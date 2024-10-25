@@ -1,0 +1,57 @@
+<h1 mat-dialog-title>Hi {{ticketDetails.first_name}}</h1>
+<!-- <div mat-dialog-content [hidden]="showTicket">
+    <p>Name&nbsp;&nbsp;:&nbsp;&nbsp;{{ticketDetails.first_name + " " + ticketDetails.last_name}}</p>
+    <p>Email&nbsp;&nbsp;:&nbsp;&nbsp;{{ticketDetails.email}}</p>
+    <p>Ticket Id&nbsp;&nbsp;:&nbsp;&nbsp;{{ticketDetails._id}}</p>
+    <p>Order Id&nbsp;&nbsp;:&nbsp;&nbsp;{{ticketDetails.order_id}}</p>
+    <p>Payment Id&nbsp;&nbsp;:&nbsp;&nbsp;{{ticketDetails.transaction_id}}</p>
+    
+    <div class="shop-items" *ngFor="let prodItem of ticketDetails.shopcart ">
+        <div class="shop-item-label">{{ prodItem.item_name }} - &#x20b9; {{ prodItem.item_subtotal }}</div>
+        <button mat-raised-button color="primary" (click)="onAdmit(prodItem)">Admit</button>
+    </div>    
+</div> -->
+
+<div mat-dialog-content [hidden]="showTicket">
+    <mat-card>
+        <mat-card-title>Ticket Details</mat-card-title>
+        <mat-card-content>
+            <p><strong>Name:</strong> {{ticketDetails.first_name}} {{ticketDetails.last_name}}</p>
+            <p><strong>Email:</strong> {{ticketDetails.email}}</p>
+            <p><strong>Ticket Id:</strong> {{ticketDetails._id}}</p>
+            <p><strong>Order Id:</strong> {{ticketDetails.order_id}}</p>
+            <p><strong>Payment Id:</strong> {{ticketDetails.transaction_id}}</p>
+
+            <div class="shop-items" *ngIf="ticketDetails.shopcart?.length">
+                <mat-list>
+                    <mat-list-item *ngFor="let prodItem of ticketDetails.shopcart; let i = index" class="shop-list-item">
+                        <div class="shop-item-label">{{ prodItem.item_name }} - &#x20b9; {{ prodItem.item_subtotal }}</div>
+                        
+                        <!-- Input field wrapped in a separate container -->
+                        <div class="input-container">
+                          <input matInput maxlength="5" [(ngModel)]="prodItem.admissionId" class="item-input">
+                        </div>
+            
+                        <div class="button-container">
+                          <button mat-raised-button color="primary" (click)="onAdmit(prodItem, i)" [disabled]="prodItem.isAdmitted">Admit</button>
+                        </div>
+                      </mat-list-item>
+                </mat-list>
+            </div>
+            <div *ngIf="!ticketDetails.shopcart?.length">No items in the cart.</div>
+        </mat-card-content>
+    </mat-card>
+</div>
+
+<div mat-dialog-actions>
+    <!-- <button mat-raised-button color="primary" (click)="onAdmit(ticketDetails)" [disabled]="ticketDetails.status != 'New'">Admit</button> -->
+    <!-- <button mat-raised-button color="primary" (click)="onShowTicket()">{{showTicket ? "View Details" : "Show Ticket"}}</button> -->
+    <button mat-raised-button color="primary" (click)="onDownloadTicket()" *ngIf="showTicket">Download Ticket</button>
+    <button mat-button (click)="onNoClick()">Close</button>
+    <!-- <button mat-button [mat-dialog-close]="ticketDetails.animal" cdkFocusInitial>Ok</button> -->
+</div>
+
+<div id="download">
+    <img #canvas src="">
+    <a #downloadLink href="" download=""></a>
+</div>

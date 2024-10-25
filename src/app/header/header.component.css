@@ -1,0 +1,24 @@
+.mat-toolbar {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.mat-button {
+    color: white;
+}
+
+.spacer {
+    flex: 1 1 auto;
+}
+
+@media only screen and (max-width: 600px) {
+    .mso-nav-long {
+        display: none;
+    }
+}
+
+@media only screen and (min-width: 600px) {
+    .mos-nav-short {
+        display: none;
+    }
+}

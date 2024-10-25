@@ -1,0 +1,84 @@
+/* cdk-overlay-pane */
+@media only screen and (max-width: 600px) {
+    table {
+      background-color: red;
+    }
+  
+    .cdk-overlay-pane {
+      position: absolute !important ;
+      top: 20%;
+    }
+}
+
+.shop-items {
+    margin-bottom: 10px;
+}
+
+.shop-item-label {
+    display: flex;
+    flex-flow: column;
+    justify-content: space-evenly;
+}
+
+.success-card {
+  color: #fff;
+  background: #fff;
+  margin-bottom: 10px;
+  background: rgb(0, 126, 0);
+  border-radius: 15px;
+  box-shadow: 0 10px 10px 0 rgba(132, 248, 132, 0.2), 0 15px 30px 0 rgba(140, 255, 140, 0.19);
+}
+
+.success-card .list-group-item {
+  background: rgb(0, 126, 0);
+  color: #fff;
+  font-weight: 400;
+}
+
+.qrcodeImage {
+  padding-left: 20%;
+}
+
+#download {
+  display: none;
+}
+
+::ng-deep .mat-dialog-container {
+    background-color: red !important; /* Change to your desired color */
+}
+
+.shop-list-item {
+    display: flex;
+    align-items: center; /* Center items vertically */
+    padding: 10px 0; /* Spacing for each item */
+  }
+  
+  .shop-item-label {
+    flex: 1; /* Allow the label to take remaining space */
+  }
+  
+  .input-container {
+    margin: 0 10px; /* Space around the input container */
+  }
+  
+  .item-input {
+    width: 60px; /* Width of the input field */
+    border-radius: 4px; /* Rounded corners */
+    border: 1px solid #ccc; /* Light border */
+    padding: 5px; /* Padding inside the input */
+    font-size: 14px; /* Font size */
+  }
+  
+  .button-container {
+    margin-left: 10px; /* Space between the input and the button */
+    display: flex;
+    justify-content: flex-end; /* Align button to the right */
+  }
+  
+  mat-card {
+    margin: 16px 0; /* Space around the card */
+  }
+  
+  h3 {
+    margin-top: 16px; /* Spacing above the "Items" header */
+  }

@@ -1,0 +1,75 @@
+/* You can add global styles to this file, and also import other style files */
+
+:root {
+    --color-primary: #1E4638;
+    --color-secondary: #386e5b;
+    --mdc-filled-text-field-container-color: #a1d694;
+}
+
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+    background-color: #FDFBD4;
+
+}
+
+input {
+    background-color: #a1d694 !important;
+    border-color: #fff;
+}
+
+input:focus {
+    border-color: #1E4638 !important;
+    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: #1E4638;
+    text-shadow: 1px 1px 2px #1E4638, 0 0 1em #1E4638, 0 0 0.0em #1E4638;
+}
+
+.section {
+    border: 5px solid #fff;
+    width: auto;
+    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+    margin-bottom: 30px;
+    padding: 15px;
+}
+
+.btn-success {
+    background-color: #1E4638;
+    border-color: #386e5b;
+    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+}
+
+
+.snackbar-success {
+    .mdc-snackbar__surface {
+        background-color: var(--color-primary) !important;
+    }
+
+    .mdc-snackbar__label {
+        color: white !important;
+    }
+}
+
+.snackbar-error {
+    .mdc-snackbar__surface {
+        background-color: red !important;
+    }
+
+    .mdc-snackbar__label {
+        color: white !important;
+    }
+}

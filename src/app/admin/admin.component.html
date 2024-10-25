@@ -1,0 +1,45 @@
+<p>admin works!</p>
+
+<div class="container">
+    <div class="section col-xs-12 col-sm-12 col-md-8 col-sm-offset-1 col-md-offset-2">
+        <h5>Register User:</h5>
+        <br>
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+            <div class="form-group">
+                <label for="userName">Name:</label>
+                <input type="text" id="userName" formControlName="userName" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" formControlName="email" class="form-control">
+                <!-- <span *ngIf="registerForm.get('email').errors['required'] && registerForm.get('email').touched" class="help-block">*Information Required</span>
+                <span *ngIf="registerForm.get('email').errors['email']" class="help-block">Please enter a valid email</span> -->
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" formControlName="password" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Confrim Password:</label>
+                <input type="password" id="confirmPassword" formControlName="confirmPassword" class="form-control">
+            </div>
+            <div *ngIf="registerForm.errors?.mismatch && registerForm.get('confirmPassword')?.touched">
+                <small>Passwords do not match.</small>
+            </div>
+            <br>  
+            <button class="btn btn-success" type="submit">Submit</button>
+        </form>
+    </div>
+    <!-- <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-8 col-sm-offset-1 col-md-offset-2">
+            <ul class="list-group" *ngIf="ticketList.length >=1">
+                <li class="" *ngFor="let ticket of ticketList">
+                    <p>{{ ticket.name }}</p>
+                    <p>{{ ticket.email }}</p>
+
+                </li>
+
+            </ul>
+        </div>
+    </div> -->
+</div>
