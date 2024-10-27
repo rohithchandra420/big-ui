@@ -10,6 +10,7 @@ import { User } from '../core/user.model';
 
 import { RegistrationService } from './registration.service'
 import { NotificationService } from '../core/notification.service';
+import { TicketsService } from '../tickets/tickets.service';
 
 @Component({
   selector: 'app-registration',
@@ -23,6 +24,7 @@ export class RegistrationComponent implements OnInit {
   genders = ['male', 'female'];
   ticketList: Ticket[] = [];
   userList: User[] = [];
+  ticketOrderIdList = [];
 
   excelFile;
   disableUploadBtn = true;
@@ -31,7 +33,7 @@ export class RegistrationComponent implements OnInit {
   url = "http://localhost:3000/";
 
   constructor(private http: HttpClient, private registrationService: RegistrationService, 
-    private notificationService: NotificationService ) {}
+    private notificationService: NotificationService, private ticketService: TicketsService ) {}
 
   ngOnInit() {
     this.registerForm = new FormGroup({
@@ -122,6 +124,17 @@ export class RegistrationComponent implements OnInit {
       console.log(error);
       this.notificationService.openErrorSnackBar("Image Upload Failed");
     })
+  }
+
+  getAllTicketOrderId() {
+    this.ticketOrderIdList = [];
+    this.ticketService.getAllTickets().subscribe((res) => {
+      res.forEach((ticket, index) => {
+        this.ticketOrderIdList.push(ticket.order_id)
+      })
+    }, (error) => {
+
+    });
   }
 
 }

@@ -1,0 +1,125 @@
+<h1 mat-dialog-title>Hi</h1>
+<div mat-dialog-content>
+
+    <div class="container">
+        <!-- devices -->
+        <div class="row">
+            <div class="col-xs-12 col-md-6 col-lg-4 col-xl-3 my-1">
+                <select #select1 (change)="action.playDevice(select1.value)" class="form-select form-select-md">
+                    <option [value]="null" selected>Select device</option>
+                    <option *ngFor="let c of action.devices.value; let i = index" [value]="c.deviceId"
+                        [selected]="i == action.deviceIndexActive">{{c.label}}</option>
+                </select>
+            </div>
+
+            <div class="col-xs-12 col-md-6 col-lg-4 col-xl-3 my-1">
+                <select #select2 (change)="action.decode = select2.value" class="form-select form-select-md">
+                    <option value="utf-8" [selected]="action.decode == 'utf-8'">UTF-8</option>
+                    <option value="iso-8859-15" [selected]="action.decode == 'iso-8859-15'">ISO-8859-15</option>
+                    <option value="windows-1252" [selected]="action.decode == 'windows-1252'">Windows-1252</option>
+                    <option value="macintosh" [selected]="action.decode == 'macintosh'">Macintosh</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- ngx-scanner-qrcode -->
+        <ngx-scanner-qrcode #action="scanner" [config]="config" (event)="onEvent($event, action)"></ngx-scanner-qrcode>
+
+        <div class="row qr-data-section" *ngIf="validKeys">
+            <div class="d-flex justify-content-between flex-wrap mb-2">
+                <div class="">
+                    <span>Ticket ID  :</span> 
+                </div>
+                <div class="">
+                    <span>{{ticketId}}</span> 
+                </div>
+                <div class="">
+                    <button class="btn btn-success" [mat-dialog-close]="ticketId">Copy</button>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between flex-wrap mb-2">
+                <div class="">
+                    <span>Transaction ID  :</span> 
+                </div>
+                <div class="">
+                    <span>{{transactionId}}</span> 
+                </div>
+                <div class="">
+                    <button class="btn btn-success" [mat-dialog-close]="transactionId">Copy</button>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between flex-wrap">
+                <div class="">
+                    <span>Order ID  :</span> 
+                </div>
+                <div class="">
+                    <span>{{orderId}}</span> 
+                </div>
+                <div class="">
+                    <button class="btn btn-success" [mat-dialog-close]="orderId">Copy</button>
+                </div>
+            </div>
+
+            <!-- <div class="row col-12">
+                <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 col-sm-offset-1 col-md-offset-2">
+                    <span>Ticket ID  :</span>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 col-sm-offset-1 col-md-offset-2">
+                    <span>{{ticketId}}</span>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12 col-sm-offset-1 col-md-offset-2">
+                    <button class="btn btn-success" [mat-dialog-close]="ticketId">Copy</button>
+                </div>
+            </div>-->
+
+        </div>
+
+        <!-- loading -->
+        <p *ngIf="action.isLoading">⌛ Loading...</p>
+
+        <div class="qr-btn-section">
+            <!-- start/stop -->
+            <button class="btn btn-action" [class.btn-info]="!action.isStart" [class.btn-warning]="action.isStart"
+                [disabled]="action.isLoading" (click)="handle(action, action.isStart ? 'stop' : 'start')">
+                <img [src]="action.isStart ? 'https://id1945.github.io/images/svg/camera-off.svg' : 'https://id1945.github.io/images/svg/camera-on.svg'"
+                    width="30px" />
+            </button>
+
+            <!-- play/pause -->
+            <button class="btn btn-action" [class.btn-info]="!action.isStart" [class.btn-warning]="action.isStart"
+                [disabled]="!action.isStart" (click)="handle(action, action.isPause ? 'play' : 'pause')">
+                <img [src]="action.isPause ? 'https://id1945.github.io/images/svg/play.svg': 'https://id1945.github.io/images/svg/pause.svg'"
+                    width="30px" />
+            </button>
+
+            <!-- isTorch -->
+            <button class="btn btn-action" [class.btn-info]="!action.isStart" [class.btn-warning]="action.isStart"
+                [disabled]="!action.isStart" (click)="action.isTorch = !action.isTorch; handle(action, 'torcher')">
+                <img [src]="action.isTorch ? 'https://id1945.github.io/images/svg/flash-off.svg' : 'https://id1945.github.io/images/svg/flash-on.svg'"
+                    width="30px" />
+            </button>
+
+            <!-- download -->
+            <!-- <button class="btn" [class.btn-info]="!action.isStart" [class.btn-warning]="action.isStart"
+        [disabled]="!action.isStart" (click)="handle(action, 'download')">
+        <img src="https://id1945.github.io/images/svg/capture.svg" width="30px" />
+    </button> -->
+
+        </div>
+
+        <br>
+
+        <!-- for select files -->
+        <!-- <input #file type="file" (change)="onSelects(file.files)" [multiple]="'multiple'"
+            [accept]="'.jpg, .png, .gif, .jpeg'" class="btn btn-success my-2" />
+        <br>
+        <input #file2 type="file" (change)="onSelects2(file2.files)" [multiple]="'multiple'"
+            [accept]="'.jpg, .png, .gif, .jpeg'" class="btn btn-success my-2" />
+        <br> -->
+    </div>
+
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="onNoClick()">No Thanks</button>
+    <!-- <button mat-button [mat-dialog-close]="ticketDetails.animal" cdkFocusInitial>Ok</button> -->
+</div>

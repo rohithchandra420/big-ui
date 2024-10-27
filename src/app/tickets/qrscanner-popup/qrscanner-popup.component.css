@@ -1,0 +1,48 @@
+table {
+    --bs-table-bg: none;
+}
+
+.qrdata-items {
+    margin-bottom: 10px;
+    /* justify-content: space-between; */
+    display: flex;
+    align-items: center;
+    /* Center items vertically */
+    padding: 10px 0;
+    /* Spacing for each item */
+}
+
+.qrdata-item-label {
+    display: flex;
+    flex: 1;
+    /* Allow the label to take remaining space */
+    flex-flow: column;
+    justify-content: space-evenly;
+}
+
+
+.button-container {
+    margin-left: 10px;
+    /* Space between the input and the button */
+    display: flex;
+    justify-content: flex-end;
+    /* Align button to the right */
+}
+
+.qr-btn-section{
+    display: flex;
+    align-items: stretch;
+}
+
+.qr-data-section {
+    margin: 15px 15px;
+}
+
+.qr-data {
+    display: flex;
+}
+
+.btn-action {
+    width: 150px;
+    margin: 15px 15px;
+}

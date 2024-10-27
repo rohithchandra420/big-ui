@@ -6,6 +6,7 @@ import { CustomMaterialModule } from './core/material.module';
 import { AppRoutingModule } from './core/app-routing.module';
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
+import { NgxScannerQrcodeModule, LOAD_WASM } from 'ngx-scanner-qrcode';
 
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
@@ -29,10 +30,10 @@ import { TicketsComponent } from './tickets/tickets.component';
 import { TicketsService } from './tickets/tickets.service';
 import { NotificationService } from './core/notification.service';
 import { TicketDetailsPopUp } from './tickets/ticket.details.popup/ticket.details.popup';
+import { QrscannerPopupComponent } from './tickets/qrscanner-popup/qrscanner-popup.component';
 
-
-
-
+// #QRCode Scanner: Necessary to solve the problem of losing internet connection
+LOAD_WASM().subscribe()
 
 @NgModule({
   declarations: [
@@ -46,7 +47,8 @@ import { TicketDetailsPopUp } from './tickets/ticket.details.popup/ticket.detail
     ErrorPageComponent,
     AdminComponent,
     TicketsComponent,
-    TicketDetailsPopUp
+    TicketDetailsPopUp,
+    QrscannerPopupComponent
   ],
   imports: [
     BrowserModule,
@@ -56,6 +58,7 @@ import { TicketDetailsPopUp } from './tickets/ticket.details.popup/ticket.detail
     AppRoutingModule,
     ReactiveFormsModule,
     HttpClientModule,
+    NgxScannerQrcodeModule,
     MatSnackBarModule,
     MatCardModule,
     MatTableModule,

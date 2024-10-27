@@ -91,6 +91,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
+ngx-scanner-qrcode
+LGPL-2.1+
+
 rxjs
 Apache-2.0
                                Apache License
