@@ -4,35 +4,109 @@
         <h5>Upload Excel File:</h5>
         <br>
         <label>File:</label>
-        <input type="file" class="form-control" (change)="onFileSelected($event)">
+        <input type="file" class="form-control" (change)="onFileSelected($event)" accept=".xlsx">
         <br>
-        <button class="btn btn-success" type="button" (click)="uploadFile()" [disabled]="disableUploadBtn" >Submit</button>
+        <button class="btn btn-success" type="button" (click)="uploadFile()"
+            [disabled]="disableUploadBtn">Submit</button>
     </div>
     <div class="section col-xs-12 col-sm-12 col-md-8 col-sm-offset-1 col-md-offset-2">
         <h5>Register Participant:</h5>
         <br>
-        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+        <!-- <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
             <div class="form-group">
-                <label for="userName">Name:</label>
-                <input type="text" id="userName" formControlName="userName" class="form-control">
+                <label for="firstName">First Name:</label>
+                <input type="text" id="firstName" formControlName="firstName" class="form-control">
             </div>
             <div class="form-group">
-                <label for="bookingId">Booking Id:</label>
-                <input type="text" id="bookingId" formControlName="bookingId" class="form-control">
+                <label for="lastName">Last Name:</label>
+                <input type="text" id="lastName" formControlName="lastName" class="form-control">
             </div>
             <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" formControlName="email" class="form-control">
+                //<span *ngIf="registerForm.get('email').errors['required'] && registerForm.get('email').touched" class="help-block">*Information Required</span>
+                //<span *ngIf="registerForm.get('email').errors['email']" class="help-block">Please enter a valid email</span>
+            </div>
+            <div class="form-group">
+                <label for="orderId">Order Id:</label>
+                <input type="text" id="orderId" formControlName="orderId" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="transactionId">Transaction Id:</label>
+                <input type="text" id="transactionId" formControlName="transactionId" class="form-control">
+            </div>            
+            <div class="form-group">
+                <label for="noOfTickets">Number of Tickets</label>
+                <input type="number" id="noOfTickets" formControlName="noOfTickets" class="form-control">
+                <span *ngIf="!registerForm.get('noOfTickets').valid && registerForm.get('noOfTickets').touched" class="help-block">Minimum nomber of tickets should be 1</span>
+            </div>
+
+            <div class="form-group">
+                <label for="noOfTickets">Number of Tickets</label>
+                <input type="number" id="noOfTickets" formControlName="noOfTickets" class="form-control">
+                <span *ngIf="!registerForm.get('noOfTickets').valid && registerForm.get('noOfTickets').touched" class="help-block">Minimum nomber of tickets should be 1</span>
+            </div>
+            <button class="btn btn-secondary" type="button">Add+</button>
+            <br>  
+            <button class="btn btn-success" type="submit">Submit</button>
+        </form> -->
+
+        <form [formGroup]="shopForm" (ngSubmit)="validateValuesandSubmit()" class="row shop-form">
+            <div class="col-12 form-group">
+                <label for="firstName">First Name:</label>
+                <input type="text" id="firstName" formControlName="firstName" class="form-control">
+            </div>
+
+            <div class="col-12 form-group">
+                <label for="lastName">Last Name:</label>
+                <input type="text" id="lastName" formControlName="lastName" class="form-control">
+            </div>
+
+            <div class="col-12 form-group">
                 <label for="email">Email:</label>
                 <input type="email" id="email" formControlName="email" class="form-control">
                 <!-- <span *ngIf="registerForm.get('email').errors['required'] && registerForm.get('email').touched" class="help-block">*Information Required</span>
                 <span *ngIf="registerForm.get('email').errors['email']" class="help-block">Please enter a valid email</span> -->
             </div>
-            <div class="form-group">
-                <label for="noOfTickets">Number of Tickets</label>
-                <input type="number" id="noOfTickets" formControlName="noOfTickets" class="form-control">
-                <span *ngIf="!registerForm.get('noOfTickets').valid && registerForm.get('noOfTickets').touched" class="help-block">Minimum nomber of tickets should be 1</span>
-            </div><br>  
-            <button class="btn btn-success" type="submit">Submit</button>
+
+            <div class="col-12 form-group">
+                <label for="orderId">Order Id:</label>
+                <input type="number" id="orderId" formControlName="orderId" class="form-control">
+            </div>
+
+            <div class="col-12 form-group">
+                <label for="transactionId">Transaction Id:</label>
+                <input type="text" id="transactionId" formControlName="transactionId" class="form-control">
+            </div>
+
+            <div formArrayName="shopcart">
+                <div *ngFor="let item of shopcart.controls; let i = index" [formGroupName]="i" class="row shop-cart-item mt-2">
+                    <div class="col-8 form-group">
+                        <label for="item_name">Ticket Items:</label>
+                        <select formControlName="item_name" class="form-control">
+                            <option value="">Select Items</option>
+                            <option value="Festival Ticket">Festival Ticket</option>
+                            <option value="PYOT (Pitch Your Own Tent)">PYOT (Pitch Your Own Tent)</option>
+                            <option value="Type3">Type 3</option>
+                        </select>
+                    </div>
+
+                    <div class="col-3 form-group">
+                        <label for="quantity">Quantity:</label>
+                        <input formControlName="quantity" type="number" class="form-control" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 mt-4">
+                <button type="button" (click)="addItem()" class="btn btn-primary">Add</button>
+            </div>
+            <div class="col-12 mt-4">                
+                <button type="submit" class="btn btn-success btn-submit" [disabled]="shopForm.invalid">Submit</button>
+            </div>
         </form>
+
+
     </div>
     <div class="row">
         <div class="col-xs-12 col-sm-12 col-md-8 col-sm-offset-1 col-md-offset-2">

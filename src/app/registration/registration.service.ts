@@ -13,9 +13,9 @@ export class RegistrationService {
 
     constructor(private http: HttpClient, private authService: AuthService) { }
 
-    registerTicket(ticketDetails: Ticket) {
+    createTicket(ticketDetails: Ticket) {
         return this.http
-            .post<[User]>(this.url + "/registerTicket", ticketDetails)
+            .post<Ticket>(this.url + "/createTicket", ticketDetails)
     }
 
     getTicketsById(ticketId: string) {
