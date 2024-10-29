@@ -1,10 +1,13 @@
 import { HttpClient } from "@angular/common/http";
 import { Workshop } from "../core/workshop.model";
 import { Injectable } from "@angular/core";
+import { environment } from "src/environments/environment.development";
+import { User } from "../core/user.model";
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
-    url = "http://localhost:3000";
+
+    url = environment.URL;
     constructor( private http: HttpClient) {}
 
     addWorkshop(workshopDetails: Workshop) {
@@ -12,8 +15,9 @@ export class AdminService {
             .post<[Workshop]>(this.url + "/addWorkshop", workshopDetails);
     }
 
-    addWorkshopImage(fileData: FormData) {
-        return this.http
-            .post<[Workshop]>(this.url + "/addWorkshop", fileData);
+    createUser(userDetails) {
+        return this.http.post<User>(this.url + "/createUser", userDetails);
     }
+
+
 }

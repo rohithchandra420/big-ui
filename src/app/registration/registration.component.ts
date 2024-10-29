@@ -110,7 +110,7 @@ export class RegistrationComponent implements OnInit {
         this.notificationService.openSucessSnackBar("Ticket created for Order #" + res.order_id);
       }, (error) => {
         console.log(error);
-        this.notificationService.openErrorSnackBar("Failed to create Ticket");
+        this.notificationService.openErrorSnackBar("Failed to create Ticket: " + error.error);
       })
 
     }
@@ -207,7 +207,7 @@ export class RegistrationComponent implements OnInit {
       this.excelFile = null;
     }, (error) => {
       console.log(error);
-      this.notificationService.openErrorSnackBar("Image Upload Failed");
+      this.notificationService.openErrorSnackBar("File Upload Failed: " + error.error);
     })
   }
 

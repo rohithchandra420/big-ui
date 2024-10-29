@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Workshop } from '../core/workshop.model';
 import { AdminService } from './admin.service';
+import { User } from '../core/user.model';
+import { NotificationService } from '../core/notification.service';
 
 @Component({
   selector: 'app-admin',
@@ -14,15 +16,16 @@ export class AdminComponent implements OnInit {
   formData = new FormData();
   file: File = null;
 
-  registerForm: FormGroup;
+  userFrom: FormGroup;
   genders = ['male', 'female'];
 
-  constructor(private adminService: AdminService) {
-    this.registerForm = new FormGroup({
+  constructor(private adminService: AdminService, private notificationService: NotificationService) {
+    this.userFrom = new FormGroup({
       'userName': new FormControl(null, Validators.required),
       'email': new FormControl(null, [Validators.required, Validators.email]),
       'password': new FormControl(null, [Validators.required, this.ticketValidator]),
-      'confirmPassword': new FormControl(null, [Validators.required, this.passwordMatchValidator])
+      'confirmPassword': new FormControl(null, [Validators.required, this.passwordMatchValidator]),
+      'role': new FormControl('', Validators.required)
     });
   }
 
@@ -31,7 +34,6 @@ export class AdminComponent implements OnInit {
   }
 
   ticketValidator(control: FormControl): {[s: string]:boolean} {
-    debugger;
     if(control.value < 1) {
       return {'inValidNoOfTickets': true};
     }
@@ -47,26 +49,22 @@ export class AdminComponent implements OnInit {
   }
 
   onSubmit() {
-    let workshopDetails: Workshop = {
-      workshopName: this.addWorkshopForm.controls.workshopName.value,
-      workshopVenue: this.addWorkshopForm.controls.workshopVenue.value,
-      startsAt: this.addWorkshopForm.controls.startsAt.value,
-      registrationTime: this.addWorkshopForm.controls.registrationTime.value,
-    };
+    let userDetails = {
+      name: this.userFrom.controls.userName.value,
+      email: this.userFrom.controls.email.value,
+      password: this.userFrom.controls.password.value,
+      role: this.userFrom.controls.role.value      
+    }
 
-    this.adminService.addWorkshop(workshopDetails).subscribe(res=> {
-      console.log(res);
-    }, error=> {
+    console.log(userDetails);
+    this.adminService.createUser(userDetails).subscribe((res) => {
+      this.notificationService.openSucessSnackBar("User " + res.name + " created Successfully");
+    }, (error) => {
+      this.notificationService.openErrorSnackBar("Could not create User");
+    })
+    //const userDetails = new User()
 
-    })   
-  }
-
-  uploadWorkshopImage() {
-    this.adminService.addWorkshopImage(this.formData).subscribe(res=> {
-
-    }, error => {
-
-    });
+      
   }
 
   onChange(event) { 

@@ -52,7 +52,6 @@ export class LoginComponent implements OnInit, OnDestroy {
   // }
 
   login() {
-    console.log(this.username, this.password);
     let loginData = {
       "email": this.username,
       "password": this.password

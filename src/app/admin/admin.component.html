@@ -4,7 +4,7 @@
     <div class="section col-xs-12 col-sm-12 col-md-8 col-sm-offset-1 col-md-offset-2">
         <h5>Register User:</h5>
         <br>
-        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+        <form [formGroup]="userFrom" (ngSubmit)="onSubmit()">
             <div class="form-group">
                 <label for="userName">Name:</label>
                 <input type="text" id="userName" formControlName="userName" class="form-control">
@@ -23,8 +23,16 @@
                 <label for="confirmPassword">Confrim Password:</label>
                 <input type="password" id="confirmPassword" formControlName="confirmPassword" class="form-control">
             </div>
-            <div *ngIf="registerForm.errors?.mismatch && registerForm.get('confirmPassword')?.touched">
+            <div *ngIf="userFrom.errors?.mismatch && userFrom.get('confirmPassword')?.touched">
                 <small>Passwords do not match.</small>
+            </div>
+            <div class="form-group">
+                <label for="item_name">Role:</label>
+                <select class="form-select" formControlName="role" >
+                    <option selected>Open this select menu</option>
+                    <option value="volunteer">Volunteer</option>
+                    <option value="admin">Admin</option>
+                </select>
             </div>
             <br>  
             <button class="btn btn-success" type="submit">Submit</button>

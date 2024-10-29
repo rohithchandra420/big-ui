@@ -55,10 +55,10 @@ const appRoutes: Routes = [
     //     ]
     // },
     { path: 'home', redirectTo: '', pathMatch: 'full'},
-    { path: 'register', component: RegistrationComponent },
+    { path: 'register', canActivate:[AuthGuard] ,component: RegistrationComponent },
     { path: 'dashboard', canActivate:[AuthGuard] ,component: DashboardComponent },
-    { path: 'tickets', component: TicketsComponent },
-    { path: 'admin', component: AdminComponent },
+    { path: 'tickets', canActivate:[AuthGuard] ,component: TicketsComponent },
+    { path: 'admin', canActivate:[AuthGuard] ,component: AdminComponent },
     { path: 'error', component: ErrorPageComponent, data: {message: 'Page Under Construction'}},
     { path: '**', redirectTo: 'error' },
 

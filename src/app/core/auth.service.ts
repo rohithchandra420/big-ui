@@ -37,15 +37,15 @@ export class AuthService {
     }
 
     getUserDetails(id: string) {
-
         // user1.name = 'AdminUser';
         // user1.role = 'Admin';
         // user1.userId = 'Admin123';
+        this.http.get<User>(this.url + '/user/me/' + id)
         return this.user;
     }
 
     signUp(signUpDetails) {
-        this.http.post<{user:User, token:string}>(this.url + "/createUsers", signUpDetails)
+        this.http.post<{user:User, token:string}>(this.url + "/signUp", signUpDetails)
             .pipe(catchError(this.handleError), tap(resData => {
                     const user = new User(resData.user._id, 
                         resData.user.name, resData.user.email, 
@@ -98,13 +98,14 @@ export class AuthService {
             ticketId: string,
             _token: string
         } = JSON.parse(localStorage.getItem('userData'));
+
+        console.log("userData: ", userData);
         if(!userData) {
             return;
         }
 
-        const loadedUser = new User( userData.id, userData.name, 
-            userData.email, userData.bookingId, userData.role, 
-            userData.ticketId, userData._token);
+        const loadedUser = new User(userData.name, userData.email, userData.bookingId,
+            userData.role, userData.ticketId, userData._token);
         if(loadedUser._token) {
             this.user.next(loadedUser);
         }
@@ -126,8 +127,9 @@ export class AuthService {
     }
 
     private handleAuthentication(id, name, email, bookingId, role, ticketId, token) {
-        const user = new User(id, name, email, bookingId, role, ticketId, token)
+        const user = new User(name, email, '', role, '', token, id);
         this.user.next(user);
+        console.log("handleAuthentication : ", user);
         localStorage.setItem('userData', JSON.stringify(user));
     }
 }
