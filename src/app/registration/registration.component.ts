@@ -38,7 +38,7 @@ export class RegistrationComponent implements OnInit {
     this.shopForm = this.fb.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],      
+      email: ['', [Validators.required, Validators.email]],
       orderId: new FormControl(null, [Validators.required]),
       transactionId: new FormControl(null, [Validators.required]),
       shopcart: this.fb.array([]) // Initialize shopcart as an empty FormArray
@@ -76,6 +76,12 @@ export class RegistrationComponent implements OnInit {
     this.shopcart.push(item);
   }
 
+  removeItem() {
+    console.log(this.shopcart);
+    this.shopcart.removeAt(this.shopcart.length - 1);
+    console.log(this.shopcart);
+  }
+
   validateValuesandSubmit() {
     this.ticketOrderIdList = [];
     this.ticketService.getAllTickets().subscribe((res) => {
@@ -84,14 +90,14 @@ export class RegistrationComponent implements OnInit {
       })
 
       const invalidOrderId = this.ticketOrderIdList.includes(this.shopForm.value.orderId);
-    console.log("ticketOrderIdList: ", this.ticketOrderIdList);
-    console.log("his.shopForm.value.orderId: ", this.shopForm.value.orderId);
-    console.log(invalidOrderId);
-    if(!invalidOrderId) {      
-      this.submitTicketValues();
-    } else {
-      this.notificationService.openErrorSnackBar("Order Id already exist");
-    }
+      console.log("ticketOrderIdList: ", this.ticketOrderIdList);
+      console.log("his.shopForm.value.orderId: ", this.shopForm.value.orderId);
+      console.log(invalidOrderId);
+      if (!invalidOrderId) {
+        this.submitTicketValues();
+      } else {
+        this.notificationService.openErrorSnackBar("Order Id already exist");
+      }
 
     }, (error) => {
       console.log("ERROR: ", error);
@@ -99,7 +105,6 @@ export class RegistrationComponent implements OnInit {
   }
 
   submitTicketValues() {
-
     if (this.shopForm.valid) { //this.shopForm.valid
       const formData = this.shopForm.value;
       console.log('Submitted Data:', formData);
@@ -116,32 +121,9 @@ export class RegistrationComponent implements OnInit {
     }
   }
 
-  initTest() {
-    this.http
-      .get<[Ticket]>("http://localhost:3000/getAllTicketDetails")
-      .pipe(map(responseData => {
-        const postsArray = [];
-        for (const key in responseData) {
-          if (responseData.hasOwnProperty(key)) {
-            postsArray.push({ ...responseData[key] });
-          }
-        }
-        return postsArray;
-      }),
-        catchError(errorRes => {
-          return throwError(errorRes);
-        }))
-      .subscribe(response => {
-        console.log(response);
-        this.ticketList = response;
-      });
-  }
-
   onFileSelected(event) {
-    this.getAllTicketOrderId();
 
     this.excelFile = event.target.files[0];
-
 
     if (this.excelFile.name.endsWith('.xlsx')) {
 
@@ -172,6 +154,12 @@ export class RegistrationComponent implements OnInit {
         const invalidOrderIds = this.ticketOrderIdList.filter(value => this.columnValues.includes(value))
 
         this.disableUploadBtn = invalidOrderIds.length ? true : false;
+
+        console.log("this.columnValues: ", this.columnValues);
+        console.log("this.ticketOrderIdList: ", this.ticketOrderIdList);
+        console.log("invalidOrderIds: ", invalidOrderIds);
+        console.log(this.disableUploadBtn);
+
         if (!invalidOrderIds.length) {
           this.disableUploadBtn = false;
         } else {

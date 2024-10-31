@@ -87,7 +87,15 @@
                             <option value="">Select Items</option>
                             <option value="Festival Ticket">Festival Ticket</option>
                             <option value="PYOT (Pitch Your Own Tent)">PYOT (Pitch Your Own Tent)</option>
-                            <option value="Type3">Type 3</option>
+                            <option value="Shared Tent">Shared Tent</option>
+                            <option value="Solo Tent">Solo Tent</option>
+                            <option value="Family Tent">Family Tent</option>
+                            <option value="Glamping Tent for Single Person">Glamping Tent for Single Person</option>
+                            <option value="GTPW">Glamping Tent with Private Washroom</option>
+                            <option value="Glamping Tent with Private Washroom">Delux Room</option>
+                            <option value="Car/Caravan Pass">Car/Caravan Pass</option>
+                            <option value="Electric Scooter Pass">Electric Scooter Pass</option>
+                            <option value="other">Other...</option>
                         </select>
                     </div>
 
@@ -100,7 +108,9 @@
 
             <div class="col-12 mt-4">
                 <button type="button" (click)="addItem()" class="btn btn-primary">Add</button>
+                <button type="button" (click)="removeItem()" class="btn btn-danger" [disabled]="!shopcart.length">Remove</button>
             </div>
+            
             <div class="col-12 mt-4">                
                 <button type="submit" class="btn btn-success btn-submit" [disabled]="shopForm.invalid">Submit</button>
             </div>

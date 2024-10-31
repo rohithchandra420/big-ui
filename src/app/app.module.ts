@@ -13,6 +13,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatRippleModule } from '@angular/material/core';
 import { MatDialogModule } from '@angular/material/dialog';
+//import { NgChartsModule } from 'ng2-charts';
 
 import { AppComponent } from './app.component';
 import { HeaderComponent } from './header/header.component';
@@ -31,6 +32,7 @@ import { TicketsService } from './tickets/tickets.service';
 import { NotificationService } from './core/notification.service';
 import { TicketDetailsPopUp } from './tickets/ticket.details.popup/ticket.details.popup';
 import { QrscannerPopupComponent } from './tickets/qrscanner-popup/qrscanner-popup.component';
+import { DashboardService } from './dashboard/dashboard.service';
 
 // #QRCode Scanner: Necessary to solve the problem of losing internet connection
 LOAD_WASM().subscribe()
@@ -65,13 +67,13 @@ LOAD_WASM().subscribe()
     MatPaginatorModule,
     MatRippleModule,
     MatDialogModule
-
   ],
   providers: [
     AuthService, 
     AuthGuard,
     TicketsService, 
     NotificationService,
+    DashboardService,
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true }
   ],
   bootstrap: [AppComponent]
