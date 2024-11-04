@@ -10,13 +10,20 @@ export class AdminService {
     url = environment.URL;
     constructor( private http: HttpClient) {}
 
-    addWorkshop(workshopDetails: Workshop) {
-        return this.http
-            .post<[Workshop]>(this.url + "/addWorkshop", workshopDetails);
-    }
-
     createUser(userDetails) {
         return this.http.post<User>(this.url + "/createUser", userDetails);
+    }
+
+    getAllUsers() {
+        return this.http.get<[User]>(this.url + '/getAllUsers');
+    }
+
+    updateUser(updatedUser) {
+        return this.http.patch(this.url + '/updateUser', updatedUser);
+    }
+
+    deleteUser(userId) {
+        return this.http.delete(this.url + '/deleteUser/' + userId);
     }
 
 

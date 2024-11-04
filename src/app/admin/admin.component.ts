@@ -15,6 +15,9 @@ export class AdminComponent implements OnInit {
   addWorkshopForm: FormGroup;  
   formData = new FormData();
   file: File = null;
+  userList: User[];
+  isEditMode = false;
+  selectedUser: User;
 
   userFrom: FormGroup;
   genders = ['male', 'female'];
@@ -30,6 +33,10 @@ export class AdminComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.getAllUsers();
+  }
+
+  resetForm() {
     
   }
 
@@ -71,6 +78,61 @@ export class AdminComponent implements OnInit {
     let file = event.target.files[0]; 
     this.formData.append("workshop", file);
     console.log(this.formData);
+  }
+
+  switchMode() {
+    this.isEditMode = !this.isEditMode;
+    this.userFrom.controls.password.enable();
+    this.userFrom.controls.confirmPassword.enable();
+    this.userFrom.reset();
+  }
+
+  getAllUsers() {
+    this.userList;
+    this.adminService.getAllUsers().subscribe((res) => {
+      if(res.length) {
+        console.log(res);
+        this.userList = res;
+      } else {
+        this.notificationService.openErrorSnackBar("No Users Found");
+      }
+
+    }, (error) => {
+      console.log(error);
+      this.notificationService.openErrorSnackBar("Error Fetching Data");
+    })
+
+  } 
+
+  editUser(user: User) {
+    console.log("Edit: ", user);
+    this.isEditMode = true;
+    this.selectedUser = user;
+    this.userFrom.controls.password.disable();
+    this.userFrom.controls.confirmPassword.disable();
+    this.userFrom.get('userName')?.setValue(user.name);
+    this.userFrom.get('email')?.setValue(user.email);
+    this.userFrom.get('role')?.setValue(user.role);
+  }
+
+  updateUser() {
+    let updateDetails = {
+      _id: this.selectedUser._id,
+      name: this.userFrom.controls.userName.value,
+      email: this.userFrom.controls.email.value,
+      role: this.userFrom.controls.role.value      
+    };
+
+    this.adminService.updateUser(updateDetails).subscribe((res) => {
+      this.getAllUsers();
+      this.notificationService.openSucessSnackBar("Successfully Updated");
+    }, (error) => {
+      this.notificationService.openErrorSnackBar("Failed to Update: " + error.error);
+    });
+  }
+
+  deleteUser() {
+
   }
 
 }

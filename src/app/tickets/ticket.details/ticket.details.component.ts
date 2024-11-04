@@ -6,11 +6,11 @@ import { NotificationService } from "src/app/core/notification.service";
 
 @Component({
   selector: 'ticket-details-popup',
-  templateUrl: './ticket.details.popup.html',
-  styleUrls: ['./ticket.details.popup.css']
+  templateUrl: './ticket.details.component.html',
+  styleUrls: ['./ticket.details.component.css']
 })
 
-export class TicketDetailsPopUp implements OnInit {
+export class TicketDetailsComponent implements OnInit {
 
   @ViewChild('ticketCard') ticketCard: ElementRef<HTMLElement>;
   @ViewChild('canvas') canvas: ElementRef;
@@ -19,7 +19,7 @@ export class TicketDetailsPopUp implements OnInit {
   qrdata: string = "mso";
   showTicket = false;
 
-  constructor(public dialogRef: MatDialogRef<TicketDetailsPopUp>, private ticketService: TicketsService,
+  constructor(public dialogRef: MatDialogRef<TicketDetailsComponent>, private ticketService: TicketsService,
     private notificationService: NotificationService , @Inject(MAT_DIALOG_DATA) public ticketDetails: Ticket) { }
 
   ngOnInit(): void {

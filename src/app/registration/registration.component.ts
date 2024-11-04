@@ -113,6 +113,7 @@ export class RegistrationComponent implements OnInit {
         formData.transactionId, "Not Yet", formData.shopcart);
       this.registrationService.createTicket(ticket).subscribe((res) => {
         this.notificationService.openSucessSnackBar("Ticket created for Order #" + res.order_id);
+        this.getAllTicketOrderId();
       }, (error) => {
         console.log(error);
         this.notificationService.openErrorSnackBar("Failed to create Ticket: " + error.error);
@@ -191,7 +192,8 @@ export class RegistrationComponent implements OnInit {
     }
 
     this.registrationService.uploadExcel(formData).subscribe((res) => {
-      this.notificationService.openSucessSnackBar("File Uploaded Successfully")
+      this.notificationService.openSucessSnackBar("File Uploaded Successfully");
+      this.getAllTicketOrderId();
       this.excelFile = null;
     }, (error) => {
       console.log(error);

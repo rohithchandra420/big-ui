@@ -4,10 +4,14 @@ import { HttpClient, HttpHeaders, HttpParams } from "@angular/common/http";
 import { environment } from "src/environments/environment.development";
 
 import { Shopcart, Ticket } from "../models/ticket.model";
+import { BehaviorSubject, Subject } from "rxjs";
 
 @Injectable()
 export class TicketsService {
-    
+    private selectedTicket = new BehaviorSubject<any>(null);
+    currentTicket = this.selectedTicket.asObservable();
+
+
     url = environment.URL;
 
     constructor(private http: HttpClient) {

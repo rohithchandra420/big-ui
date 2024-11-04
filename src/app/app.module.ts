@@ -30,7 +30,7 @@ import { AlertComponent } from './alert/alert.component';
 import { TicketsComponent } from './tickets/tickets.component';
 import { TicketsService } from './tickets/tickets.service';
 import { NotificationService } from './core/notification.service';
-import { TicketDetailsPopUp } from './tickets/ticket.details.popup/ticket.details.popup';
+import { TicketDetailsComponent } from './tickets/ticket.details/ticket.details.component';
 import { QrscannerPopupComponent } from './tickets/qrscanner-popup/qrscanner-popup.component';
 import { DashboardService } from './dashboard/dashboard.service';
 
@@ -49,7 +49,7 @@ LOAD_WASM().subscribe()
     ErrorPageComponent,
     AdminComponent,
     TicketsComponent,
-    TicketDetailsPopUp,
+    TicketDetailsComponent,
     QrscannerPopupComponent
   ],
   imports: [

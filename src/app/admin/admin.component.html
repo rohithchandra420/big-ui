@@ -2,8 +2,9 @@
 
 <div class="container">
     <div class="section col-xs-12 col-sm-12 col-md-8 col-sm-offset-1 col-md-offset-2">
-        <h5>Register User:</h5>
-        <br>
+        <div class="section-header-center col-lg-12 mb-3">
+            <h2>{{isEditMode? "Edit": "Register" }} User:</h2>
+        </div>
         <form [formGroup]="userFrom" (ngSubmit)="onSubmit()">
             <div class="form-group">
                 <label for="userName">Name:</label>
@@ -28,26 +29,61 @@
             </div>
             <div class="form-group">
                 <label for="item_name">Role:</label>
-                <select class="form-select" formControlName="role" >
+                <select class="form-select" formControlName="role">
                     <option selected>Open this select menu</option>
                     <option value="volunteer">Volunteer</option>
                     <option value="admin">Admin</option>
                 </select>
             </div>
-            <br>  
-            <button class="btn btn-success" type="submit">Submit</button>
+            <div class="action-group">
+                <div class="col-lg-4 col-md-4 col-xs-12 text-center">
+                    <button class="btn btn-success mr-3" type="submit" *ngIf="!isEditMode">
+                        Create User</button>
+                    <button class="btn btn-primary mr-3" type="button" *ngIf="isEditMode" 
+                        (click)="switchMode()">Switch to Regitser</button>
+                </div>
+                <div class="col-lg-4 col-md-4 col-xs-12 text-center">
+                    <button class="btn btn-success mr-3" type="button" [disabled]="!isEditMode"
+                        (click)="updateUser()">Update User</button>
+                </div>
+                <div class="col-lg-4 col-md-4 col-xs-12 text-center">
+                    <button class="btn btn-danger" type="button" [disabled]="!isEditMode"
+                        (click)="deleteUser()">Delete User</button>
+                </div>
+            </div>
+
         </form>
     </div>
-    <!-- <div class="row">
-        <div class="col-xs-12 col-sm-12 col-md-8 col-sm-offset-1 col-md-offset-2">
-            <ul class="list-group" *ngIf="ticketList.length >=1">
-                <li class="" *ngFor="let ticket of ticketList">
-                    <p>{{ ticket.name }}</p>
-                    <p>{{ ticket.email }}</p>
 
-                </li>
-
-            </ul>
+    <div class="section col-lg-12">
+        <div class="section-header-center col-lg-12 mb-3">
+            <h2>Users:</h2>
         </div>
-    </div> -->
+        <div class="row col-lg-12 col-sm-offset-1 col-md-offset-2">
+            <mat-card class="user-card col-lg-4 col-md-5 col-xs-12" *ngFor="let user of userList">
+                <mat-card-header class="text-center">
+                    <!-- <div mat-card-avatar class="user-header-image"></div> -->
+                    <mat-card-title>{{user.name}}</mat-card-title>
+                    <mat-card-subtitle> * {{user.role}} *</mat-card-subtitle>
+                </mat-card-header>
+                <!-- <img mat-card-image src="https://material.angular.io/assets/img/examples/shiba2.jpg"
+                        alt="Photo of a Shiba Inu"> -->
+                <mat-card-content class="mb-2">
+                    <p>
+                        <strong>Name: </strong> {{user.name}}<br>
+                        <strong>Email: </strong> {{user.email}}<br>
+                        <strong>Role: </strong> {{user.role}}<br>
+                    </p>
+                </mat-card-content>
+                <mat-card-actions>
+                    <button class="btn btn-primary" (click)="editUser(user)">Edit</button>
+                    <button class="btn btn-danger">Delete</button>
+                </mat-card-actions>
+            </mat-card>
+        </div>
+
+        <!-- <div class=" row col-lg-12 col-sm-offset-1 col-md-offset-2 p-5"> -->
+
+        <!-- </div> -->
+    </div>
 </div>

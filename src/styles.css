@@ -30,6 +30,12 @@ input:focus {
     box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19) !important;
 }
 
+input:disabled {
+    border-color: #1E4638 !important;
+    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19) !important;
+    background-color: rgb(72, 95, 72) !important;
+}
+
 h1,
 h2,
 h3,
@@ -51,6 +57,12 @@ h6 {
 .btn-success {
     background-color: #1E4638;
     border-color: #386e5b;
+    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+}
+
+.btn-primary {
+    background-color: #386e5b;
+    border-color: #1E4638;
     box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
 }
 

@@ -255,13 +255,13 @@ export class DashboardComponent implements OnInit {
         datasets: [{
           label: 'Festival Ticket Allocated',
           data: [9999, 9999], // Example values for each fruit
-          backgroundColor: ['#004d00', '#00cc00', '#FF7B00', '#FFB76B'], // Dark green, green, 99ff99light green
+          backgroundColor: ['#004d00', '#00cc00'], // Dark green, green, 99ff99light green
           borderWidth: 1
         },
         {
           label: 'Accomodation',
-          data: [0, 0, 9999, 9999], // Example values for each fruit
-          backgroundColor: ['#004d00', '#00cc00', '#FF7B00', '#FFB76B'], // Dark green, green, Dark Orange, LightOrange
+          data: [9999, 9999], // Example values for each fruit
+          backgroundColor: ['#FF7B00', '#FFB76B'], // Dark green, green, Dark Orange, LightOrange
           borderWidth: 1
         }
         ]
@@ -439,8 +439,8 @@ export class DashboardComponent implements OnInit {
 
     if (this.mainChart) {
       // Update the data and labels
-      this.mainChart.data.datasets[0].data = [this.TotalFestPassAdmitted, this.RemaingFestPassToAdmit, 0, 0];
-      this.mainChart.data.datasets[1].data = [0, 0, accomAdmitted, accomRemaining];
+      this.mainChart.data.datasets[0].data = [this.TotalFestPassAdmitted, this.RemaingFestPassToAdmit];
+      this.mainChart.data.datasets[1].data = [accomAdmitted, accomRemaining];
       //this.mainChart.data.labels = newLabels;
 
       // Call the update method to re-render the chart

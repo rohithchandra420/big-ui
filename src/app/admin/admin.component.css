@@ -1,0 +1,49 @@
+.section-header-center {
+    display: flex;
+    justify-content: center;
+}
+
+.action-group {
+    display: flex;
+    margin-top: 25px;
+    justify-content: space-around;
+}
+
+.user-card {
+    max-width: 100%;
+    margin-bottom: 10px;
+    margin-right:10px;
+    border: 10px solid var(--mdc-filled-text-field-container-color);
+    background-color: var(--color-primary);
+    border-radius: 10px;
+    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+}
+
+.user-card  .mat-mdc-card-header {
+    display: block;
+}
+
+.user-card mat-card-content {
+    color: #fff;
+    font-size: medium;
+}
+
+/* .user-card .btn-danger {
+    background: red;;
+}
+
+.user-card .btn-secondary {
+    background: rgb(115, 93, 192);;
+} */
+
+.user-card mat-card-title {
+    color: #fff;
+}
+
+.user-card mat-card-content {
+    word-wrap: break-word;
+}
+
+.user-card mat-card-actions{
+    justify-content: space-between;
+}

@@ -7,7 +7,7 @@ import { NotificationService } from '../core/notification.service';
 
 
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { TicketDetailsPopUp } from './ticket.details.popup/ticket.details.popup';
+import { TicketDetailsComponent } from './ticket.details/ticket.details.component';
 import { QrscannerPopupComponent } from './qrscanner-popup/qrscanner-popup.component';
 
 @Component({
@@ -48,7 +48,7 @@ export class TicketsComponent implements OnInit {
   }
 
   openTicketDetails(row) {
-    const dialogRef = this.dialog.open(TicketDetailsPopUp, {
+    const dialogRef = this.dialog.open(TicketDetailsComponent, {
       width: '500px',
       data: row
     });

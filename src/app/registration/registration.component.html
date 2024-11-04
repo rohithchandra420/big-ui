@@ -12,45 +12,6 @@
     <div class="section col-xs-12 col-sm-12 col-md-8 col-sm-offset-1 col-md-offset-2">
         <h5>Register Participant:</h5>
         <br>
-        <!-- <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-            <div class="form-group">
-                <label for="firstName">First Name:</label>
-                <input type="text" id="firstName" formControlName="firstName" class="form-control">
-            </div>
-            <div class="form-group">
-                <label for="lastName">Last Name:</label>
-                <input type="text" id="lastName" formControlName="lastName" class="form-control">
-            </div>
-            <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" formControlName="email" class="form-control">
-                //<span *ngIf="registerForm.get('email').errors['required'] && registerForm.get('email').touched" class="help-block">*Information Required</span>
-                //<span *ngIf="registerForm.get('email').errors['email']" class="help-block">Please enter a valid email</span>
-            </div>
-            <div class="form-group">
-                <label for="orderId">Order Id:</label>
-                <input type="text" id="orderId" formControlName="orderId" class="form-control">
-            </div>
-            <div class="form-group">
-                <label for="transactionId">Transaction Id:</label>
-                <input type="text" id="transactionId" formControlName="transactionId" class="form-control">
-            </div>            
-            <div class="form-group">
-                <label for="noOfTickets">Number of Tickets</label>
-                <input type="number" id="noOfTickets" formControlName="noOfTickets" class="form-control">
-                <span *ngIf="!registerForm.get('noOfTickets').valid && registerForm.get('noOfTickets').touched" class="help-block">Minimum nomber of tickets should be 1</span>
-            </div>
-
-            <div class="form-group">
-                <label for="noOfTickets">Number of Tickets</label>
-                <input type="number" id="noOfTickets" formControlName="noOfTickets" class="form-control">
-                <span *ngIf="!registerForm.get('noOfTickets').valid && registerForm.get('noOfTickets').touched" class="help-block">Minimum nomber of tickets should be 1</span>
-            </div>
-            <button class="btn btn-secondary" type="button">Add+</button>
-            <br>  
-            <button class="btn btn-success" type="submit">Submit</button>
-        </form> -->
-
         <form [formGroup]="shopForm" (ngSubmit)="validateValuesandSubmit()" class="row shop-form">
             <div class="col-12 form-group">
                 <label for="firstName">First Name:</label>
