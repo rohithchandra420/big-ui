@@ -1,57 +1,99 @@
-<h1 mat-dialog-title>Hi {{ticketDetails.first_name}}</h1>
-<!-- <div mat-dialog-content [hidden]="showTicket">
-    <p>Name&nbsp;&nbsp;:&nbsp;&nbsp;{{ticketDetails.first_name + " " + ticketDetails.last_name}}</p>
-    <p>Email&nbsp;&nbsp;:&nbsp;&nbsp;{{ticketDetails.email}}</p>
-    <p>Ticket Id&nbsp;&nbsp;:&nbsp;&nbsp;{{ticketDetails._id}}</p>
-    <p>Order Id&nbsp;&nbsp;:&nbsp;&nbsp;{{ticketDetails.order_id}}</p>
-    <p>Payment Id&nbsp;&nbsp;:&nbsp;&nbsp;{{ticketDetails.transaction_id}}</p>
-    
-    <div class="shop-items" *ngFor="let prodItem of ticketDetails.shopcart ">
-        <div class="shop-item-label">{{ prodItem.item_name }} - &#x20b9; {{ prodItem.item_subtotal }}</div>
-        <button mat-raised-button color="primary" (click)="onAdmit(prodItem)">Admit</button>
-    </div>    
-</div> -->
+<div class="container">
+    <div class="row section col-xs-12 col-sm-12 col-md-8 col-sm-offset-1 col-md-offset-2 mt-2">
+        <a (click)="goBack()" style="cursor: pointer;">Back</a>
+        <div class="section-header-center col-lg-12 mb-3">
+            <h2>Ticket Details</h2>
+        </div>
 
-<div mat-dialog-content [hidden]="showTicket">
-    <mat-card>
-        <mat-card-title>Ticket Details</mat-card-title>
-        <mat-card-content>
-            <p><strong>Name:</strong> {{ticketDetails.first_name}} {{ticketDetails.last_name}}</p>
-            <p><strong>Email:</strong> {{ticketDetails.email}}</p>
-            <p><strong>Ticket Id:</strong> {{ticketDetails._id}}</p>
-            <p><strong>Order Id:</strong> {{ticketDetails.order_id}}</p>
-            <p><strong>Payment Id:</strong> {{ticketDetails.transaction_id}}</p>
-
-            <div class="shop-items" *ngIf="ticketDetails.shopcart?.length">
-                <mat-list>
-                    <mat-list-item *ngFor="let prodItem of ticketDetails.shopcart; let i = index" class="shop-list-item">
-                        <div class="shop-item-label">{{ prodItem.item_name }} - &#x20b9; {{ prodItem.item_subtotal }}</div>
-                        
-                        <!-- Input field wrapped in a separate container -->
-                        <div class="input-container">
-                          <input matInput maxlength="5" [(ngModel)]="prodItem.admissionId" class="item-input">
-                        </div>
-            
-                        <div class="button-container">
-                          <button mat-raised-button color="primary" (click)="onAdmit(prodItem, i)" [disabled]="prodItem.isAdmitted">Admit</button>
-                        </div>
-                    </mat-list-item>
-                </mat-list>
+        <div class="col-lg-6 col-md-6 col-xs-12" *ngIf="ticket">
+            <div class="info-pair">
+                <h6 class="section-control">First Name : </h6>
+                <span class="section-control-value">{{ticket.first_name}}</span>
             </div>
-            <div *ngIf="!ticketDetails.shopcart?.length">No items in the cart.</div>
-        </mat-card-content>
-    </mat-card>
-</div>
+            <div class="info-pair">
+                <h6 class="section-control">Last Name : </h6>
+                <span class="section-control-value">{{ticket.last_name}}</span>
+            </div>
+            <div class="info-pair">
+                <h6 class="section-control">Mobile No : </h6>
+                <span class="section-control-value">{{+91 }}</span>
+            </div>
+            <div class="info-pair">
+                <h6 class="section-control">Email : </h6>
+                <span class="section-control-value">{{ticket.email}}</span>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-xs-12" *ngIf="ticket">
+            <div class="info-pair">
+                <h6 class="section-control">Order ID : </h6>
+                <span class="section-control-value">{{ticket.order_id}}</span>
+            </div>
+            <div class="info-pair">
+                <h6 class="section-control">Ticket ID : </h6>
+                <span class="section-control-value">{{ticket._id}}</span>
+            </div>
+            <div class="info-pair">
+                <h6 class="section-control">Transaction ID : </h6>
+                <span class="section-control-value">{{ticket.transaction_id}}</span>
+            </div>
+        </div>
 
-<div mat-dialog-actions>
-    <!-- <button mat-raised-button color="primary" (click)="onAdmit(ticketDetails)" [disabled]="ticketDetails.status != 'New'">Admit</button> -->
-    <!-- <button mat-raised-button color="primary" (click)="onShowTicket()">{{showTicket ? "View Details" : "Show Ticket"}}</button> -->
-    <button mat-raised-button color="primary" (click)="onDownloadTicket()" *ngIf="showTicket">Download Ticket</button>
-    <button mat-button (click)="onNoClick()">Close</button>
-    <!-- <button mat-button [mat-dialog-close]="ticketDetails.animal" cdkFocusInitial>Ok</button> -->
-</div>
+        <div class="col-12 content-box">
+            <div class="col-12 button-group-container">
+                <button *ngFor="let filter of filters" mat-raised-button
+                    [color]="selectedFilter === filter ? 'primary' : ''" (click)="toggleFilter(filter)">
+                    {{ filter }}
+                </button>
+            </div>
 
-<div id="download">
-    <img #canvas src="">
-    <a #downloadLink href="" download=""></a>
+            <mat-card class="pass-card col-lg-12 col-md-12 col-xs-12" *ngFor="let ticketpass of filteredItems; let i=index">
+                <mat-card-header class="text-center">
+                    <mat-card-title>{{ticketpass.item_name}}</mat-card-title>
+                    <mat-card-subtitle>ID: {{ticketpass._id}} Order#: {{ticketpass.order_id}}</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content class="d-flex flex-wrap mb-2">
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input type="text" [(ngModel)]="ticketpass.name" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Mobile No:</label>
+                        <input type="text" [(ngModel)]="ticketpass.phone_no" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>E-mail:</label>
+                        <input type="text" [(ngModel)]="ticketpass.email" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Is Admitted:</label>
+                        <input type="text" [(ngModel)]="ticketpass.isAdmitted" [disabled]="true" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Order No:</label>
+                        <input type="text" [(ngModel)]="ticketpass.order_id" [disabled]="true" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Pass ID:</label>
+                        <input type="text" [(ngModel)]="ticketpass._id" [disabled]="true" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Pass Type:</label>
+                        <input type="text" [(ngModel)]="ticketpass.item_name" [disabled]="true" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Admission Id:</label>
+                        <input type="text" [(ngModel)]="ticketpass.admissionId" class="form-control">
+                    </div>
+
+                </mat-card-content>
+                <mat-card-actions>
+                    <button mat-raised-button color="primary" class="btn btn-success" (click)="onAdmit(ticketpass, i)">Admit</button>
+                    <!-- <button class="btn btn-primary" (click)="savePass(ticketpass)">Save</button> -->
+                    
+                </mat-card-actions>
+            </mat-card>
+        </div>
+
+    </div>
 </div>

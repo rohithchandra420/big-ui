@@ -1,23 +1,23 @@
 /* cdk-overlay-pane */
 @media only screen and (max-width: 600px) {
-    table {
-      background-color: red;
-    }
-  
-    .cdk-overlay-pane {
-      position: absolute !important ;
-      top: 20%;
-    }
+  table {
+    background-color: red;
+  }
+
+  .cdk-overlay-pane {
+    position: absolute !important;
+    top: 20%;
+  }
 }
 
 .shop-items {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 .shop-item-label {
-    display: flex;
-    flex-flow: column;
-    justify-content: space-evenly;
+  display: flex;
+  flex-flow: column;
+  justify-content: space-evenly;
 }
 
 .success-card {
@@ -44,41 +44,171 @@
 }
 
 ::ng-deep .mat-dialog-container {
-    background-color: red !important; /* Change to your desired color */
+  background-color: red !important;
+  /* Change to your desired color */
 }
 
 .shop-list-item {
-    display: flex;
-    align-items: center; /* Center items vertically */
-    padding: 10px 0; /* Spacing for each item */
+  display: flex;
+  align-items: center;
+  /* Center items vertically */
+  padding: 10px 0;
+  /* Spacing for each item */
+}
+
+.shop-item-label {
+  flex: 1;
+  /* Allow the label to take remaining space */
+}
+
+.input-container {
+  margin: 0 10px;
+  /* Space around the input container */
+}
+
+.item-input {
+  width: 60px;
+  /* Width of the input field */
+  border-radius: 4px;
+  /* Rounded corners */
+  border: 1px solid #ccc;
+  /* Light border */
+  padding: 5px;
+  /* Padding inside the input */
+  font-size: 14px;
+  /* Font size */
+}
+
+.button-container {
+  margin-left: 10px;
+  /* Space between the input and the button */
+  display: flex;
+  justify-content: flex-end;
+  /* Align button to the right */
+}
+
+mat-card {
+  margin: 16px 0;
+  /* Space around the card */
+}
+
+h3 {
+  margin-top: 16px;
+  /* Spacing above the "Items" header */
+}
+
+/* ========================================================================================= */
+
+.section-header-center {
+  display: flex;
+  justify-content: center;
+}
+
+/* .section-control {
+  display: flex;
+  align-items: center; 
+  gap: 0.5rem;
+}
+
+.section-control-value {
+  margin-bottom: .5rem;
+} */
+
+.info-pair {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px; /* Spacing between rows */
+}
+
+.section-control {
+  margin-right: 8px; /* Space between h6 and span */
+  font-weight: bold; /* Optional: bold for label */
+}
+
+.section-control-value {
+  color: #555; /* Style for the value */
+}
+
+.content-box {
+  border: 5px solid var(--color-primary);
+  border-radius: 10px;
+}
+
+.pass-card {
+  max-width: 100%;
+  margin-bottom: 10px;
+  margin-right:10px;
+  border: 10px solid var(--mdc-filled-text-field-container-color);
+  background-color: var(--color-primary);
+  border-radius: 10px;
+  box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+}
+
+.pass-card  .mat-mdc-card-header {
+  display: block;
+}
+
+.pass-card mat-card-content {
+  color: #fff;
+  font-size: medium;
+}
+
+/* .pass-card .btn-danger {
+  background: red;;
+}
+
+.pass-card .btn-secondary {
+  background: rgb(115, 93, 192);;
+} */
+
+.pass-card mat-card-title {
+  color: #fff;
+}
+
+.pass-card mat-card-content {
+  word-wrap: break-word;
+}
+
+.pass-card mat-card-actions{
+  justify-content: space-evenly;
+}
+
+.d-flex {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-evenly;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.button-group-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px; /* Space between buttons */
+  width: 100%;
+  justify-content: flex-start;
+  margin-bottom: 16px;
+  margin-top: 16px;
+  box-sizing: border-box; 
+}
+
+.button-group-container button {
+  padding: 8px 12px;              /* Button padding */
+  white-space: nowrap;            /* Prevent text from wrapping to the next line */
+  overflow: visible;              /* Make sure text is visible */
+  text-overflow: clip;            /* No ellipsis, show full text */
+  max-width: unset;               /* Remove any max-width constraints */
+  min-width: unset;               /* Remove any min-width constraints */
+  flex-grow: 0;                   /* Prevent buttons from stretching */
+  flex-shrink: 1;                 /* Allow buttons to shrink if needed */
+  flex-basis: auto;               /* Let each button take as much space as its content needs */
+}
+
+/* Optional: Adjust padding and font size for mobile view */
+@media (max-width: 576px) {
+  .button-group-container button {
+    padding: 6px 10px;        /* Smaller padding for mobile */
+    font-size: 14px;          /* Adjust font size */
   }
-  
-  .shop-item-label {
-    flex: 1; /* Allow the label to take remaining space */
-  }
-  
-  .input-container {
-    margin: 0 10px; /* Space around the input container */
-  }
-  
-  .item-input {
-    width: 60px; /* Width of the input field */
-    border-radius: 4px; /* Rounded corners */
-    border: 1px solid #ccc; /* Light border */
-    padding: 5px; /* Padding inside the input */
-    font-size: 14px; /* Font size */
-  }
-  
-  .button-container {
-    margin-left: 10px; /* Space between the input and the button */
-    display: flex;
-    justify-content: flex-end; /* Align button to the right */
-  }
-  
-  mat-card {
-    margin: 16px 0; /* Space around the card */
-  }
-  
-  h3 {
-    margin-top: 16px; /* Spacing above the "Items" header */
-  }
+}

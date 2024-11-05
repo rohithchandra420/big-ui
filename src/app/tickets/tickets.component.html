@@ -1,91 +1,95 @@
 <p>tickets works!</p>
+<div>
+    <div class="row col-lg-12">
+        <div class="col-lg-8 col-md-8 col-xs-12 mb-3">
+            <mat-form-field>
+                <mat-label>Filter</mat-label>
+                <input matInput [(ngModel)]="filterValue" (keyup)="applyFilter($event)" placeholder="Ex. ium" #input>
+            </mat-form-field>
 
-<div class="row col-lg-12">
-    <div class="col-lg-8 col-md-8 col-xs-12 mb-3">
-        <mat-form-field>
-            <mat-label>Filter</mat-label>
-            <input matInput [(ngModel)]="filterValue" (keyup)="applyFilter($event)" placeholder="Ex. ium" #input>
-        </mat-form-field>
+            <!-- <div class="form-group">
+                <label for="filter">Filter:</label>
+                <input type="text" id="filter" [(ngModel)]="filterValue" (keyup)="applyFilter($event)" placeholder="Ex. ium" #input formControlName="userName" class="form-control">
+            </div> -->
+        </div>
+        <div class="col-lg-3 col-md-3 col-xs-12 mb-3">
+            <button class="btn btn-success" (click)="openScanner()" #scan>Scan</button>
+        </div>
+    </div>
 
-        <!-- <div class="form-group">
-            <label for="filter">Filter:</label>
-            <input type="text" id="filter" [(ngModel)]="filterValue" (keyup)="applyFilter($event)" placeholder="Ex. ium" #input formControlName="userName" class="form-control">
-        </div> -->
+    <!-- <div class="col-lg-12 table-container"> -->
+    <div class="mat-elevation-z8 col-lg-12 table-container">
+        <table mat-table [dataSource]="dataSource">
+
+            <!-- Position Column -->
+            <ng-container matColumnDef="position">
+                <th mat-header-cell *matHeaderCellDef> Sl No. </th>
+                <td mat-cell *matCellDef="let element"> {{element.position}} </td>
+            </ng-container>
+
+            <!-- First Name Column -->
+            <ng-container matColumnDef="first_name">
+                <th mat-header-cell *matHeaderCellDef> First Name </th>
+                <td mat-cell *matCellDef="let element"> {{element.first_name}} </td>
+            </ng-container>
+
+            <!-- Last Name Column -->
+            <ng-container matColumnDef="last_name">
+                <th mat-header-cell *matHeaderCellDef> Last Name </th>
+                <td mat-cell *matCellDef="let element"> {{element.last_name}} </td>
+            </ng-container>
+
+            <!-- Email Column -->
+            <ng-container matColumnDef="email">
+                <th mat-header-cell *matHeaderCellDef> Email </th>
+                <td mat-cell *matCellDef="let element"> {{element.email}} </td>
+            </ng-container>
+
+            <!-- Ticket ID Column -->
+            <ng-container matColumnDef="_id">
+                <th mat-header-cell *matHeaderCellDef> Ticket Id </th>
+                <td mat-cell *matCellDef="let element"> {{element._id}} </td>
+            </ng-container>
+
+            <!-- Order Id Column -->
+            <ng-container matColumnDef="order_id">
+                <th mat-header-cell *matHeaderCellDef> Order ID </th>
+                <td mat-cell *matCellDef="let element"> {{element.order_id}} </td>
+            </ng-container>
+
+            <!-- Transaction Id Column -->
+            <ng-container matColumnDef="transaction_id">
+                <th mat-header-cell *matHeaderCellDef> Transaction ID </th>
+                <td mat-cell *matCellDef="let element"> {{element.transaction_id}} </td>
+            </ng-container>
+
+            <!-- Transaction Id Column -->
+            <ng-container matColumnDef="hasEmailSent">
+                <th mat-header-cell *matHeaderCellDef> Email Sent </th>
+                <td mat-cell *matCellDef="let element"> {{element.hasEmailSent}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+                <!-- <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell> -->
+                <th mat-header-cell *matHeaderCellDef> Actions </th>
+                <td mat-cell *matCellDef="let element; let i = index">
+                    <button class="btn btn-success" (click)="sendTicketEmail(element, i); $event.stopPropagation()"
+                        [disabled]="buttonDisabled[i]">Email Ticket</button>
+                </td>
+                <!-- <mat-cell *matCellDef="let row">
+                    <button mat-button (click)="sendEmail(row)">Edit</button>
+                </mat-cell> -->
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row (click)="openTicketDetails(row)" *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+
+        <!-- <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons aria-label="Select page of periodic elements">
+        </mat-paginator> -->
     </div>
-    <div class="col-lg-3 col-md-3 col-xs-12 mb-3">
-        <button class="btn btn-success" (click)="openScanner()" #scan>Scan</button>
-    </div>
+    <!-- </div> -->
 </div>
 
-<!-- <div class="col-lg-12 table-container"> -->
-<div class="mat-elevation-z8 col-lg-12 table-container">
-    <table mat-table [dataSource]="dataSource">
 
-        <!-- Position Column -->
-        <ng-container matColumnDef="position">
-            <th mat-header-cell *matHeaderCellDef> Sl No. </th>
-            <td mat-cell *matCellDef="let element"> {{element.position}} </td>
-        </ng-container>
-
-        <!-- First Name Column -->
-        <ng-container matColumnDef="first_name">
-            <th mat-header-cell *matHeaderCellDef> First Name </th>
-            <td mat-cell *matCellDef="let element"> {{element.first_name}} </td>
-        </ng-container>
-
-        <!-- Last Name Column -->
-        <ng-container matColumnDef="last_name">
-            <th mat-header-cell *matHeaderCellDef> Last Name </th>
-            <td mat-cell *matCellDef="let element"> {{element.last_name}} </td>
-        </ng-container>
-
-        <!-- Email Column -->
-        <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef> Email </th>
-            <td mat-cell *matCellDef="let element"> {{element.email}} </td>
-        </ng-container>
-
-        <!-- Ticket ID Column -->
-        <ng-container matColumnDef="_id">
-            <th mat-header-cell *matHeaderCellDef> Ticket Id </th>
-            <td mat-cell *matCellDef="let element"> {{element._id}} </td>
-        </ng-container>
-
-        <!-- Order Id Column -->
-        <ng-container matColumnDef="order_id">
-            <th mat-header-cell *matHeaderCellDef> Order ID </th>
-            <td mat-cell *matCellDef="let element"> {{element.order_id}} </td>
-        </ng-container>
-
-        <!-- Transaction Id Column -->
-        <ng-container matColumnDef="transaction_id">
-            <th mat-header-cell *matHeaderCellDef> Transaction ID </th>
-            <td mat-cell *matCellDef="let element"> {{element.transaction_id}} </td>
-        </ng-container>
-
-        <!-- Transaction Id Column -->
-        <ng-container matColumnDef="hasEmailSent">
-            <th mat-header-cell *matHeaderCellDef> Email Sent </th>
-            <td mat-cell *matCellDef="let element"> {{element.hasEmailSent}} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="actions">
-            <!-- <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell> -->
-            <th mat-header-cell *matHeaderCellDef> Actions </th>
-            <td mat-cell *matCellDef="let element; let i = index">
-                <button class="btn btn-success" (click)="sendTicketEmail(element, i); $event.stopPropagation()"
-                    [disabled]="buttonDisabled[i]">Email Ticket</button>
-            </td>
-            <!-- <mat-cell *matCellDef="let row">
-                <button mat-button (click)="sendEmail(row)">Edit</button>
-            </mat-cell> -->
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row (click)="openTicketDetails(row)" *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
-
-    <!-- <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons aria-label="Select page of periodic elements">
-    </mat-paginator> -->
-</div>
-<!-- </div> -->
+<router-outlet></router-outlet>

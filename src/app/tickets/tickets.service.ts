@@ -8,8 +8,8 @@ import { BehaviorSubject, Subject } from "rxjs";
 
 @Injectable()
 export class TicketsService {
-    private selectedTicket = new BehaviorSubject<any>(null);
-    currentTicket = this.selectedTicket.asObservable();
+    private selectedTicketSubject = new BehaviorSubject<Ticket>(null);
+    selectedTicket$ = this.selectedTicketSubject.asObservable();
 
 
     url = environment.URL;
@@ -18,8 +18,16 @@ export class TicketsService {
 
     }
 
+    setSelectedTicket(ticket: Ticket) {
+        this.selectedTicketSubject.next(ticket);
+    }
+
     getAllTickets() {
         return this.http.get<[Ticket]>(this.url + "/getalltickets");
+    }
+
+    getTicketById(ticketId) {
+        return this.http.get<Ticket>(this.url + "/tickets/" + ticketId);
     }
 
     sendEmail(ticket: Ticket) {

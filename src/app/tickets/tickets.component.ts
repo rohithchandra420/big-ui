@@ -9,6 +9,7 @@ import { NotificationService } from '../core/notification.service';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { TicketDetailsComponent } from './ticket.details/ticket.details.component';
 import { QrscannerPopupComponent } from './qrscanner-popup/qrscanner-popup.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-tickets',
@@ -24,7 +25,7 @@ export class TicketsComponent implements OnInit {
   @ViewChild(MatPaginator) paginator: MatPaginator;
 
   constructor(private ticketsService: TicketsService, private notificationService: NotificationService,
-    public dialog: MatDialog) {
+    public dialog: MatDialog, private router: Router) {
 
   }
 
@@ -47,16 +48,20 @@ export class TicketsComponent implements OnInit {
     })
   }
 
-  openTicketDetails(row) {
-    const dialogRef = this.dialog.open(TicketDetailsComponent, {
-      width: '500px',
-      data: row
-    });
+  openTicketDetails(row: Ticket) {
+    // const dialogRef = this.dialog.open(TicketDetailsComponent, {
+    //   width: '500px',
+    //   data: row
+    // });
 
-    dialogRef.afterClosed().subscribe(result => {
-      console.log('The dialog was closed', result);
-      this.getAllTickets();
-    });
+    // dialogRef.afterClosed().subscribe(result => {
+    //   console.log('The dialog was closed', result);
+    //   this.getAllTickets();
+    // });
+    console.log(row);
+    this.ticketsService.setSelectedTicket(row);
+    const ticketId = row._id;
+    this.router.navigate(['tickets/details', ticketId]);
   }
 
   getAllTickets() {

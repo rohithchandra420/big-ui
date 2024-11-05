@@ -33,6 +33,7 @@ import { NotificationService } from './core/notification.service';
 import { TicketDetailsComponent } from './tickets/ticket.details/ticket.details.component';
 import { QrscannerPopupComponent } from './tickets/qrscanner-popup/qrscanner-popup.component';
 import { DashboardService } from './dashboard/dashboard.service';
+import { AccomodationComponent } from './accomodation/accomodation.component';
 
 // #QRCode Scanner: Necessary to solve the problem of losing internet connection
 LOAD_WASM().subscribe()
@@ -50,7 +51,8 @@ LOAD_WASM().subscribe()
     AdminComponent,
     TicketsComponent,
     TicketDetailsComponent,
-    QrscannerPopupComponent
+    QrscannerPopupComponent,
+    AccomodationComponent
   ],
   imports: [
     BrowserModule,

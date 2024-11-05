@@ -12,6 +12,8 @@ import { ErrorPageComponent } from "../error-page/error-page.component";
 import { AuthResolver } from "./auth-resolver.service";
 import { AdminComponent } from "../admin/admin.component";
 import { TicketsComponent } from "../tickets/tickets.component";
+import { TicketDetailsComponent } from "../tickets/ticket.details/ticket.details.component";
+import { AccomodationComponent } from "../accomodation/accomodation.component";
 
 const profileGuard: CanActivateFn = (
     route: ActivatedRouteSnapshot,
@@ -58,9 +60,20 @@ const appRoutes: Routes = [
     { path: 'register', canActivate:[AuthGuard] ,component: RegistrationComponent },
     { path: 'dashboard', canActivate:[AuthGuard] ,component: DashboardComponent },
     { path: 'tickets', canActivate:[AuthGuard] ,component: TicketsComponent },
+    { path: 'tickets/details/:id', component: TicketDetailsComponent },
+    { path: 'accomodation', canActivate:[AuthGuard] ,component: AccomodationComponent },
     { path: 'admin', canActivate:[AuthGuard] ,component: AdminComponent },
     { path: 'error', component: ErrorPageComponent, data: {message: 'Page Under Construction'}},
     { path: '**', redirectTo: 'error' },
+
+    //{ path: '', component: HomeComponent },
+    
+    // {
+    //     path: 'admin', canActivate:[authGuard], resolve: {userDetails: AuthResolver} , component: AdminComponent, children: [
+    //         // { path: 'dashboard', component: DashboardComponent },
+    //         { path: 'register', component: RegistrationComponent }
+    //     ]
+    // },
 
 ];
 
