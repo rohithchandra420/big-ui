@@ -1,1 +1,98 @@
 <p>accomodation works!</p>
+<div class="container">
+    <div class="row section col-xs-12 col-sm-12 col-md-8 col-sm-offset-1 col-md-offset-2 mt-2">
+        <div class="section-header col-lg-12 mb-3" (click)="toggleTable()">
+            <h2>Tenting</h2>
+            <span class="arrow-icon">
+                <i [ngClass]="showTable ? 'arrow-down' : 'arrow-up'"></i>
+            </span>
+        </div>
+
+        <div class="table-container" *ngIf="showTable">
+            <div class="col-lg-12 col-md-12 col-xs-12 d-flex flex-wrap mb-3">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Tent Type</th>
+                            <th scope="col capacity-col">Capacity</th>
+                            <th scope="col quantity-col">Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let tent of tentInitData; let i = index">
+                            <td>
+                                <input type="text" [(ngModel)]="tent.tentType" [disabled]="true" class="form-control" />
+                            </td>
+                            <td>
+                                <input type="number" [(ngModel)]="tent.capacity" class="form-control capacity-input" />
+                            </td>
+                            <td>
+                                <input type="number" [(ngModel)]="tent.quantity" class="form-control quantity-input" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="col-12 text-center">
+                <button (click)="createTents()" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row section col-xs-12 col-sm-12 col-md-8 col-sm-offset-1 col-md-offset-2 mt-2">
+        <!-- <div class="section-header col-lg-12 mb-3" (click)="toggleTable()">
+            <h2>Tenting</h2>
+        </div> -->
+
+        <div class="col-12 content-box">
+            <div class="col-12 button-group-container">
+                <button *ngFor="let filter of filters" mat-raised-button
+                    [color]="selectedFilter === filter ? 'primary' : ''" (click)="toggleFilter(filter)">
+                    {{ filter }}
+                </button>
+            </div>
+
+            <mat-card class="tent-card col-lg-12 col-md-12 col-xs-12" *ngFor="let tent of filteredItems; let i=index">
+                <mat-card-header class="text-center">
+                    <mat-card-title>{{tent.tent_type}}</mat-card-title>
+                    <mat-card-subtitle>ID: {{tent._id}} Order#: {{tent.updatedAt | utcToLocalTime}}</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content class="d-flex flex-wrap mb-2">
+                    <div class="form-group">
+                        <label>Tent No:</label>
+                        <input type="text" [(ngModel)]="tent.tent_no" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Tent Capacity:</label>
+                        <input type="text" [(ngModel)]="tent.capcity" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>ID:</label>
+                        <input type="text" [(ngModel)]="tent._id" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Tent Type:</label>
+                        <input type="text" [(ngModel)]="tent.tent_type" [disabled]="true" class="form-control">
+                    </div>
+
+
+                    <div class="form-group" *ngFor="let occupant of tent.occupants; let j=index">
+                        <label>Occupant No.{{j+1}}</label>
+                        <input type="text" [(ngModel)]="tent.occupants[j]" class="form-control">
+                    </div>
+
+
+
+                </mat-card-content>
+                <mat-card-actions>
+                    <button mat-raised-button color="primary" class="btn btn-success"
+                        (click)="editTent(tent, i)">Edit</button>
+                    <!-- <button class="btn btn-primary" (click)="deleteTent(tent)">Save</button> -->
+
+                </mat-card-actions>
+            </mat-card>
+        </div>
+
+    </div>
+</div>

@@ -34,6 +34,8 @@ import { TicketDetailsComponent } from './tickets/ticket.details/ticket.details.
 import { QrscannerPopupComponent } from './tickets/qrscanner-popup/qrscanner-popup.component';
 import { DashboardService } from './dashboard/dashboard.service';
 import { AccomodationComponent } from './accomodation/accomodation.component';
+import { AccomodationService } from './accomodation/accomodation.service';
+import { UtcToLocalTimePipe } from './pipes/utc-to-local-time.pipe';
 
 // #QRCode Scanner: Necessary to solve the problem of losing internet connection
 LOAD_WASM().subscribe()
@@ -52,7 +54,8 @@ LOAD_WASM().subscribe()
     TicketsComponent,
     TicketDetailsComponent,
     QrscannerPopupComponent,
-    AccomodationComponent
+    AccomodationComponent,
+    UtcToLocalTimePipe
   ],
   imports: [
     BrowserModule,
@@ -76,6 +79,7 @@ LOAD_WASM().subscribe()
     TicketsService, 
     NotificationService,
     DashboardService,
+    AccomodationService,
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true }
   ],
   bootstrap: [AppComponent]
