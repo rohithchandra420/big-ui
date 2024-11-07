@@ -1,0 +1,168 @@
+.d-flex {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.table-responsive th,
+.table-responsive td {
+    text-align: left;
+    padding: 8px;
+    vertical-align: middle;
+}
+
+th,
+td {
+    padding: 8px;
+}
+
+/* Specifically target the narrow columns */
+.capacity-col,
+.quantity-col {
+    width: 80px;
+    /* Set width as needed */
+}
+
+input.capacity-input,
+input.quantity-input {
+    width: 100%;
+    /* Fill available cell width */
+    max-width: 80px;
+    /* Max width based on header text */
+}
+
+input[type="text"] {
+    width: 100%;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+/* Arrow Icon Styling */
+.arrow-icon {
+    display: inline-block;
+    margin-left: 8px;
+    cursor: pointer;
+}
+
+.arrow-up::before {
+    content: '▲';
+}
+
+.arrow-down::before {
+    content: '▼';
+}
+
+/* Smooth Animation for Table Visibility */
+.table-container {
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+}
+
+.table-container.ng-enter,
+.table-container.ng-leave {
+    max-height: 0;
+    opacity: 0;
+}
+
+.table-container.ng-enter-active,
+.table-container.ng-leave-active {
+    max-height: 500px;
+    /* Set this based on estimated table height */
+    opacity: 1;
+}
+
+.button-group-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    /* Space between buttons */
+    width: 100%;
+    justify-content: flex-start;
+    margin-bottom: 16px;
+    margin-top: 16px;
+    box-sizing: border-box;
+}
+
+.button-group-container button {
+    padding: 8px 12px;
+    /* Button padding */
+    white-space: nowrap;
+    /* Prevent text from wrapping to the next line */
+    overflow: visible;
+    /* Make sure text is visible */
+    text-overflow: clip;
+    /* No ellipsis, show full text */
+    max-width: unset;
+    /* Remove any max-width constraints */
+    min-width: unset;
+    /* Remove any min-width constraints */
+    flex-grow: 0;
+    /* Prevent buttons from stretching */
+    flex-shrink: 1;
+    /* Allow buttons to shrink if needed */
+    flex-basis: auto;
+    /* Let each button take as much space as its content needs */
+}
+
+/* Optional: Adjust padding and font size for mobile view */
+@media (max-width: 576px) {
+    .button-group-container button {
+        padding: 6px 10px;
+        /* Smaller padding for mobile */
+        font-size: 14px;
+        /* Adjust font size */
+    }
+}
+
+.tent-card {
+    max-width: 100%;
+    margin-bottom: 10px;
+    margin-right: 10px;
+    border: 10px solid var(--mdc-filled-text-field-container-color);
+    background-color: var(--color-primary);
+    border-radius: 10px;
+    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+}
+
+.tent-card .mat-mdc-card-header {
+    display: block;
+}
+
+.tent-card mat-card-content {
+    color: #fff;
+    font-size: medium;
+}
+
+/* .tent-card .btn-danger {
+    background: red;;
+  }
+  
+  .tent-card .btn-secondary {
+    background: rgb(115, 93, 192);;
+  } */
+
+.tent-card mat-card-title {
+    color: #fff;
+}
+
+.tent-card mat-card-content {
+    word-wrap: break-word;
+}
+
+.tent-card mat-card-actions {
+    justify-content: space-evenly;
+}
+
+input:disabled  {
+    color: #fff;
+    cursor: none;
+}
