@@ -17,6 +17,7 @@ export class AccomodationComponent implements OnInit {
   tentList: Tent[] = [];
   filters = ["All"];
   selectedFilter = 'All';
+  searchInput = '';
 
   tentInitData = [
     { tentType: 'Shared Tent', capacity: null, quantity: null },
@@ -68,7 +69,20 @@ export class AccomodationComponent implements OnInit {
   get filteredItems() {
     return this.selectedFilter === 'All'
       ? this.tentList
-      : this.tentList.filter(item => item.tent_type === this.selectedFilter);
+      : this.tentList.filter(item => {
+        // Match for tent_type or tent_no directly
+        const matchesTentType = item.tent_type?.toLowerCase().includes(this.selectedFilter.toLowerCase());
+        const matchesTentNo = item.tent_no?.toLowerCase().includes(this.selectedFilter.toLowerCase());
+
+        // Match for occupants' properties (name and order_id) if occupants exist
+        const matchesOccupant = item.occupants?.some(occupant => 
+          occupant?.name?.toLowerCase().includes(this.selectedFilter.toLowerCase()) ||
+          (occupant?.order_id?.toString().includes(this.selectedFilter))
+        );
+
+        // Return true if any of the properties match the filter
+        return matchesTentType || matchesTentNo || matchesOccupant;
+      });
   }
 
   fetchAllTentDetails() {

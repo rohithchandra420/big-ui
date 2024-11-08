@@ -51,6 +51,12 @@
                     [color]="selectedFilter === filter ? 'primary' : ''" (click)="toggleFilter(filter)">
                     {{ filter }}
                 </button>
+                <div class="form-group">
+                    <input type="text" [(ngModel)]="selectedFilter" class="form-control" placeholder="Search Tent No:">
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-primary" (click)="openOccupantDetails('', '')">Check Festival Tickets</button>
+                </div>
             </div>
 
             <mat-card class="tent-card col-lg-12 col-md-12 col-xs-12" *ngFor="let tent of filteredItems; let i=index">
@@ -90,9 +96,8 @@
 
 
                     <div *ngFor="let occupant of tent.occupants; let k=index">
-                        <div class="form-group" *ngIf="tent.occupants[k] === null"
-                            (click)="openOccupantDetails(tent, k)">
-                            <label>OOOccupant No.{{k+1}}</label>
+                        <div class="form-group" *ngIf="tent.occupants[k] === null" > <!-- (click)="openOccupantDetails(tent, k)" -->
+                            <label>Occupant No.{{k+1}}</label>
                             <input type="text" class="form-control">
                         </div>
                     </div>

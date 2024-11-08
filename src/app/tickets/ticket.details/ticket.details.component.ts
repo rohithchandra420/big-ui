@@ -76,16 +76,35 @@ export class TicketDetailsComponent implements OnInit {
   get filteredItems() {
     return this.selectedFilter === 'All'
       ? this.ticketPassList
-      : this.ticketPassList.filter(item => item.item_name === this.selectedFilter);
+      : this.ticketPassList.filter(item => {
+        // Match for tent_type or tent_no directly
+        const matchesTentType = item.item_name?.toLowerCase().includes(this.selectedFilter.toLowerCase());
+        const matchesTentNo = item.admissionId?.toLowerCase().includes(this.selectedFilter.toLowerCase());
+        const matchesName = item.name?.toLowerCase().includes(this.selectedFilter.toLowerCase());
+        const matchesPhone = item.phone_no?.toLowerCase().includes(this.selectedFilter.toLowerCase());
+        const matchesEmail = item.email?.toLowerCase().includes(this.selectedFilter.toLowerCase());
+
+        // Return true if any of the properties match the filter
+        return matchesTentType || matchesTentNo || matchesName || matchesPhone || matchesEmail;
+      });
   }
 
-  savePass(shopItem: Shopcart) {
+
+  savePass(shopItem: Shopcart, index: number) {
     console.log(shopItem);
+    this.ticketService.allocateTentForFestivalTicket(shopItem).subscribe((res) => {
+      this.ticket.shopcart[index] = res;
+      this.notificationService.openSucessSnackBar("Admitted");
+    }, (error) => {
+      console.log(error);
+      this.notificationService.openErrorSnackBar("Server Error");
+    })
   }
 
   onAdmit(shopItem: Shopcart, index: number) {
     this.ticketService.updateTicketToAdmit(shopItem).subscribe((res) => {
-      // this.ticket.shopcart[index] = res;
+      this.ticket.shopcart[index] = res;
+      //this.ticketPassList =
       this.notificationService.openSucessSnackBar("Admitted");
     }, (error) => {
       console.log(error);

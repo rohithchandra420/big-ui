@@ -43,5 +43,9 @@ export class TicketsService {
         return this.http.get<[Tent]>(this.url + '/getAllVacantTentsByType/' + tentType)
     }
 
+    allocateTentForFestivalTicket(festivalPass) {
+        return this.http.post<Shopcart>(this.url + '/allocateTent', festivalPass);
+    }
+
 
 }

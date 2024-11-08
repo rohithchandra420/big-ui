@@ -44,6 +44,9 @@
                     [color]="selectedFilter === filter ? 'primary' : ''" (click)="toggleFilter(filter)">
                     {{ filter }}
                 </button>
+                <div class="form-group">
+                    <input type="text" [(ngModel)]="selectedFilter" class="form-control" placeholder="Search Tent No:">
+                </div>
             </div>
 
             <mat-card class="pass-card col-lg-12 col-md-12 col-xs-12" *ngFor="let ticketpass of filteredItems; let i=index">
@@ -82,14 +85,14 @@
                         <input type="text" [(ngModel)]="ticketpass.item_name" [disabled]="true" class="form-control">
                     </div>
                     <div class="form-group">
-                        <label>Admission Id:</label>
+                        <label>Tent No:</label>
                         <input type="text" [(ngModel)]="ticketpass.admissionId" (click)="openTicketDetails(ticketpass, i)" class="form-control">
                     </div>
 
                 </mat-card-content>
                 <mat-card-actions>
                     <button mat-raised-button color="primary" class="btn btn-success" (click)="onAdmit(ticketpass, i)">Admit</button>
-                    <!-- <button class="btn btn-primary" (click)="savePass(ticketpass)">Save</button> -->
+                    <button class="btn btn-primary" (click)="savePass(ticketpass, i)" *ngIf="ticketpass.item_name == 'Festival Ticket'" [disabled]="!ticketpass.isAdmitted">Save</button>
                     
                 </mat-card-actions>
             </mat-card>
