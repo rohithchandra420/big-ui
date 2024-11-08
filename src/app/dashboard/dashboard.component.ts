@@ -77,7 +77,6 @@ export class DashboardComponent implements OnInit {
     this.dashboardService.getallShopItems().subscribe((res) => {
       this.shopItemList = res;
       if (this.shopItemList.length) {
-        console.log(this.shopItemList);
 
         this.getFestivalPassCount(this.shopItemList);
         
@@ -115,9 +114,9 @@ export class DashboardComponent implements OnInit {
     this.TotalFestPassAdmitted = totalFestPasses.filter(pass => pass.isAdmitted).length;
     this.RemaingFestPassToAdmit = this.TotalFestivalPasses - this.TotalFestPassAdmitted;
 
-    console.log("this.TotalFestivalPasses: ", this.TotalFestivalPasses);
-    console.log("this.TotalFestPassAdmitted: ", this.TotalFestPassAdmitted);
-    console.log("this.RemaingFestPassToAdmit: ", this.RemaingFestPassToAdmit);
+    // console.log("this.TotalFestivalPasses: ", this.TotalFestivalPasses);
+    // console.log("this.TotalFestPassAdmitted: ", this.TotalFestPassAdmitted);
+    // console.log("this.RemaingFestPassToAdmit: ", this.RemaingFestPassToAdmit);
   }
 
   getPYOTPassCount(data) {
@@ -227,9 +226,9 @@ export class DashboardComponent implements OnInit {
     this.TotalCaravanPassAdmitted = totalFestPasses.filter(pass => pass.isAdmitted).length;
     this.RemaingCaravanToAdmit = this.TotalCaravanPasses - this.TotalCaravanPassAdmitted;
 
-    console.log("this.TotalCaravanPasses: ", this.TotalCaravanPasses);
-    console.log("this.TotalCaravanPassAdmitted: ", this.TotalCaravanPassAdmitted);
-    console.log("this.RemaingCaravanToAdmit: ", this.RemaingCaravanToAdmit);
+    // console.log("this.TotalCaravanPasses: ", this.TotalCaravanPasses);
+    // console.log("this.TotalCaravanPassAdmitted: ", this.TotalCaravanPassAdmitted);
+    // console.log("this.RemaingCaravanToAdmit: ", this.RemaingCaravanToAdmit);
   }
 
   getEScooterPassCount(data) {
@@ -241,9 +240,9 @@ export class DashboardComponent implements OnInit {
     this.TotalEScooterPassAdmitted = totalFestPasses.filter(pass => pass.isAdmitted).length;
     this.RemaingEScooterToAdmit = this.TotalEScooterPasses - this.TotalEScooterPassAdmitted;
     
-    console.log("this.TotalEScooterPasses: ", this.TotalEScooterPasses);
-    console.log("this.TotalEScooterPassAdmitted: ", this.TotalEScooterPassAdmitted);
-    console.log("this.RemaingEScooterToAdmit: ", this.RemaingEScooterToAdmit);
+    // console.log("this.TotalEScooterPasses: ", this.TotalEScooterPasses);
+    // console.log("this.TotalEScooterPassAdmitted: ", this.TotalEScooterPassAdmitted);
+    // console.log("this.RemaingEScooterToAdmit: ", this.RemaingEScooterToAdmit);
   }
 
   createDoughnutChart(): void {

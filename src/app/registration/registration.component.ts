@@ -77,9 +77,7 @@ export class RegistrationComponent implements OnInit {
   }
 
   removeItem() {
-    console.log(this.shopcart);
     this.shopcart.removeAt(this.shopcart.length - 1);
-    console.log(this.shopcart);
   }
 
   validateValuesandSubmit() {
@@ -90,9 +88,6 @@ export class RegistrationComponent implements OnInit {
       })
 
       const invalidOrderId = this.ticketOrderIdList.includes(this.shopForm.value.orderId);
-      console.log("ticketOrderIdList: ", this.ticketOrderIdList);
-      console.log("his.shopForm.value.orderId: ", this.shopForm.value.orderId);
-      console.log(invalidOrderId);
       if (!invalidOrderId) {
         this.submitTicketValues();
       } else {
@@ -107,7 +102,6 @@ export class RegistrationComponent implements OnInit {
   submitTicketValues() {
     if (this.shopForm.valid) { //this.shopForm.valid
       const formData = this.shopForm.value;
-      console.log('Submitted Data:', formData);
       // Here you can submit the form data to your backend
       let ticket = new Ticket(formData.orderId, formData.firstName, formData.lastName, formData.email,
         formData.transactionId, "Not Yet", formData.shopcart);
@@ -153,13 +147,7 @@ export class RegistrationComponent implements OnInit {
         }
 
         const invalidOrderIds = this.ticketOrderIdList.filter(value => this.columnValues.includes(value))
-
         this.disableUploadBtn = invalidOrderIds.length ? true : false;
-
-        console.log("this.columnValues: ", this.columnValues);
-        console.log("this.ticketOrderIdList: ", this.ticketOrderIdList);
-        console.log("invalidOrderIds: ", invalidOrderIds);
-        console.log(this.disableUploadBtn);
 
         if (!invalidOrderIds.length) {
           this.disableUploadBtn = false;

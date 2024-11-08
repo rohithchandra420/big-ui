@@ -64,8 +64,6 @@ export class AuthService {
                     resData.user.ticketId, resData.token);
             }))
             .subscribe(response => {
-                console.log(response.user);
-
                 this.loggedIn = true;
                 //this.user = response;
                 //this.user.next(response.user)
@@ -99,7 +97,6 @@ export class AuthService {
             _token: string
         } = JSON.parse(localStorage.getItem('userData'));
 
-        console.log("userData: ", userData);
         if(!userData) {
             return;
         }
@@ -129,7 +126,6 @@ export class AuthService {
     private handleAuthentication(id, name, email, bookingId, role, ticketId, token) {
         const user = new User(name, email, '', role, '', token, id);
         this.user.next(user);
-        console.log("handleAuthentication : ", user);
         localStorage.setItem('userData', JSON.stringify(user));
     }
 }

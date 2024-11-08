@@ -20,7 +20,6 @@ export class AppComponent implements OnInit{
 
   ngOnInit() {
     this.authService.autoLogin();
-    console.log("hi");
   }
 
   openSnackBar(message: string, action: string) { 

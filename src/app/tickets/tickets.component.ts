@@ -58,7 +58,6 @@ export class TicketsComponent implements OnInit {
     //   console.log('The dialog was closed', result);
     //   this.getAllTickets();
     // });
-    console.log(row);
     this.ticketsService.setSelectedTicket(row);
     const ticketId = row._id;
     this.router.navigate(['tickets/details', ticketId]);
@@ -66,7 +65,6 @@ export class TicketsComponent implements OnInit {
 
   getAllTickets() {
     this.ticketsService.getAllTickets().subscribe(res => {
-      console.log(res);
       this.populateTable(res);
     }, error => {
 

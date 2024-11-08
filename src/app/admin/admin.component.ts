@@ -63,7 +63,6 @@ export class AdminComponent implements OnInit {
       role: this.userFrom.controls.role.value      
     }
 
-    console.log(userDetails);
     this.adminService.createUser(userDetails).subscribe((res) => {
       this.notificationService.openSucessSnackBar("User " + res.name + " created Successfully");
     }, (error) => {
@@ -77,7 +76,6 @@ export class AdminComponent implements OnInit {
   onChange(event) { 
     let file = event.target.files[0]; 
     this.formData.append("workshop", file);
-    console.log(this.formData);
   }
 
   switchMode() {
@@ -91,7 +89,6 @@ export class AdminComponent implements OnInit {
     this.userList;
     this.adminService.getAllUsers().subscribe((res) => {
       if(res.length) {
-        console.log(res);
         this.userList = res;
       } else {
         this.notificationService.openErrorSnackBar("No Users Found");
@@ -105,7 +102,6 @@ export class AdminComponent implements OnInit {
   } 
 
   editUser(user: User) {
-    console.log("Edit: ", user);
     this.isEditMode = true;
     this.selectedUser = user;
     this.userFrom.controls.password.disable();

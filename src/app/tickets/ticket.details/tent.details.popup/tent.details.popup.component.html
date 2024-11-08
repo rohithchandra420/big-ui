@@ -1,0 +1,26 @@
+<h1 mat-dialog-title>{{ticketPassDetails.item_name}}</h1>
+<div mat-dialog-content class="popup-body">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tent No.</th>
+                    <th>Vacancy</th>
+                </tr>        
+            </thead>
+            <tbody>
+                <tr *ngFor="let row of tableData" [class.selected]="row === selectedRow" (click)="selectRow(row)">
+                    <td>{{ row.tent_no }}</td>
+                    <td>{{ countNullOccupants(row.occupants) }} / {{ row.capcity }}</td>
+                  </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<div mat-dialog-actions>
+    <div class="d-flex justify-center">
+        <button class="btn btn-primary" (click)="onSubmit()" [disabled]="!selectedRow">Select</button>
+    </div>    
+</div>

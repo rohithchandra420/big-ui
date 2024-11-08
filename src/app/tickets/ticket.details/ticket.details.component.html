@@ -83,7 +83,7 @@
                     </div>
                     <div class="form-group">
                         <label>Admission Id:</label>
-                        <input type="text" [(ngModel)]="ticketpass.admissionId" class="form-control">
+                        <input type="text" [(ngModel)]="ticketpass.admissionId" (click)="openTicketDetails(ticketpass, i)" class="form-control">
                     </div>
 
                 </mat-card-content>

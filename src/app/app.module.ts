@@ -36,6 +36,8 @@ import { DashboardService } from './dashboard/dashboard.service';
 import { AccomodationComponent } from './accomodation/accomodation.component';
 import { AccomodationService } from './accomodation/accomodation.service';
 import { UtcToLocalTimePipe } from './pipes/utc-to-local-time.pipe';
+import { TentDetailsPopUp } from './tickets/ticket.details/tent.details.popup/tent.details.popup.component';
+import { OccupantPopupComponent } from './accomodation/occupant-popup/occupant-popup.component';
 
 // #QRCode Scanner: Necessary to solve the problem of losing internet connection
 LOAD_WASM().subscribe()
@@ -55,7 +57,9 @@ LOAD_WASM().subscribe()
     TicketDetailsComponent,
     QrscannerPopupComponent,
     AccomodationComponent,
-    UtcToLocalTimePipe
+    UtcToLocalTimePipe,
+    TentDetailsPopUp,
+    OccupantPopupComponent
   ],
   imports: [
     BrowserModule,

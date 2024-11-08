@@ -1,0 +1,28 @@
+<h1 mat-dialog-title>Hi</h1>
+<div mat-dialog-content class="popup-body">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name.</th>
+                    <th>Order ID</th>
+                    <th>Allocation</th>
+                </tr>        
+            </thead>
+            <tbody>
+                <tr *ngFor="let row of occupantData" [class.selected]="row === selectedRow" (click)="selectRow(row)">
+                    <td>{{ row.name }}</td>
+                    <td>{{row.order_id }}</td>
+                    <td>{{row.admissionId }}</td>
+                  </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<div mat-dialog-actions>
+    <div class="d-flex justify-center">
+        <!-- <button class="btn btn-primary" (click)="onSubmit()" [disabled]="!selectedRow">Select</button> -->
+    </div>    
+</div>

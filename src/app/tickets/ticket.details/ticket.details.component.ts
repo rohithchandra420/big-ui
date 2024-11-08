@@ -4,9 +4,10 @@ import { Shopcart, Ticket } from "src/app/models/ticket.model";
 import { TicketsService } from "../tickets.service";
 import { NotificationService } from "src/app/core/notification.service";
 import { ActivatedRoute, Router } from "@angular/router";
+import { TentDetailsPopUp } from "./tent.details.popup/tent.details.popup.component";
 
 @Component({
-  selector: 'ticket-details-popup',
+  selector: 'ticket-details',
   templateUrl: './ticket.details.component.html',
   styleUrls: ['./ticket.details.component.css']
 })
@@ -25,8 +26,11 @@ export class TicketDetailsComponent implements OnInit {
   filters = ["All"];
   selectedFilter = 'All';
 
+  selectedTentNo;
+  selectedTentId;
+
   constructor(private ticketService: TicketsService, private notificationService: NotificationService,
-    private route: ActivatedRoute, private router: Router) {
+    private route: ActivatedRoute, private router: Router, public dialog: MatDialog) {
 
   }
 
@@ -45,7 +49,6 @@ export class TicketDetailsComponent implements OnInit {
 
   getTicketDetails(ticketId) {
     this.ticketService.getTicketById(ticketId).subscribe((res) => {
-      console.log(res);
       this.ticketService.setSelectedTicket(res);
       this.notificationService.openSucessSnackBar("Succefully fetched Ticket Details");
     }, (error) => {
@@ -59,8 +62,8 @@ export class TicketDetailsComponent implements OnInit {
   } 
 
   getFilter() {
+    this.filters = ["ALL"];
     const categoriesSet = new Set(this.ticketPassList.map(item => item.item_name));
-    console.log("Categoried: ", categoriesSet);
     categoriesSet.forEach(itemName => {
       this.filters.push(itemName);
     })
@@ -81,8 +84,6 @@ export class TicketDetailsComponent implements OnInit {
   }
 
   onAdmit(shopItem: Shopcart, index: number) {
-    console.log(shopItem);
-    console.log(this.ticket.shopcart[index]);
     this.ticketService.updateTicketToAdmit(shopItem).subscribe((res) => {
       // this.ticket.shopcart[index] = res;
       this.notificationService.openSucessSnackBar("Admitted");
@@ -93,44 +94,19 @@ export class TicketDetailsComponent implements OnInit {
     })
   }
 
-  //   onNoClick(): void {
-  //     this.dialogRef.close();
-  //   }
-
-  //   populatePopup(data) {
-  //     //console.log(data);
-  //   }
-
-
-
-  //   onShowTicket() {
-  //     this.showTicket = !this.showTicket;
-  //   }
-
-  // //   onDownloadTicket() {    
-  // //     this.downloadTicketPng();
-  // //   }
-
-  //   createQrCode(data) {
-  //     if (data) {
-  //       let qrValues = {
-  //         tid: data._id,
-  //         oid: data.orderId,
-  //         pid: data.paymentId,
-  //       };
-  //       this.qrdata = JSON.stringify(qrValues);
-  //     } else {
-  //       console.log("transDetails Not Ok");
-  //     }
-  //   }
-
-  //   downloadTicketPng() {
-  //     html2canvas(this.ticketCard.nativeElement).then(canvas => {
-  //       this.canvas.nativeElement.src = canvas.toDataURL();
-  //       this.downloadLink.nativeElement.href = canvas.toDataURL('image/png');
-  //       this.downloadLink.nativeElement.download = this.ticketDetails.name + '-mso-ticket.png';
-  //       this.downloadLink.nativeElement.click();
-  //     });
-  //   }
+  openTicketDetails(ticketPassDetails, index) {
+    if(ticketPassDetails.item_name !== 'Festival Ticket') {
+      const dialogRef = this.dialog.open(TentDetailsPopUp, {
+        width: '500px',
+        data: ticketPassDetails
+      });
+  
+      dialogRef.afterClosed().subscribe(result => {
+        console.log('The dialog was closed', result);
+        //this.getAllTickets();
+      });
+    }
+    
+  }
 
 }

@@ -6,7 +6,6 @@ import { User } from "./user.model";
 
 export const AuthResolver: ResolveFn<User> =
     (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
-        console.log("Resolver");
         let data = inject(AuthService).getUserDetails('Admin');
         return data;
     };

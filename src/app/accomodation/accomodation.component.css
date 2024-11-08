@@ -166,3 +166,9 @@ input:disabled  {
     color: #fff;
     cursor: none;
 }
+
+.remove-btn-container {
+    display: flex;
+    justify-content: center;
+}
+

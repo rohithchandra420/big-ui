@@ -5,6 +5,7 @@ import { environment } from "src/environments/environment.development";
 
 import { Shopcart, Ticket } from "../models/ticket.model";
 import { BehaviorSubject, Subject } from "rxjs";
+import { Tent } from "../models/tent.model";
 
 @Injectable()
 export class TicketsService {
@@ -31,12 +32,15 @@ export class TicketsService {
     }
 
     sendEmail(ticket: Ticket) {
-        console.log("Ticket: ", ticket);
         return this.http.post<[Ticket]>(this.url + "/sendmail", ticket);
     }
 
     updateTicketToAdmit(shopItem: Shopcart) {
         return this.http.post<Shopcart>(this.url + "/admitTicket", shopItem);
+    }
+
+    getAvailableTents(tentType) {
+        return this.http.get<[Tent]>(this.url + '/getAllVacantTentsByType/' + tentType)
     }
 
 

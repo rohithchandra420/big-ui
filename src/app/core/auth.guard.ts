@@ -10,7 +10,6 @@ export const authGuard: CanActivateFn = (route, state) => {
   let token = userData ? userData._token : null;
   //authS.isA
   const router = inject(Router);
-  console.log(token);
   if(token) {
       //router.navigate(['dashboard']);
       return true;

@@ -1,0 +1,40 @@
+.popup-body {
+    background-color: #FDFBD4 !important;
+}
+
+.table-container {
+    width: 100%;
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,td {
+    padding: 8px 12px;
+    border: 1px solid var(--color-secondary);
+    text-align: center;
+    color: #000;
+}
+
+tr.selected {
+    background-color: var(--color-primary);
+    /* Light blue background for selected row */
+    border: 1px solid #009688;
+    /* Teal border */
+    color: #fff !important;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.cdk-overlay-backdrop {
+    background-color: red; /* Semi-transparent dark background */
+  }
+
+.mat-mdc-dialog-container {
+    --mdc-dialog-container-color: red;
+}
