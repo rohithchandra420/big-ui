@@ -39,7 +39,7 @@ export class TentDetailsPopUp implements OnInit {
         this.ticketService.getAvailableTents(tentType).subscribe((res) => {
             this.tableData = res;
         }, (error) => {
-
+            console.log(error);
         })
     }
 

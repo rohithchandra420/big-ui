@@ -47,5 +47,15 @@ export class TicketsService {
         return this.http.post<Shopcart>(this.url + '/allocateTent', festivalPass);
     }
 
+    deactivatePass(shopItemId) {
+        const data = { _id: shopItemId};
+        return this.http.post<Shopcart>(this.url + '/dectivateShopItem', data);
+    }
+
+    activatePass(shopItemId) {
+        const data = { _id: shopItemId};
+        return this.http.post<Shopcart>(this.url + '/dectivateShopItem', data);
+    }
+
 
 }

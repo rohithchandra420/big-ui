@@ -3,6 +3,7 @@
 :root {
     --color-primary: #1E4638;
     --color-secondary: #386e5b;
+    --color-warning: #e69b00;
     --mdc-filled-text-field-container-color: #a1d694;
     --bs-body-bg: #a1d694;
     --mdc-dialog-container-color: #FDFBD4 !important;
@@ -65,6 +66,28 @@ h6 {
     background-color: #386e5b;
     border-color: #1E4638;
     box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+}
+
+.btn-primary:hover {    
+    background-color: #386e5b;
+    border-color: #f0f0f0;
+    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+}
+
+.btn-primary:disabled {
+    background-color: unset !important;
+    border-color: #1E4638;
+}
+
+.btn-warning {
+    color: #fff;
+    background-color: var(--color-warning) !important;
+    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+}
+
+.btn-warning:hover {
+    color: #fff;
+    border-color: #f0f0f0;
 }
 
 

@@ -37,14 +37,14 @@ export class OccupantPopupComponent implements OnInit {
     this.selectedRow = row; // Set the selected row
   }
 
-  onSubmit() {
-    this.incomingData.tentDetails.occupants[this.incomingData.pos] = this.selectedRow;
-    if (this.selectedRow) {
-        // Close the dialog and pass the selected row data back to the parent component
-        this.dialogRef.close({
-            tent_no: this.selectedRow.tent_no,
-            _id: this.selectedRow._id 
-        });
-      }
-    }
+  // onSubmit() {
+  //   this.incomingData.tentDetails.occupants[this.incomingData.pos] = this.selectedRow;
+  //   if (this.selectedRow) {
+  //       // Close the dialog and pass the selected row data back to the parent component
+  //       this.dialogRef.close({
+  //           tent_no: this.selectedRow.tent_no,
+  //           _id: this.selectedRow._id 
+  //       });
+  //     }
+  // }
 }

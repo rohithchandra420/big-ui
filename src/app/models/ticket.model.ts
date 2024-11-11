@@ -6,13 +6,14 @@ export class Shopcart {
     public order_id: number;
     public admissionId: string;
     public isAdmitted: boolean;
+    public isActive: boolean;
     public name?: string;
     public phone_no?: string;
     public email?: string;
     public _id?: string;
     
     constructor(item_name: string, item_quantity: number, item_subtotal: number, item_subtotal_tax: number,
-        order_id: number, admissionId: string, isAdmitted: boolean, name?: string, phone_no?: string, email?: string,  _id?: string ) {
+        order_id: number, admissionId: string, isAdmitted: boolean, isActive:boolean, name?: string, phone_no?: string, email?: string,  _id?: string ) {
             this.item_name = item_name;
             this.item_quantity = item_quantity;
             this.item_subtotal = item_subtotal;
@@ -20,6 +21,7 @@ export class Shopcart {
             this.order_id = order_id;
             this.admissionId = admissionId;
             this.isAdmitted = isAdmitted;
+            this.isActive = isActive;
             this.name = name;
             this.phone_no = phone_no;
             this.email = email;

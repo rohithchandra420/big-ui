@@ -6,6 +6,7 @@ import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { BehaviorSubject, Subject, catchError, pipe, tap, throwError } from "rxjs";
 import { Router } from "@angular/router";
 import { environment } from "src/environments/environment.development";
+import { NotificationService } from "./notification.service";
 
 @Injectable()
 export class AuthService {
@@ -18,7 +19,7 @@ export class AuthService {
     userLoggedInEmitter = new Subject<string>();
     loginErrorMessageEmitter = new Subject<string>();
 
-    constructor(private router: Router, private http: HttpClient) {//private user1: User) {
+    constructor(private router: Router, private http: HttpClient, private notificationService: NotificationService) {//private user1: User) {
     }
 
     isAuthenticated() {
@@ -74,11 +75,12 @@ export class AuthService {
 
                 this.userLoggedInEmitter.next('response.')
                 //this.userLoggedInEmitter.next('AdminRole');
-
+                this.notificationService.openSucessSnackBar("Login Successful");
                 this.router.navigate(['home']);
             }, error => {
                 debugger;
                 this.loggedIn = false;
+                this.notificationService.openErrorSnackBar(error);
                 this.loginErrorMessageEmitter.next(error);
             });
 
@@ -117,10 +119,11 @@ export class AuthService {
     }
 
     private handleError(errorRes: HttpErrorResponse) {
-        let errorMessage = "An unknown error occured";
+        let errorMessage =  errorRes.error && errorRes.error.message ? errorRes.error.message :"An unknown error occured";
         if (!errorRes.error || !errorRes.error.message) {
             return throwError(errorMessage);
         }
+        return throwError(() => new Error(errorMessage));
     }
 
     private handleAuthentication(id, name, email, bookingId, role, ticketId, token) {

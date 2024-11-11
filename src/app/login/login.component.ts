@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 
 import { AuthService } from '../core/auth.service';
 import { Subscription } from 'rxjs';
+import { NotificationService } from '../core/notification.service';
 
 @Component({
   selector: 'app-login',
@@ -21,7 +22,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
 
 
-  constructor(private http: HttpClient, private authService: AuthService) {
+  constructor(private http: HttpClient, private authService: AuthService, private notificationService: NotificationService) {
 
   }
 
@@ -29,7 +30,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.showSpinner = true;
     this.errorSub = this.authService.loginErrorMessageEmitter.subscribe(errorMessage => {
-      debugger;
+      this.notificationService.openErrorSnackBar(errorMessage);
       this.loginError = errorMessage;
     })
   }

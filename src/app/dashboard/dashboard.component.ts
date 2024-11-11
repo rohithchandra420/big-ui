@@ -101,7 +101,7 @@ export class DashboardComponent implements OnInit {
 
     }, (error) => {
       console.log(error);
-      this.notificationService.openErrorSnackBar("Error: " + error.error);
+      this.notificationService.openErrorSnackBar(error.error);
     })
   }
 

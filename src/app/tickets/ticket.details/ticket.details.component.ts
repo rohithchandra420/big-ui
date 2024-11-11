@@ -1,4 +1,4 @@
-import { Component, ElementRef, Inject, OnInit, ViewChild } from "@angular/core";
+import { Component, ElementRef, Inject, OnInit, TemplateRef, ViewChild } from "@angular/core";
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Shopcart, Ticket } from "src/app/models/ticket.model";
 import { TicketsService } from "../tickets.service";
@@ -28,6 +28,11 @@ export class TicketDetailsComponent implements OnInit {
 
   selectedTentNo;
   selectedTentId;
+  confirmationText: string = '';
+  action: string = '';
+
+  private dialogRefConfirm!: MatDialogRef<any>;
+  @ViewChild('confirmDialog') confirmDialog!: TemplateRef<any>;
 
   constructor(private ticketService: TicketsService, private notificationService: NotificationService,
     private route: ActivatedRoute, private router: Router, public dialog: MatDialog) {
@@ -126,6 +131,58 @@ export class TicketDetailsComponent implements OnInit {
       });
     }
     
+  }
+
+  // Function to open the confirmation dialog
+  openConfirmDialog(shopItem: Shopcart, index: number) {
+    this.action = shopItem.isActive ? "Deactivate" : "Activate";
+    this.confirmationText = ''; // Reset the confirmation text on each open
+
+    this.dialogRefConfirm = this.dialog.open(this.confirmDialog); // Open the inline template
+
+    this.dialogRefConfirm.afterClosed().subscribe(result => {
+      if (result) {
+        // Perform the action if confirmed
+        if (this.action === 'Activate') {
+          this.activatePass(shopItem, index);
+        } else if (this.action === 'Deactivate') {
+          this.deactiavtePass(shopItem, index);
+        }
+      }
+    });
+  }
+
+  onCancel() {
+    this.dialogRefConfirm.close(false);
+  }
+
+  onConfirm() {
+    this.dialogRefConfirm.close(true);
+  }
+
+  // Placeholder methods for activation/deactivation logic
+  activatePass(shopItem, index) {
+    console.log(shopItem);
+    this.ticketService.activatePass(shopItem._id).subscribe((res) => {
+      console.log(res);
+      this.ticket.shopcart[index] = res;
+      this.notificationService.openSucessSnackBar("Successfully Activated");
+    }, (error) => {
+      console.log(error);
+      this.notificationService.openErrorSnackBar("Server Error");
+    })
+  }
+
+  deactiavtePass(shopItem, index) {
+    console.log(shopItem);
+    this.ticketService.deactivatePass(shopItem._id).subscribe((res) => {
+      console.log(res);
+      this.ticket.shopcart[index] = res;
+      this.notificationService.openSucessSnackBar("Successfully Deactivated");
+    }, (error) => {
+      console.log(error);
+      this.notificationService.openErrorSnackBar("Server Error");
+    })
   }
 
 }

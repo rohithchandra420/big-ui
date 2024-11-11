@@ -66,8 +66,15 @@ export class TicketsComponent implements OnInit {
   getAllTickets() {
     this.ticketsService.getAllTickets().subscribe(res => {
       this.populateTable(res);
+      if(res.length) {
+        this.notificationService.openSucessSnackBar("Succcefully Fetched Data");
+      }
+      else {
+        this.notificationService.openSucessSnackBar("Succceful: No Data to Fetch");
+      }
     }, error => {
-
+      console.log(error);
+      this.notificationService.openErrorSnackBar("Server Error")
     })
   }
 

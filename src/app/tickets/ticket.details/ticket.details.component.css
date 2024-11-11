@@ -144,6 +144,11 @@ h3 {
   box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
 }
 
+.pass-card.deactivated {
+  position: relative;
+  opacity: 0.6; /* Optional: To dim the card content */
+}
+
 .pass-card  .mat-mdc-card-header {
   display: block;
 }
@@ -171,6 +176,19 @@ h3 {
 
 .pass-card mat-card-actions{
   justify-content: space-evenly;
+}
+
+.watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  color: rgba(255, 0, 0, 0.4); /* Light red, semi-transparent */
+  font-weight: bold;
+  text-transform: uppercase;
+  pointer-events: none; /* Prevent interaction with the overlay */
+  z-index: 10;
 }
 
 .d-flex {
