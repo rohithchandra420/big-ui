@@ -40,6 +40,11 @@
                 <input type="text" id="transactionId" formControlName="transactionId" class="form-control">
             </div>
 
+            <div class="col-12 form-group">
+                <label for="totalPrice">Total Price:</label>
+                <input type="number" id="totalPrice" formControlName="totalPrice" class="form-control">
+            </div>
+
             <div formArrayName="shopcart">
                 <div *ngFor="let item of shopcart.controls; let i = index" [formGroupName]="i" class="row shop-cart-item mt-2">
                     <div class="col-8 form-group">
