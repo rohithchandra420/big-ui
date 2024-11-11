@@ -97,19 +97,22 @@ export class TicketDetailsComponent implements OnInit {
 
   savePass(shopItem: Shopcart, index: number) {
     console.log(shopItem);
+    const pos = this.ticket.shopcart.indexOf(shopItem);
     this.ticketService.allocateTentForFestivalTicket(shopItem).subscribe((res) => {
-      this.ticket.shopcart[index] = res;
+      // this.filteredItems[index] = res;      
+      this.ticket.shopcart[pos] = res;
       this.notificationService.openSucessSnackBar("Admitted");
     }, (error) => {
       console.log(error);
-      this.notificationService.openErrorSnackBar("Server Error");
+      this.notificationService.openErrorSnackBar(error.error);
     })
   }
 
   onAdmit(shopItem: Shopcart, index: number) {
+    const pos = this.ticket.shopcart.indexOf(shopItem);
     this.ticketService.updateTicketToAdmit(shopItem).subscribe((res) => {
-      this.ticket.shopcart[index] = res;
-      //this.ticketPassList =
+      //this.filteredItems[index] = res;
+      this.ticket.shopcart[pos] = res;
       this.notificationService.openSucessSnackBar("Admitted");
     }, (error) => {
       console.log(error);
