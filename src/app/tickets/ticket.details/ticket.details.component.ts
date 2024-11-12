@@ -67,7 +67,7 @@ export class TicketDetailsComponent implements OnInit {
   } 
 
   getFilter() {
-    this.filters = ["ALL"];
+    this.filters = ["All"];
     const categoriesSet = new Set(this.ticketPassList.map(item => item.item_name));
     categoriesSet.forEach(itemName => {
       this.filters.push(itemName);
@@ -101,7 +101,7 @@ export class TicketDetailsComponent implements OnInit {
     this.ticketService.allocateTentForFestivalTicket(shopItem).subscribe((res) => {
       // this.filteredItems[index] = res;      
       this.ticket.shopcart[pos] = res;
-      this.notificationService.openSucessSnackBar("Admitted");
+      this.notificationService.openSucessSnackBar("Successfully Allocated Tent");
     }, (error) => {
       console.log(error);
       this.notificationService.openErrorSnackBar(error.error);

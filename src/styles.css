@@ -93,7 +93,10 @@ h6 {
 
 .snackbar-success {
     .mdc-snackbar__surface {
+        border: 2px solid var(--bs-body-bg);
+        border-radius: 10px !important;
         background-color: var(--color-primary) !important;
+        box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19) !important;
     }
 
     .mdc-snackbar__label {
@@ -103,7 +106,10 @@ h6 {
 
 .snackbar-error {
     .mdc-snackbar__surface {
-        background-color: red !important;
+        background-color: rgb(151, 9, 9) !important;
+        /* border: 2px solid rgb(255, 0, 0); */
+        border-radius: 10px !important;
+        box-shadow: 0 8px 16px 0 rgba(255, 0, 0, 0.2), 0 6px 20px 0 rgba(255, 0, 0, 0.19) !important;
     }
 
     .mdc-snackbar__label {

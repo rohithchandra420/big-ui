@@ -10,7 +10,7 @@ export class NotificationService {
 
     openSucessSnackBar(message) {
         this._snackBar.open(message, 'Close', {
-          duration: 5000,
+          duration: 50000,
           horizontalPosition: 'end',
           verticalPosition: 'bottom',
           panelClass: ['custom-snackbar', 'snackbar-success'],

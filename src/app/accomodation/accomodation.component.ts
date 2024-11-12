@@ -48,6 +48,7 @@ export class AccomodationComponent implements OnInit {
     this.accomodationService.createTents(tentsData).subscribe((res) => {
       if(res && res.length) {
         this.tentList.push(...res);
+        this.notificationService.openSucessSnackBar("Successfully Created Tents");
       } else {
         this.notificationService.openErrorSnackBar("Server Error");
       }
@@ -89,8 +90,9 @@ export class AccomodationComponent implements OnInit {
     this.accomodationService.getAllTents().subscribe((res) => {
       if(res && res.length) {
         this.tentList = res;
+        this.notificationService.openSucessSnackBar("Successfully Fetched Tent Details");
       } else {
-        this.notificationService.openErrorSnackBar("Server Error");
+        this.notificationService.openErrorSnackBar("No Tents Available");
       }
     },(error) => {
       console.log(error);
@@ -114,8 +116,10 @@ export class AccomodationComponent implements OnInit {
   removeOccupant(tentDetails: Tent, index) {
     tentDetails.occupants[index] = null;
     this.accomodationService.removeOccupant(tentDetails).subscribe((res) => {
-      console.log(res);
+      this.notificationService.openSucessSnackBar("Successfully Removed Particpant from their Tent");
     },(error) => {
+      console.log(error);
+      this.notificationService.openErrorSnackBar("Server Error");
 
     })
   }

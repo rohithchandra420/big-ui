@@ -127,6 +127,7 @@ h3 {
 
 .section-control-value {
   color: #555; /* Style for the value */
+  margin-bottom: 5px;
 }
 
 .content-box {
