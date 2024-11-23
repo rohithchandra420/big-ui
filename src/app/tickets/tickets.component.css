@@ -5,6 +5,7 @@ mat-form-field {
 
 .table-container {
     overflow: scroll;
+    height: 75vh;
 }
 
 .mat-mdc-table {

@@ -64,7 +64,7 @@ export class TicketDetailsComponent implements OnInit {
 
   goBack() {
     this.router.navigate(['/tickets']);
-  } 
+  }
 
   getFilter() {
     this.filters = ["All"];
@@ -122,18 +122,19 @@ export class TicketDetailsComponent implements OnInit {
   }
 
   openTicketDetails(ticketPassDetails, index) {
-    if(ticketPassDetails.item_name !== 'Festival Ticket') {
+    if (ticketPassDetails.item_name !== 'Festival Ticket' &&
+      ticketPassDetails.item_name !== 'Weekend pass' && ticketPassDetails.item_name !== 'Day Pass') {
       const dialogRef = this.dialog.open(TentDetailsPopUp, {
         width: '500px',
         data: ticketPassDetails
       });
-  
+
       dialogRef.afterClosed().subscribe(result => {
         console.log('The dialog was closed', result);
         //this.getAllTickets();
       });
     }
-    
+
   }
 
   // Function to open the confirmation dialog

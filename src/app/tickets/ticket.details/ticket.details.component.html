@@ -100,12 +100,14 @@
                 </mat-card-content>
                 <mat-card-actions>
                     <button mat-raised-button color="primary" class="btn btn-success"
-                        *ngIf="!ticketpass.isAdmitted || ticketpass.item_name != 'Festival Ticket'"
+                        *ngIf="!ticketpass.isAdmitted || (ticketpass.item_name != 'Festival Ticket' && 
+                                ticketpass.item_name != 'Weekend pass' && ticketpass.item_name != 'Day Pass')"
                         [disabled]="!ticketpass.isActive" (click)="onAdmit(ticketpass, i)">Admit</button>
                     <button class="btn btn-warning" (click)="openConfirmDialog(ticketpass, i)">{{ticketpass.isActive ?
                         "Deactivate" : "Activate"}}</button>
                     <button class="btn btn-primary" (click)="savePass(ticketpass, i)"
-                        *ngIf="ticketpass.item_name == 'Festival Ticket'"
+                        *ngIf="ticketpass.item_name == 'Festival Ticket' || ticketpass.item_name == 'Weekend pass'
+                                 || ticketpass.item_name == 'Day Pass'"
                         [disabled]="!ticketpass.isAdmitted || !ticketpass.isActive">Allocate Tent</button>
 
                 </mat-card-actions>
