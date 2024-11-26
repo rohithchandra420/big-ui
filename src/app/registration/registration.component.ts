@@ -39,6 +39,7 @@ export class RegistrationComponent implements OnInit {
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
+      phoneNo: ['', Validators.required],
       orderId: new FormControl(null, [Validators.required]),
       transactionId: new FormControl(null, [Validators.required]),
       totalPrice: new FormControl(null, Validators.required),
@@ -104,8 +105,8 @@ export class RegistrationComponent implements OnInit {
     if (this.shopForm.valid) { //this.shopForm.valid
       const formData = this.shopForm.value;
       // Here you can submit the form data to your backend
-      let ticket = new Ticket(formData.orderId, formData.firstName, formData.lastName, formData.email,
-        formData.transactionId, "Not Yet", formData.totalPrice, formData.shopcart);
+      let ticket = new Ticket(formData.orderId, formData.firstName, formData.lastName, formData.email, 
+        formData.phoneNo, formData.transactionId, "Not Yet", formData.totalPrice, formData.shopcart);
       this.registrationService.createTicket(ticket).subscribe((res) => {
         this.notificationService.openSucessSnackBar("Ticket created for Order #" + res.order_id);
         this.getAllTicketOrderId();

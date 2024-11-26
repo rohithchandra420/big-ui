@@ -30,6 +30,7 @@ export class Ticket {
     public first_name: string;
     public last_name: string;
     public email: string;
+    public phone_no: string;
     public transaction_id: string;
     public hasEmailSent: string;
     public totalPrice: number;
@@ -37,12 +38,13 @@ export class Ticket {
     public _id?: string;
 
     
-   constructor(order_id: number, first_name: string, last_name: string, email: string, transaction_id: string, 
+   constructor(order_id: number, first_name: string, last_name: string, email: string, phone_no:string, transaction_id: string, 
     hasEmailSent: string , totalPrice: number, shopcart?: Shopcart[], _id?: string) {
     this.order_id = order_id;
     this.first_name = first_name;
     this.last_name = last_name;
     this.email = email;
+    this.phone_no = phone_no;
     this.transaction_id = transaction_id;
     this.hasEmailSent = hasEmailSent;    
     this.totalPrice = totalPrice;
