@@ -177,13 +177,13 @@ export class DashboardComponent implements OnInit {
 
   getGTSPPassCount(data) {
     const totalFestPasses = data.filter(pass => {
-      return pass.item_name === 'Glamping Tent for Single Person';
+      return pass.item_name === 'Glamping Tent For 1 Person.';
     });
 
     this.TotalGTSPPasses = totalFestPasses.length;
     this.TotalGTSPPassAdmitted = totalFestPasses.filter(pass => pass.isAdmitted).length;
     this.RemaingGTSPToAdmit = this.TotalGTSPPasses - this.TotalGTSPPassAdmitted;
-
+    
     // console.log("this.TotalGTSPPasses: ", this.TotalGTSPPasses);
     // console.log("this.TotalGTSPPassAdmitted: ", this.TotalGTSPPassAdmitted);
     // console.log("this.RemaingGTSPToAdmit: ", this.RemaingGTSPToAdmit);
@@ -191,7 +191,7 @@ export class DashboardComponent implements OnInit {
 
   getGTPWPassCount(data) {
     const totalFestPasses = data.filter(pass => {
-      return pass.item_name === 'Glamping Tent for Single Person';
+      return pass.item_name == 'Glamping Tent with Private Washroom.';
     });
 
     this.TotalGTPWPasses = totalFestPasses.length;
@@ -205,7 +205,7 @@ export class DashboardComponent implements OnInit {
 
   getDeluxPassCount(data) {
     const totalFestPasses = data.filter(pass => {
-      return pass.item_name === 'Glamping Tent for Single Person';
+      return pass.item_name === 'Deluxe room near Shoolagiri';
     });
 
     this.TotalDeluxPasses = totalFestPasses.length;
@@ -219,7 +219,7 @@ export class DashboardComponent implements OnInit {
 
   getCaravanPassCount(data) {
     const totalFestPasses = data.filter(pass => {
-      return pass.item_name === 'Glamping Tent for Single Person';
+      return pass.item_name === 'Car/Caravan Pass';
     });
 
     this.TotalCaravanPasses = totalFestPasses.length;
@@ -233,7 +233,7 @@ export class DashboardComponent implements OnInit {
 
   getEScooterPassCount(data) {
     const totalFestPasses = data.filter(pass => {
-      return pass.item_name === 'Glamping Tent for Single Person';
+      return pass.item_name === 'Ola electric scooter';
     });
 
     this.TotalEScooterPasses = totalFestPasses.length;
@@ -272,8 +272,18 @@ export class DashboardComponent implements OnInit {
             position: 'top',
           },
           title: {
-            display: true,
-            text: 'Overall Admission'
+            display: true, // Enables the title
+            text: 'Overall Admission', // Title text
+            font: {
+              size: 18, // Font size for the title
+              weight: 'bold' // Font weight
+            },
+            padding: {
+              top: 10,
+              bottom: 30
+            },
+            align: 'center', // Options: 'start', 'center', 'end'
+            color: '#333' // Title color
           },
           datalabels: {
             color: '#ffffff', // Change to a contrasting color for visibility
@@ -372,6 +382,20 @@ export class DashboardComponent implements OnInit {
           legend: {
             display: true,
           },
+          title: {
+            display: true, // Enables the title
+            text: 'Tenting Data', // Title text
+            font: {
+              size: 18, // Font size for the title
+              weight: 'bold' // Font weight
+            },
+            padding: {
+              top: 10,
+              bottom: 30
+            },
+            align: 'center', // Options: 'start', 'center', 'end'
+            color: '#333' // Title color
+          }
         },
       },
     }) as Chart<'bar', number[], string>;
@@ -417,6 +441,20 @@ export class DashboardComponent implements OnInit {
           legend: {
             display: true,
           },
+          title: {
+            display: true, // Enables the title
+            text: 'Vehicle Admission', // Title text
+            font: {
+              size: 18, // Font size for the title
+              weight: 'bold' // Font weight
+            },
+            padding: {
+              top: 10,
+              bottom: 30
+            },
+            align: 'center', // Options: 'start', 'center', 'end'
+            color: '#333' // Title color
+          }
         },
       },
     }) as Chart<'bar', number[], string>;

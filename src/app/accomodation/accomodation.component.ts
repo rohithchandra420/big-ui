@@ -18,14 +18,15 @@ export class AccomodationComponent implements OnInit {
   filters = ["All"];
   selectedFilter = 'All';
   searchInput = '';
+  disableTentCreation = false;
 
   tentInitData = [
     { tentType: 'Shared Tent', capacity: null, quantity: null },
     { tentType: 'Solo Tent', capacity: null, quantity: null },
     { tentType: 'Family Tent', capacity: null, quantity: null },
     { tentType: 'PYOT (Pitch Your Own Tent)', capacity: null, quantity: null },
-    { tentType: 'Glamping Tent for Single Person', capacity: null, quantity: null },
-    { tentType: 'Glamping Tent with Private Washroom', capacity: null, quantity: null },
+    { tentType: 'Glamping Tent For 1 Person.', capacity: null, quantity: null },
+    { tentType: 'Glamping Tent with Private Washroom.', capacity: null, quantity: null },
   ];
 
   constructor(private accomodationService: AccomodationService, private notificationService: NotificationService,
@@ -40,6 +41,7 @@ export class AccomodationComponent implements OnInit {
   }
 
   createTents() {
+    this.disableTentCreation = true;
     const tentsData = this.tentInitData.map(tent => ({
       tentType: tent.tentType,
       capacity: tent.capacity,
@@ -52,9 +54,11 @@ export class AccomodationComponent implements OnInit {
       } else {
         this.notificationService.openErrorSnackBar("Server Error");
       }
+      this.disableTentCreation = false;
     },(error) => {
       console.log(error);
       this.notificationService.openErrorSnackBar("Server Error");
+      this.disableTentCreation = false;
     })
     // You can send this data to a server or process it as needed
   }
