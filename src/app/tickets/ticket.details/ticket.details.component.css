@@ -66,6 +66,14 @@
   /* Space around the input container */
 }
 
+.input-field {
+  width: 65%;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  padding: 5px;
+  font-size: 14px;
+}
+
 .item-input {
   width: 60px;
   /* Width of the input field */

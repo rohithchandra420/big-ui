@@ -35,6 +35,10 @@ export class TicketsService {
         return this.http.post<[Ticket]>(this.url + "/sendmail", ticket);
     }
 
+    updateTicketDetails(updatedTicket: Ticket) {
+        return this.http.post<Ticket>(this.url + '/updateTicketDetails', updatedTicket);
+    }
+
     updateTicketToAdmit(shopItem: Shopcart) {
         return this.http.post<Shopcart>(this.url + "/admitTicket", shopItem);
     }

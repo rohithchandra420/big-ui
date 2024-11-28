@@ -16,11 +16,13 @@
             </div>
             <div class="info-pair">
                 <h6 class="section-control">Mobile No : </h6>
-                <span class="section-control-value">{{ticket.phone_no}}</span>
+                <span class="section-control-value" *ngIf="!isEditMode">{{ticket.phone_no}}</span>
+                <input type="text" [(ngModel)]="ticketUpdatePhone" class="input-field" *ngIf="isEditMode">
             </div>
             <div class="info-pair">
                 <h6 class="section-control">Email : </h6>
-                <span class="section-control-value">{{ticket.email}}</span>
+                <span class="section-control-value" *ngIf="!isEditMode">{{ticket.email}}</span>
+                <input type="email" [(ngModel)]="ticketUpdateEmail" class="input-field" *ngIf="isEditMode">
             </div>
         </div>
         <div class="col-lg-6 col-md-6 col-xs-12" *ngIf="ticket">
@@ -42,7 +44,12 @@
             </div>
         </div>
 
-        <div class="col-12 content-box">
+        <div class="col-lg-12 col-md-12 col-xs-12 text-center" *ngIf="ticket">
+            <button class="btn btn-primary" (click)="editTicket()" *ngIf="!isEditMode && userRole == 'admin'">Edit</button>
+            <button class="btn btn-primary" (click)="updateTicket()" *ngIf="isEditMode">Update</button>
+        </div>
+
+        <div class="col-12 mt-3 content-box">
             <div class="col-12 button-group-container">
                 <button *ngFor="let filter of filters" mat-raised-button
                     [color]="selectedFilter === filter ? 'primary' : ''" (click)="toggleFilter(filter)">

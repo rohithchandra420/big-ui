@@ -1,10 +1,12 @@
 import { Component, ElementRef, Inject, OnInit, TemplateRef, ViewChild } from "@angular/core";
+import { Subscription } from "rxjs";
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Shopcart, Ticket } from "src/app/models/ticket.model";
 import { TicketsService } from "../tickets.service";
 import { NotificationService } from "src/app/core/notification.service";
 import { ActivatedRoute, Router } from "@angular/router";
 import { TentDetailsPopUp } from "./tent.details.popup/tent.details.popup.component";
+import { AuthService } from "src/app/core/auth.service";
 
 @Component({
   selector: 'ticket-details',
@@ -21,6 +23,8 @@ export class TicketDetailsComponent implements OnInit {
   // qrdata: string = "mso";
   // showTicket = false;
 
+  userRole;
+  private userSub: Subscription;
   ticket: Ticket;
   ticketPassList: Shopcart[];
   filters = ["All"];
@@ -31,20 +35,29 @@ export class TicketDetailsComponent implements OnInit {
   confirmationText: string = '';
   action: string = '';
 
+  isEditMode = false;
+  ticketUpdatePhone;
+  ticketUpdateEmail;
+
   private dialogRefConfirm!: MatDialogRef<any>;
   @ViewChild('confirmDialog') confirmDialog!: TemplateRef<any>;
 
-  constructor(private ticketService: TicketsService, private notificationService: NotificationService,
+  constructor(private authService:AuthService, private ticketService: TicketsService, private notificationService: NotificationService,
     private route: ActivatedRoute, private router: Router, public dialog: MatDialog) {
 
   }
 
   ngOnInit(): void {
+    this.userSub = this.authService.user.subscribe(user => {
+      this.userRole = user ? user.role : '';
+    });
     //this.populatePopup(this.ticketDetails);
     // this.createQrCode(this.ticketDetails);
     const ticketId = this.route.snapshot.paramMap.get('id');
     this.ticketService.selectedTicket$.subscribe((ticket) => {
       this.ticket = ticket;
+      this.ticketUpdatePhone = ticket.phone_no;
+      this.ticketUpdateEmail = ticket.email;
       this.ticketPassList = ticket ? ticket.shopcart : [];
       this.getFilter();
     })
@@ -64,6 +77,24 @@ export class TicketDetailsComponent implements OnInit {
 
   goBack() {
     this.router.navigate(['/tickets']);
+  }
+
+  editTicket() {
+    this.isEditMode = true;
+  }
+
+  updateTicket() {
+    this.ticket.phone_no = this.ticketUpdatePhone;
+    this.ticket.email = this.ticketUpdateEmail;
+
+    this.ticketService.updateTicketDetails(this.ticket).subscribe((res) => {
+      this.ticketService.setSelectedTicket(res);
+      this.notificationService.openSucessSnackBar("Succefully Updated Ticket Details");
+      this.isEditMode = false;
+    }, (error) => {
+      console.log(error);
+      this.notificationService.openErrorSnackBar("Failed to Update Ticket Details");
+    })
   }
 
   getFilter() {

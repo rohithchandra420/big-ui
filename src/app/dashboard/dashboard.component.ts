@@ -20,12 +20,21 @@ export class DashboardComponent implements OnInit {
   title = 'ng-chart';
   shopItemList: Shopcart[];
   mainChart: Chart<'doughnut', number[], string> | undefined;
+  festBarChart: Chart<'bar', number[], string> | undefined;
   accomBarChart: Chart<'bar', number[], string> | undefined;
   vehicleBarChart: Chart<'bar', number[], string> | undefined;
 
   TotalFestivalPasses: number = 0;
   TotalFestPassAdmitted: number = 0;
   RemaingFestPassToAdmit: number = 0;
+
+  TotalWeekendPasses: number = 0;
+  TotalWeekendPassAdmitted: number = 0;
+  RemaingWeekendPassToAdmit: number = 0;
+
+  TotalDayPasses: number = 0;
+  TotalDayPassAdmitted: number = 0;
+  RemaingDayPassToAdmit: number = 0;
 
   TotalPYOTPasses: number = 0;
   TotalPYOTPassAdmitted: number = 0;
@@ -79,6 +88,8 @@ export class DashboardComponent implements OnInit {
       if (this.shopItemList.length) {
 
         this.getFestivalPassCount(this.shopItemList);
+        this.getWeekendPassCount(this.shopItemList);
+        this.getDayPassCount(this.shopItemList);
         
         this.getPYOTPassCount(this.shopItemList);
         this.getSoloTentPassCount(this.shopItemList);
@@ -92,6 +103,7 @@ export class DashboardComponent implements OnInit {
         this.getEScooterPassCount(this.shopItemList);
 
         this.getDataForMainChart();
+        this.getDataForFestBarChart();
         this.getDataForAccomBarChart();
         this.getDataForVehicelBarChart();
 
@@ -113,6 +125,34 @@ export class DashboardComponent implements OnInit {
     this.TotalFestivalPasses = totalFestPasses.length;
     this.TotalFestPassAdmitted = totalFestPasses.filter(pass => pass.isAdmitted).length;
     this.RemaingFestPassToAdmit = this.TotalFestivalPasses - this.TotalFestPassAdmitted;
+
+    // console.log("this.TotalFestivalPasses: ", this.TotalFestivalPasses);
+    // console.log("this.TotalFestPassAdmitted: ", this.TotalFestPassAdmitted);
+    // console.log("this.RemaingFestPassToAdmit: ", this.RemaingFestPassToAdmit);
+  }
+
+  getWeekendPassCount(data) {
+    const totalWeekendPasses = data.filter(pass => {
+      return pass.item_name == "Weekend pass";
+    });
+
+    this.TotalWeekendPasses = totalWeekendPasses.length;
+    this.TotalWeekendPassAdmitted = totalWeekendPasses.filter(pass => pass.isAdmitted).length;
+    this.RemaingWeekendPassToAdmit = this.TotalWeekendPasses - this.TotalWeekendPassAdmitted;
+
+    // console.log("this.TotalFestivalPasses: ", this.TotalFestivalPasses);
+    // console.log("this.TotalFestPassAdmitted: ", this.TotalFestPassAdmitted);
+    // console.log("this.RemaingFestPassToAdmit: ", this.RemaingFestPassToAdmit);
+  }
+
+  getDayPassCount(data) {
+    const totalDayPasses = data.filter(pass => {
+      return pass.item_name == "Day Pass";
+    });
+
+    this.TotalDayPasses = totalDayPasses.length;
+    this.TotalDayPassAdmitted = totalDayPasses.filter(pass => pass.isAdmitted).length;
+    this.RemaingDayPassToAdmit = this.TotalDayPasses - this.TotalDayPassAdmitted;
 
     // console.log("this.TotalFestivalPasses: ", this.TotalFestivalPasses);
     // console.log("this.TotalFestPassAdmitted: ", this.TotalFestPassAdmitted);
@@ -340,16 +380,15 @@ export class DashboardComponent implements OnInit {
       }
     }) as Chart<'doughnut', number[], string>;
 
-    const ctx2 = document.getElementById('accomodationBarChart') as HTMLCanvasElement;
-    this.accomBarChart = new Chart(ctx2, {
+    const ctx4 = document.getElementById('festBarChart') as HTMLCanvasElement;
+    this.festBarChart = new Chart(ctx4, {
       type: 'bar',
       data: {
-        labels: [ 'PYOT', 'Shared Tent', 'Solo Tent',
-                  ' Family Tent', 'GTSP', 'GTPW', 'Delux Room'],
+        labels: [ 'Festival Passes', 'Weekend Passes', 'Day Passes'],
         datasets: [
           {
             label: 'Admitted',
-            data: [10, 20, 30, 40, 30, 20, 10], // Example values for admitted tickets
+            data: [10, 20, 30], // Example values for admitted tickets
             backgroundColor: '#004d00',
             datalabels: {
               color: 'white', // Set label color for Admitted
@@ -359,7 +398,7 @@ export class DashboardComponent implements OnInit {
           },
           {
             label: 'Yet to Admit',
-            data: [10, 20, 30, 40, 30, 20, 10], // Example values for yet to admit tickets
+            data: [10, 20, 30], // Example values for yet to admit tickets
             backgroundColor: '#99ff99',
             datalabels: {
               color: 'black', // Set label color for Yet to Admit
@@ -400,15 +439,16 @@ export class DashboardComponent implements OnInit {
       },
     }) as Chart<'bar', number[], string>;
 
-    const ctx3 = document.getElementById('vehicleBarChart') as HTMLCanvasElement;
-    this.vehicleBarChart = new Chart(ctx3, {
+    const ctx2 = document.getElementById('accomodationBarChart') as HTMLCanvasElement;
+    this.accomBarChart = new Chart(ctx2, {
       type: 'bar',
       data: {
-        labels: [ 'Car/Caravan Pass', 'Electric Scooter'],
+        labels: [ 'PYOT', 'Shared Tent', 'Solo Tent',
+                  ' Family Tent', 'GTSP', 'GTPW', 'Delux Room'],
         datasets: [
           {
             label: 'Admitted',
-            data: [10, 20], // Example values for admitted tickets
+            data: [10, 20, 30, 40, 30, 20, 10], // Example values for admitted tickets
             backgroundColor: '#FF7B00',
             datalabels: {
               color: 'white', // Set label color for Admitted
@@ -418,8 +458,67 @@ export class DashboardComponent implements OnInit {
           },
           {
             label: 'Yet to Admit',
-            data: [10, 20], // Example values for yet to admit tickets
+            data: [10, 20, 30, 40, 30, 20, 10], // Example values for yet to admit tickets
             backgroundColor: '#FFB76B',
+            datalabels: {
+              color: 'black', // Set label color for Yet to Admit
+              anchor: 'center',
+              align: 'end',
+            },
+          },
+        ],
+      },
+      options: {
+        scales: {
+          x: {
+            stacked: true,
+          },
+          y: {
+            stacked: true,
+          },
+        },
+        plugins: {
+          legend: {
+            display: true,
+          },
+          title: {
+            display: true, // Enables the title
+            text: 'Festival Pass Data', // Title text
+            font: {
+              size: 18, // Font size for the title
+              weight: 'bold' // Font weight
+            },
+            padding: {
+              top: 10,
+              bottom: 30
+            },
+            align: 'center', // Options: 'start', 'center', 'end'
+            color: '#333' // Title color
+          }
+        },
+      },
+    }) as Chart<'bar', number[], string>;
+
+    const ctx3 = document.getElementById('vehicleBarChart') as HTMLCanvasElement;
+    this.vehicleBarChart = new Chart(ctx3, {
+      type: 'bar',
+      data: {
+        labels: [ 'Car/Caravan Pass', 'Electric Scooter'],
+        datasets: [
+          {
+            label: 'Admitted',
+            data: [10, 20], // Example values for admitted tickets
+            backgroundColor: '#3B1C32',
+            datalabels: {
+              color: 'white', // Set label color for Admitted
+              anchor: 'center',
+              align: 'end',
+            },
+          },
+          {
+            label: 'Yet to Admit',
+            data: [10, 20], // Example values for yet to admit tickets
+            backgroundColor: '#A64D79',
             datalabels: {
               color: 'black', // Set label color for Yet to Admit
               anchor: 'center',
@@ -464,6 +563,9 @@ export class DashboardComponent implements OnInit {
   getDataForMainChart() {
     //const mainChartLablel = ['Festival Ticket Allocated', 'Accomodation'];
 
+    const overallFestAdmitted = this.TotalFestPassAdmitted + this.TotalWeekendPassAdmitted + this.TotalDayPassAdmitted;
+    const overallFestRemaining = this.RemaingFestPassToAdmit + this.RemaingWeekendPassToAdmit + this.RemaingDayPassToAdmit;
+
     const accomAdmitted = this.TotalPYOTPassAdmitted + this.TotalSoloTPassAdmitted +
       this.TotalSharedTPassAdmitted + this.TotalFamilyTPassAdmitted +
       this.TotalGTSPPassAdmitted + this.TotalGTPWPassAdmitted +
@@ -476,12 +578,22 @@ export class DashboardComponent implements OnInit {
 
     if (this.mainChart) {
       // Update the data and labels
-      this.mainChart.data.datasets[0].data = [this.TotalFestPassAdmitted, this.RemaingFestPassToAdmit];
+      this.mainChart.data.datasets[0].data = [overallFestAdmitted, overallFestRemaining];
       this.mainChart.data.datasets[1].data = [accomAdmitted, accomRemaining];
       //this.mainChart.data.labels = newLabels;
 
       // Call the update method to re-render the chart
       this.mainChart.update();
+    }
+  }
+
+  getDataForFestBarChart() {
+    if (this.festBarChart) {
+      // Update the data and labels  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      this.festBarChart.data.datasets[0].data = [this.TotalFestPassAdmitted, this.TotalWeekendPassAdmitted, this.TotalDayPassAdmitted];
+      this.festBarChart.data.datasets[1].data = [this.RemaingFestPassToAdmit, this.RemaingWeekendPassToAdmit, this.RemaingDayPassToAdmit];
+      
+      this.festBarChart.update();
     }
   }
 
