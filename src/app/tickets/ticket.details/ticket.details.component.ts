@@ -97,6 +97,17 @@ export class TicketDetailsComponent implements OnInit {
     })
   }
 
+  deleteTicket() {
+    alert("Delete")
+    const ticketId = this.ticket._id;
+    this.ticketService.deleteTicketById(ticketId).subscribe((res) => {
+      this.notificationService.openSucessSnackBar("Succefully Deleted Ticket");
+      this.goBack();
+    }, (error) => {
+      this.notificationService.openErrorSnackBar("Failed to Delete Ticket");
+    })
+  }
+
   getFilter() {
     this.filters = ["All"];
     const categoriesSet = new Set(this.ticketPassList.map(item => item.item_name));

@@ -209,6 +209,10 @@ h3 {
   flex-wrap: wrap;
 }
 
+.margin-r-20 {
+  margin-right: 20px;
+}
+
 .button-group-container {
   display: flex;
   flex-wrap: wrap;

@@ -17,7 +17,7 @@ import { Router } from '@angular/router';
   styleUrls: ['./tickets.component.css']
 })
 export class TicketsComponent implements OnInit {
-  displayedColumns: string[] = ['first_name', 'last_name', 'email', '_id', 'order_id', 'transaction_id', 'hasEmailSent', 'actions'];
+  displayedColumns: string[] = ['position', 'first_name', 'last_name', 'email', '_id', 'order_id', 'transaction_id', 'hasEmailSent', 'actions'];
   dataSource;
   buttonDisabled: boolean[] = [];
   filterValue = "";

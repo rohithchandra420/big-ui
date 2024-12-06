@@ -48,7 +48,7 @@ const profileGuard: CanActivateFn = (
 // }
 
 const appRoutes: Routes = [
-    { path: '', component: HomeComponent },
+    { path: '', component: DashboardComponent },
     { path: 'login', component: LoginComponent },
     // {
     //     path: 'admin', canActivate:[authGuard], resolve: {userDetails: AuthResolver} , component: AdminComponent, children: [
@@ -56,9 +56,9 @@ const appRoutes: Routes = [
     //         { path: 'register', component: RegistrationComponent }
     //     ]
     // },
-    { path: 'home', redirectTo: '', pathMatch: 'full'},
+    //{ path: 'home', redirectTo: '', pathMatch: 'full'},    
+    { path: 'dashboard', redirectTo: '',  pathMatch: 'full'},
     { path: 'register', canActivate:[AuthGuard] ,component: RegistrationComponent },
-    { path: 'dashboard', canActivate:[AuthGuard] ,component: DashboardComponent },
     { path: 'tickets', canActivate:[AuthGuard] ,component: TicketsComponent },
     { path: 'tickets/details/:id', component: TicketDetailsComponent },
     { path: 'accomodation', canActivate:[AuthGuard] ,component: AccomodationComponent },

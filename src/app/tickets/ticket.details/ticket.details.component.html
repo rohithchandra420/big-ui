@@ -45,8 +45,9 @@
         </div>
 
         <div class="col-lg-12 col-md-12 col-xs-12 text-center" *ngIf="ticket">
-            <button class="btn btn-primary" (click)="editTicket()" *ngIf="!isEditMode && userRole == 'admin'">Edit</button>
-            <button class="btn btn-primary" (click)="updateTicket()" *ngIf="isEditMode">Update</button>
+            <button class="btn btn-primary margin-r-20" (click)="editTicket()" *ngIf="!isEditMode && userRole == 'admin'">Edit Ticket</button>
+            <button class="btn btn-primary margin-r-20" (click)="updateTicket()" *ngIf="isEditMode">Update</button>
+            <button class="btn btn-danger" (click)="deleteTicket()" *ngIf="userRole == 'admin'">Delete Ticket</button>
         </div>
 
         <div class="col-12 mt-3 content-box">

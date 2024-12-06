@@ -61,5 +61,9 @@ export class TicketsService {
         return this.http.post<Shopcart>(this.url + '/dectivateShopItem', data);
     }
 
+    deleteTicketById(ticketId) {
+        return this.http.delete<Shopcart>(this.url + '/deleteTicket/' + ticketId);
+    }
+
 
 }

@@ -76,7 +76,7 @@ export class AuthService {
                 this.userLoggedInEmitter.next('response.')
                 //this.userLoggedInEmitter.next('AdminRole');
                 this.notificationService.openSucessSnackBar("Login Successful");
-                this.router.navigate(['home']);
+                this.router.navigate(['']);
             }, error => {
                 debugger;
                 this.loggedIn = false;
