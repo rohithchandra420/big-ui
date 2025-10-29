@@ -90,6 +90,16 @@ h6 {
     border-color: #f0f0f0;
 }
 
+/* ---------------------------------------------Menu Starts----------------------------------------- */
+
+.mat-mdc-menu-content {
+    background-color: var(--color-secondary);
+}
+
+/* ---------------------------------------------Menu Ends----------------------------------------- */
+
+
+
 
 .snackbar-success {
     .mdc-snackbar__surface {

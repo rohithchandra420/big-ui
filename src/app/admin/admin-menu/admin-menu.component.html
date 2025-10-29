@@ -1,0 +1,34 @@
+<mat-toolbar color="primary" class="submenu-toolbar">
+  <mat-toolbar-row>
+    <span class="submenu-title">Menu</span>
+    <span class="spacer"></span>
+    
+    <!-- Desktop Menu -->
+    <div class="desktop-menu">
+      <button mat-button [routerLink]="['user']">
+        <mat-icon>person</mat-icon>
+        User
+      </button>
+      <button mat-button [routerLink]="['tickets']">
+        <mat-icon>confirmation_number</mat-icon>
+        Ticket
+      </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <button mat-icon-button [matMenuTriggerFor]="mobileMenu" class="mobile-menu-button">
+      <mat-icon>menu</mat-icon>
+    </button>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<mat-menu #mobileMenu="matMenu">
+  <button mat-menu-item (click)="navigateTo('/user')">
+    <mat-icon>person</mat-icon>
+    <span>User</span>
+  </button>
+  <button mat-menu-item (click)="navigateTo('/ticket')">
+    <mat-icon>confirmation_number</mat-icon>
+    <span>Ticket</span>
+  </button>
+</mat-menu>

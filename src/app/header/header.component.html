@@ -6,7 +6,18 @@
     <a mat-button [routerLink]="['/register']" *ngIf="isAuthenticated">Register</a>
     <a mat-button [routerLink]="['/tickets']" *ngIf="isAuthenticated">Tickets</a>
     <a mat-button [routerLink]="['/accomodation']" *ngIf="isAuthenticated">Tenting</a>
-    <a mat-button [routerLink]="['/admin']" *ngIf="userRole == 'admin'">Admin</a>
+    <a mat-button [routerLink]="['/calendar']" *ngIf="isAuthenticated">Calendar</a>
+    <a mat-button [matMenuTriggerFor]="adminMenu" *ngIf="userRole == 'admin'">Admin</a>
+    <mat-menu #adminMenu="matMenu">
+      <button mat-menu-item [routerLink]="['/admin/user']">
+        <mat-icon>person</mat-icon>
+        <span>User</span>
+      </button>
+      <button mat-menu-item [routerLink]="['/admin/ticket']">
+        <mat-icon>confirmation_number</mat-icon>
+        <span>Ticket</span>
+      </button>
+    </mat-menu>
     <a mat-button class="active" routerLink="/login" *ngIf="!isAuthenticated">Login</a>
     <a mat-button class="active" (click)="onLogOut()" *ngIf="isAuthenticated">Logout</a>
   </div>
@@ -28,15 +39,31 @@
       <button mat-menu-item [routerLink]="['/accomodation']" *ngIf="isAuthenticated">
         <span>Tenting</span>
       </button>
-      <button mat-menu-item [routerLink]="['/admin']" *ngIf="userRole == 'admin'">
+      <button mat-menu-item [routerLink]="['/calendar']" *ngIf="isAuthenticated">
+        <span>Calendar</span>
+      </button>
+      <!-- <button mat-menu-item [routerLink]="['/admin']" *ngIf="userRole == 'admin'">
+        <span>Admin</span>
+      </button> -->
+      <button mat-menu-item [matMenuTriggerFor]="adminSubmenu" *ngIf="userRole == 'admin'">
         <span>Admin</span>
       </button>
+      <mat-menu #adminSubmenu="matMenu">
+        <button mat-menu-item [routerLink]="['/admin/user']">
+          <mat-icon>person</mat-icon>
+          <span>User</span>
+        </button>
+        <button mat-menu-item [routerLink]="['/admin/ticket']">
+          <mat-icon>confirmation_number</mat-icon>
+          <span>Ticket</span>
+        </button>
+      </mat-menu>
       <button mat-menu-item class="active" routerLink="/login" *ngIf="!isAuthenticated">
         <span>Login</span>
       </button>
       <button mat-menu-item class="active" (click)="onLogOut()" *ngIf="isAuthenticated">
         <span>Logout</span>
-      </button>>
+      </button>
     </mat-menu>
   </div>
 

@@ -11,14 +11,30 @@
     flex: 1 1 auto;
 }
 
+
+
 @media only screen and (max-width: 600px) {
     .mso-nav-long {
         display: none;
     }
+
 }
 
 @media only screen and (min-width: 600px) {
     .mos-nav-short {
         display: none;
     }
+
+    .mso-nav-long {
+        display: flex;
+        height: 100%;
+    }
+
+    .mso-nav-long a {
+        height: 100%;
+    }
+}
+
+.mat-menu-item:hover .mat-menu-trigger {
+  background-color: rgba(0, 0, 0, 0.04);
 }

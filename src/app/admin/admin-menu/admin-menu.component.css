@@ -1,0 +1,46 @@
+.submenu-toolbar {
+    background-color: var(--color-primary);
+    opacity: 0.8;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.submenu-title {
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.desktop-menu {
+  display: flex;
+  gap: 8px;
+
+  button {
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+.mobile-menu-button {
+  display: none;
+}
+
+/* Responsive breakpoint */
+@media (max-width: 768px) {
+  .desktop-menu {
+    display: none;
+  }
+
+  .mobile-menu-button {
+    display: block;
+  }
+
+  .submenu-title {
+    font-size: 1rem;
+  }
+}

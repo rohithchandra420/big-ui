@@ -38,6 +38,12 @@ import { AccomodationService } from './accomodation/accomodation.service';
 import { UtcToLocalTimePipe } from './pipes/utc-to-local-time.pipe';
 import { TentDetailsPopUp } from './tickets/ticket.details/tent.details.popup/tent.details.popup.component';
 import { OccupantPopupComponent } from './accomodation/occupant-popup/occupant-popup.component';
+import { AdminMenuComponent } from './admin/admin-menu/admin-menu.component';
+import { UserRegisteryComponent } from './admin/user-registery/user-registery.component';
+import { TicketRegisteryComponent } from './admin/ticket-registery/ticket-registery.component';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatIconModule } from '@angular/material/icon';
+import { CalendarComponent } from './calendar/calendar.component';
 
 // #QRCode Scanner: Necessary to solve the problem of losing internet connection
 LOAD_WASM().subscribe()
@@ -59,7 +65,11 @@ LOAD_WASM().subscribe()
     AccomodationComponent,
     UtcToLocalTimePipe,
     TentDetailsPopUp,
-    OccupantPopupComponent
+    OccupantPopupComponent,
+    AdminMenuComponent,
+    UserRegisteryComponent,
+    TicketRegisteryComponent,
+    CalendarComponent
   ],
   imports: [
     BrowserModule,
@@ -75,7 +85,9 @@ LOAD_WASM().subscribe()
     MatTableModule,
     MatPaginatorModule,
     MatRippleModule,
-    MatDialogModule
+    MatDialogModule,
+    MatMenuModule,
+    MatIconModule
   ],
   providers: [
     AuthService, 
