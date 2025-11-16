@@ -10,6 +10,7 @@ import { Subscription } from "rxjs";
 
 export class HeaderComponent implements OnInit, OnDestroy{
     userRole;
+    userName;
     private logSub: Subscription;
     private userSub: Subscription;
 
@@ -24,6 +25,7 @@ export class HeaderComponent implements OnInit, OnDestroy{
         // });
 
         this.userSub = this.authService.user.subscribe(user => {
+            this.userName = user ? user.name : 'Guest';
             this.isAuthenticated = !user ? false : true;
             this.userRole = user ? user.role : '';
         });

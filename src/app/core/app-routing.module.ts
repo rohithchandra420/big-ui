@@ -17,27 +17,28 @@ import { AccomodationComponent } from "../accomodation/accomodation.component";
 import { UserRegisteryComponent } from "../admin/user-registery/user-registery.component";
 import { TicketRegisteryComponent } from "../admin/ticket-registery/ticket-registery.component";
 import { CalendarComponent } from "../calendar/calendar.component";
+import { AuthPermissionGuard } from "./auth-permission-guard.service";
 
-const profileGuard: CanActivateFn = (
-    route: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot,
-):  | Observable<boolean | UrlTree>
-    | Promise<boolean | UrlTree>
-    | boolean
-    | UrlTree => {
-        const currentUser = inject(AuthService).isAuthenticated();
+// const profileGuard: CanActivateFn = (
+//     route: ActivatedRouteSnapshot,
+//     state: RouterStateSnapshot,
+// ):  | Observable<boolean | UrlTree>
+//     | Promise<boolean | UrlTree>
+//     | boolean
+//     | UrlTree => {
+//         const currentUser = inject(AuthService).isAuthenticated();
 
-        //Redirect to Another Route
-        if(!currentUser) {
-            return inject(Router).createUrlTree(["/", "login"]);
-        }
+//         //Redirect to Another Route
+//         if(!currentUser) {
+//             return inject(Router).createUrlTree(["/", "login"]);
+//         }
 
-        //const profileId = route.params["id"];
+//         //const profileId = route.params["id"];
         
-        //Grants or deny access to this route
+//         //Grants or deny access to this route
         
-        return true;
-    }
+//         return true;
+//     }
 
 // export function featureFlagHuard( ):CanActivateChildFn {
 //     return() => {
@@ -63,7 +64,7 @@ const appRoutes: Routes = [
     { path: 'dashboard', redirectTo: '',  pathMatch: 'full'},
     { path: 'register', canActivate:[AuthGuard] ,component: RegistrationComponent },
     { path: 'tickets', canActivate:[AuthGuard] ,component: TicketsComponent },
-    { path: 'calendar', canActivate:[AuthGuard] ,component: CalendarComponent },
+    { path: 'calendar', canActivate:[AuthGuard, AuthPermissionGuard] ,component: CalendarComponent },
     { path: 'tickets/details/:id', component: TicketDetailsComponent },
     { path: 'accomodation', canActivate:[AuthGuard] ,component: AccomodationComponent },
     { path: 'admin', canActivate:[AuthGuard] ,component: AdminComponent, children: [

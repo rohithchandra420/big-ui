@@ -28,15 +28,15 @@
                 <label for="item_name">Role:</label>
                 <select class="form-select" formControlName="role">
                     <option selected>Open this select menu</option>
-                    <option value="volunteer">Volunteer</option>
-                    <option value="tl">Team Lead</option>
-                    <option value="hod">HoD</option>
-                    <option value="admin">Admin</option>
+                    <option value="VOL">Volunteer</option>
+                    <option value="TL">Team Lead</option>
+                    <option value="HOD">HoD</option>
+                    <option value="ADMIN">Admin</option>
                 </select>
             </div>
             <div class="action-group">
                 <div class="col-lg-4 col-md-4 col-xs-12 text-center">
-                    <button class="btn btn-success mr-3" type="submit" *ngIf="!isEditMode">
+                    <button class="btn btn-success mr-3" type="submit" *hasPermission="{user: user, permission:'teams:write'}">
                         Create User</button>
                     <button class="btn btn-primary mr-3" type="button" *ngIf="isEditMode" 
                         (click)="switchMode()">Switch to Regitser</button>

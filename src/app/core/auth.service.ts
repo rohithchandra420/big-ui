@@ -1,7 +1,7 @@
 //Service Used to call API to check the login Service at the backend
 
 import { Injectable } from "@angular/core";
-import { User } from "./user.model";
+import { RolePermissions, User } from "./user.model";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { BehaviorSubject, Subject, catchError, pipe, tap, throwError } from "rxjs";
 import { Router } from "@angular/router";
@@ -21,6 +21,26 @@ export class AuthService {
 
     constructor(private router: Router, private http: HttpClient, private notificationService: NotificationService) {//private user1: User) {
     }
+
+    getUserPermissions(user: User): string[] | 'ALL' {
+    const perms = RolePermissions[user.role] || [];
+
+    if (perms.includes('*')) return 'ALL';
+    return perms;
+  }
+
+  hasPermission(user: User, permission: string): boolean {
+    const perms = this.getUserPermissions(user);
+
+    console.log("this.user : ", user);    
+    console.log("perms : ", perms);
+
+    if (perms === 'ALL') return true;
+    return perms.includes(permission);
+  }
+
+    get currentUser$() { return this.user.asObservable(); }
+    get currentUser(): User { return this.user.value; }
 
     isAuthenticated() {
         // debugger;

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { Subscription } from "rxjs";
 
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
@@ -8,6 +9,7 @@ import { User } from '../core/user.model';
 import { DashboardService } from './dashboard.service';
 import { NotificationService } from '../core/notification.service';
 import { Shopcart } from '../models/ticket.model';
+import { AuthService } from '../core/auth.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -16,6 +18,8 @@ import { Shopcart } from '../models/ticket.model';
 })
 export class DashboardComponent implements OnInit {
 
+  userDetails: any;
+  private userSub: Subscription;
   chart: any = [];
   title = 'ng-chart';
   shopItemList: Shopcart[];
@@ -73,13 +77,16 @@ export class DashboardComponent implements OnInit {
   RemaingEScooterToAdmit = 0;
 
   constructor(private route: ActivatedRoute, private dashboardService: DashboardService,
-    private notificationService: NotificationService) {
+    private notificationService: NotificationService, private authService: AuthService) {
     Chart.register(...registerables, ChartDataLabels);
   }
 
   ngOnInit() {
     this.createDoughnutChart();
     this.getAllShopItems();
+    this.userSub = this.authService.user.subscribe(user => {
+      this.userDetails = user;
+    });
   }
 
   getAllShopItems() {
@@ -90,7 +97,7 @@ export class DashboardComponent implements OnInit {
         this.getFestivalPassCount(this.shopItemList);
         this.getWeekendPassCount(this.shopItemList);
         this.getDayPassCount(this.shopItemList);
-        
+
         this.getPYOTPassCount(this.shopItemList);
         this.getSoloTentPassCount(this.shopItemList);
         this.getSharedTentPassCount(this.shopItemList);
@@ -209,7 +216,7 @@ export class DashboardComponent implements OnInit {
     this.TotalFamilyTPasses = totalFestPasses.length;
     this.TotalFamilyTPassAdmitted = totalFestPasses.filter(pass => pass.isAdmitted).length;
     this.RemaingFamilyTToAdmit = this.TotalFamilyTPasses - this.TotalFamilyTPassAdmitted;
-    
+
     // console.log("this.TotalFamilyTPasses: ", this.TotalFamilyTPasses);
     // console.log("this.TotalFamilyTPassAdmitted: ", this.TotalFamilyTPassAdmitted);
     // console.log("this.RemaingFamilyTToAdmit: ", this.RemaingFamilyTToAdmit);
@@ -223,7 +230,7 @@ export class DashboardComponent implements OnInit {
     this.TotalGTSPPasses = totalFestPasses.length;
     this.TotalGTSPPassAdmitted = totalFestPasses.filter(pass => pass.isAdmitted).length;
     this.RemaingGTSPToAdmit = this.TotalGTSPPasses - this.TotalGTSPPassAdmitted;
-    
+
     // console.log("this.TotalGTSPPasses: ", this.TotalGTSPPasses);
     // console.log("this.TotalGTSPPassAdmitted: ", this.TotalGTSPPassAdmitted);
     // console.log("this.RemaingGTSPToAdmit: ", this.RemaingGTSPToAdmit);
@@ -237,7 +244,7 @@ export class DashboardComponent implements OnInit {
     this.TotalGTPWPasses = totalFestPasses.length;
     this.TotalGTPWPassAdmitted = totalFestPasses.filter(pass => pass.isAdmitted).length;
     this.RemaingGTPWToAdmit = this.TotalGTPWPasses - this.TotalGTPWPassAdmitted;
-    
+
     // console.log("this.TotalGTPWPasses: ", this.TotalGTPWPasses);
     // console.log("this.TotalGTPWPassAdmitted: ", this.TotalGTPWPassAdmitted);
     // console.log("this.RemaingGTPWToAdmit: ", this.RemaingGTPWToAdmit);
@@ -279,7 +286,7 @@ export class DashboardComponent implements OnInit {
     this.TotalEScooterPasses = totalFestPasses.length;
     this.TotalEScooterPassAdmitted = totalFestPasses.filter(pass => pass.isAdmitted).length;
     this.RemaingEScooterToAdmit = this.TotalEScooterPasses - this.TotalEScooterPassAdmitted;
-    
+
     // console.log("this.TotalEScooterPasses: ", this.TotalEScooterPasses);
     // console.log("this.TotalEScooterPassAdmitted: ", this.TotalEScooterPassAdmitted);
     // console.log("this.RemaingEScooterToAdmit: ", this.RemaingEScooterToAdmit);
@@ -384,7 +391,7 @@ export class DashboardComponent implements OnInit {
     this.festBarChart = new Chart(ctx4, {
       type: 'bar',
       data: {
-        labels: [ 'Festival Passes', 'Weekend Passes', 'Day Passes'],
+        labels: ['Festival Passes', 'Weekend Passes', 'Day Passes'],
         datasets: [
           {
             label: 'Admitted',
@@ -443,8 +450,8 @@ export class DashboardComponent implements OnInit {
     this.accomBarChart = new Chart(ctx2, {
       type: 'bar',
       data: {
-        labels: [ 'PYOT', 'Shared Tent', 'Solo Tent',
-                  ' Family Tent', 'GTSP', 'GTPW', 'Delux Room'],
+        labels: ['PYOT', 'Shared Tent', 'Solo Tent',
+          ' Family Tent', 'GTSP', 'GTPW', 'Delux Room'],
         datasets: [
           {
             label: 'Admitted',
@@ -503,7 +510,7 @@ export class DashboardComponent implements OnInit {
     this.vehicleBarChart = new Chart(ctx3, {
       type: 'bar',
       data: {
-        labels: [ 'Car/Caravan Pass', 'Electric Scooter'],
+        labels: ['Car/Caravan Pass', 'Electric Scooter'],
         datasets: [
           {
             label: 'Admitted',
@@ -592,7 +599,7 @@ export class DashboardComponent implements OnInit {
       // Update the data and labels  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
       this.festBarChart.data.datasets[0].data = [this.TotalFestPassAdmitted, this.TotalWeekendPassAdmitted, this.TotalDayPassAdmitted];
       this.festBarChart.data.datasets[1].data = [this.RemaingFestPassToAdmit, this.RemaingWeekendPassToAdmit, this.RemaingDayPassToAdmit];
-      
+
       this.festBarChart.update();
     }
   }
@@ -602,7 +609,7 @@ export class DashboardComponent implements OnInit {
       // Update the data and labels  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
       this.accomBarChart.data.datasets[0].data = [this.TotalPYOTPassAdmitted, this.TotalSharedTPassAdmitted, this.TotalSoloTPassAdmitted, this.TotalFamilyTPassAdmitted, this.TotalGTSPPassAdmitted, this.TotalGTPWPassAdmitted, this.TotalDeluxPassAdmitted];
       this.accomBarChart.data.datasets[1].data = [this.RemaingPYOTtPassToAdmit, this.RemaingSharedTToAdmit, this.RemaingSoloTToAdmit, this.RemaingFamilyTToAdmit, this.RemaingGTSPToAdmit, this.RemaingGTPWToAdmit, this.RemaingDeluxToAdmit];
-      
+
       this.accomBarChart.update();
     }
   }
@@ -614,9 +621,13 @@ export class DashboardComponent implements OnInit {
       // Update the data and labels  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
       this.vehicleBarChart.data.datasets[0].data = [this.TotalCaravanPassAdmitted, this.TotalEScooterPassAdmitted];
       this.vehicleBarChart.data.datasets[1].data = [this.RemaingCaravanToAdmit, this.RemaingEScooterToAdmit];
-      
+
       this.vehicleBarChart.update();
     }
   }
+
+  ngOnDestroy() {
+        this.userSub.unsubscribe();
+    }
 
 }

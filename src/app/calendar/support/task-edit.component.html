@@ -1,0 +1,42 @@
+<h3 mat-dialog-title>Edit Task</h3>
+  <div mat-dialog-content>
+    <div class="form-group">
+      <label>Title</label>
+      <input class="form-control" [(ngModel)]="task.title" />
+    </div>
+    <div class="form-group mt-2">
+      <label>Description</label>
+      <textarea class="form-control" [(ngModel)]="task.description"></textarea>
+    </div>
+
+    <div class="row mt-2">
+      <div class="col">
+        <label>Start</label>
+        <input type="datetime-local" class="form-control" [(ngModel)]="startLocal" (change)="onLocalStartChange()" />
+      </div>
+      <div class="col">
+        <label>End</label>
+        <input type="datetime-local" class="form-control" [(ngModel)]="endLocal" (change)="onLocalEndChange()" />
+      </div>
+    </div>
+
+    <div *ngIf="mode==='full'" class="mt-2">
+      <label>Assign Volunteers</label>
+      <select multiple class="form-select" [(ngModel)]="task.assignedVolunteerIds">
+        <option *ngFor="let v of volunteers" [value]="v._id">{{v.name}}</option>
+      </select>
+    </div>
+
+    <div *ngIf="mode==='instance'" class="mt-2">
+      <label>Assigned volunteer (instance)</label>
+      <select class="form-select" [(ngModel)]="instanceVolunteerId">
+        <option *ngFor="let v of volunteers" [value]="v._id">{{v.name}}</option>
+      </select>
+    </div>
+  </div>
+
+  <div mat-dialog-actions class="mt-3">
+    <button class="btn btn-secondary" (click)="close()">Cancel</button>
+    <button class="btn btn-danger" *ngIf="mode==='full'" (click)="delete()">Delete</button>
+    <button class="btn btn-primary" (click)="save()">Save</button>
+  </div>

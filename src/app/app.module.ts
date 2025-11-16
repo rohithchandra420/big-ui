@@ -1,13 +1,18 @@
-import { NgModule } from '@angular/core';
+import { LOCALE_ID, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CustomMaterialModule } from './core/material.module';
 import { AppRoutingModule } from './core/app-routing.module';
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
-import { MatCardModule } from '@angular/material/card';
+
 import { NgxScannerQrcodeModule, LOAD_WASM } from 'ngx-scanner-qrcode';
 
+import { CalendarModule, DateAdapter, MOMENT } from 'angular-calendar';
+import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
+import { SchedulerModule } from 'angular-calendar-scheduler';
+
+import { MatCardModule } from '@angular/material/card';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -44,6 +49,11 @@ import { TicketRegisteryComponent } from './admin/ticket-registery/ticket-regist
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { CalendarComponent } from './calendar/calendar.component';
+import { TaskPoolComponent } from './calendar/support/task-pool.component';
+
+import * as moment from 'moment';
+import { CalendarService } from './calendar/calendar.service';
+import { HasPermissionDirective } from './directives/has-permission.directive';
 
 // #QRCode Scanner: Necessary to solve the problem of losing internet connection
 LOAD_WASM().subscribe()
@@ -69,7 +79,9 @@ LOAD_WASM().subscribe()
     AdminMenuComponent,
     UserRegisteryComponent,
     TicketRegisteryComponent,
-    CalendarComponent
+    CalendarComponent,
+    TaskPoolComponent,
+    HasPermissionDirective
   ],
   imports: [
     BrowserModule,
@@ -87,7 +99,17 @@ LOAD_WASM().subscribe()
     MatRippleModule,
     MatDialogModule,
     MatMenuModule,
-    MatIconModule
+    MatIconModule,
+
+    CalendarModule.forRoot({
+      provide: DateAdapter,
+      useFactory: adapterFactory,
+    }),
+    SchedulerModule.forRoot({
+      locale: 'en',
+      headerDateFormat: 'daysRange',
+      logEnabled: true,
+    }),
   ],
   providers: [
     AuthService, 
@@ -96,7 +118,10 @@ LOAD_WASM().subscribe()
     NotificationService,
     DashboardService,
     AccomodationService,
-    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true }
+    CalendarService,
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true },
+    { provide: LOCALE_ID, useValue: 'en-US' },
+    { provide: MOMENT, useValue: moment },
   ],
   bootstrap: [AppComponent]
 })

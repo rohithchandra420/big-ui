@@ -21,3 +21,25 @@ export class User {
     //     return this._token;
     // }
 }
+
+export const RolePermissions: Record<string, string[]> = {
+  GOD: ["*"],
+
+  ADMIN: [
+    "event:read", "event:write",
+    "teams:read", "teams:write",
+    "users:read", "users:write",
+  ],
+
+  TL: [
+    "team:self:read",
+    "team:self:write",
+    "volunteers:self:read",
+    "volunteers:self:write",
+  ],
+
+  VOLUNTEER: [
+    "self:read",
+    "team:read",
+  ]
+};

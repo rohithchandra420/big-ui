@@ -4,6 +4,8 @@ import { Workshop } from '../../core/workshop.model';
 import { AdminService } from '../admin.service';
 import { User } from '../../core/user.model';
 import { NotificationService } from '../../core/notification.service';
+import { Subscription } from 'rxjs';
+import { AuthService } from 'src/app/core/auth.service';
 
 
 @Component({
@@ -13,7 +15,11 @@ import { NotificationService } from '../../core/notification.service';
 })
 export class UserRegisteryComponent implements OnInit {
 
-  addWorkshopForm: FormGroup;  
+
+  private userSub: Subscription;
+  userRole;
+  user: User;
+  addWorkshopForm: FormGroup;
   formData = new FormData();
   file: File = null;
   userList: User[];
@@ -23,7 +29,7 @@ export class UserRegisteryComponent implements OnInit {
   userFrom: FormGroup;
   genders = ['male', 'female'];
 
-  constructor(private adminService: AdminService, private notificationService: NotificationService) {
+  constructor(private adminService: AdminService, private notificationService: NotificationService, private authService: AuthService) {
     this.userFrom = new FormGroup({
       'userName': new FormControl(null, Validators.required),
       'email': new FormControl(null, [Validators.required, Validators.email]),
@@ -34,16 +40,20 @@ export class UserRegisteryComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.userSub = this.authService.user.subscribe(user => {
+      this.user = user;
+      this.userRole = user ? user.role : '';
+    });
     this.getAllUsers();
   }
 
   resetForm() {
-    
+
   }
 
-  ticketValidator(control: FormControl): {[s: string]:boolean} {
-    if(control.value < 1) {
-      return {'inValidNoOfTickets': true};
+  ticketValidator(control: FormControl): { [s: string]: boolean } {
+    if (control.value < 1) {
+      return { 'inValidNoOfTickets': true };
     }
     return null;
   }
@@ -61,7 +71,7 @@ export class UserRegisteryComponent implements OnInit {
       name: this.userFrom.controls.userName.value,
       email: this.userFrom.controls.email.value,
       password: this.userFrom.controls.password.value,
-      role: this.userFrom.controls.role.value      
+      role: this.userFrom.controls.role.value
     }
 
     this.adminService.createUser(userDetails).subscribe((res) => {
@@ -71,11 +81,11 @@ export class UserRegisteryComponent implements OnInit {
     })
     //const userDetails = new User()
 
-      
+
   }
 
-  onChange(event) { 
-    let file = event.target.files[0]; 
+  onChange(event) {
+    let file = event.target.files[0];
     this.formData.append("workshop", file);
   }
 
@@ -89,7 +99,7 @@ export class UserRegisteryComponent implements OnInit {
   getAllUsers() {
     this.userList;
     this.adminService.getAllUsers().subscribe((res) => {
-      if(res.length) {
+      if (res.length) {
         this.userList = res;
       } else {
         this.notificationService.openErrorSnackBar("No Users Found");
@@ -100,7 +110,7 @@ export class UserRegisteryComponent implements OnInit {
       this.notificationService.openErrorSnackBar("Error Fetching Data");
     })
 
-  } 
+  }
 
   editUser(user: User) {
     this.isEditMode = true;
@@ -117,7 +127,7 @@ export class UserRegisteryComponent implements OnInit {
       _id: this.selectedUser._id,
       name: this.userFrom.controls.userName.value,
       email: this.userFrom.controls.email.value,
-      role: this.userFrom.controls.role.value      
+      role: this.userFrom.controls.role.value
     };
 
     this.adminService.updateUser(updateDetails).subscribe((res) => {
