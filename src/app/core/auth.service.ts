@@ -124,7 +124,7 @@ export class AuthService {
         }
 
         const loadedUser = new User(userData.name, userData.email, userData.bookingId,
-            userData.role, userData.ticketId, userData._token);
+            userData.role, userData.ticketId, userData._token, userData.id);
         if(loadedUser._token) {
             this.user.next(loadedUser);
         }

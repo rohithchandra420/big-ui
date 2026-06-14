@@ -1,0 +1,68 @@
+<div class="profile-container">
+
+  <mat-card class="profile-card">
+
+    <!-- Header -->
+    <div class="profile-header">
+
+      <!-- Profile Image -->
+      <div class="profile-img-wrapper">
+        <img [src]="profilePreview" class="profile-img">
+        <input type="file" *ngIf="isEditMode" (change)="onFileSelect($event)" />
+      </div>
+
+      <!-- Title + Button -->
+      <div class="profile-title">
+        <h2>My Profile</h2>
+        <button mat-raised-button color="primary" (click)="toggleEdit()">
+          {{ isEditMode ? 'Cancel' : 'Edit' }}
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Form -->
+    <form [formGroup]="profileForm" class="profile-form">
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput formControlName="name" [readonly]="!isEditMode">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Phone</mat-label>
+          <input matInput formControlName="phone" [readonly]="!isEditMode">
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-error *ngIf="profileForm.get('email')?.hasError('required')">
+            Email is required
+          </mat-error>
+          <mat-error *ngIf="profileForm.get('email')?.hasError('email')">
+            Invalid email
+          </mat-error>
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" [readonly]="!isEditMode">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Role</mat-label>
+          <input matInput formControlName="role" readonly>
+        </mat-form-field>
+      </div>
+
+      <!-- Save Button -->
+      <div class="actions" *ngIf="isEditMode">
+        <button mat-raised-button color="accent" (click)="saveProfile()">
+          Save Changes
+        </button>
+      </div>
+
+    </form>
+
+  </mat-card>
+
+</div>

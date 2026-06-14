@@ -18,6 +18,7 @@ import { UserRegisteryComponent } from "../admin/user-registery/user-registery.c
 import { TicketRegisteryComponent } from "../admin/ticket-registery/ticket-registery.component";
 import { CalendarComponent } from "../calendar/calendar.component";
 import { AuthPermissionGuard } from "./auth-permission-guard.service";
+import { ProfileComponent } from "../profile/profile.component";
 
 // const profileGuard: CanActivateFn = (
 //     route: ActivatedRouteSnapshot,
@@ -62,6 +63,7 @@ const appRoutes: Routes = [
     // },
     //{ path: 'home', redirectTo: '', pathMatch: 'full'},    
     { path: 'dashboard', redirectTo: '',  pathMatch: 'full'},
+    { path: 'profile', canActivate:[AuthGuard] ,component: ProfileComponent },
     { path: 'register', canActivate:[AuthGuard] ,component: RegistrationComponent },
     { path: 'tickets', canActivate:[AuthGuard] ,component: TicketsComponent },
     { path: 'calendar', canActivate:[AuthGuard, AuthPermissionGuard] ,component: CalendarComponent },

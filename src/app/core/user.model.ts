@@ -6,8 +6,9 @@ export class User {
     public _token: string;
     public role: string;
     public _id?: string;
+    public phone?: string;
 
-    constructor(name: string, email: string, bookingId: string, role: string, ticketId: string, token: string, _id?: string, ) {
+    constructor(name: string, email: string, bookingId: string, role: string, ticketId: string, token: string, _id?: string, phone?: string ) {
         this.name = name;
         this.email = email;
         this.bookingId = bookingId;
@@ -15,6 +16,7 @@ export class User {
         this.ticketId = ticketId;
         this._token = token;
         this._id = _id;
+        this.phone = phone;
     }
 
     // get token() {
