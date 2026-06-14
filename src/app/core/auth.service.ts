@@ -77,11 +77,12 @@ export class AuthService {
     }
 
     logIn(loginDetails) {
-        this.http.post<{user:User}>(this.url + "/login", loginDetails)
+        this.http.post<{user: any}>(this.url + "/login", loginDetails)
             .pipe(catchError(this.handleError), tap(resData => {
+                const roleName = resData.user.role?.name || resData.user.role;
                 this.handleAuthentication(resData.user._id,
                     resData.user.name, resData.user.email,
-                    resData.user.bookingId, resData.user.role,
+                    resData.user.bookingId, roleName,
                     resData.user.ticketId);
             }))
             .subscribe(response => {

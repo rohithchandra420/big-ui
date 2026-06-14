@@ -21,7 +21,6 @@ export class ProfileService {
   }
 
   getProfileDetails(userId: string) {
-    debugger;
     return this.http.get<User>(this.url + "/user/profile", {
       params: new HttpParams().set('id', userId),
       responseType: 'json'

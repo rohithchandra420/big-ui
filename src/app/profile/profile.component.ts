@@ -62,7 +62,6 @@ export class ProfileComponent implements OnInit {
           email: user.email,
           role: user.role
         });
-        debugger;
       },
       error: (err) => {
         console.error(err);
