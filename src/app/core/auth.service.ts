@@ -77,65 +77,52 @@ export class AuthService {
     }
 
     logIn(loginDetails) {
-        this.http.post<{user:User, token:string}>(this.url + "/login", loginDetails)
+        this.http.post<{user:User}>(this.url + "/login", loginDetails)
             .pipe(catchError(this.handleError), tap(resData => {
-                this.handleAuthentication(resData.user._id, 
-                    resData.user.name, resData.user.email, 
-                    resData.user.bookingId, resData.user.role, 
-                    resData.user.ticketId, resData.token);
+                this.handleAuthentication(resData.user._id,
+                    resData.user.name, resData.user.email,
+                    resData.user.bookingId, resData.user.role,
+                    resData.user.ticketId);
             }))
             .subscribe(response => {
                 this.loggedIn = true;
-                //this.user = response;
-                //this.user.next(response.user)
-                // setTimeout(() => {
-                //     debugger;
                 localStorage.setItem("IsLoggedIn", 'true');
-                //}, 2000);
-
-                this.userLoggedInEmitter.next('response.')
-                //this.userLoggedInEmitter.next('AdminRole');
+                this.userLoggedInEmitter.next('response.');
                 this.notificationService.openSucessSnackBar("Login Successful");
                 this.router.navigate(['']);
             }, error => {
-                debugger;
                 this.loggedIn = false;
                 this.notificationService.openErrorSnackBar(error);
                 this.loginErrorMessageEmitter.next(error);
             });
-
-
-
     }
 
     autoLogin() {
         const userData: {
-            id: string, 
+            id: string,
             name: string,
-            email: string, 
+            email: string,
             bookingId: string,
             role: string,
             ticketId: string,
-            _token: string
         } = JSON.parse(localStorage.getItem('userData'));
 
-        if(!userData) {
+        if (!userData) {
             return;
         }
 
         const loadedUser = new User(userData.name, userData.email, userData.bookingId,
-            userData.role, userData.ticketId, userData._token, userData.id);
-        if(loadedUser._token) {
-            this.user.next(loadedUser);
-        }
+            userData.role, userData.ticketId, '', userData.id);
+        this.user.next(loadedUser);
     }
 
     logOut() {
+        this.http.post(this.url + '/user/logout', {}).subscribe();
         this.loggedIn = false;
-        localStorage.setItem("IsLoggedIn", 'false');
+        localStorage.removeItem('IsLoggedIn');
         localStorage.removeItem('userData');
         this.user.next(null);
-        this.router.navigate(['/dashboard'])
+        this.router.navigate(['/login']);
     }
 
     private handleError(errorRes: HttpErrorResponse) {
@@ -146,8 +133,8 @@ export class AuthService {
         return throwError(() => new Error(errorMessage));
     }
 
-    private handleAuthentication(id, name, email, bookingId, role, ticketId, token) {
-        const user = new User(name, email, '', role, '', token, id);
+    private handleAuthentication(id, name, email, bookingId, role, ticketId) {
+        const user = new User(name, email, '', role, '', '', id);
         this.user.next(user);
         localStorage.setItem('userData', JSON.stringify(user));
     }

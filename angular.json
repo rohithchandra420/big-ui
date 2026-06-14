@@ -82,7 +82,8 @@
               "browserTarget": "big-app-ui:build:production"
             },
             "development": {
-              "browserTarget": "big-app-ui:build:development"
+              "browserTarget": "big-app-ui:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"
