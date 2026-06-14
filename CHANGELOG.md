@@ -9,6 +9,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.1.1] - 2026-06-14
+
+### Fixed
+- `auth.service.ts` — extract `role.name` from populated role object returned by login API; previously `user.role` was an ObjectId string, breaking `RolePermissions` lookup
+- `header.component.html` — admin menu condition corrected from `'admin'` to `'ADMIN'` to match actual role names from DB
+- Removed leftover `debugger` statements from `profile.component.ts` and `profile.service.ts`
+
+---
+
 ## [1.1.0] - 2026-06-14
 
 ### Security
