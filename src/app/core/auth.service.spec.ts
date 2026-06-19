@@ -120,14 +120,19 @@ describe('AuthService', () => {
     });
 
     describe('hasPermission', () => {
-        it('returns true for GOD role (all permissions)', () => {
-            const user = new User('Test', 'a@b.com', '', 'GOD', '', '', '123');
+        it('returns true for DEV role (all permissions)', () => {
+            const user = new User('Test', 'a@b.com', '', 'DEV', '', '', '123');
             expect(service.hasPermission(user, 'any:permission')).toBeTrue();
         });
 
         it('returns true for ADMIN role with a valid permission', () => {
-            const user = new User('Test', 'a@b.com', '', 'ADMIN', '', '', '123');
-            expect(service.hasPermission(user, 'users:read')).toBeTrue();
+            const user = new User('Test', 'a@b.com', '', 'ADMIN', '', '', '123', undefined, [], ['general:read']);
+            expect(service.hasPermission(user, 'general:read')).toBeTrue();
+        });
+
+        it('returns true when user has write and read is required (tiered)', () => {
+            const user = new User('Test', 'a@b.com', '', 'ADMIN', '', '', '123', undefined, [], ['general:write']);
+            expect(service.hasPermission(user, 'general:read')).toBeTrue();
         });
 
         it('returns false for a permission the role does not have', () => {

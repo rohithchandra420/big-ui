@@ -4,24 +4,19 @@
 
     <!-- Header -->
     <div class="profile-header">
-
-      <!-- Profile Image -->
       <div class="profile-img-wrapper">
         <img [src]="profilePreview" class="profile-img">
         <input type="file" *ngIf="isEditMode" (change)="onFileSelect($event)" />
       </div>
-
-      <!-- Title + Button -->
       <div class="profile-title">
         <h2>My Profile</h2>
         <button mat-raised-button color="primary" (click)="toggleEdit()">
           {{ isEditMode ? 'Cancel' : 'Edit' }}
         </button>
       </div>
-
     </div>
 
-    <!-- Form -->
+    <!-- Basic Info Form -->
     <form [formGroup]="profileForm" class="profile-form">
 
       <div class="form-row">
@@ -38,13 +33,9 @@
 
       <div class="form-row">
         <mat-form-field appearance="outline">
-          <mat-error *ngIf="profileForm.get('email')?.hasError('required')">
-            Email is required
-          </mat-error>
-          <mat-error *ngIf="profileForm.get('email')?.hasError('email')">
-            Invalid email
-          </mat-error>
           <mat-label>Email</mat-label>
+          <mat-error *ngIf="profileForm.get('email')?.hasError('required')">Email is required</mat-error>
+          <mat-error *ngIf="profileForm.get('email')?.hasError('email')">Invalid email</mat-error>
           <input matInput formControlName="email" [readonly]="!isEditMode">
         </mat-form-field>
 
@@ -54,14 +45,74 @@
         </mat-form-field>
       </div>
 
-      <!-- Save Button -->
-      <div class="actions" *ngIf="isEditMode">
-        <button mat-raised-button color="accent" (click)="saveProfile()">
-          Save Changes
-        </button>
+    </form>
+
+    <!-- Department Access Section -->
+    <div class="dept-matrix-section mt-3">
+      <h3>Department Access</h3>
+
+      <!-- DEV / DIR: full access badge -->
+      <div *ngIf="isSuperuser" class="alert alert-success">
+        <strong>Full Access</strong> — No department restrictions apply to this role.
       </div>
 
-    </form>
+      <!-- ADMIN, TL, VOL: department matrix -->
+      <div *ngIf="!isSuperuser">
+        <p *ngIf="deptMatrix.length === 0" class="text-muted">No departments assigned.</p>
+
+        <table *ngIf="deptMatrix.length > 0" class="table table-bordered dept-table">
+          <thead>
+            <tr>
+              <th>Department</th>
+              <th>Access</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of deptMatrix">
+              <td>{{ entry.deptName }}</td>
+              <td>
+                <!-- Read-only view -->
+                <ng-container *ngIf="!isEditMode || !canEditMatrix">
+                  <span class="badge"
+                    [ngClass]="{'badge-success': entry.currentAccess.includes('write'), 'badge-secondary': !entry.currentAccess.includes('write')}">
+                    {{ entry.currentAccess.includes('write') ? 'Read + Write' : 'Read Only' }}
+                  </span>
+                </ng-container>
+
+                <!-- Editable radio buttons -->
+                <ng-container *ngIf="isEditMode && canEditMatrix">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio"
+                      [name]="'access_' + entry.deptId"
+                      [id]="'read_' + entry.deptId"
+                      value="read"
+                      [checked]="entry.editAccess === 'read'"
+                      (change)="setDeptAccess(entry.deptId, 'read')">
+                    <label class="form-check-label" [for]="'read_' + entry.deptId">Read Only</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio"
+                      [name]="'access_' + entry.deptId"
+                      [id]="'rw_' + entry.deptId"
+                      value="read_write"
+                      [checked]="entry.editAccess === 'read_write'"
+                      (change)="setDeptAccess(entry.deptId, 'read_write')">
+                    <label class="form-check-label" [for]="'rw_' + entry.deptId">Read + Write</label>
+                  </div>
+                </ng-container>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Save Button -->
+    <div class="actions mt-3" *ngIf="isEditMode">
+      <button mat-raised-button color="accent" (click)="saveProfile()">
+        Save Changes
+      </button>
+    </div>
 
   </mat-card>
 

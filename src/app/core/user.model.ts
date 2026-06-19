@@ -1,3 +1,18 @@
+export interface DepartmentAccess {
+    department: { _id: string; name: string };
+    access: ('read' | 'write')[];
+}
+
+export interface UserProfile {
+    _id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    role: { _id: string; name: string };
+    departments: DepartmentAccess[];
+    permissions: string[];
+}
+
 export class User {
     public name: string;
     public email: string;
@@ -7,8 +22,14 @@ export class User {
     public role: string;
     public _id?: string;
     public phone?: string;
+    public departments?: DepartmentAccess[];
+    public permissions?: string[];
 
-    constructor(name: string, email: string, bookingId: string, role: string, ticketId: string, token: string, _id?: string, phone?: string ) {
+    constructor(
+        name: string, email: string, bookingId: string, role: string,
+        ticketId: string, token: string, _id?: string, phone?: string,
+        departments?: DepartmentAccess[], permissions?: string[]
+    ) {
         this.name = name;
         this.email = email;
         this.bookingId = bookingId;
@@ -17,31 +38,7 @@ export class User {
         this._token = token;
         this._id = _id;
         this.phone = phone;
+        this.departments = departments || [];
+        this.permissions = permissions || [];
     }
-
-    // get token() {
-    //     return this._token;
-    // }
 }
-
-export const RolePermissions: Record<string, string[]> = {
-  GOD: ["*"],
-
-  ADMIN: [
-    "event:read", "event:write",
-    "teams:read", "teams:write",
-    "users:read", "users:write",
-  ],
-
-  TL: [
-    "team:self:read",
-    "team:self:write",
-    "volunteers:self:read",
-    "volunteers:self:write",
-  ],
-
-  VOLUNTEER: [
-    "self:read",
-    "team:read",
-  ]
-};

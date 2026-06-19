@@ -1,7 +1,7 @@
 //Service Used to call API to check the login Service at the backend
 
 import { Injectable } from "@angular/core";
-import { RolePermissions, User } from "./user.model";
+import { DepartmentAccess, User } from "./user.model";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { BehaviorSubject, Subject, catchError, pipe, tap, throwError } from "rxjs";
 import { Router } from "@angular/router";
@@ -14,7 +14,7 @@ export class AuthService {
     url = environment.URL;
 
 
-    user = new BehaviorSubject<User>(null);
+    user = new BehaviorSubject<User | null>(null);
 
     userLoggedInEmitter = new Subject<string>();
     loginErrorMessageEmitter = new Subject<string>();
@@ -22,25 +22,32 @@ export class AuthService {
     constructor(private router: Router, private http: HttpClient, private notificationService: NotificationService) {//private user1: User) {
     }
 
+    private readonly permTiers = ['read', 'write', 'manage'];
+
     getUserPermissions(user: User): string[] | 'ALL' {
-    const perms = RolePermissions[user.role] || [];
+        if (['DEV', 'DIR'].includes(user.role)) return 'ALL';
+        return user.permissions || [];
+    }
 
-    if (perms.includes('*')) return 'ALL';
-    return perms;
-  }
+    hasPermission(user: User, required: string): boolean {
+        const perms = this.getUserPermissions(user);
+        if (perms === 'ALL') return true;
+        const [reqModule, reqAction] = required.split(':');
+        const reqLevel = this.permTiers.indexOf(reqAction);
+        return perms.some(p => {
+            const [pModule, pAction] = p.split(':');
+            return pModule === reqModule && this.permTiers.indexOf(pAction) >= reqLevel;
+        });
+    }
 
-  hasPermission(user: User, permission: string): boolean {
-    const perms = this.getUserPermissions(user);
-
-    console.log("this.user : ", user);    
-    console.log("perms : ", perms);
-
-    if (perms === 'ALL') return true;
-    return perms.includes(permission);
-  }
+    hasDepartmentAccess(user: User, deptName: string): boolean {
+        return (user.departments || []).some(d =>
+            d.department?.name?.toLowerCase() === deptName.toLowerCase()
+        );
+    }
 
     get currentUser$() { return this.user.asObservable(); }
-    get currentUser(): User { return this.user.value; }
+    get currentUser(): User | null { return this.user.value; }
 
     isAuthenticated() {
         // debugger;
@@ -83,7 +90,8 @@ export class AuthService {
                 this.handleAuthentication(resData.user._id,
                     resData.user.name, resData.user.email,
                     resData.user.bookingId, roleName,
-                    resData.user.ticketId);
+                    resData.user.ticketId, resData.user.departments || [],
+                    resData.user.permissions || []);
             }))
             .subscribe(response => {
                 this.loggedIn = true;
@@ -99,21 +107,27 @@ export class AuthService {
     }
 
     autoLogin() {
+        const raw = localStorage.getItem('userData');
+        if (!raw) return;
+
         const userData: {
-            id: string,
+            _id: string,
             name: string,
             email: string,
             bookingId: string,
             role: string,
             ticketId: string,
-        } = JSON.parse(localStorage.getItem('userData'));
+            departments: DepartmentAccess[],
+            permissions: string[]
+        } = JSON.parse(raw);
 
-        if (!userData) {
-            return;
-        }
+        if (!userData) return;
 
-        const loadedUser = new User(userData.name, userData.email, userData.bookingId,
-            userData.role, userData.ticketId, '', userData.id);
+        const loadedUser = new User(
+            userData.name, userData.email, userData.bookingId,
+            userData.role, userData.ticketId, '', userData._id,
+            undefined, userData.departments || [], userData.permissions || []
+        );
         this.user.next(loadedUser);
     }
 
@@ -134,8 +148,8 @@ export class AuthService {
         return throwError(() => new Error(errorMessage));
     }
 
-    private handleAuthentication(id, name, email, bookingId, role, ticketId) {
-        const user = new User(name, email, '', role, '', '', id);
+    private handleAuthentication(id: string, name: string, email: string, bookingId: string, role: string, ticketId: string, departments: DepartmentAccess[] = [], permissions: string[] = []) {
+        const user = new User(name, email, '', role, '', '', id, undefined, departments, permissions);
         this.user.next(user);
         localStorage.setItem('userData', JSON.stringify(user));
     }

@@ -93,7 +93,7 @@
 
     <div class="mso-nav-long">
       <a mat-button routerLink="/dashboard" *ngIf="isAuthenticated">Dashboard</a>
-      <a mat-button routerLink="/register" *ngIf="isAuthenticated">Register</a>
+      <a mat-button routerLink="/box-office" *ngIf="isAuthenticated && canSeeBoxOffice">Box Office</a>
       <a mat-button routerLink="/tickets" *ngIf="isAuthenticated">Tickets</a>
       <a mat-button routerLink="/accomodation" *ngIf="isAuthenticated">Tenting</a>
       <a mat-button routerLink="/calendar" *ngIf="isAuthenticated">Calendar</a>
@@ -150,7 +150,7 @@
   <!-- MOBILE MENU CONTENT -->
   <mat-menu #menu="matMenu">
     <button mat-menu-item routerLink="/dashboard" *ngIf="isAuthenticated">Dashboard</button>
-    <button mat-menu-item routerLink="/register" *ngIf="isAuthenticated">Register</button>
+    <button mat-menu-item routerLink="/box-office" *ngIf="isAuthenticated && canSeeBoxOffice">Box Office</button>
     <button mat-menu-item routerLink="/tickets" *ngIf="isAuthenticated">Tickets</button>
     <button mat-menu-item routerLink="/accomodation" *ngIf="isAuthenticated">Tenting</button>
     <button mat-menu-item routerLink="/calendar" *ngIf="isAuthenticated">Calendar</button>
