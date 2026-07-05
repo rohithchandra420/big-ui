@@ -26,6 +26,17 @@ export class HeaderComponent implements OnInit, OnDestroy {
                this.authService.hasDepartmentAccess(this.currentUser, 'Box Office');
     }
 
+    readonly adminMenuRoles = ['DEV', 'DIR', 'ADMIN', 'TL'];
+    readonly ticketManagerRoles = ['DEV', 'DIR', 'ADMIN'];
+
+    get canSeeAdminMenu(): boolean {
+        return this.adminMenuRoles.includes(this.userRole);
+    }
+
+    get canSeeTicketRegistry(): boolean {
+        return this.ticketManagerRoles.includes(this.userRole);
+    }
+
     ngOnInit() {
         this.userSub = this.authService.user.subscribe(user => {
             this.currentUser = user;

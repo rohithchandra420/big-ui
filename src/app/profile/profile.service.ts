@@ -30,8 +30,4 @@ export class ProfileService {
   updateProfile(userId: string, updatedData: any) {
     return this.http.patch<any>(this.url + "/updateUser", { _id: userId, ...updatedData });
   }
-
-  updateDepartmentAccess(payload: { userId: string; departmentId: string; access: string[] }) {
-    return this.http.patch<any>(this.url + '/updateDepartmentAccess', payload);
-  }
 }

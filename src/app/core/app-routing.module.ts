@@ -69,9 +69,9 @@ const appRoutes: Routes = [
     { path: 'calendar', canActivate:[AuthGuard] ,component: CalendarComponent },
     { path: 'tickets/details/:id', component: TicketDetailsComponent },
     { path: 'accomodation', canActivate:[AuthGuard] ,component: AccomodationComponent },
-    { path: 'admin', canActivate:[AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: AdminComponent, children: [
-        { path: 'user', component: UserRegisteryComponent },
-        { path: 'tickets', component: TicketRegisteryComponent }
+    { path: 'admin', canActivate:[AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: AdminComponent, children: [
+        { path: 'user', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: UserRegisteryComponent },
+        { path: 'tickets', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: TicketRegisteryComponent }
     ]},
     { path: 'error', component: ErrorPageComponent, data: {message: 'Page Under Construction'}},
     //{ path: '**', redirectTo: 'error' },

@@ -5,11 +5,10 @@ import { Subscription, lastValueFrom } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 import { NotificationService } from '../core/notification.service';
 
-interface DeptMatrixEntry {
-  deptId: string;
-  deptName: string;
-  currentAccess: string[];
-  editAccess: 'read' | 'read_write';
+interface PermissionEntry {
+  moduleKey: string;
+  displayName: string;
+  level: 'read' | 'write' | 'manage';
 }
 
 @Component({
@@ -27,16 +26,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
   profileData: any;
   profilePreview: string = 'assets/default-user.png';
 
-  deptMatrix: DeptMatrixEntry[] = [];
+  memberDepartments: string[] = [];
+  permissionEntries: PermissionEntry[] = [];
   readonly superuserRoles = ['DEV', 'DIR'];
-  readonly elevatedRoles = ['DEV', 'DIR', 'ADMIN'];
 
   get isSuperuser(): boolean {
     return this.superuserRoles.includes(this.loggedInRole);
-  }
-
-  get canEditMatrix(): boolean {
-    return this.elevatedRoles.includes(this.loggedInRole) || this.loggedInRole === 'TL';
   }
 
   constructor(
@@ -72,27 +67,24 @@ export class ProfileComponent implements OnInit, OnDestroy {
           email: user.email,
           role: (user.role as any)?.name || user.role
         });
-        this.buildDeptMatrix(user);
+        this.buildMemberDepartments(user);
+        this.buildPermissionEntries(user);
       },
       error: (err) => console.error(err)
     });
   }
 
-  private buildDeptMatrix(user: any) {
-    this.deptMatrix = (user.departments || []).map((da: any) => {
-      const hasWrite = da.access?.includes('write');
-      return {
-        deptId: da.department?._id || da.department,
-        deptName: da.department?.name || da.department,
-        currentAccess: da.access || ['read'],
-        editAccess: hasWrite ? 'read_write' : 'read'
-      };
-    });
+  private buildMemberDepartments(user: any) {
+    this.memberDepartments = (user.departments || []).map((da: any) => da.department?.name || da.department);
   }
 
-  setDeptAccess(deptId: string, access: 'read' | 'read_write') {
-    const entry = this.deptMatrix.find(d => d.deptId === deptId);
-    if (entry) entry.editAccess = access;
+  private buildPermissionEntries(user: any) {
+    const map = this.authService.getEffectivePermissionMap(user);
+    this.permissionEntries = Object.entries(map).map(([moduleKey, level]) => ({
+      moduleKey,
+      displayName: moduleKey.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+      level
+    }));
   }
 
   toggleEdit() {
@@ -113,35 +105,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
 
     const payload = this.profileForm.getRawValue();
-    const saves: Promise<void>[] = [];
 
-    // Save basic profile fields
-    saves.push(
-      lastValueFrom(this.profileService.updateProfile(this.loggedInUser._id, {
-        name: payload.name,
-        email: payload.email,
-        roleName: payload.role
-      })).then(() => {})
-    );
-
-    // Save changed department access entries
-    if (this.canEditMatrix) {
-      this.deptMatrix.forEach(entry => {
-        const newAccess = entry.editAccess === 'read_write' ? ['read', 'write'] : ['read'];
-        const changed = JSON.stringify(entry.currentAccess.sort()) !== JSON.stringify(newAccess.sort());
-        if (changed) {
-          saves.push(
-            lastValueFrom(this.profileService.updateDepartmentAccess({
-              userId: this.loggedInUser._id,
-              departmentId: entry.deptId,
-              access: newAccess
-            })).then(() => {})
-          );
-        }
-      });
-    }
-
-    Promise.all(saves).then(() => {
+    lastValueFrom(this.profileService.updateProfile(this.loggedInUser._id, {
+      name: payload.name,
+      email: payload.email,
+      roleName: payload.role
+    })).then(() => {
       this.notificationService.openSucessSnackBar('Profile saved successfully');
       this.isEditMode = false;
       this.profileForm.disable();

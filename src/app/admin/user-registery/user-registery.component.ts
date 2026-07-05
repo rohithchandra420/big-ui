@@ -31,10 +31,24 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
 
   userFrom: FormGroup;
 
-  readonly managerRoles = ['DEV', 'DIR', 'ADMIN'];
+  readonly topLevelRoles = ['DEV', 'DIR', 'ADMIN'];
 
-  get canManageUsers(): boolean {
-    return this.managerRoles.includes(this.userRole);
+  // DEV/DIR/ADMIN: full platform-wide create + edit access
+  get isTopLevel(): boolean {
+    return this.topLevelRoles.includes(this.userRole);
+  }
+
+  // TL: view/edit only, scoped to their own department (enforced server-side too)
+  get isTL(): boolean {
+    return this.userRole === 'TL';
+  }
+
+  get canCreateUsers(): boolean {
+    return this.isTopLevel;
+  }
+
+  get canViewPage(): boolean {
+    return this.isTopLevel || this.isTL;
   }
 
   constructor(
@@ -47,7 +61,8 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
       email: new FormControl(null, [Validators.required, Validators.email]),
       password: new FormControl(null, Validators.required),
       confirmPassword: new FormControl(null, Validators.required),
-      role: new FormControl('', Validators.required)
+      role: new FormControl('', Validators.required),
+      homeDepartment: new FormControl('', Validators.required)
     });
   }
 
@@ -55,9 +70,16 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     this.userSub = this.authService.user.subscribe(user => {
       this.user = user;
       this.userRole = user?.role || '';
+
+      if (this.isTopLevel) {
+        this.loadRoles();
+        this.loadDepartments();
+      } else if (this.isTL) {
+        this.setupTLDepartmentContext();
+        this.userFrom.get('role')?.disable();
+        this.userFrom.get('homeDepartment')?.disable();
+      }
     });
-    this.loadRoles();
-    this.loadDepartments();
     this.getAllUsers();
   }
 
@@ -87,39 +109,45 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     });
   }
 
+  // TL doesn't have access to /admin/departments — their one department is already
+  // known from their own logged-in user object, so build the chip/dropdown list from that.
+  private setupTLDepartmentContext() {
+    const ownDept = this.user?.departments?.[0]?.department;
+    this.departments = ownDept && typeof ownDept !== 'string'
+      ? [{ _id: ownDept._id, name: ownDept.name }]
+      : [];
+    this.deptSelections = {};
+    this.departments.forEach(d => { this.deptSelections[d._id] = 'none'; });
+  }
+
   setDeptLevel(deptId: string, level: PermLevel) {
     // Clicking the active level deselects the department
     this.deptSelections[deptId] = this.deptSelections[deptId] === level ? 'none' : level;
   }
 
-  private deptNameToKey(name: string): string {
-    return name.toLowerCase().replace(/\s+/g, '-');
-  }
-
-  private buildPayload(): { permissions: string[]; departmentIds: string[] } {
+  private buildPermissions(): string[] {
     const permissions: string[] = [];
-    const departmentIds: string[] = [];
     Object.entries(this.deptSelections).forEach(([deptId, level]) => {
       if (level !== 'none') {
-        departmentIds.push(deptId);
         const dept = this.departments.find(d => d._id === deptId);
-        if (dept) permissions.push(`${this.deptNameToKey(dept.name)}:${level}`);
+        if (dept) permissions.push(`${this.authService.deptNameToKey(dept.name)}:${level}`);
       }
     });
-    return { permissions, departmentIds };
+    return permissions;
   }
 
   onSubmit() {
-    if (!this.canManageUsers || this.userFrom.invalid) return;
+    if (!this.canCreateUsers || this.userFrom.invalid) return;
 
-    const { permissions, departmentIds } = this.buildPayload();
+    const permissions = this.buildPermissions();
+    const homeDepartmentId = this.userFrom.value.homeDepartment;
 
     const userDetails = {
       name: this.userFrom.value.userName,
       email: this.userFrom.value.email,
       password: this.userFrom.value.password,
       roleName: this.userFrom.value.role,
-      departmentIds,
+      departmentIds: homeDepartmentId ? [homeDepartmentId] : [],
       permissions
     };
 
@@ -132,7 +160,34 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     });
   }
 
+  canEditUser(user: any): boolean {
+    if (this.isTopLevel) return true;
+    if (!this.isTL) return false;
+    const ownDeptId = this.user?.departments?.[0]?.department?._id;
+    const userDept = user.departments?.[0]?.department;
+    const userDeptId = userDept && typeof userDept !== 'string' ? userDept._id : userDept;
+    return !!ownDeptId && ownDeptId === userDeptId;
+  }
+
+  getAccessLabel(user: any): string {
+    const homeDept = user.departments?.[0]?.department;
+    const deptName = homeDept && typeof homeDept !== 'string' ? homeDept.name : null;
+    if (!deptName) return '—';
+
+    const key = this.authService.deptNameToKey(deptName);
+    const roleName = user.role?.name || user.role || '';
+    const map = this.authService.getEffectivePermissionMap({
+      role: roleName,
+      permissions: user.permissions,
+      departments: user.departments
+    } as any);
+    const level = map[key];
+    return level ? level.charAt(0).toUpperCase() + level.slice(1) : 'Read Only';
+  }
+
   editUser(user: any) {
+    if (!this.canEditUser(user)) return;
+
     this.isEditMode = true;
     this.selectedUser = user;
     this.userFrom.controls['password'].disable();
@@ -141,14 +196,26 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     this.userFrom.get('email')?.setValue(user.email);
     this.userFrom.get('role')?.setValue(user.role?.name || user.role);
 
-    // Reset all to none, then restore from user.permissions strings
+    const userDept = user.departments?.[0]?.department;
+    const userDeptId = userDept && typeof userDept !== 'string' ? userDept._id : userDept;
+    this.userFrom.get('homeDepartment')?.setValue(userDeptId || '');
+
+    if (!this.isTopLevel) {
+      // TL: role and home department are locked, only their own department's
+      // permission chip (already the sole row in `departments`) is editable
+      this.roles = [{ _id: '', name: user.role?.name || user.role || '' }];
+      this.userFrom.get('role')?.disable();
+      this.userFrom.get('homeDepartment')?.disable();
+    }
+
+    // Reset all chip rows to none, then restore from user.permissions strings
     this.departments.forEach(d => {
       this.deptSelections[d._id] = 'none';
     });
     if (user.permissions) {
       user.permissions.forEach((perm: string) => {
         const [module, action] = perm.split(':');
-        const dept = this.departments.find(d => this.deptNameToKey(d.name) === module);
+        const dept = this.departments.find(d => this.authService.deptNameToKey(d.name) === module);
         if (dept && this.permLevels.includes(action as PermLevel)) {
           this.deptSelections[dept._id] = action as PermLevel;
         }
@@ -157,19 +224,22 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
   }
 
   updateUser() {
-    if (!this.canManageUsers) return;
+    if (!this.isEditMode) return;
 
-    const { permissions, departmentIds } = this.buildPayload();
-    const departments = departmentIds.map(id => ({ departmentId: id, access: ['read'] }));
+    const permissions = this.buildPermissions();
+    const raw = this.userFrom.getRawValue();
 
-    const updateDetails = {
+    const updateDetails: any = {
       _id: this.selectedUser._id,
-      name: this.userFrom.value.userName,
-      email: this.userFrom.value.email,
-      roleName: this.userFrom.value.role,
-      departments,
+      name: raw.userName,
+      email: raw.email,
+      roleName: raw.role,
       permissions
     };
+
+    if (this.isTopLevel) {
+      updateDetails.departments = raw.homeDepartment ? [{ departmentId: raw.homeDepartment, access: ['read'] }] : [];
+    }
 
     this.adminService.updateUser(updateDetails).subscribe(() => {
       this.getAllUsers();
@@ -182,10 +252,17 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
 
   switchMode() {
     this.isEditMode = false;
+    this.userFrom.reset();
     this.userFrom.controls['password'].enable();
     this.userFrom.controls['confirmPassword'].enable();
-    this.userFrom.reset();
-    this.loadDepartments();
+
+    if (this.isTopLevel) {
+      this.loadDepartments();
+    } else if (this.isTL) {
+      this.setupTLDepartmentContext();
+      this.userFrom.get('role')?.disable();
+      this.userFrom.get('homeDepartment')?.disable();
+    }
   }
 
   getAllUsers() {

@@ -29,15 +29,38 @@ export class AuthService {
         return user.permissions || [];
     }
 
-    hasPermission(user: User, required: string): boolean {
+    deptNameToKey(name: string): string {
+        return (name || '').toLowerCase().replace(/\s+/g, '-');
+    }
+
+    // Effective module -> best tier, including a TL's automatic 'manage' over their own department(s)
+    getEffectivePermissionMap(user: User): { [module: string]: 'read' | 'write' | 'manage' } {
+        const map: { [module: string]: 'read' | 'write' | 'manage' } = {};
         const perms = this.getUserPermissions(user);
-        if (perms === 'ALL') return true;
+        if (perms !== 'ALL') {
+            perms.forEach(p => {
+                const [mod, action] = p.split(':');
+                if (!mod || !this.permTiers.includes(action)) return;
+                if (!map[mod] || this.permTiers.indexOf(action) > this.permTiers.indexOf(map[mod])) {
+                    map[mod] = action as 'read' | 'write' | 'manage';
+                }
+            });
+        }
+        if (user.role === 'TL') {
+            (user.departments || []).forEach(d => {
+                const key = this.deptNameToKey(d.department?.name);
+                if (key) map[key] = 'manage';
+            });
+        }
+        return map;
+    }
+
+    hasPermission(user: User, required: string): boolean {
+        if (this.getUserPermissions(user) === 'ALL') return true;
         const [reqModule, reqAction] = required.split(':');
         const reqLevel = this.permTiers.indexOf(reqAction);
-        return perms.some(p => {
-            const [pModule, pAction] = p.split(':');
-            return pModule === reqModule && this.permTiers.indexOf(pAction) >= reqLevel;
-        });
+        const level = this.getEffectivePermissionMap(user)[reqModule];
+        return level !== undefined && this.permTiers.indexOf(level) >= reqLevel;
     }
 
     hasDepartmentAccess(user: User, deptName: string): boolean {

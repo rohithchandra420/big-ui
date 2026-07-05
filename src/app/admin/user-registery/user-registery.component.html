@@ -3,11 +3,11 @@
         <h2>{{ isEditMode ? 'Edit' : 'Register' }} User:</h2>
     </div>
 
-    <div *ngIf="!canManageUsers" class="alert alert-warning">
+    <div *ngIf="!canViewPage" class="alert alert-warning">
         You do not have permission to manage users.
     </div>
 
-    <form *ngIf="canManageUsers" [formGroup]="userFrom" (ngSubmit)="onSubmit()">
+    <form *ngIf="canCreateUsers || isEditMode" [formGroup]="userFrom" (ngSubmit)="onSubmit()">
         <div class="form-group">
             <label for="userName">Name:</label>
             <input type="text" id="userName" formControlName="userName" class="form-control">
@@ -33,7 +33,15 @@
             </select>
         </div>
 
-        <!-- Department Access -->
+        <div class="form-group">
+            <label for="homeDepartment">Home Department:</label>
+            <select class="form-select" formControlName="homeDepartment" id="homeDepartment">
+                <option value="" disabled>Select a department</option>
+                <option *ngFor="let d of departments" [value]="d._id">{{ d.name }}</option>
+            </select>
+        </div>
+
+        <!-- Permission grants — independent of home department, can cover any department -->
         <div class="dept-access-section mt-3">
             <label class="dept-access-label">Department Access</label>
             <div class="dept-access-list">
@@ -61,19 +69,19 @@
 
         <div class="action-group">
             <div class="col-lg-4 col-md-4 col-xs-12 text-center">
-                <button class="btn btn-success mr-3" type="submit" *ngIf="!isEditMode">
+                <button class="btn btn-success mr-3" type="submit" *ngIf="!isEditMode && canCreateUsers">
                     Create User
                 </button>
                 <button class="btn btn-primary mr-3" type="button" *ngIf="isEditMode"
                     (click)="switchMode()">
-                    Switch to Register
+                    {{ canCreateUsers ? 'Switch to Register' : 'Cancel' }}
                 </button>
             </div>
             <div class="col-lg-4 col-md-4 col-xs-12 text-center">
                 <button class="btn btn-success mr-3" type="button" [disabled]="!isEditMode"
                     (click)="updateUser()">Update User</button>
             </div>
-            <div class="col-lg-4 col-md-4 col-xs-12 text-center">
+            <div class="col-lg-4 col-md-4 col-xs-12 text-center" *ngIf="canCreateUsers">
                 <button class="btn btn-danger" type="button" [disabled]="!isEditMode"
                     (click)="deleteUser()">Delete User</button>
             </div>
@@ -81,7 +89,7 @@
     </form>
 </div>
 
-<div class="section col-lg-12">
+<div class="section col-lg-12" *ngIf="canViewPage">
     <div class="section-header-center col-lg-12 mb-3">
         <h2>Users:</h2>
     </div>
@@ -96,6 +104,8 @@
                     <strong>Name: </strong> {{ u.name }}<br>
                     <strong>Email: </strong> {{ u.email }}<br>
                     <strong>Role: </strong> {{ u.role?.name || u.role }}<br>
+                    <strong>Department: </strong> {{ u.departments?.[0]?.department?.name || u.departments?.[0]?.department || '—' }}<br>
+                    <strong>Access: </strong> {{ getAccessLabel(u) }}<br>
                 </p>
                 <div *ngIf="u.permissions?.length">
                     <strong>Permissions:</strong>
@@ -104,9 +114,9 @@
                     </div>
                 </div>
             </mat-card-content>
-            <mat-card-actions *ngIf="canManageUsers">
-                <button class="btn btn-primary" (click)="editUser(u)">Edit</button>
-                <button class="btn btn-danger" (click)="deleteUser()">Delete</button>
+            <mat-card-actions>
+                <button class="btn btn-primary" *ngIf="canEditUser(u)" (click)="editUser(u)">Edit</button>
+                <button class="btn btn-danger" *ngIf="canCreateUsers" (click)="deleteUser()">Delete</button>
             </mat-card-actions>
         </mat-card>
     </div>

@@ -9,6 +9,33 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.0] - 2026-06-20
+
+### Added
+- `AuthService.getEffectivePermissionMap(user)` — single source of truth for a user's effective access: merges explicit `permissions[]` strings with a role rule — TL automatically has `manage` tier for any department they belong to, regardless of explicit permission grants
+- `AuthService.deptNameToKey(name)` — now public; converts department display name to permission module key (`"Box Office"` → `"box-office"`)
+- 6 new Jasmine tests for `getEffectivePermissionMap` and TL auto-manage (`hasPermission` + map contents + cross-dept denial)
+
+### Changed
+- `auth.service.ts` — `hasPermission()` now delegates to `getEffectivePermissionMap`; tiered comparison is map-based instead of a `.some()` loop
+- `app-routing.module.ts` — `/admin/user` route now allows TL role in addition to DEV/DIR/ADMIN; `/admin/tickets` remains DEV/DIR/ADMIN only
+- `header.component.ts/.html` — replaced hardcoded `userRole === 'ADMIN'` gate on the "Admin" nav link with `canSeeAdminMenu` getter (DEV/DIR/ADMIN/TL); added `canSeeTicketRegistry` getter (DEV/DIR/ADMIN) for the Ticket sub-item; applied to both desktop and mobile variants
+- `admin-menu.component.ts/.html` — Ticket link gated by new `canSeeTickets` getter (DEV/DIR/ADMIN only)
+- `user-registery.component.ts/.html` — form and list now role-aware:
+  - `canCreateUsers` (DEV/DIR/ADMIN): gates create form, delete buttons
+  - `canViewPage` (+ TL): gates the entire page content
+  - `canEditUser(user)`: DEV/DIR/ADMIN always; TL only for users in their own department
+  - New **Home Department** single-select dropdown (membership entry, separate from permission chips)
+  - For TL: role/department dropdowns skipped (admin-gated endpoints); TL's own department list sourced from their in-memory user object
+  - User cards now show Department (home dept name) and Access (highest effective tier via `getEffectivePermissionMap`)
+- `profile.component.ts/.html/.css` — department section redesigned:
+  - `departments[]` shown as plain membership badges (typically one)
+  - `permissions[]` shown as a read-only Department + Tier table driven by `getEffectivePermissionMap` (Read/Write/Manage, colour-coded)
+  - Removed old editable Read/Read+Write radio toggle that wrote to `departments[].access` (field no longer read anywhere)
+  - DEV/DIR still show "Full Access" banner instead of a table
+
+---
+
 ## [1.2.0] - 2026-06-19
 
 ### Added
