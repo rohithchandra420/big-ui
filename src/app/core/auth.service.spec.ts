@@ -120,19 +120,60 @@ describe('AuthService', () => {
     });
 
     describe('hasPermission', () => {
-        it('returns true for GOD role (all permissions)', () => {
-            const user = new User('Test', 'a@b.com', '', 'GOD', '', '', '123');
+        it('returns true for DEV role (all permissions)', () => {
+            const user = new User('Test', 'a@b.com', '', 'DEV', '', '', '123');
             expect(service.hasPermission(user, 'any:permission')).toBeTrue();
         });
 
         it('returns true for ADMIN role with a valid permission', () => {
-            const user = new User('Test', 'a@b.com', '', 'ADMIN', '', '', '123');
-            expect(service.hasPermission(user, 'users:read')).toBeTrue();
+            const user = new User('Test', 'a@b.com', '', 'ADMIN', '', '', '123', undefined, [], ['general:read']);
+            expect(service.hasPermission(user, 'general:read')).toBeTrue();
+        });
+
+        it('returns true when user has write and read is required (tiered)', () => {
+            const user = new User('Test', 'a@b.com', '', 'ADMIN', '', '', '123', undefined, [], ['general:write']);
+            expect(service.hasPermission(user, 'general:read')).toBeTrue();
         });
 
         it('returns false for a permission the role does not have', () => {
             const user = new User('Test', 'a@b.com', '', 'VOLUNTEER', '', '', '123');
             expect(service.hasPermission(user, 'users:write')).toBeFalse();
+        });
+
+        it('grants TL automatic manage access within their own department, with no explicit permission', () => {
+            const user = new User('Test', 'a@b.com', '', 'TL', '', '', '123', undefined,
+                [{ department: { _id: 'd1', name: 'Box Office' }, access: ['read'] }], []);
+            expect(service.hasPermission(user, 'box-office:manage')).toBeTrue();
+            expect(service.hasPermission(user, 'box-office:read')).toBeTrue();
+        });
+
+        it('does not grant TL access to a department they do not belong to', () => {
+            const user = new User('Test', 'a@b.com', '', 'TL', '', '', '123', undefined,
+                [{ department: { _id: 'd1', name: 'Box Office' }, access: ['read'] }], []);
+            expect(service.hasPermission(user, 'finance:read')).toBeFalse();
+        });
+    });
+
+    describe('getEffectivePermissionMap', () => {
+        it('merges explicit permissions with TL auto-manage for their own department', () => {
+            const user = new User('Test', 'a@b.com', '', 'TL', '', '', '123', undefined,
+                [{ department: { _id: 'd1', name: 'Box Office' }, access: ['read'] }], ['general:write']);
+            const map = service.getEffectivePermissionMap(user);
+            expect(map['box-office']).toBe('manage');
+            expect(map['general']).toBe('write');
+        });
+
+        it('TL automatically has manage-level access in their own department, even with no explicit permission string', () => {
+            const user = new User('Test', 'a@b.com', '', 'TL', '', '', '123',
+                undefined, [{ department: { _id: 'd1', name: 'Box Office' }, access: ['read'] }], []);
+            expect(service.hasPermission(user, 'box-office:manage')).toBeTrue();
+            expect(service.hasPermission(user, 'box-office:read')).toBeTrue();
+        });
+
+        it('TL auto-manage does not extend to departments they do not belong to', () => {
+            const user = new User('Test', 'a@b.com', '', 'TL', '', '', '123',
+                undefined, [{ department: { _id: 'd1', name: 'Box Office' }, access: ['read'] }], []);
+            expect(service.hasPermission(user, 'finance:read')).toBeFalse();
         });
     });
 

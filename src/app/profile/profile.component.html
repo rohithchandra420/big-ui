@@ -4,24 +4,19 @@
 
     <!-- Header -->
     <div class="profile-header">
-
-      <!-- Profile Image -->
       <div class="profile-img-wrapper">
         <img [src]="profilePreview" class="profile-img">
         <input type="file" *ngIf="isEditMode" (change)="onFileSelect($event)" />
       </div>
-
-      <!-- Title + Button -->
       <div class="profile-title">
         <h2>My Profile</h2>
         <button mat-raised-button color="primary" (click)="toggleEdit()">
           {{ isEditMode ? 'Cancel' : 'Edit' }}
         </button>
       </div>
-
     </div>
 
-    <!-- Form -->
+    <!-- Basic Info Form -->
     <form [formGroup]="profileForm" class="profile-form">
 
       <div class="form-row">
@@ -38,13 +33,9 @@
 
       <div class="form-row">
         <mat-form-field appearance="outline">
-          <mat-error *ngIf="profileForm.get('email')?.hasError('required')">
-            Email is required
-          </mat-error>
-          <mat-error *ngIf="profileForm.get('email')?.hasError('email')">
-            Invalid email
-          </mat-error>
           <mat-label>Email</mat-label>
+          <mat-error *ngIf="profileForm.get('email')?.hasError('required')">Email is required</mat-error>
+          <mat-error *ngIf="profileForm.get('email')?.hasError('email')">Invalid email</mat-error>
           <input matInput formControlName="email" [readonly]="!isEditMode">
         </mat-form-field>
 
@@ -54,14 +45,45 @@
         </mat-form-field>
       </div>
 
-      <!-- Save Button -->
-      <div class="actions" *ngIf="isEditMode">
-        <button mat-raised-button color="accent" (click)="saveProfile()">
-          Save Changes
-        </button>
+    </form>
+
+    <!-- DEV / DIR: full access badge -->
+    <div *ngIf="isSuperuser" class="alert alert-success mt-3">
+      <strong>Full Access</strong> — No department restrictions apply to this role.
+    </div>
+
+    <ng-container *ngIf="!isSuperuser">
+
+      <!-- Department membership -->
+      <div class="dept-matrix-section mt-3">
+        <h3>Department</h3>
+        <p *ngIf="memberDepartments.length === 0" class="text-muted">No department assigned.</p>
+        <div class="perm-chips" *ngIf="memberDepartments.length > 0">
+          <span class="perm-badge" *ngFor="let dept of memberDepartments">{{ dept }}</span>
+        </div>
       </div>
 
-    </form>
+      <!-- Effective permissions -->
+      <div class="dept-matrix-section mt-3">
+        <h3>Permissions</h3>
+        <p *ngIf="permissionEntries.length === 0" class="text-muted">No permissions assigned.</p>
+
+        <div class="dept-access-list" *ngIf="permissionEntries.length > 0">
+          <div class="dept-row" *ngFor="let entry of permissionEntries">
+            <span class="dept-name">{{ entry.displayName }}</span>
+            <span class="chip" [ngClass]="'chip-' + entry.level">{{ entry.level }}</span>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <!-- Save Button -->
+    <div class="actions mt-3" *ngIf="isEditMode">
+      <button mat-raised-button color="accent" (click)="saveProfile()">
+        Save Changes
+      </button>
+    </div>
 
   </mat-card>
 

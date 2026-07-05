@@ -9,7 +9,7 @@
         <mat-icon>person</mat-icon>
         User
       </button>
-      <button mat-button [routerLink]="['tickets']">
+      <button mat-button [routerLink]="['tickets']" *ngIf="canSeeTickets">
         <mat-icon>confirmation_number</mat-icon>
         Ticket
       </button>
@@ -27,7 +27,7 @@
     <mat-icon>person</mat-icon>
     <span>User</span>
   </button>
-  <button mat-menu-item (click)="navigateTo('/ticket')">
+  <button mat-menu-item (click)="navigateTo('/ticket')" *ngIf="canSeeTickets">
     <mat-icon>confirmation_number</mat-icon>
     <span>Ticket</span>
   </button>

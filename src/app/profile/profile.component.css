@@ -57,3 +57,75 @@ mat-form-field {
 .actions {
   text-align: right;
 }
+
+/* ── Department / Permissions ───────────────────────── */
+
+.dept-matrix-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  opacity: 0.8;
+  margin-bottom: 10px;
+}
+
+.perm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.perm-badge {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.05);
+  letter-spacing: 0.3px;
+}
+
+.dept-access-list {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dept-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.dept-row:last-child {
+  border-bottom: none;
+}
+
+.dept-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.chip {
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  text-transform: capitalize;
+  color: #fff;
+}
+
+.chip.chip-read {
+  background: #2e7d32;
+}
+
+.chip.chip-write {
+  background: #1565c0;
+}
+
+.chip.chip-manage {
+  background: #6a1b9a;
+}

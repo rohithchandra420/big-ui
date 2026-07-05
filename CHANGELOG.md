@@ -9,6 +9,57 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.0] - 2026-06-20
+
+### Added
+- `AuthService.getEffectivePermissionMap(user)` — single source of truth for a user's effective access: merges explicit `permissions[]` strings with a role rule — TL automatically has `manage` tier for any department they belong to, regardless of explicit permission grants
+- `AuthService.deptNameToKey(name)` — now public; converts department display name to permission module key (`"Box Office"` → `"box-office"`)
+- 6 new Jasmine tests for `getEffectivePermissionMap` and TL auto-manage (`hasPermission` + map contents + cross-dept denial)
+
+### Changed
+- `auth.service.ts` — `hasPermission()` now delegates to `getEffectivePermissionMap`; tiered comparison is map-based instead of a `.some()` loop
+- `app-routing.module.ts` — `/admin/user` route now allows TL role in addition to DEV/DIR/ADMIN; `/admin/tickets` remains DEV/DIR/ADMIN only
+- `header.component.ts/.html` — replaced hardcoded `userRole === 'ADMIN'` gate on the "Admin" nav link with `canSeeAdminMenu` getter (DEV/DIR/ADMIN/TL); added `canSeeTicketRegistry` getter (DEV/DIR/ADMIN) for the Ticket sub-item; applied to both desktop and mobile variants
+- `admin-menu.component.ts/.html` — Ticket link gated by new `canSeeTickets` getter (DEV/DIR/ADMIN only)
+- `user-registery.component.ts/.html` — form and list now role-aware:
+  - `canCreateUsers` (DEV/DIR/ADMIN): gates create form, delete buttons
+  - `canViewPage` (+ TL): gates the entire page content
+  - `canEditUser(user)`: DEV/DIR/ADMIN always; TL only for users in their own department
+  - New **Home Department** single-select dropdown (membership entry, separate from permission chips)
+  - For TL: role/department dropdowns skipped (admin-gated endpoints); TL's own department list sourced from their in-memory user object
+  - User cards now show Department (home dept name) and Access (highest effective tier via `getEffectivePermissionMap`)
+- `profile.component.ts/.html/.css` — department section redesigned:
+  - `departments[]` shown as plain membership badges (typically one)
+  - `permissions[]` shown as a read-only Department + Tier table driven by `getEffectivePermissionMap` (Read/Write/Manage, colour-coded)
+  - Removed old editable Read/Read+Write radio toggle that wrote to `departments[].access` (field no longer read anywhere)
+  - DEV/DIR still show "Full Access" banner instead of a table
+
+---
+
+## [1.2.0] - 2026-06-19
+
+### Added
+- `src/app/box-office/` — Box Office module (renamed from Registration): component, service, and styles. Route changed from `/register` to `/box-office`.
+  - Page visibility: DEV/DIR/ADMIN always; users with `box-office:read` permission; users in the Box Office department
+  - Submit button: DEV/DIR/ADMIN always; TL with `box-office:read` permission or Box Office department membership; VOL cannot submit
+- `AuthService.hasDepartmentAccess(user, deptName)` — checks `user.departments[].department.name` (populated at login) as a secondary access fallback
+- `AuthService.getUserPermissions(user)` — returns `'ALL'` for DEV/DIR (bypasses all checks); returns `user.permissions` string array for all other roles
+- Tiered permission checking in `AuthService.hasPermission()` — a higher-tier permission satisfies a lower-tier check (e.g., `write` satisfies a `read` requirement)
+- `AuthPermissionGuard` extended to support three OR-combined access criteria via route data: `roles`, `permissions`, and `departments`
+
+### Changed
+- `src/app/core/user.model.ts` — `permissions` field changed from object array to `string[]`; removed static `RolePermissions` map (permissions now come from API)
+- `src/app/admin/user-registery/` — department access UI replaced with toggle chip rows (Read / Write / Manage pill buttons per department, colour-coded by level); `buildPayload()` produces `permissions: string[]` alongside `departmentIds`; edit mode restores chip state from user's permission strings
+- `src/app/header/header.component.*` — navigation link updated from "Register" to "Box Office" (`/box-office`), gated by role, permission, and department membership
+- `src/app/core/app-routing.module.ts` — `/box-office` route added with permission guard; `/register` route removed
+- `src/app/app.module.ts` — `RegistrationComponent` replaced with `BoxOfficeComponent`
+
+### Fixed
+- `src/app/core/auth.service.spec.ts` — updated tests to use string permissions; added tiered permission test
+- `src/app/admin/admin.service.ts` — `getRoles()` and `getDepartments()` wired to correct backend endpoints
+
+---
+
 ## [1.1.1] - 2026-06-14
 
 ### Fixed

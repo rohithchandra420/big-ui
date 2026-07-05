@@ -1,8 +1,6 @@
 import { HttpClient } from "@angular/common/http";
-import { Workshop } from "../core/workshop.model";
 import { Injectable } from "@angular/core";
 import { environment } from "src/environments/environment.development";
-import { User } from "../core/user.model";
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
@@ -10,19 +8,31 @@ export class AdminService {
     url = environment.URL;
     constructor( private http: HttpClient) {}
 
-    createUser(userDetails) {
-        return this.http.post<User>(this.url + "/createUser", userDetails);
+    getRoles() {
+        return this.http.get<{ _id: string; name: string }[]>(this.url + '/admin/roles');
+    }
+
+    getDepartments() {
+        return this.http.get<{ _id: string; name: string }[]>(this.url + '/admin/departments');
+    }
+
+    createUser(userDetails: any) {
+        return this.http.post<any>(this.url + "/createUser", userDetails);
     }
 
     getAllUsers() {
-        return this.http.get<[User]>(this.url + '/getAllUsers');
+        return this.http.get<any[]>(this.url + '/getAllUsers');
     }
 
-    updateUser(updatedUser) {
-        return this.http.patch(this.url + '/updateUser', updatedUser);
+    updateUser(updatedUser: any) {
+        return this.http.patch<any>(this.url + '/updateUser', updatedUser);
     }
 
-    deleteUser(userId) {
+    updateDepartmentAccess(payload: { userId: string; departmentId: string; access: string[] }) {
+        return this.http.patch<any>(this.url + '/updateDepartmentAccess', payload);
+    }
+
+    deleteUser(userId: string) {
         return this.http.delete(this.url + '/deleteUser/' + userId);
     }
 

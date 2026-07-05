@@ -4,7 +4,7 @@ import { ActivatedRouteSnapshot, CanActivateChildFn, CanActivateFn, Router, Rout
 import { DashboardComponent } from "../dashboard/dashboard.component";
 import { HomeComponent } from "../home/home.component";
 import { LoginComponent } from "../login/login.component";
-import { RegistrationComponent } from "../registration/registration.component";
+import { BoxOfficeComponent } from "../box-office/box-office.component";
 import { Observable } from "rxjs";
 import { AuthService } from "./auth.service";
 import { AuthGuard } from "./auth-guard.service";
@@ -64,14 +64,14 @@ const appRoutes: Routes = [
     //{ path: 'home', redirectTo: '', pathMatch: 'full'},    
     { path: 'dashboard', redirectTo: '',  pathMatch: 'full'},
     { path: 'profile', canActivate:[AuthGuard] ,component: ProfileComponent },
-    { path: 'register', canActivate:[AuthGuard] ,component: RegistrationComponent },
+    { path: 'box-office', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BoxOfficeComponent },
     { path: 'tickets', canActivate:[AuthGuard] ,component: TicketsComponent },
-    { path: 'calendar', canActivate:[AuthGuard, AuthPermissionGuard] ,component: CalendarComponent },
+    { path: 'calendar', canActivate:[AuthGuard] ,component: CalendarComponent },
     { path: 'tickets/details/:id', component: TicketDetailsComponent },
     { path: 'accomodation', canActivate:[AuthGuard] ,component: AccomodationComponent },
-    { path: 'admin', canActivate:[AuthGuard] ,component: AdminComponent, children: [
-        { path: 'user', component: UserRegisteryComponent },
-        { path: 'tickets', component: TicketRegisteryComponent }
+    { path: 'admin', canActivate:[AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: AdminComponent, children: [
+        { path: 'user', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: UserRegisteryComponent },
+        { path: 'tickets', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: TicketRegisteryComponent }
     ]},
     { path: 'error', component: ErrorPageComponent, data: {message: 'Page Under Construction'}},
     //{ path: '**', redirectTo: 'error' },

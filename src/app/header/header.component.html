@@ -93,19 +93,19 @@
 
     <div class="mso-nav-long">
       <a mat-button routerLink="/dashboard" *ngIf="isAuthenticated">Dashboard</a>
-      <a mat-button routerLink="/register" *ngIf="isAuthenticated">Register</a>
+      <a mat-button routerLink="/box-office" *ngIf="isAuthenticated && canSeeBoxOffice">Box Office</a>
       <a mat-button routerLink="/tickets" *ngIf="isAuthenticated">Tickets</a>
       <a mat-button routerLink="/accomodation" *ngIf="isAuthenticated">Tenting</a>
       <a mat-button routerLink="/calendar" *ngIf="isAuthenticated">Calendar</a>
 
       <!-- ADMIN MENU -->
-      <a mat-button [matMenuTriggerFor]="adminMenu" *ngIf="userRole === 'ADMIN'">Admin</a>
+      <a mat-button [matMenuTriggerFor]="adminMenu" *ngIf="canSeeAdminMenu">Admin</a>
       <mat-menu #adminMenu="matMenu">
         <button mat-menu-item routerLink="/admin/user">
           <mat-icon>person</mat-icon>
           <span>User</span>
         </button>
-        <button mat-menu-item routerLink="/admin/ticket">
+        <button mat-menu-item routerLink="/admin/ticket" *ngIf="canSeeTicketRegistry">
           <mat-icon>confirmation_number</mat-icon>
           <span>Ticket</span>
         </button>
@@ -150,17 +150,17 @@
   <!-- MOBILE MENU CONTENT -->
   <mat-menu #menu="matMenu">
     <button mat-menu-item routerLink="/dashboard" *ngIf="isAuthenticated">Dashboard</button>
-    <button mat-menu-item routerLink="/register" *ngIf="isAuthenticated">Register</button>
+    <button mat-menu-item routerLink="/box-office" *ngIf="isAuthenticated && canSeeBoxOffice">Box Office</button>
     <button mat-menu-item routerLink="/tickets" *ngIf="isAuthenticated">Tickets</button>
     <button mat-menu-item routerLink="/accomodation" *ngIf="isAuthenticated">Tenting</button>
     <button mat-menu-item routerLink="/calendar" *ngIf="isAuthenticated">Calendar</button>
 
-    <button mat-menu-item [matMenuTriggerFor]="adminSubmenu" *ngIf="userRole === 'ADMIN'">
+    <button mat-menu-item [matMenuTriggerFor]="adminSubmenu" *ngIf="canSeeAdminMenu">
       Admin
     </button>
     <mat-menu #adminSubmenu="matMenu">
       <button mat-menu-item routerLink="/admin/user">User</button>
-      <button mat-menu-item routerLink="/admin/ticket">Ticket</button>
+      <button mat-menu-item routerLink="/admin/ticket" *ngIf="canSeeTicketRegistry">Ticket</button>
     </mat-menu>
 
     <button mat-menu-item routerLink="/profile" *ngIf="isAuthenticated">Profile</button>

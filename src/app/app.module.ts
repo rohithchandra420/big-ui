@@ -24,7 +24,7 @@ import { AppComponent } from './app.component';
 import { HeaderComponent } from './header/header.component';
 import { HomeComponent } from './home/home.component';
 import { LoginComponent } from './login/login.component';
-import { RegistrationComponent } from './registration/registration.component';
+import { BoxOfficeComponent } from './box-office/box-office.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { AuthService } from './core/auth.service';
 import { AuthGuard } from './core/auth-guard.service';
@@ -66,7 +66,7 @@ LOAD_WASM().subscribe()
     AlertComponent,
     HomeComponent,
     LoginComponent,
-    RegistrationComponent,
+    BoxOfficeComponent,
     DashboardComponent,
     ErrorPageComponent,
     AdminComponent,

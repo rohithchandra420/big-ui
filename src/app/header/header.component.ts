@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from "@angular/core";
 import { AuthService } from "../core/auth.service";
+import { User } from "../core/user.model";
 import { Subscription } from "rxjs";
 
 @Component({
@@ -8,32 +9,45 @@ import { Subscription } from "rxjs";
     styleUrls: ['./header.component.css']
 })
 
-export class HeaderComponent implements OnInit, OnDestroy{
-    userRole;
-    userName;
-    private logSub: Subscription;
-    private userSub: Subscription;
+export class HeaderComponent implements OnInit, OnDestroy {
+    userRole: string = '';
+    userName: string = '';
+    private userSub!: Subscription;
 
     isAuthenticated = false;
+    private currentUser: User | null = null;
 
     constructor(private authService: AuthService) {}
-    
-    ngOnInit() {
-        // this.logSub = this.authService.userLoggedInEmitter.subscribe( isLoggedIn => {
-        //     this.userRole = isLoggedIn;
-        //     console.log(this.userRole);
-        // });
 
+    get canSeeBoxOffice(): boolean {
+        if (!this.currentUser) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(this.userRole)) return true;
+        return this.authService.hasPermission(this.currentUser, 'box-office:read') ||
+               this.authService.hasDepartmentAccess(this.currentUser, 'Box Office');
+    }
+
+    readonly adminMenuRoles = ['DEV', 'DIR', 'ADMIN', 'TL'];
+    readonly ticketManagerRoles = ['DEV', 'DIR', 'ADMIN'];
+
+    get canSeeAdminMenu(): boolean {
+        return this.adminMenuRoles.includes(this.userRole);
+    }
+
+    get canSeeTicketRegistry(): boolean {
+        return this.ticketManagerRoles.includes(this.userRole);
+    }
+
+    ngOnInit() {
         this.userSub = this.authService.user.subscribe(user => {
+            this.currentUser = user;
             this.userName = user ? user.name : 'Guest';
-            this.isAuthenticated = !user ? false : true;
+            this.isAuthenticated = !!user;
             this.userRole = user ? user.role : '';
         });
     }
 
     ngOnDestroy() {
-        this.logSub.unsubscribe();
-        this.userSub.unsubscribe();
+        this.userSub?.unsubscribe();
     }
 
     onLogOut() {

@@ -9,17 +9,108 @@
     justify-content: space-around;
 }
 
+/* ── Department Access ─────────────────────────────── */
+
+.dept-access-section {
+    margin-bottom: 8px;
+}
+
+.dept-access-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 14px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+.dept-access-list {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dept-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 12px;
+}
+
+.dept-row:last-child {
+    border-bottom: none;
+}
+
+.dept-name {
+    flex: 0 0 140px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.chip-group {
+    display: flex;
+    gap: 6px;
+}
+
+.chip {
+    padding: 4px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: all 0.18s ease;
+    outline: none;
+}
+
+.chip:hover {
+    border-color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.chip.chip-read {
+    background: #2e7d32;
+    border-color: #43a047;
+    color: #fff;
+}
+
+.chip.chip-write {
+    background: #1565c0;
+    border-color: #1e88e5;
+    color: #fff;
+}
+
+.chip.chip-manage {
+    background: #6a1b9a;
+    border-color: #8e24aa;
+    color: #fff;
+}
+
+.dept-status {
+    font-size: 13px;
+    color: #81c784;
+    margin-left: 4px;
+}
+
+/* ── User Cards ───────────────────────────────────── */
+
 .user-card {
     max-width: 100%;
     margin-bottom: 10px;
-    margin-right:10px;
+    margin-right: 10px;
     border: 10px solid var(--mdc-filled-text-field-container-color);
     background-color: var(--color-primary);
     border-radius: 10px;
     box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
 }
 
-.user-card  .mat-mdc-card-header {
+.user-card .mat-mdc-card-header {
     display: block;
 }
 
@@ -27,14 +118,6 @@
     color: #fff;
     font-size: medium;
 }
-
-/* .user-card .btn-danger {
-    background: red;;
-}
-
-.user-card .btn-secondary {
-    background: rgb(115, 93, 192);;
-} */
 
 .user-card mat-card-title {
     color: #fff;
@@ -44,6 +127,22 @@
     word-wrap: break-word;
 }
 
-.user-card mat-card-actions{
+.user-card mat-card-actions {
     justify-content: space-between;
+}
+
+.perm-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.perm-badge {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.08);
+    letter-spacing: 0.3px;
 }

@@ -27,9 +27,7 @@ export class ProfileService {
     });
   }
 
-  updateProfile(userId: string, updatedData: Partial<User>) {
-    return this.http.put<User>(this.url + "/updateUser", updatedData, {
-      params: new HttpParams().set('id', userId),
-    });
+  updateProfile(userId: string, updatedData: any) {
+    return this.http.patch<any>(this.url + "/updateUser", { _id: userId, ...updatedData });
   }
 }
