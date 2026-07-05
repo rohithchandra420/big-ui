@@ -1,0 +1,51 @@
+<div class="dept-page">
+  <div class="page-header">
+    <h2 class="page-title">Departments</h2>
+    <button mat-raised-button class="btn-create" (click)="openCreateDialog()">
+      <mat-icon>add</mat-icon> Create Department
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-wrap">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && departments.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">domain</mat-icon>
+    <p>No departments yet. Create one to get started.</p>
+  </div>
+
+  <div class="dept-grid" *ngIf="!loading && departments.length > 0">
+    <mat-card class="dept-card" *ngFor="let dept of departments">
+      <div class="card-header">
+        <span class="dept-name">{{ dept.name }}</span>
+      </div>
+      <mat-card-content class="card-body">
+        <p class="dept-desc" *ngIf="dept.description">{{ dept.description }}</p>
+        <p class="dept-desc muted" *ngIf="!dept.description">No description</p>
+
+        <div class="meta-row">
+          <mat-icon class="meta-icon">supervisor_account</mat-icon>
+          <span class="meta-label">TL:</span>
+          <span class="meta-value">{{ tlNames(dept) }}</span>
+        </div>
+        <div class="meta-row">
+          <mat-icon class="meta-icon">group</mat-icon>
+          <span class="meta-label">Volunteers:</span>
+          <span class="meta-value">{{ dept.volunteerCount }}</span>
+        </div>
+      </mat-card-content>
+      <mat-card-actions class="card-actions">
+        <button mat-button class="btn-edit" (click)="editDepartment(dept)">
+          <mat-icon>edit</mat-icon> Edit
+        </button>
+        <button mat-button class="btn-delete"
+          (click)="openDeleteDialog(dept)"
+          [disabled]="deletingId === dept._id">
+          <mat-icon>delete</mat-icon>
+          {{ deletingId === dept._id ? 'Deleting...' : 'Delete' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

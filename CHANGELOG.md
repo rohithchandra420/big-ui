@@ -9,6 +9,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.4.0] - 2026-07-05
+
+### Added
+- `AdminService` — `DeptSummary` and `DeptDetail` interfaces; 5 new methods: `getDepartmentsSummary`, `getDepartmentDetail`, `createDepartment`, `updateDepartment`, `deleteDepartment`
+- `DepartmentsComponent` (`/admin/departments`) — department list page with cards showing name, description, TL names, and volunteer count; Create Department dialog; Delete confirm dialog (shows affected users)
+- `DepartmentDetailComponent` (`/admin/departments/:id`) — view/edit mode; TL and VOL chip lists with autocomplete user-search pickers; volunteer already-assigned warning banner; save computes add/remove user diff
+- `DepartmentCreateDialogComponent` — MatDialog for creating a department (name + description)
+- `DepartmentDeleteDialogComponent` — MatDialog showing affected users; force-unassign on confirm
+- `MatAutocompleteModule`, `MatSelectModule` added to `CustomMaterialModule`
+- 45 new Jasmine tests across all 4 new components (70 total, all passing)
+
+### Changed
+- `app-routing.module.ts` — added `/admin/departments` and `/admin/departments/:id` child routes (DEV/DIR/ADMIN only via `AuthPermissionGuard`)
+- `admin-menu.component.ts/.html` — added Departments nav link (desktop + mobile) gated by `canSeeManageDepts`; removed `navigateTo()` helper; mobile menu buttons now use `[routerLink]` consistently with desktop
+
+---
+
 ## [1.3.0] - 2026-06-20
 
 ### Added
