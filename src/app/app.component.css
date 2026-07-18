@@ -1,0 +1,73 @@
+/* Full-viewport shell container */
+.app-shell {
+  height: 100vh;
+}
+
+/* Override mat-sidenav default border — shadow replaces it */
+::ng-deep .app-sidebar {
+  border-right: none !important;
+  box-shadow: 1px 0 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Main content area */
+.app-content {
+  background: var(--surface-body);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Uniform page inset — wraps only the router-outlet, not the mobile topbar */
+.page-padded {
+  padding: 1.25rem 1.5rem;
+  flex: 1;
+}
+
+/* ── Mobile top bar ─────────────────────────────────────── */
+.mobile-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  height: 52px;
+  background: var(--surface-body);
+  border-bottom: 1px solid var(--border-default);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.mobile-app-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Three-line hamburger — matches wireframe .hamb style */
+.hamburger-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.hamburger-btn span {
+  width: 16px;
+  height: 2px;
+  background: #444;
+  border-radius: 2px;
+  display: block;
+}
+
+.hamburger-btn:hover {
+  background: #f5f5f4;
+}

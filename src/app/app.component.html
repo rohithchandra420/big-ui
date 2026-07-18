@@ -1,24 +1,30 @@
-<!-- <app-login></app-login> -->
-<div class="container">
-    <div class="row">
-        <app-header class="p-0"></app-header>
+<mat-sidenav-container class="app-shell" [hasBackdrop]="isMobile">
+
+  <mat-sidenav
+    #sidenav
+    [mode]="isMobile ? 'over' : 'side'"
+    [opened]="sidenavOpen"
+    class="app-sidebar">
+    <app-header (navItemClicked)="isMobile ? sidenav.close() : null"></app-header>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="app-content">
+
+    <!-- Sticky top bar — mobile only, when authenticated -->
+    <div class="mobile-topbar" *ngIf="isAuthenticated && isMobile">
+      <button class="hamburger-btn" (click)="sidenav.toggle()" aria-label="Open navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <span class="mobile-app-title">Bloom in Green</span>
     </div>
-    <router-outlet></router-outlet>
-    <!-- <div class="row">
 
-    </div> -->
+    <!-- Page content — padded only for authenticated pages -->
+    <div [class.page-padded]="isAuthenticated">
+      <router-outlet></router-outlet>
+    </div>
 
-    <!-- <div>
-    <button (click)=
-    "openSnackBar('GAME ONE','HURRAH !!!!!')">
-    Show snack-bar Message
-</button>
+  </mat-sidenav-content>
 
-<p>
-    By Clicking on above button we can invoke
-    the function and it will, render the
-    message of snack-bar
-</p>
-</div> -->
-</div>
-
+</mat-sidenav-container>

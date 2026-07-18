@@ -1,49 +1,326 @@
-.section-header-center {
-    display: flex;
-    justify-content: center;
+/* ── Form card ───────────────────────────────────────────── */
+.form-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+  overflow: hidden;
+  max-width: 860px;
 }
 
-.action-group {
-    display: flex;
-    margin-top: 25px;
-    justify-content: space-around;
+.form-card-hd {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-default);
+  background: #fafafa;
 }
 
+.form-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.user-form {
+  padding: 1.25rem;
+}
+
+/* ── Alert banner inside form ────────────────────────────── */
+.field-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 1.25rem;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.field-alert-warn {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+/* ── Section divider ─────────────────────────────────────── */
+.section-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 16px 0;
+}
+
+/* ── Department access table ─────────────────────────────── */
+.dept-access-table {
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dept-row {
+  display: flex;
+  align-items: center;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 12px;
+}
+
+.dept-row:last-child {
+  border-bottom: none;
+}
+
+.dept-name {
+  flex: 0 0 160px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.chip-group {
+  display: flex;
+  gap: 6px;
+}
+
+.access-chip {
+  padding: 3px 12px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #555;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+
+.access-chip.chip-inactive {
+  border-color: #ddd;
+  background: #fff;
+  color: #999;
+}
+
+.access-chip:hover {
+  border-color: #999;
+  color: #1a1a1a;
+}
+
+.access-chip.chip-read {
+  background: #dcfce7;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.access-chip.chip-write {
+  background: #dbeafe;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.access-chip.chip-manage {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn-brand {
+  padding: 7px 16px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.btn-brand:hover:not(:disabled) { background: var(--color-secondary); }
+.btn-brand:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-outline-brand {
+  padding: 7px 16px;
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.btn-outline-brand:hover { background: var(--color-primary); color: #fff; }
+
+.btn-danger-tint {
+  padding: 7px 16px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.btn-danger-tint:hover:not(:disabled) { background: #fecaca; }
+.btn-danger-tint:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Users section ───────────────────────────────────────── */
+.users-section {
+  max-width: 1100px;
+}
+
+.user-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* ── User card ───────────────────────────────────────────── */
 .user-card {
-    max-width: 100%;
-    margin-bottom: 10px;
-    margin-right:10px;
-    border: 10px solid var(--mdc-filled-text-field-container-color);
-    background-color: var(--color-primary);
-    border-radius: 10px;
-    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.user-card  .mat-mdc-card-header {
-    display: block;
+.user-card-hd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: #fafafa;
 }
 
-.user-card mat-card-content {
-    color: #fff;
-    font-size: medium;
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-/* .user-card .btn-danger {
-    background: red;;
+.user-meta {
+  flex: 1;
+  min-width: 0;
 }
 
-.user-card .btn-secondary {
-    background: rgb(115, 93, 192);;
-} */
-
-.user-card mat-card-title {
-    color: #fff;
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.user-card mat-card-content {
-    word-wrap: break-word;
+.user-role-badge {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-primary);
+  background: rgba(30, 70, 56, 0.08);
+  padding: 1px 8px;
+  border-radius: 10px;
 }
 
-.user-card mat-card-actions{
-    justify-content: space-between;
+/* ── User field rows ─────────────────────────────────────── */
+.user-fields {
+  padding: 10px 16px;
+  flex: 1;
 }
+
+.user-field-row {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  margin-bottom: 5px;
+  align-items: baseline;
+}
+
+.uf-label {
+  font-weight: 500;
+  color: var(--text-muted);
+  flex: 0 0 68px;
+  font-size: 11px;
+}
+
+.uf-value {
+  color: var(--text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Permission chips ────────────────────────────────────── */
+.perm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 16px 10px;
+}
+
+.perm-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  background: var(--surface-body);
+}
+
+/* ── Card actions ────────────────────────────────────────── */
+.card-actions {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-subtle);
+  background: #fafafa;
+}
+
+.btn-sm-outline {
+  padding: 5px 12px;
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.btn-sm-outline:hover { background: var(--color-primary); color: #fff; }
+
+.btn-sm-danger {
+  padding: 5px 12px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-sm-danger:hover { background: #fecaca; }

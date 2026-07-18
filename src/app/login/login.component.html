@@ -1,36 +1,36 @@
 
-<div class="login-container">
-    <mat-card class="login-card">
-        <mat-card-header>
-          <mat-card-title>Login</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <form class="login-form" #loginForm="ngForm">
-            <table class="example-full-width" cellspacing="0">
-              <tr>
-                <td>
-                  <mat-form-field class="example-full-width">
-                  <input matInput placeholder="Username" [(ngModel)]="username" name="username" required>
-                  </mat-form-field>
-                </td>
-              </tr>
-              <tr>
-              <td><mat-form-field class="example-full-width">
-                <input matInput placeholder="Password" [(ngModel)]="password"type="password" name="password" required>
-              </mat-form-field></td>
-              <td>
-                <!-- <span class="error-message" *ngIf="loginError">
-                  Please enter valid username and password
-                </span> -->
-                
-              <app-alert [message]="loginError" *ngIf="loginError"></app-alert>
-              </td>
-            </tr></table>
-          </form>
-          <mat-spinner [style.display]="showSpinner ? 'block' : 'none'"></mat-spinner>
-        </mat-card-content>
-        <mat-card-actions>
-          <button mat-raised-button (click)="login()" color="primary" [disabled]="!loginForm.valid">Login</button>
-        </mat-card-actions>
-    </mat-card>
+<div class="login-page">
+  <div class="login-card">
+
+    <!-- Brand mark -->
+    <div class="brand-mark">
+      <div class="brand-logo">BiG</div>
+      <div class="brand-name">Bloom in Green</div>
+      <div class="brand-sub">6.0 &middot; Jan 16&ndash;18, 2026</div>
+    </div>
+
+    <!-- Form -->
+    <form class="login-form" #loginForm="ngForm">
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Username</mat-label>
+        <input matInput [(ngModel)]="username" name="username" required autocomplete="username">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Password</mat-label>
+        <input matInput [(ngModel)]="password" type="password" name="password" required autocomplete="current-password">
+      </mat-form-field>
+
+      <div class="login-error" *ngIf="loginError">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <span>{{ loginError }}</span>
+      </div>
+
+      <button class="btn-login" (click)="login()" [disabled]="!loginForm.valid">
+        Sign In
+      </button>
+
+    </form>
+  </div>
 </div>

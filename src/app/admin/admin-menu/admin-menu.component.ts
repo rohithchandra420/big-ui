@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'app-admin-menu',
@@ -8,9 +8,17 @@ import { Router } from '@angular/router';
 })
 export class AdminMenuComponent {
 
-  constructor(private router: Router) {}
+  readonly adminOnlyRoles = ['DEV', 'DIR', 'ADMIN'];
 
-  navigateTo(route: string) {
-    this.router.navigate([route]);
+  constructor(private authService: AuthService) {}
+
+  // Ticket registry is restricted to DEV/DIR/ADMIN
+  get canSeeTickets(): boolean {
+    return this.adminOnlyRoles.includes(this.authService.currentUser?.role || '');
+  }
+
+  // Department management page is DEV/DIR/ADMIN only
+  get canSeeManageDepts(): boolean {
+    return this.adminOnlyRoles.includes(this.authService.currentUser?.role || '');
   }
 }

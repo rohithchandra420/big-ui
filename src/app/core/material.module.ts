@@ -9,32 +9,44 @@ import {MatTableModule} from '@angular/material/table';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatIconModule} from '@angular/material/icon';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { LayoutModule } from '@angular/cdk/layout';
 
 
 @NgModule({
   imports: [
-  CommonModule, 
+  CommonModule,
   MatToolbarModule,
-  MatButtonModule, 
+  MatButtonModule,
   MatCardModule,
   MatInputModule,
   MatDialogModule,
   MatTableModule,
   MatMenuModule,
   MatIconModule,
-  MatProgressSpinnerModule
+  MatProgressSpinnerModule,
+  MatAutocompleteModule,
+  MatSelectModule,
+  MatSidenavModule,
+  LayoutModule
   ],
   exports: [
   CommonModule,
-   MatToolbarModule, 
-   MatButtonModule, 
-   MatCardModule, 
-   MatInputModule, 
-   MatDialogModule, 
-   MatTableModule, 
+   MatToolbarModule,
+   MatButtonModule,
+   MatCardModule,
+   MatInputModule,
+   MatDialogModule,
+   MatTableModule,
    MatMenuModule,
    MatIconModule,
-   MatProgressSpinnerModule
+   MatProgressSpinnerModule,
+   MatAutocompleteModule,
+   MatSelectModule,
+   MatSidenavModule,
+   LayoutModule
    ],
 })
 export class CustomMaterialModule { }

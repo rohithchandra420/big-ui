@@ -1,68 +1,104 @@
-<div class="profile-container">
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">My Profile</div>
+    <div class="page-ph-sub">Manage your account details</div>
+  </div>
+</div>
 
-  <mat-card class="profile-card">
+<div class="profile-page">
+  <div class="profile-card">
 
     <!-- Header -->
     <div class="profile-header">
-
-      <!-- Profile Image -->
-      <div class="profile-img-wrapper">
-        <img [src]="profilePreview" class="profile-img">
-        <input type="file" *ngIf="isEditMode" (change)="onFileSelect($event)" />
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar">
+          {{ (profileForm.get('name')?.value || 'U').charAt(0).toUpperCase() }}
+        </div>
+        <label *ngIf="isEditMode" class="avatar-upload-label">
+          Change photo
+          <input type="file" (change)="onFileSelect($event)" accept="image/*" hidden>
+        </label>
       </div>
-
-      <!-- Title + Button -->
       <div class="profile-title">
-        <h2>My Profile</h2>
-        <button mat-raised-button color="primary" (click)="toggleEdit()">
-          {{ isEditMode ? 'Cancel' : 'Edit' }}
+        <div>
+          <h2>{{ profileForm.get('name')?.value || 'My Profile' }}</h2>
+          <span class="profile-role-badge">{{ profileForm.get('role')?.value }}</span>
+        </div>
+        <button class="btn-outline" (click)="toggleEdit()">
+          {{ isEditMode ? 'Cancel' : 'Edit Profile' }}
         </button>
       </div>
-
     </div>
 
-    <!-- Form -->
-    <form [formGroup]="profileForm" class="profile-form">
+    <div class="divider"></div>
 
+    <!-- Basic Info Form -->
+    <form [formGroup]="profileForm" class="profile-form">
       <div class="form-row">
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="form-field">
           <mat-label>Name</mat-label>
           <input matInput formControlName="name" [readonly]="!isEditMode">
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="form-field">
           <mat-label>Phone</mat-label>
           <input matInput formControlName="phone" [readonly]="!isEditMode">
         </mat-form-field>
       </div>
 
       <div class="form-row">
-        <mat-form-field appearance="outline">
-          <mat-error *ngIf="profileForm.get('email')?.hasError('required')">
-            Email is required
-          </mat-error>
-          <mat-error *ngIf="profileForm.get('email')?.hasError('email')">
-            Invalid email
-          </mat-error>
+        <mat-form-field appearance="outline" class="form-field">
           <mat-label>Email</mat-label>
+          <mat-error *ngIf="profileForm.get('email')?.hasError('required')">Email is required</mat-error>
+          <mat-error *ngIf="profileForm.get('email')?.hasError('email')">Invalid email</mat-error>
           <input matInput formControlName="email" [readonly]="!isEditMode">
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="form-field">
           <mat-label>Role</mat-label>
           <input matInput formControlName="role" readonly>
         </mat-form-field>
       </div>
-
-      <!-- Save Button -->
-      <div class="actions" *ngIf="isEditMode">
-        <button mat-raised-button color="accent" (click)="saveProfile()">
-          Save Changes
-        </button>
-      </div>
-
     </form>
 
-  </mat-card>
+    <!-- Superuser notice -->
+    <div *ngIf="isSuperuser" class="access-banner">
+      <mat-icon class="banner-icon">verified</mat-icon>
+      <div>
+        <strong>Full Access</strong>
+        <span>No department restrictions apply to this role.</span>
+      </div>
+    </div>
 
+    <ng-container *ngIf="!isSuperuser">
+
+      <!-- Department membership -->
+      <div class="profile-section">
+        <div class="section-label">Department</div>
+        <p *ngIf="memberDepartments.length === 0" class="no-data">No department assigned.</p>
+        <div class="dept-chips" *ngIf="memberDepartments.length > 0">
+          <span class="dept-chip" *ngFor="let dept of memberDepartments">{{ dept }}</span>
+        </div>
+      </div>
+
+      <!-- Effective permissions -->
+      <div class="profile-section">
+        <div class="section-label">Permissions</div>
+        <p *ngIf="permissionEntries.length === 0" class="no-data">No permissions assigned.</p>
+        <div class="perm-table" *ngIf="permissionEntries.length > 0">
+          <div class="perm-row" *ngFor="let entry of permissionEntries">
+            <span class="perm-dept">{{ entry.displayName }}</span>
+            <span class="perm-chip" [ngClass]="'level-' + entry.level">{{ entry.level }}</span>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <!-- Save -->
+    <div class="profile-actions" *ngIf="isEditMode">
+      <button class="btn-brand" (click)="saveProfile()">Save Changes</button>
+    </div>
+
+  </div>
 </div>

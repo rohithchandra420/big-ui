@@ -1,0 +1,139 @@
+<div class="detail-page">
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-wrap">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading && detail">
+
+    <!-- Back + Edit toolbar -->
+    <div class="top-bar">
+      <button class="btn-back" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon> Departments
+      </button>
+      <button class="btn-edit" *ngIf="!editMode" (click)="enterEditMode()">
+        <mat-icon>edit</mat-icon> Edit
+      </button>
+    </div>
+
+    <!-- ── VIEW MODE ─────────────────────────────────────── -->
+    <ng-container *ngIf="!editMode">
+      <h2 class="dept-title">{{ detail.name }}</h2>
+      <p class="dept-desc" *ngIf="detail.description">{{ detail.description }}</p>
+      <p class="dept-desc muted" *ngIf="!detail.description">No description</p>
+
+      <section class="section">
+        <h3 class="section-title">
+          <mat-icon class="section-icon teal">supervisor_account</mat-icon>
+          Team Leaders
+        </h3>
+        <div class="chip-row" *ngIf="detail.tls.length > 0; else noTls">
+          <span class="chip chip-tl" *ngFor="let t of detail.tls">{{ t.name }}</span>
+        </div>
+        <ng-template #noTls><p class="empty-text">No team leaders assigned</p></ng-template>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">
+          <mat-icon class="section-icon pink">group</mat-icon>
+          Volunteers ({{ detail.volunteers.length }})
+        </h3>
+        <div class="chip-row" *ngIf="detail.volunteers.length > 0; else noVols">
+          <span class="chip chip-vol" *ngFor="let v of detail.volunteers">{{ v.name }}</span>
+        </div>
+        <ng-template #noVols><p class="empty-text">No volunteers assigned</p></ng-template>
+      </section>
+    </ng-container>
+
+    <!-- ── EDIT MODE ──────────────────────────────────────── -->
+    <ng-container *ngIf="editMode">
+      <form [formGroup]="editForm" class="edit-form">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Name</mat-label>
+          <input matInput formControlName="name" />
+          <mat-error *ngIf="editForm.get('name')?.hasError('required')">Name is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Description</mat-label>
+          <textarea matInput formControlName="description" rows="3"></textarea>
+        </mat-form-field>
+      </form>
+
+      <!-- TL Section -->
+      <section class="section">
+        <h3 class="section-title">
+          <mat-icon class="section-icon teal">supervisor_account</mat-icon>
+          Team Leaders
+        </h3>
+        <div class="chip-row">
+          <span class="chip chip-tl removable" *ngFor="let t of editedTls">
+            {{ t.name }}
+            <button class="chip-remove" (click)="removeTl(t._id)" title="Remove">×</button>
+          </span>
+        </div>
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Add Team Leader</mat-label>
+          <input matInput [formControl]="tlSearchCtrl" [matAutocomplete]="tlAuto"
+            placeholder="Search by name…" />
+          <mat-autocomplete #tlAuto="matAutocomplete" (optionSelected)="onTlSelected($event.option.value)">
+            <mat-option *ngFor="let u of filteredTlOptions" [value]="u">
+              {{ u.name }}
+            </mat-option>
+            <mat-option *ngIf="filteredTlOptions.length === 0 && tlSearchCtrl.value" disabled>
+              No matching users
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+      </section>
+
+      <!-- VOL Section -->
+      <section class="section">
+        <h3 class="section-title">
+          <mat-icon class="section-icon pink">group</mat-icon>
+          Volunteers
+        </h3>
+        <div class="chip-row">
+          <span class="chip chip-vol removable" *ngFor="let v of editedVolunteers">
+            {{ v.name }}
+            <button class="chip-remove" (click)="removeVol(v._id)" title="Remove">×</button>
+          </span>
+        </div>
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Add Volunteer</mat-label>
+          <input matInput [formControl]="volSearchCtrl" [matAutocomplete]="volAuto"
+            placeholder="Search by name…" />
+          <mat-autocomplete #volAuto="matAutocomplete" (optionSelected)="onVolSelected($event.option.value)">
+            <mat-option *ngFor="let u of filteredVolOptions" [value]="u">
+              {{ u.name }}
+            </mat-option>
+            <mat-option *ngIf="filteredVolOptions.length === 0 && volSearchCtrl.value" disabled>
+              No matching volunteers
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <!-- Reassignment warning banner -->
+        <div class="warning-banner" *ngIf="warningList.length > 0">
+          <mat-icon class="warn-icon">info</mat-icon>
+          <div>
+            <div *ngFor="let w of warningList" class="warning-line">
+              <strong>{{ w.name }}</strong> is currently in <em>{{ w.fromDept }}</em>.
+              Saving will move them to this department.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Save / Cancel -->
+      <div class="edit-actions">
+        <button class="btn-cancel" (click)="cancelEdit()" [disabled]="saving">Cancel</button>
+        <button class="btn-save" (click)="save()" [disabled]="editForm.invalid || saving">
+          {{ saving ? 'Saving…' : 'Save Changes' }}
+        </button>
+      </div>
+    </ng-container>
+
+  </ng-container>
+</div>

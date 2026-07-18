@@ -1,0 +1,29 @@
+<h2 mat-dialog-title>Delete "{{ data.deptName }}"?</h2>
+
+<mat-dialog-content>
+
+  <ng-container *ngIf="data.users.length > 0; else emptyDept">
+    <div class="warn-banner">
+      <mat-icon class="warn-icon">warning</mat-icon>
+      <div>
+        <div class="warn-title">{{ data.users.length }} user(s) will be unassigned</div>
+        <ul class="user-list">
+          <li *ngFor="let u of data.users">{{ u.name }}</li>
+        </ul>
+        <div class="warn-sub">Their department membership and matching permissions will be removed.</div>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #emptyDept>
+    <p class="confirm-text">Are you sure you want to delete this department? This cannot be undone.</p>
+  </ng-template>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button class="btn-ghost" (click)="cancel()">Cancel</button>
+  <button class="btn-danger" (click)="confirm()">
+    {{ data.users.length > 0 ? 'Unassign All &amp; Delete' : 'Delete' }}
+  </button>
+</mat-dialog-actions>

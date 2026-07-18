@@ -1,158 +1,442 @@
-/* You can add global styles to this file, and also import other style files */
+/* ═══════════════════════════════════════════════════════════
+   DESIGN SYSTEM — Global tokens & resets
+   ═══════════════════════════════════════════════════════════ */
 
 :root {
-    --color-primary: #1E4638;
-    --color-secondary: #386e5b;
-    --color-warning: #e69b00;
-    --mdc-filled-text-field-container-color: #a1d694;
-    --bs-body-bg: #a1d694;
-    --mdc-dialog-container-color: #FDFBD4 !important;
+  /* Brand colours — keep existing palette */
+  --color-primary:   #1E4638;
+  --color-secondary: #386e5b;
+  --color-warning:   #e69b00;
+
+  /* Semantic colours (from design context) */
+  --color-danger:  #dc2626;
+  --color-info:    #2563eb;
+  --color-success: #16a34a;
+
+  /* Surface colours */
+  --surface-body:    #f5f5f5;
+  --surface-sidebar: #fafafa;
+  --surface-card:    #ffffff;
+  --surface-input:   #f9f9f9;
+
+  /* Border colours */
+  --border-default: #e5e5e5;
+  --border-subtle:  #f0f0f0;
+
+  /* Text colours */
+  --text-primary:   #1a1a1a;
+  --text-secondary: #666;
+  --text-muted:     #888;
+  --text-faint:     #aaa;
+
+  /* Shadow tokens */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.10), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  /* Material overrides */
+  --mdc-dialog-container-color: #ffffff;
 }
 
-
+/* ── Base reset ─────────────────────────────────────────── */
 html,
 body {
-    height: 100%;
+  height: 100%;
+  margin: 0;
 }
 
 body {
-    margin: 0;
-    font-family: Roboto, "Helvetica Neue", sans-serif;
-    background-color: #FDFBD4;
-
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background-color: var(--surface-body);
+  color: var(--text-primary);
+  font-size: 13px;
 }
 
-input {
-    background-color: #a1d694 !important;
-    border-color: #fff;
+/* ── Headings ───────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-primary);
 }
 
-input:focus {
-    border-color: #1E4638 !important;
-    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19) !important;
+/* ── Inputs (global baseline — components may override) ─── */
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px rgba(30, 70, 56, 0.12) !important;
 }
 
 input:disabled {
-    border-color: #1E4638 !important;
-    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19) !important;
-    background-color: rgb(72, 95, 72) !important;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    color: #1E4638;
-    text-shadow: 1px 1px 2px #1E4638, 0 0 1em #1E4638, 0 0 0.0em #1E4638;
-}
-
-.section {
-    border: 5px solid #fff;
-    width: auto;
-    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
-    margin-bottom: 30px;
-    padding: 15px;
-}
-
+/* ── Bootstrap button overrides ─────────────────────────── */
 .btn-success {
-    background-color: #1E4638;
-    border-color: #386e5b;
-    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+  background-color: var(--color-primary);
+  border-color: var(--color-secondary);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary {
-    background-color: #386e5b;
-    border-color: #1E4638;
-    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+  background-color: var(--color-secondary);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 
-.btn-primary:hover {    
-    background-color: #386e5b;
-    border-color: #f0f0f0;
-    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+.btn-primary:hover {
+  background-color: var(--color-secondary);
+  border-color: var(--border-subtle);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-primary:disabled {
-    background-color: unset !important;
-    border-color: #1E4638;
+  background-color: unset !important;
+  border-color: var(--color-primary);
 }
 
 .btn-warning {
-    color: #fff;
-    background-color: var(--color-warning) !important;
-    box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19);
+  color: #fff;
+  background-color: var(--color-warning) !important;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-warning:hover {
-    color: #fff;
-    border-color: #f0f0f0;
+  color: #fff;
+  border-color: var(--border-subtle);
 }
 
-/* ---------------------------------------------Menu Starts----------------------------------------- */
-
+/* ── Angular Material Menu ──────────────────────────────── */
 .mat-mdc-menu-content {
-    background-color: var(--color-secondary);
+  background-color: var(--color-secondary);
 }
 
-/* ---------------------------------------------Menu Ends----------------------------------------- */
-
-
-
-
+/* ── Snackbars ──────────────────────────────────────────── */
 .snackbar-success {
-    .mdc-snackbar__surface {
-        border: 2px solid var(--bs-body-bg);
-        border-radius: 10px !important;
-        background-color: var(--color-primary) !important;
-        box-shadow: 0 8px 16px 0 rgba(56, 110, 91, 0.2), 0 6px 20px 0 rgba(56, 110, 91, 0.19) !important;
-    }
-
-    .mdc-snackbar__label {
-        color: white !important;
-    }
+  .mdc-snackbar__surface {
+    border: 2px solid var(--color-secondary);
+    border-radius: 10px !important;
+    background-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-md) !important;
+  }
+  .mdc-snackbar__label {
+    color: white !important;
+  }
 }
 
 .snackbar-error {
-    .mdc-snackbar__surface {
-        background-color: rgb(151, 9, 9) !important;
-        /* border: 2px solid rgb(255, 0, 0); */
-        border-radius: 10px !important;
-        box-shadow: 0 8px 16px 0 rgba(255, 0, 0, 0.2), 0 6px 20px 0 rgba(255, 0, 0, 0.19) !important;
-    }
-
-    .mdc-snackbar__label {
-        color: white !important;
-    }
+  .mdc-snackbar__surface {
+    background-color: rgb(151, 9, 9) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 16px 0 rgba(255, 0, 0, 0.2), 0 6px 20px 0 rgba(255, 0, 0, 0.19) !important;
+  }
+  .mdc-snackbar__label {
+    color: white !important;
+  }
 }
 
-/* -----------------------------SCROLL BAR DESIGN STARTS---------------------------------------- */
-/* Basic Scrollbar Customization */
+/* ── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar {
-    width: 8px; /* Adjust scrollbar width */
-    height: 8px; /* Adjust scrollbar height for horizontal scrollbars */
-  }
-  
-  ::-webkit-scrollbar-track {
-    background-color: red; /* Background color of the scrollbar track */
-    border-radius: 10px; /* Optional: Rounded corners */
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background-color: blue; /* Scrollbar thumb color */
-    border-radius: 10px; /* Optional: Rounded corners for thumb */
-    border: 2px solid #f0f0f0; /* Padding around the thumb */
-  }
-  
-  /* Hover Effect */
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: green; /* Darker color when hovered */
-  }
-  
-  /* For Firefox (Gecko-based browsers) */
-  * {
-    scrollbar-width: thin; /* Sets scrollbar width to thin */
-    scrollbar-color: var(--color-primary) var(--bs-body-bg); /* Thumb color and track color */
-  }
-/* -----------------------------SCROLL BAR DESIGN ENDS---------------------------------------- */
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--border-subtle);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #ccc var(--border-subtle);
+}
+
+/* ── Standard form fields (wireframe pattern) ───────────── */
+/* Used for native inputs/selects across all non-Material forms */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.field label {
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #1a1a1a;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.12s;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(30, 70, 56, 0.1);
+}
+
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+  background: #f5f5f4;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.form-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .form-two-col { grid-template-columns: 1fr; }
+}
+
+/* ── Global Material dialog overrides ───────────────────── */
+.mat-mdc-dialog-surface {
+  border-radius: 14px !important;
+}
+
+.mat-mdc-dialog-title {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  padding: 1rem 1.25rem !important;
+  margin: 0 !important;
+  border-bottom: 1px solid var(--border-default);
+  line-height: 1.4 !important;
+}
+
+.mat-mdc-dialog-title::before {
+  display: none !important;
+}
+
+.mat-mdc-dialog-content {
+  padding: 1.25rem !important;
+  margin: 0 !important;
+  max-height: 65vh;
+}
+
+.mat-mdc-dialog-actions {
+  padding: 0.875rem 1.25rem !important;
+  margin: 0 !important;
+  border-top: 1px solid var(--border-default) !important;
+  background: #fafafa;
+  justify-content: flex-end !important;
+  gap: 8px;
+  min-height: unset !important;
+}
+
+/* Override mat-form-field inside dialogs */
+.mat-mdc-dialog-content .mat-mdc-form-field {
+  --mdc-outlined-text-field-input-text-color: #1a1a1a;
+  --mdc-outlined-text-field-outline-color: #c8c8c8;
+  --mdc-outlined-text-field-hover-outline-color: #999;
+  --mdc-outlined-text-field-focus-outline-color: var(--color-primary);
+  --mdc-outlined-text-field-label-text-color: #666;
+  --mdc-outlined-text-field-focus-label-text-color: var(--color-primary);
+  --mdc-outlined-text-field-container-shape: 8px;
+  --mat-form-field-container-text-size: 13px;
+}
+
+/* ── Angular Material button colour overrides ───────────── */
+/* Remap mat-raised-button color="primary" from purple → brand green */
+.mat-mdc-raised-button.mat-primary {
+  --mdc-protected-button-container-color: var(--color-primary);
+  --mdc-protected-button-label-text-color: #fff;
+}
+.mat-mdc-raised-button.mat-accent {
+  --mdc-protected-button-container-color: var(--color-secondary);
+  --mdc-protected-button-label-text-color: #fff;
+}
+.mat-mdc-unelevated-button.mat-primary {
+  --mdc-filled-button-container-color: var(--color-primary);
+  --mdc-filled-button-label-text-color: #fff;
+}
+.mat-mdc-unelevated-button.mat-accent {
+  --mdc-filled-button-container-color: var(--color-secondary);
+  --mdc-filled-button-label-text-color: #fff;
+}
+
+/* ── Page header (wireframe .ph pattern) ───────────────── */
+/* Full-bleed sticky header at the top of every content page.
+   Negative margins escape the .page-padded inset so it reads edge-to-edge. */
+.page-ph {
+  margin: -1.25rem -1.5rem 1.25rem;
+  padding: 1rem 1.5rem;
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.page-ph-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.page-ph-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+@media (max-width: 768px) {
+  /* Keep sticky on mobile — offset by the mobile topbar height (52px) so it
+     sits flush below the topbar without overlap */
+  .page-ph { top: 52px; }
+}
+
+/* ── Dialog button utilities ────────────────────────────── */
+/* Used by mat-dialog-actions in all dialogs — no inline styles needed */
+.btn-ghost {
+  padding: 6px 14px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+.btn-ghost:hover { background: var(--border-subtle); }
+
+.btn-cta {
+  padding: 6px 16px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.btn-cta:hover:not(:disabled) { background: var(--color-secondary); }
+.btn-cta:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-danger {
+  padding: 6px 16px;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.btn-danger:hover { background: #b91c1c; }
+
+/* ── Field validation error ─────────────────────────────── */
+.field-error {
+  font-size: 11px;
+  color: #dc2626;
+  margin-top: 2px;
+}
+
+/* ── Dialog warning banner ──────────────────────────────── */
+.warn-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 4px;
+}
+.warn-banner .warn-icon {
+  color: #f59e0b;
+  font-size: 20px;
+  height: 20px;
+  width: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.warn-banner .warn-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+.warn-banner .user-list {
+  margin: 4px 0 6px 18px;
+  font-size: 12px;
+  color: #78350f;
+  padding: 0;
+}
+.warn-banner .user-list li { margin-bottom: 2px; }
+.warn-banner .warn-sub {
+  font-size: 11px;
+  color: #92400e;
+  opacity: 0.8;
+}
+.confirm-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 4px 0 0;
+}
+
+/* ── Section label ──────────────────────────────────────── */
+.section-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Utility: section card ──────────────────────────────── */
+.section {
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  width: auto;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+  padding: 15px;
+  background: var(--surface-card);
+}

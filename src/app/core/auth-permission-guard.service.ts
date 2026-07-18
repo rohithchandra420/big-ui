@@ -1,26 +1,28 @@
 import { Injectable } from "@angular/core";
-import { CanActivate, Router, UrlTree } from "@angular/router";
+import { ActivatedRouteSnapshot, CanActivate, Router, UrlTree } from "@angular/router";
 import { AuthService } from "./auth.service";
-import { User } from "./user.model";
 import { map, Observable, take } from "rxjs";
 
 @Injectable({ providedIn: 'root' })
-
 export class AuthPermissionGuard implements CanActivate {
 
-    user: User
+    constructor(private authService: AuthService, private router: Router) {}
 
-    constructor(private authService: AuthService, private router: Router) {
-        // this.authService.currentUser;
-    }
+    canActivate(route: ActivatedRouteSnapshot): boolean | UrlTree | Observable<boolean | UrlTree> | Promise<boolean | UrlTree> {
+        const requiredRoles: string[] = route.data['roles'] || [];
+        const requiredPermissions: string[] = route.data['permissions'] || [];
+        const requiredDepts: string[] = route.data['departments'] || [];
 
-    canActivate(): boolean | UrlTree | Observable<boolean | UrlTree> | Promise<boolean | UrlTree> {
         return this.authService.user.pipe(take(1), map(user => {
-            //return !user ? false : true;
-            this.user = user;
-            if (this.authService.hasPermission(this.user, 'teams:write')) {
-                return true;
-            }
+            if (!user) return this.router.parseUrl('/login');
+
+            const hasRole = requiredRoles.length === 0 || requiredRoles.includes(user.role);
+            const hasPerm = requiredPermissions.length > 0 &&
+                requiredPermissions.some(p => this.authService.hasPermission(user, p));
+            const hasDept = requiredDepts.length > 0 &&
+                requiredDepts.some(d => this.authService.hasDepartmentAccess(user, d));
+
+            if (hasRole || hasPerm || hasDept) return true;
             return this.router.parseUrl('');
         }));
     }
