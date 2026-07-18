@@ -9,10 +9,10 @@
 
     <!-- Back + Edit toolbar -->
     <div class="top-bar">
-      <button mat-button class="btn-back" (click)="goBack()">
+      <button class="btn-back" (click)="goBack()">
         <mat-icon>arrow_back</mat-icon> Departments
       </button>
-      <button mat-raised-button class="btn-edit" *ngIf="!editMode" (click)="enterEditMode()">
+      <button class="btn-edit" *ngIf="!editMode" (click)="enterEditMode()">
         <mat-icon>edit</mat-icon> Edit
       </button>
     </div>
@@ -128,10 +128,9 @@
 
       <!-- Save / Cancel -->
       <div class="edit-actions">
-        <button mat-button (click)="cancelEdit()" [disabled]="saving">Cancel</button>
-        <button mat-raised-button class="btn-save" (click)="save()"
-          [disabled]="editForm.invalid || saving">
-          {{ saving ? 'Saving...' : 'Save Changes' }}
+        <button class="btn-cancel" (click)="cancelEdit()" [disabled]="saving">Cancel</button>
+        <button class="btn-save" (click)="save()" [disabled]="editForm.invalid || saving">
+          {{ saving ? 'Saving…' : 'Save Changes' }}
         </button>
       </div>
     </ng-container>

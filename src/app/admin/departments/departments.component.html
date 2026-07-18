@@ -1,13 +1,15 @@
 <div class="dept-page">
-  <div class="page-header">
-    <h2 class="page-title">Departments</h2>
-    <button mat-raised-button class="btn-create" (click)="openCreateDialog()">
-      <mat-icon>add</mat-icon> Create Department
-    </button>
+
+  <div class="page-ph">
+    <div>
+      <div class="page-ph-title">Departments</div>
+      <div class="page-ph-sub">{{ departments.length }} departments</div>
+    </div>
+    <button class="btn-cta" (click)="openCreateDialog()">+ Create Department</button>
   </div>
 
   <div *ngIf="loading" class="loading-wrap">
-    <mat-spinner diameter="40"></mat-spinner>
+    <mat-spinner diameter="36"></mat-spinner>
   </div>
 
   <div *ngIf="!loading && departments.length === 0" class="empty-state">
@@ -16,36 +18,35 @@
   </div>
 
   <div class="dept-grid" *ngIf="!loading && departments.length > 0">
-    <mat-card class="dept-card" *ngFor="let dept of departments">
-      <div class="card-header">
+    <div class="dept-card" *ngFor="let dept of departments">
+
+      <div class="dept-card-hd">
         <span class="dept-name">{{ dept.name }}</span>
       </div>
-      <mat-card-content class="card-body">
+
+      <div class="dept-card-body">
         <p class="dept-desc" *ngIf="dept.description">{{ dept.description }}</p>
         <p class="dept-desc muted" *ngIf="!dept.description">No description</p>
 
         <div class="meta-row">
-          <mat-icon class="meta-icon">supervisor_account</mat-icon>
-          <span class="meta-label">TL:</span>
-          <span class="meta-value">{{ tlNames(dept) }}</span>
+          <span class="meta-label">TL</span>
+          <span class="meta-value">{{ tlNames(dept) || '—' }}</span>
         </div>
         <div class="meta-row">
-          <mat-icon class="meta-icon">group</mat-icon>
-          <span class="meta-label">Volunteers:</span>
+          <span class="meta-label">Volunteers</span>
           <span class="meta-value">{{ dept.volunteerCount }}</span>
         </div>
-      </mat-card-content>
-      <mat-card-actions class="card-actions">
-        <button mat-button class="btn-edit" (click)="editDepartment(dept)">
-          <mat-icon>edit</mat-icon> Edit
-        </button>
-        <button mat-button class="btn-delete"
-          (click)="openDeleteDialog(dept)"
+      </div>
+
+      <div class="dept-card-actions">
+        <button class="btn-sm-outline" (click)="editDepartment(dept)">Edit</button>
+        <button class="btn-sm-danger" (click)="openDeleteDialog(dept)"
           [disabled]="deletingId === dept._id">
-          <mat-icon>delete</mat-icon>
-          {{ deletingId === dept._id ? 'Deleting...' : 'Delete' }}
+          {{ deletingId === dept._id ? 'Deleting…' : 'Delete' }}
         </button>
-      </mat-card-actions>
-    </mat-card>
+      </div>
+
+    </div>
   </div>
+
 </div>

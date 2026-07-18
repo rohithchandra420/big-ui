@@ -11,6 +11,8 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { LayoutModule } from '@angular/cdk/layout';
 
 
 @NgModule({
@@ -26,7 +28,9 @@ import { MatSelectModule } from '@angular/material/select';
   MatIconModule,
   MatProgressSpinnerModule,
   MatAutocompleteModule,
-  MatSelectModule
+  MatSelectModule,
+  MatSidenavModule,
+  LayoutModule
   ],
   exports: [
   CommonModule,
@@ -40,7 +44,9 @@ import { MatSelectModule } from '@angular/material/select';
    MatIconModule,
    MatProgressSpinnerModule,
    MatAutocompleteModule,
-   MatSelectModule
+   MatSelectModule,
+   MatSidenavModule,
+   LayoutModule
    ],
 })
 export class CustomMaterialModule { }

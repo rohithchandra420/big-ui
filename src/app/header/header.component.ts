@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Component, EventEmitter, OnDestroy, OnInit, Output } from "@angular/core";
 import { AuthService } from "../core/auth.service";
 import { User } from "../core/user.model";
 import { Subscription } from "rxjs";
@@ -8,17 +8,25 @@ import { Subscription } from "rxjs";
     templateUrl: './header.component.html',
     styleUrls: ['./header.component.css']
 })
-
 export class HeaderComponent implements OnInit, OnDestroy {
+
+    /** Emitted on every nav item click — parent uses this to close mobile drawer */
+    @Output() navItemClicked = new EventEmitter<void>();
+
     userRole: string = '';
     userName: string = '';
+    isAuthenticated = false;
+
+    private currentUser: User | null = null;
     private userSub!: Subscription;
 
-    isAuthenticated = false;
-    private currentUser: User | null = null;
+    readonly adminMenuRoles   = ['DEV', 'DIR', 'ADMIN', 'TL'];
+    readonly ticketManagerRoles = ['DEV', 'DIR', 'ADMIN'];
+    readonly manageDeptsRoles = ['DEV', 'DIR', 'ADMIN'];
 
     constructor(private authService: AuthService) {}
 
+    /** Box Office is visible to admin roles, or users with the permission/department access */
     get canSeeBoxOffice(): boolean {
         if (!this.currentUser) return false;
         if (['DEV', 'DIR', 'ADMIN'].includes(this.userRole)) return true;
@@ -26,15 +34,21 @@ export class HeaderComponent implements OnInit, OnDestroy {
                this.authService.hasDepartmentAccess(this.currentUser, 'Box Office');
     }
 
-    readonly adminMenuRoles = ['DEV', 'DIR', 'ADMIN', 'TL'];
-    readonly ticketManagerRoles = ['DEV', 'DIR', 'ADMIN'];
-
     get canSeeAdminMenu(): boolean {
         return this.adminMenuRoles.includes(this.userRole);
     }
 
     get canSeeTicketRegistry(): boolean {
         return this.ticketManagerRoles.includes(this.userRole);
+    }
+
+    get canSeeManageDepts(): boolean {
+        return this.manageDeptsRoles.includes(this.userRole);
+    }
+
+    /** Notify parent so it can close the mobile drawer */
+    onNavClick(): void {
+        this.navItemClicked.emit();
     }
 
     ngOnInit() {
