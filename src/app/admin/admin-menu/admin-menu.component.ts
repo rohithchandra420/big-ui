@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
@@ -9,15 +8,17 @@ import { AuthService } from '../../core/auth.service';
 })
 export class AdminMenuComponent {
 
-  readonly ticketManagerRoles = ['DEV', 'DIR', 'ADMIN'];
+  readonly adminOnlyRoles = ['DEV', 'DIR', 'ADMIN'];
 
-  constructor(private router: Router, private authService: AuthService) {}
+  constructor(private authService: AuthService) {}
 
+  // Ticket registry is restricted to DEV/DIR/ADMIN
   get canSeeTickets(): boolean {
-    return this.ticketManagerRoles.includes(this.authService.currentUser?.role || '');
+    return this.adminOnlyRoles.includes(this.authService.currentUser?.role || '');
   }
 
-  navigateTo(route: string) {
-    this.router.navigate([route]);
+  // Department management page is DEV/DIR/ADMIN only
+  get canSeeManageDepts(): boolean {
+    return this.adminOnlyRoles.includes(this.authService.currentUser?.role || '');
   }
 }

@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>Create Department</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="dialog-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" placeholder="e.g. Finance" />
+      <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" rows="3"
+        placeholder="What does this department handle?"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-raised-button class="btn-create" (click)="save()" [disabled]="form.invalid || saving">
+    {{ saving ? 'Creating...' : 'Create' }}
+  </button>
+</mat-dialog-actions>
+
+<style>
+  .dialog-form { display: flex; flex-direction: column; padding-top: 8px; }
+  .full-width { width: 100%; }
+  .btn-create { background: #0D9488; color: #fff; }
+  .btn-create:disabled { background: #ccc; }
+</style>

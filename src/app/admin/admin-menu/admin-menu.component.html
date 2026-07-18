@@ -2,7 +2,7 @@
   <mat-toolbar-row>
     <span class="submenu-title">Menu</span>
     <span class="spacer"></span>
-    
+
     <!-- Desktop Menu -->
     <div class="desktop-menu">
       <button mat-button [routerLink]="['user']">
@@ -12,6 +12,10 @@
       <button mat-button [routerLink]="['tickets']" *ngIf="canSeeTickets">
         <mat-icon>confirmation_number</mat-icon>
         Ticket
+      </button>
+      <button mat-button [routerLink]="['departments']" *ngIf="canSeeManageDepts">
+        <mat-icon>domain</mat-icon>
+        Departments
       </button>
     </div>
 
@@ -23,12 +27,16 @@
 </mat-toolbar>
 
 <mat-menu #mobileMenu="matMenu">
-  <button mat-menu-item (click)="navigateTo('/user')">
+  <button mat-menu-item [routerLink]="['user']">
     <mat-icon>person</mat-icon>
     <span>User</span>
   </button>
-  <button mat-menu-item (click)="navigateTo('/ticket')" *ngIf="canSeeTickets">
+  <button mat-menu-item [routerLink]="['tickets']" *ngIf="canSeeTickets">
     <mat-icon>confirmation_number</mat-icon>
     <span>Ticket</span>
+  </button>
+  <button mat-menu-item [routerLink]="['departments']" *ngIf="canSeeManageDepts">
+    <mat-icon>domain</mat-icon>
+    <span>Departments</span>
   </button>
 </mat-menu>

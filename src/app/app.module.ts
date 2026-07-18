@@ -55,6 +55,10 @@ import * as moment from 'moment';
 import { CalendarService } from './calendar/calendar.service';
 import { HasPermissionDirective } from './directives/has-permission.directive';
 import { ProfileComponent } from './profile/profile.component';
+import { DepartmentsComponent } from './admin/departments/departments.component';
+import { DepartmentDetailComponent } from './admin/departments/department-detail/department-detail.component';
+import { DepartmentCreateDialogComponent } from './admin/departments/department-create-dialog/department-create-dialog.component';
+import { DepartmentDeleteDialogComponent } from './admin/departments/department-delete-dialog/department-delete-dialog.component';
 
 // #QRCode Scanner: Necessary to solve the problem of losing internet connection
 LOAD_WASM().subscribe()
@@ -83,7 +87,11 @@ LOAD_WASM().subscribe()
     CalendarComponent,
     TaskPoolComponent,
     HasPermissionDirective,
-    ProfileComponent
+    ProfileComponent,
+    DepartmentsComponent,
+    DepartmentDetailComponent,
+    DepartmentCreateDialogComponent,
+    DepartmentDeleteDialogComponent
   ],
   imports: [
     BrowserModule,
