@@ -1,35 +1,60 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRouteSnapshot } from '@angular/router';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AuthService } from './core/auth.service';
-
-import {MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition} from '@angular/material/snack-bar'; 
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { Subscription } from 'rxjs';
+import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit{
+export class AppComponent implements OnInit, OnDestroy {
   title = 'big-app-ui';
-  horizontalPosition: MatSnackBarHorizontalPosition = 'right';
-  verticalPosition: MatSnackBarVerticalPosition = 'top';  
+  isAuthenticated = false;
+  isMobile = false;
 
-  constructor(private authService: AuthService, private _snackBar: MatSnackBar) {
-    //localStorage.clear();
+  horizontalPosition: MatSnackBarHorizontalPosition = 'right';
+  verticalPosition: MatSnackBarVerticalPosition = 'top';
+
+  private authSub!: Subscription;
+  private breakpointSub!: Subscription;
+
+  constructor(
+    private authService: AuthService,
+    private _snackBar: MatSnackBar,
+    private breakpointObserver: BreakpointObserver
+  ) {}
+
+  /** Open sidebar automatically on desktop when authenticated; close on mobile/logged-out */
+  get sidenavOpen(): boolean {
+    return this.isAuthenticated && !this.isMobile;
   }
 
   ngOnInit() {
     this.authService.autoLogin();
+
+    this.authSub = this.authService.user.subscribe(user => {
+      this.isAuthenticated = !!user;
+    });
+
+    this.breakpointSub = this.breakpointObserver
+      .observe(['(max-width: 768px)'])
+      .subscribe(result => {
+        this.isMobile = result.matches;
+      });
   }
 
-  openSnackBar(message: string, action: string) { 
-    this._snackBar.open(message, action, { 
-      duration: 2000, 
+  ngOnDestroy() {
+    this.authSub?.unsubscribe();
+    this.breakpointSub?.unsubscribe();
+  }
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action, {
+      duration: 2000,
       horizontalPosition: this.horizontalPosition,
       verticalPosition: this.verticalPosition
-    }); 
-  } 
-  
+    });
+  }
 }
-
-

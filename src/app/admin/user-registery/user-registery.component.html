@@ -1,123 +1,142 @@
-<div class="section col-xs-12 col-sm-12 col-md-8 col-sm-offset-1 col-md-offset-2 mt-2">
-    <div class="section-header-center col-lg-12 mb-3">
-        <h2>{{ isEditMode ? 'Edit' : 'Register' }} User:</h2>
-    </div>
-
-    <div *ngIf="!canViewPage" class="alert alert-warning">
-        You do not have permission to manage users.
-    </div>
-
-    <form *ngIf="canCreateUsers || isEditMode" [formGroup]="userFrom" (ngSubmit)="onSubmit()">
-        <div class="form-group">
-            <label for="userName">Name:</label>
-            <input type="text" id="userName" formControlName="userName" class="form-control">
-        </div>
-        <div class="form-group">
-            <label for="email">Email:</label>
-            <input type="email" id="email" formControlName="email" class="form-control">
-        </div>
-        <div class="form-group" *ngIf="!isEditMode">
-            <label for="password">Password:</label>
-            <input type="password" id="password" formControlName="password" class="form-control">
-        </div>
-        <div class="form-group" *ngIf="!isEditMode">
-            <label for="confirmPassword">Confirm Password:</label>
-            <input type="password" id="confirmPassword" formControlName="confirmPassword" class="form-control">
-        </div>
-
-        <div class="form-group">
-            <label for="role">Role:</label>
-            <select class="form-select" formControlName="role" id="role">
-                <option value="" disabled>Select a role</option>
-                <option *ngFor="let r of roles" [value]="r.name">{{ r.name }}</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="homeDepartment">Home Department:</label>
-            <select class="form-select" formControlName="homeDepartment" id="homeDepartment">
-                <option value="" disabled>Select a department</option>
-                <option *ngFor="let d of departments" [value]="d._id">{{ d.name }}</option>
-            </select>
-        </div>
-
-        <!-- Permission grants — independent of home department, can cover any department -->
-        <div class="dept-access-section mt-3">
-            <label class="dept-access-label">Department Access</label>
-            <div class="dept-access-list">
-                <div *ngFor="let dept of departments" class="dept-row">
-                    <span class="dept-name">{{ dept.name }}</span>
-                    <div class="chip-group">
-                        <button
-                            *ngFor="let level of permLevels"
-                            type="button"
-                            class="chip"
-                            [class.active]="deptSelections[dept._id] === level"
-                            [class.chip-read]="level === 'read' && deptSelections[dept._id] === level"
-                            [class.chip-write]="level === 'write' && deptSelections[dept._id] === level"
-                            [class.chip-manage]="level === 'manage' && deptSelections[dept._id] === level"
-                            (click)="setDeptLevel(dept._id, level)">
-                            {{ level | titlecase }}
-                        </button>
-                    </div>
-                    <span class="dept-status" *ngIf="deptSelections[dept._id] !== 'none'">
-                        &#10003;
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <div class="action-group">
-            <div class="col-lg-4 col-md-4 col-xs-12 text-center">
-                <button class="btn btn-success mr-3" type="submit" *ngIf="!isEditMode && canCreateUsers">
-                    Create User
-                </button>
-                <button class="btn btn-primary mr-3" type="button" *ngIf="isEditMode"
-                    (click)="switchMode()">
-                    {{ canCreateUsers ? 'Switch to Register' : 'Cancel' }}
-                </button>
-            </div>
-            <div class="col-lg-4 col-md-4 col-xs-12 text-center">
-                <button class="btn btn-success mr-3" type="button" [disabled]="!isEditMode"
-                    (click)="updateUser()">Update User</button>
-            </div>
-            <div class="col-lg-4 col-md-4 col-xs-12 text-center" *ngIf="canCreateUsers">
-                <button class="btn btn-danger" type="button" [disabled]="!isEditMode"
-                    (click)="deleteUser()">Delete User</button>
-            </div>
-        </div>
-    </form>
+<!-- ── Page header ────────────────────────────────────────── -->
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Users</div>
+    <div class="page-ph-sub">{{ userList.length }} registered users</div>
+  </div>
 </div>
 
-<div class="section col-lg-12" *ngIf="canViewPage">
-    <div class="section-header-center col-lg-12 mb-3">
-        <h2>Users:</h2>
+<!-- ── Create / Edit form ─────────────────────────────────── -->
+<div class="form-card" *ngIf="canCreateUsers || isEditMode">
+
+  <div class="form-card-hd">
+    <div class="form-card-title">{{ isEditMode ? 'Edit User' : 'Register New User' }}</div>
+  </div>
+
+  <div *ngIf="!canViewPage" class="field-alert field-alert-warn">
+    You do not have permission to manage users.
+  </div>
+
+  <form [formGroup]="userFrom" (ngSubmit)="onSubmit()" class="user-form">
+
+    <div class="form-two-col">
+      <div class="field">
+        <label>Name *</label>
+        <input type="text" formControlName="userName" placeholder="Full name">
+      </div>
+      <div class="field">
+        <label>Email *</label>
+        <input type="email" formControlName="email" placeholder="email@example.com">
+      </div>
     </div>
-    <div class="row col-lg-12 col-sm-offset-1 col-md-offset-2">
-        <mat-card class="user-card col-lg-4 col-md-5 col-xs-12" *ngFor="let u of userList">
-            <mat-card-header class="text-center">
-                <mat-card-title>{{ u.name }}</mat-card-title>
-                <mat-card-subtitle>* {{ u.role?.name || u.role }} *</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content class="mb-2">
-                <p>
-                    <strong>Name: </strong> {{ u.name }}<br>
-                    <strong>Email: </strong> {{ u.email }}<br>
-                    <strong>Role: </strong> {{ u.role?.name || u.role }}<br>
-                    <strong>Department: </strong> {{ u.departments?.[0]?.department?.name || u.departments?.[0]?.department || '—' }}<br>
-                    <strong>Access: </strong> {{ getAccessLabel(u) }}<br>
-                </p>
-                <div *ngIf="u.permissions?.length">
-                    <strong>Permissions:</strong>
-                    <div class="perm-chips mt-1">
-                        <span *ngFor="let p of u.permissions" class="perm-badge">{{ p }}</span>
-                    </div>
-                </div>
-            </mat-card-content>
-            <mat-card-actions>
-                <button class="btn btn-primary" *ngIf="canEditUser(u)" (click)="editUser(u)">Edit</button>
-                <button class="btn btn-danger" *ngIf="canCreateUsers" (click)="deleteUser()">Delete</button>
-            </mat-card-actions>
-        </mat-card>
+
+    <div class="form-two-col" *ngIf="!isEditMode">
+      <div class="field">
+        <label>Password *</label>
+        <input type="password" formControlName="password" placeholder="Min. 8 characters">
+      </div>
+      <div class="field">
+        <label>Confirm Password *</label>
+        <input type="password" formControlName="confirmPassword" placeholder="Repeat password">
+      </div>
     </div>
+
+    <div class="form-two-col">
+      <div class="field">
+        <label>Role *</label>
+        <select formControlName="role">
+          <option value="" disabled>Select a role</option>
+          <option *ngFor="let r of roles" [value]="r.name">{{ r.name }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Home Department</label>
+        <select formControlName="homeDepartment">
+          <option value="" disabled>Select a department</option>
+          <option *ngFor="let d of departments" [value]="d._id">{{ d.name }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Department Access -->
+    <div class="section-divider"></div>
+    <div class="section-lbl">Department Access</div>
+    <div class="dept-access-table">
+      <div *ngFor="let dept of departments" class="dept-row">
+        <span class="dept-name">{{ dept.name }}</span>
+        <div class="chip-group">
+          <button
+            *ngFor="let level of permLevels"
+            type="button"
+            class="access-chip"
+            [class.chip-read]="level === 'read' && deptSelections[dept._id] === level"
+            [class.chip-write]="level === 'write' && deptSelections[dept._id] === level"
+            [class.chip-manage]="level === 'manage' && deptSelections[dept._id] === level"
+            [class.chip-inactive]="deptSelections[dept._id] !== level"
+            (click)="setDeptLevel(dept._id, level)">
+            {{ level | titlecase }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="btn-row">
+      <button class="btn-brand" type="submit" *ngIf="!isEditMode && canCreateUsers">
+        Create User
+      </button>
+      <button class="btn-outline-brand" type="button" *ngIf="isEditMode" (click)="switchMode()">
+        {{ canCreateUsers ? 'Switch to Register' : 'Cancel' }}
+      </button>
+      <button class="btn-brand" type="button" [disabled]="!isEditMode" (click)="updateUser()">
+        Update User
+      </button>
+      <button class="btn-danger-tint" type="button" *ngIf="canCreateUsers"
+        [disabled]="!isEditMode" (click)="deleteUser()">
+        Delete
+      </button>
+    </div>
+
+  </form>
+</div>
+
+<!-- ── User list ──────────────────────────────────────────── -->
+<div class="users-section" *ngIf="canViewPage">
+  <div class="section-lbl" style="margin-bottom: 14px; margin-top: 8px;">All Users</div>
+  <div class="user-grid">
+    <div class="user-card" *ngFor="let u of userList">
+      <div class="user-card-hd">
+        <div class="user-avatar">{{ u.name.charAt(0).toUpperCase() }}</div>
+        <div class="user-meta">
+          <div class="user-name">{{ u.name }}</div>
+          <span class="user-role-badge">{{ u.role?.name || u.role }}</span>
+        </div>
+      </div>
+
+      <div class="user-fields">
+        <div class="user-field-row">
+          <span class="uf-label">Email</span>
+          <span class="uf-value">{{ u.email }}</span>
+        </div>
+        <div class="user-field-row">
+          <span class="uf-label">Department</span>
+          <span class="uf-value">{{ u.departments?.[0]?.department?.name || u.departments?.[0]?.department || '—' }}</span>
+        </div>
+        <div class="user-field-row">
+          <span class="uf-label">Access</span>
+          <span class="uf-value">{{ getAccessLabel(u) }}</span>
+        </div>
+      </div>
+
+      <div class="perm-chips" *ngIf="u.permissions?.length">
+        <span class="perm-badge" *ngFor="let p of u.permissions">{{ p }}</span>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-sm-outline" *ngIf="canEditUser(u)" (click)="editUser(u)">Edit</button>
+        <button class="btn-sm-danger" *ngIf="canCreateUsers" (click)="deleteUser()">Delete</button>
+      </div>
+    </div>
+  </div>
 </div>
