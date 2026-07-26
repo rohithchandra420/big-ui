@@ -22,15 +22,6 @@
     </a>
 
     <a class="nav-item"
-       routerLink="/box-office"
-       routerLinkActive="active"
-       (click)="onNavClick()"
-       *ngIf="isAuthenticated && canSeeBoxOffice">
-      <span class="nav-dot"></span>
-      Box Office
-    </a>
-
-    <a class="nav-item"
        routerLink="/tickets"
        routerLinkActive="active"
        (click)="onNavClick()"
@@ -56,6 +47,27 @@
       <span class="nav-dot"></span>
       Calendar
     </a>
+
+    <!-- Box Office group — visible to admin roles, box-office permission, or Box Office dept -->
+    <ng-container *ngIf="isAuthenticated && canSeeBoxOffice">
+      <div class="nav-group-label">Box Office</div>
+
+      <a class="nav-item"
+         routerLink="/box-office/bookings"
+         routerLinkActive="active"
+         (click)="onNavClick()">
+        <span class="nav-dot"></span>
+        Bookings
+      </a>
+
+      <a class="nav-item"
+         routerLink="/box-office/registration"
+         routerLinkActive="active"
+         (click)="onNavClick()">
+        <span class="nav-dot"></span>
+        Registration
+      </a>
+    </ng-container>
 
     <!-- Admin group — visible to DEV / DIR / ADMIN / TL -->
     <ng-container *ngIf="isAuthenticated && canSeeAdminMenu">

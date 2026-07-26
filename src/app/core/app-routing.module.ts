@@ -21,6 +21,9 @@ import { AuthPermissionGuard } from "./auth-permission-guard.service";
 import { ProfileComponent } from "../profile/profile.component";
 import { DepartmentsComponent } from "../admin/departments/departments.component";
 import { DepartmentDetailComponent } from "../admin/departments/department-detail/department-detail.component";
+import { BookingsComponent } from "../box-office/bookings/bookings.component";
+import { RegistrationComponent } from "../box-office/registration/registration.component";
+import { BookingFoundComponent } from "../box-office/registration/booking-found/booking-found.component";
 
 // const profileGuard: CanActivateFn = (
 //     route: ActivatedRouteSnapshot,
@@ -67,6 +70,9 @@ const appRoutes: Routes = [
     { path: 'dashboard', redirectTo: '',  pathMatch: 'full'},
     { path: 'profile', canActivate:[AuthGuard] ,component: ProfileComponent },
     { path: 'box-office', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BoxOfficeComponent },
+    { path: 'box-office/bookings', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BookingsComponent },
+    { path: 'box-office/registration', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: RegistrationComponent },
+    { path: 'box-office/registration/:id', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BookingFoundComponent },
     { path: 'tickets', canActivate:[AuthGuard] ,component: TicketsComponent },
     { path: 'calendar', canActivate:[AuthGuard] ,component: CalendarComponent },
     { path: 'tickets/details/:id', component: TicketDetailsComponent },

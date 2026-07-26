@@ -1,0 +1,50 @@
+<div class="alert aw" *ngIf="!isEditing">
+  Counter entry — fallback path. If the attendee has a working phone, prefer "Send form to their phone" to keep the queue moving.
+</div>
+
+<div class="card">
+  <div class="card-title" style="margin-bottom: 12px;">
+    {{ isEditing ? 'Edit attendee details' : 'Complete attendee details' }} — <span class="mono">{{ shopItem._id }}</span>
+  </div>
+
+  <form [formGroup]="form" class="form-two-col">
+    <div class="field">
+      <label>Full name *</label>
+      <input type="text" formControlName="name" placeholder="Full name">
+      <span class="field-error" *ngIf="form.get('name')?.touched && form.get('name')?.hasError('required')">
+        Name is required
+      </span>
+    </div>
+
+    <div class="field">
+      <label>Phone (WhatsApp) *</label>
+      <input type="text" formControlName="phone_no" placeholder="+91">
+      <span class="field-error" *ngIf="form.get('phone_no')?.touched && form.get('phone_no')?.hasError('required')">
+        Phone is required
+      </span>
+    </div>
+
+    <div class="field">
+      <label>Email *</label>
+      <input type="email" formControlName="email" placeholder="email@example.com">
+      <span class="field-error" *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
+        A valid email is required
+      </span>
+    </div>
+
+    <div class="field">
+      <label>Gender (optional)</label>
+      <select formControlName="gender">
+        <option value="">Not specified</option>
+        <option *ngFor="let option of genderOptions" [value]="option">{{ option }}</option>
+      </select>
+    </div>
+  </form>
+
+  <div class="btn-row">
+    <button class="btn-ghost" (click)="back()">Back</button>
+    <button class="btn-cta" (click)="save()" [disabled]="form.invalid || saving">
+      {{ saving ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+</div>

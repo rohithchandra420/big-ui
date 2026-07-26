@@ -1,3 +1,5 @@
+export type Gender = 'Male' | 'Female' | 'Prefer not to say';
+
 export class Shopcart {
     public item_name: string;
     public item_quantity: number;
@@ -9,9 +11,13 @@ export class Shopcart {
     public phone_no?: string;
     public email?: string;
     public _id?: string;
-    
+    public gender?: Gender | null;
+    public allocatedTentId?: string | null;
+    public linkedPassId?: string | null;
+
     constructor(item_name: string, item_quantity: number, order_id: number, admissionId: string,
-         isAdmitted: boolean, isActive:boolean, name?: string, phone_no?: string, email?: string,  _id?: string ) {
+         isAdmitted: boolean, isActive:boolean, name?: string, phone_no?: string, email?: string,  _id?: string,
+         gender?: Gender | null, allocatedTentId?: string | null, linkedPassId?: string | null) {
             this.item_name = item_name;
             this.item_quantity = item_quantity;
             this.order_id = order_id;
@@ -22,6 +28,9 @@ export class Shopcart {
             this.phone_no = phone_no;
             this.email = email;
             this._id = _id
+            this.gender = gender;
+            this.allocatedTentId = allocatedTentId;
+            this.linkedPassId = linkedPassId;
     }
 }
 

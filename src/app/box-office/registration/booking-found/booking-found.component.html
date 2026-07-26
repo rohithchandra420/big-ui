@@ -1,0 +1,33 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Booking Found</div>
+    <div class="page-ph-sub" *ngIf="ticket">{{ admittedCount }} of {{ totalCount }} checked in</div>
+  </div>
+</div>
+
+<div class="alert ai" *ngIf="ticket">Parent booking found — Ticket #{{ ticket.order_id }}</div>
+<div class="alert ad" *ngIf="notFound">Booking not found.</div>
+
+<div class="card" *ngIf="ticket">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+    <div>
+      <div style="font-size:14px; font-weight:600;">
+        {{ ticket.first_name }} {{ ticket.last_name }}
+        <span style="font-weight:400; font-size:12px; color:var(--text-secondary);">(primary booker)</span>
+      </div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">{{ ticket.phone_no }} · {{ ticket.email }}</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:2px;" class="mono">
+        Ticket ID: {{ ticket._id }} · Order ID: {{ ticket.order_id }}
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="section-lbl">Attendees under this booking</div>
+
+  <app-attendee-list [ticket]="ticket" [allowEdit]="true"></app-attendee-list>
+
+  <div class="btn-row">
+    <button class="btn-ghost" (click)="goBack()">Back</button>
+  </div>
+</div>

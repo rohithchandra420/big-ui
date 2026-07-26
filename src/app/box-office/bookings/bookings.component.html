@@ -1,0 +1,166 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Bookings</div>
+    <div class="page-ph-sub">{{ totalBookings }} booking{{ totalBookings === 1 ? '' : 's' }}</div>
+  </div>
+  <button class="btn-cta" (click)="openBulkUpload()">Bulk Upload</button>
+</div>
+
+<div class="stat-row">
+  <div class="stat tap" [class.act]="activeFilter === 'emailSent'" (click)="toggleFilter('emailSent')">
+    <div class="stat-l">Emails Sent</div>
+    <div class="stat-n">{{ emailsSentCount }}</div>
+    <div class="stat-s">tap to view →</div>
+  </div>
+
+  <div class="stat tap" [class.act]="activeFilter === 'admitted'" (click)="toggleFilter('admitted')">
+    <div class="stat-l">Admitted</div>
+    <div class="stat-n">{{ admittedCount }}</div>
+    <div class="stat-s">tap to view →</div>
+  </div>
+
+  <div class="stat tap" [class.act]="activeFilter === 'spotRegistration'" (click)="toggleFilter('spotRegistration')">
+    <div class="stat-l">Spot Registrations</div>
+    <div class="stat-n">{{ spotRegistrationCount }}</div>
+    <div class="stat-s">tap to view →</div>
+  </div>
+</div>
+
+<div class="tbl-container">
+  <div class="tbl-filters">
+    <div class="filter-bar">
+      <input type="text" placeholder="Search name, email, order ID or ticket ID..."
+             [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
+    </div>
+  </div>
+
+  <div class="seg-bar">
+    <span class="seg-txt">{{ segText }}</span>
+    <button class="btn-secondary" title="Bulk actions coming soon">Bulk action</button>
+  </div>
+
+  <div class="tbl-scroll bookings-tbl-scroll">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>
+            <label class="cb-wrap">
+              <input type="checkbox"
+                     [checked]="allPagedSelected"
+                     [indeterminate]="somePagedSelected"
+                     [disabled]="pagedBookings.length === 0"
+                     (change)="toggleSelectAllPaged()">
+              <span class="cb-box"></span>
+            </label>
+          </th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Order ID</th>
+          <th>Ticket ID</th>
+          <th>Passes</th>
+          <th>Amount</th>
+          <th>Email Sent</th>
+          <th>Admitted</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let booking of pagedBookings"
+            [class.selected]="panelOpen && activeBooking?._id === booking._id"
+            (click)="openPanel(booking)">
+          <td (click)="$event.stopPropagation()">
+            <label class="cb-wrap">
+              <input type="checkbox"
+                     [checked]="selectedIds.has(booking._id!)"
+                     (change)="toggleRow(booking._id!)">
+              <span class="cb-box"></span>
+            </label>
+          </td>
+          <td>{{ booking.first_name }} {{ booking.last_name }}</td>
+          <td>{{ booking.email }}</td>
+          <td class="mono">{{ booking.order_id }}</td>
+          <td class="mono">{{ booking._id }}</td>
+          <td>{{ passSummary(booking) }}</td>
+          <td>₹{{ booking.totalPrice }}</td>
+          <td>
+            <span class="badge" [ngClass]="booking.hasEmailSent === 'Yes' ? 'bg' : 'bx'">{{ booking.hasEmailSent }}</span>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="admittedCountFor(booking) > 0 ? 'bg' : 'bx'">{{ admittedCountFor(booking) }} / {{ booking.shopcart?.length || 0 }}</span>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && pagedBookings.length === 0">
+          <td colspan="9" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tbl-foot">
+    <span>
+      {{ filteredBookings.length }} booking{{ filteredBookings.length === 1 ? '' : 's' }}
+      <span *ngIf="refreshing" style="color: var(--text-faint); margin-left: 6px;">Refreshing…</span>
+    </span>
+    <mat-paginator [length]="filteredBookings.length"
+                   [pageSize]="pageSize"
+                   [pageSizeOptions]="pageSizeOptions"
+                   [pageIndex]="pageIndex"
+                   [selectConfig]="{ panelClass: 'app-select-panel' }"
+                   (page)="onPageChange($event)">
+    </mat-paginator>
+  </div>
+</div>
+
+<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
+
+<div class="panel" [class.open]="panelOpen" *ngIf="activeBooking">
+  <div class="panel-hd">
+    <div>
+      <div style="font-size: 15px; font-weight: 600; color: var(--text-primary);">
+        {{ activeBooking.first_name }} {{ activeBooking.last_name }}
+      </div>
+      <div class="mono" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+        Ticket ID: {{ activeBooking._id }} · Order ID: {{ activeBooking.order_id }}
+      </div>
+      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+        {{ activeBooking.email }} · {{ activeBooking.phone_no }}
+      </div>
+    </div>
+    <button class="panel-close" (click)="closePanel()" aria-label="Close" title="Close">✕</button>
+  </div>
+
+  <div class="panel-body">
+    <ng-container *ngIf="!editingTicket; else editForm">
+      <div class="pay-summary">
+        <div class="pay-box">
+          <div class="pay-l">Total</div>
+          <div class="pay-v">₹{{ activeBooking.totalPrice }}</div>
+        </div>
+        <div class="pay-box">
+          <div class="pay-l">Email Sent</div>
+          <div class="pay-v">
+            <span class="badge" [ngClass]="activeBooking.hasEmailSent === 'Yes' ? 'bg' : 'bx'">{{ activeBooking.hasEmailSent }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top: 8px;">
+        <button class="btn-secondary" (click)="editingTicket = true">Edit Ticket</button>
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-lbl">Attendees ({{ activeBooking.shopcart?.length || 0 }})</div>
+      <app-attendee-list [ticket]="activeBooking" [allowEdit]="true"></app-attendee-list>
+    </ng-container>
+
+    <ng-template #editForm>
+      <app-ticket-edit-form [ticket]="activeBooking"
+                             (saved)="onTicketSaved($event)"
+                             (cancelled)="editingTicket = false">
+      </app-ticket-edit-form>
+    </ng-template>
+  </div>
+
+  <div class="panel-actions">
+    <button class="btn-secondary" (click)="goToRegistration()">Open in Registration</button>
+  </div>
+</div>

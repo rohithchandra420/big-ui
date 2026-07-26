@@ -1,0 +1,56 @@
+<h2 mat-dialog-title>Bulk Upload Bookings</h2>
+
+<mat-dialog-content>
+  <div class="alert ai">Import pre-existing external orders (e.g. from a partner/agent)</div>
+
+  <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.6;">
+    One row per pass/item. Required columns: <span class="mono">order_id</span>, <span class="mono">item_name</span>,
+    <span class="mono">item_quantity</span>, <span class="mono">billing_first_name</span>, <span class="mono">billing_last_name</span>,
+    <span class="mono">phone_no</span>, <span class="mono">billing_email</span>, <span class="mono">transaction_id</span>,
+    <span class="mono">order_total</span>. Rows sharing the same <span class="mono">order_id</span> are grouped into one booking.
+  </div>
+
+  <div class="bu-dropzone" [class.bu-dropzone-active]="dragOver"
+       (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)"
+       (click)="fileInput.click()">
+    <input #fileInput type="file" accept=".xlsx" style="display:none" (change)="onFileInputChange($event)">
+    <ng-container *ngIf="!selectedFile">
+      <div class="bu-dropzone-text">Drag &amp; drop an .xlsx file here, or click to select</div>
+    </ng-container>
+    <ng-container *ngIf="selectedFile">
+      <div class="bu-dropzone-text"><strong>{{ selectedFile.name }}</strong> selected — click or drop to replace</div>
+    </ng-container>
+  </div>
+
+  <div class="field" *ngIf="sheetNames.length > 1" style="margin-top: 12px;">
+    <label>Sheet to upload *</label>
+    <select (change)="onSheetSelectChange($event)">
+      <option *ngFor="let name of sheetNames" [value]="name" [selected]="name === selectedSheetName">{{ name }}</option>
+    </select>
+  </div>
+
+  <div class="card" *ngIf="preview" style="background: var(--surface-input); margin-top: 12px; margin-bottom: 0;">
+    <div style="font-size: 12px;"><strong>{{ preview.rowCount }}</strong> row{{ preview.rowCount === 1 ? '' : 's' }} ·
+      <strong>{{ preview.orderIds.length }}</strong> booking{{ preview.orderIds.length === 1 ? '' : 's' }} ·
+      items: {{ preview.itemNames.join(', ') || '—' }}
+    </div>
+  </div>
+
+  <div class="alert ad" style="margin-top: 12px;" *ngIf="validationErrors.length">
+    <strong>Validation failed:</strong>
+    <ul style="margin: 6px 0 0; padding-left: 18px;">
+      <li *ngFor="let err of validationErrors">{{ err }}</li>
+    </ul>
+  </div>
+
+  <div class="alert ad" style="margin-top: 12px;" *ngIf="duplicateOrderIds.length">
+    <strong>These Order IDs already exist:</strong> {{ duplicateOrderIds.join(', ') }}
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button class="btn-ghost" (click)="cancel()">Cancel</button>
+  <button class="btn-cta" (click)="upload()" [disabled]="!selectedFile || uploading">
+    {{ uploading ? 'Uploading…' : 'Upload' }}
+  </button>
+</mat-dialog-actions>

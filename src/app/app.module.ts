@@ -59,6 +59,16 @@ import { DepartmentsComponent } from './admin/departments/departments.component'
 import { DepartmentDetailComponent } from './admin/departments/department-detail/department-detail.component';
 import { DepartmentCreateDialogComponent } from './admin/departments/department-create-dialog/department-create-dialog.component';
 import { DepartmentDeleteDialogComponent } from './admin/departments/department-delete-dialog/department-delete-dialog.component';
+import { BookingsComponent } from './box-office/bookings/bookings.component';
+import { RegistrationComponent } from './box-office/registration/registration.component';
+import { BookingFoundComponent } from './box-office/registration/booking-found/booking-found.component';
+import { CounterFormComponent } from './box-office/registration/counter-form/counter-form.component';
+import { BoxOfficeQrscannerPopupComponent } from './box-office/registration/qrscanner-popup/qrscanner-popup.component';
+import { AllocateTentComponent } from './box-office/registration/allocate-tent/allocate-tent.component';
+import { AttendeeListComponent } from './box-office/attendee-list/attendee-list.component';
+import { TicketEditFormComponent } from './box-office/ticket-edit-form/ticket-edit-form.component';
+import { SpotRegistrationComponent } from './box-office/registration/spot-registration/spot-registration.component';
+import { BulkUploadComponent } from './box-office/bookings/bulk-upload/bulk-upload.component';
 
 // #QRCode Scanner: Necessary to solve the problem of losing internet connection
 LOAD_WASM().subscribe()
@@ -91,7 +101,17 @@ LOAD_WASM().subscribe()
     DepartmentsComponent,
     DepartmentDetailComponent,
     DepartmentCreateDialogComponent,
-    DepartmentDeleteDialogComponent
+    DepartmentDeleteDialogComponent,
+    BookingsComponent,
+    RegistrationComponent,
+    BookingFoundComponent,
+    CounterFormComponent,
+    BoxOfficeQrscannerPopupComponent,
+    AllocateTentComponent,
+    AttendeeListComponent,
+    TicketEditFormComponent,
+    SpotRegistrationComponent,
+    BulkUploadComponent
   ],
   imports: [
     BrowserModule,
