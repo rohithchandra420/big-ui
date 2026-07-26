@@ -9,6 +9,29 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.0] - 2026-07-27
+
+### Added
+- **Bookings page** (`/box-office/bookings`) — stats row (Emails Sent, Admitted, Spot Registrations — each a tappable filter), searchable/paginated table, a fully interactive slide-in detail panel (booking summary, inline Edit Ticket form, live attendee actions, "Open in Registration"), and a Bulk Upload dialog (drag-and-drop or click-to-select, sheet picker for multi-sheet workbooks, inline validation/duplicate-order-id feedback)
+- **Registration page** (`/box-office/registration`) — header stats (Checked In, Pending Admits, Incomplete Details, Spot Registrations), multi-field search/lookup, QR scan auto-navigate, and Spot Registration (on-the-spot multi-item ticket creation for walk-ins, with server-assigned order/transaction ids)
+- **Booking Found** (`/box-office/registration/:id`) — primary booker summary plus the shared attendee list (see below)
+- `AttendeeListComponent` — shared Check In / Allocate Tent / Vacate / Fill-at-Counter / Edit actions per attendee row, used by both Booking Found and the Bookings panel so this logic lives in exactly one place; an `allowEdit` input controls whether the Edit action (re-opens Counter Form on an already-complete pass, for corrections) is shown
+- `AllocateTentComponent` — gender-aware tent picker with best-effort cross-ticket Festival Pass linking and a gender-mismatch confirm step
+- `CounterFormComponent` — fills or edits a pass's name/phone/email/gender; wording adapts ("Edit attendee details" vs "Complete attendee details") depending on which
+- `TicketEditFormComponent`, `SpotRegistrationComponent`, `BulkUploadComponent` (new components backing the features above)
+- `box-office.utils.ts` — shared helpers (`isFestivalPass`, `isSpotRegistration`, pass-grouping/chip helpers) used across the Box Office module
+- 152 new Jasmine/Karma tests (222 total, all passing)
+
+### Changed
+- `BoxOfficeService` — extended with the new endpoints above, plus `createBoxOfficeTicket()`/`uploadBoxOfficeExcel()` as separate methods from the legacy `createTicket()`/`uploadExcel()` (which still hit the original, untouched Tickets-module routes)
+- `AccomodationService` — extended with `allocateTentSlot()`, `vacateTentSlot()`, `suggestFestivalPassMatches()`, `getTentById()` (shared with the future standalone Tenting page, not duplicated into Box Office)
+
+### Notes
+- Merge/payment-split/communication-history/internal-notes sections from the original wireframe were intentionally left out of the Bookings panel — no backing data field exists for any of them yet
+- The Edit action and Bulk Upload dialog are both deliberate exceptions to (or extensions of) established UI patterns in this module — see in-code comments for the reasoning
+
+---
+
 ## [1.4.0] - 2026-07-05
 
 ### Added
