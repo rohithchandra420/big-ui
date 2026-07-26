@@ -1,0 +1,13 @@
+/* Approximate: 100vh minus page-padded padding, .page-ph, .stat-row, .tbl-filters,
+   .seg-bar and .tbl-foot heights above the scrollable table body. Estimated, not
+   measured — adjust the offset if it's off after a live check. */
+.bookings-tbl-scroll {
+  max-height: calc(100vh - 380px);
+}
+
+@media (max-width: 768px) {
+  /* Extra offset for the mobile topbar */
+  .bookings-tbl-scroll {
+    max-height: calc(100vh - 440px);
+  }
+}

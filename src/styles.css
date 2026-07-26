@@ -225,8 +225,17 @@ input:disabled {
 }
 
 /* ── Global Material dialog overrides ───────────────────── */
+/* Backdrop tinted to match the app's other overlay (.panel-overlay) instead
+   of Material's default plain black scrim. */
+.cdk-overlay-dark-backdrop {
+  background: rgba(20, 25, 20, 0.28);
+}
+
 .mat-mdc-dialog-surface {
   border-radius: 14px !important;
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border-default) !important;
+  box-shadow: var(--shadow-lg) !important;
 }
 
 .mat-mdc-dialog-title {
@@ -290,6 +299,54 @@ input:disabled {
   --mdc-filled-button-label-text-color: #fff;
 }
 
+/* ── Angular Material paginator overrides ───────────────── */
+.mat-mdc-paginator {
+  background: transparent;
+  color: var(--text-secondary);
+  --mat-paginator-container-text-color: var(--text-secondary);
+  --mat-paginator-container-background-color: transparent;
+  --mat-paginator-select-trigger-text-color: var(--text-primary);
+  --mat-paginator-container-text-size: 12px;
+  /* Nav icon SVGs are filled via these tokens, NOT the generic `color` property */
+  --mat-paginator-enabled-icon-color: var(--text-secondary);
+  --mat-paginator-disabled-icon-color: var(--border-default);
+}
+.mat-mdc-paginator .mat-mdc-select-value,
+.mat-mdc-paginator .mat-mdc-select-arrow {
+  color: var(--text-primary) !important;
+}
+/* Paginator's page-size select uses "outline" appearance by default */
+.mat-mdc-paginator .mat-mdc-form-field {
+  --mdc-outlined-text-field-outline-color: var(--border-default);
+  --mdc-outlined-text-field-hover-outline-color: #999;
+  --mdc-outlined-text-field-focus-outline-color: var(--color-primary);
+  --mdc-outlined-text-field-container-shape: 8px;
+  --mat-form-field-container-height: 32px;
+}
+.mat-mdc-paginator .mat-mdc-icon-button {
+  color: var(--text-secondary);
+}
+
+/* Select options panel — rendered via CDK overlay, NOT inside .mat-mdc-paginator's
+   DOM, so it needs its own scoped panelClass rather than a descendant selector. */
+.app-select-panel {
+  border-radius: 8px !important;
+  border: 1px solid var(--border-default);
+  background: var(--surface-card) !important;
+}
+.app-select-panel .mat-mdc-option {
+  font-size: 12px;
+  color: var(--text-primary);
+  min-height: 32px;
+}
+.app-select-panel .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
+  background: var(--surface-input);
+}
+.app-select-panel .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+  background: #f0f7f2;
+  color: var(--color-primary);
+}
+
 /* ── Page header (wireframe .ph pattern) ───────────────── */
 /* Full-bleed sticky header at the top of every content page.
    Negative margins escape the .page-padded inset so it reads edge-to-edge. */
@@ -341,6 +398,26 @@ input:disabled {
   transition: background 0.1s;
 }
 .btn-ghost:hover { background: var(--border-subtle); }
+
+/* ── Secondary button (wireframe tinted .btn.p pattern, BIG6_DESIGN_CONTEXT §13) ── */
+/* Tinted ghost button — coloured background tint with matching border/text, not
+   a solid fill. Distinct from .btn-ghost (transparent bg, dialog Cancel actions)
+   and .btn-cta (solid brand fill, reserved for the one primary action per page). */
+.btn-secondary {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.12s;
+}
+.btn-secondary:hover:not(:disabled) { background: #c8f0d3; }
+.btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn-cta {
   padding: 6px 16px;
@@ -439,4 +516,494 @@ input:disabled {
   margin-bottom: 24px;
   padding: 15px;
   background: var(--surface-card);
+}
+
+/* ── Stat cards (wireframe .stat pattern, BIG6_DESIGN_CONTEXT §10) ── */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+
+.stat {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 0.875rem;
+  box-shadow: var(--shadow-xs);
+}
+
+.stat-l {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.stat-n {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 2px;
+}
+
+.stat-s {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Tappable stat — acts as a quick-filter shortcut */
+.stat.tap {
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.12s;
+}
+.stat.tap:hover {
+  border-color: #ccc;
+  background: #efefee;
+}
+.stat.tap.act {
+  border-color: var(--color-primary);
+  background: #f0f7f2;
+}
+.stat.tap.act .stat-s {
+  color: var(--color-primary);
+}
+
+/* Alert stat — represents an actionable problem, not just a census number */
+.stat.alert-stat {
+  background: #fdf6ec;
+  border-left: 3px solid var(--color-warning);
+}
+.stat.alert-stat .stat-n {
+  color: #92400e;
+}
+
+/* Compact inline stat — for a single stat tile inside .page-ph, not the grid.
+   Needs its own tinted background since .page-ph and .stat are both white by
+   default — a plain border alone doesn't read clearly against a white header. */
+.stat-compact {
+  padding: 5px 12px;
+  margin: 0;
+  background: var(--surface-input);
+}
+
+/* ── Row selection checkbox (wireframe .cb-wrap pattern, BIG6_DESIGN_CONTEXT §39) ── */
+.cb-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.cb-wrap input[type="checkbox"] {
+  opacity: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  position: absolute;
+}
+.cb-box {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.cb-wrap input:checked ~ .cb-box {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.cb-wrap input:checked ~ .cb-box::after {
+  content: '';
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+.cb-wrap input:indeterminate ~ .cb-box {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.cb-wrap input:indeterminate ~ .cb-box::after {
+  content: '';
+  width: 8px;
+  height: 2px;
+  background: #fff;
+}
+.cb-wrap:hover .cb-box {
+  border-color: var(--color-primary);
+}
+
+/* ── Data table (wireframe .tbl pattern, BIG6_DESIGN_CONTEXT §16) ── */
+.tbl-container {
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.tbl-filters {
+  padding: 0.875rem;
+  background: #f9f9f8;
+  border-bottom: 1px solid var(--border-default);
+}
+.tbl-foot {
+  padding: 0.6rem 0.875rem;
+  font-size: 11px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-default);
+  background: #f9f9f8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  table-layout: auto;
+}
+/* Wrapper that scrolls the table body only, keeping the sticky .tbl th header
+   visible. Pages set their own max-height (depends on their own header/filter
+   chrome above the table) — see e.g. bookings.component.css. */
+.tbl-scroll {
+  overflow: auto;
+}
+.tbl th {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border-default);
+  font-size: 10px;
+  background: #f9f9f8;
+  white-space: nowrap;
+  /* Stays pinned when the header row's row-body scrolls inside .tbl-scroll */
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.tbl td {
+  padding: 8px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  vertical-align: middle;
+  white-space: nowrap;
+  background: var(--surface-body);
+}
+.tbl tr:last-child td {
+  border-bottom: none;
+}
+.tbl tr:hover td {
+  background: var(--surface-input);
+}
+/* Row selected for the detail panel (Task 7) — NOT the same as checkbox/bulk-action selection */
+.tbl tr.selected td {
+  background: #fff9f0;
+}
+.tbl td.mono {
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ── Segment action bar (wireframe .seg-bar pattern, BIG6_DESIGN_CONTEXT §34) ── */
+.seg-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 14px;
+  background: #f0f7f2;
+  border-top: 1px solid #d9e8dd;
+  flex-wrap: wrap;
+}
+.seg-txt {
+  font-size: 12px;
+  color: #166534;
+  font-weight: 500;
+}
+
+/* ── Filter bar (search + quick actions above a table) ── */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-bar input {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-input);
+  width: 240px;
+  max-width: 100%;
+  font-family: inherit;
+}
+
+/* ── Badges (read-only status indicators, BIG6_DESIGN_CONTEXT §12) ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.badge.bg { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.badge.ba { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.badge.bb { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+.badge.br { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.badge.bx { background: #f3f4f6; color: #374151; border-color: #d1d5db; }
+
+/* Flex wrapper for a row of .badge chips — shared by Booking Found's
+   attendee rows and Registration's multi-match Look Up cards. */
+.att-badges {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+/* Small icon inside a .badge chip (e.g. Look Up's Passes chips) — sized
+   below the chip's own line-height so it never grows the chip taller.
+   .badge is a flex container, so vertical-align has no effect on this
+   child; center the glyph with flex on the icon itself instead — that
+   also sidesteps icon-font metric quirks that throw off line-height centering.
+   No color rule needed: mat-icon's ligature glyph paints with the
+   inherited text `color`, so it automatically matches .badge.bg/.badge.ba. */
+.badge-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  width: 12px !important;
+  height: 12px !important;
+  margin-right: 3px;
+  flex-shrink: 0;
+}
+
+/* Rows that open the detail panel on click (BIG6_DESIGN_CONTEXT §16) */
+.tbl tbody tr {
+  cursor: pointer;
+}
+
+/* ── Side panel / drill-in panel (BIG6_DESIGN_CONTEXT §29) ── */
+.panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 25, 20, 0.28);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s;
+  z-index: 40;
+}
+.panel-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 440px;
+  max-width: 92vw;
+  background: var(--surface-card);
+  border-left: 1px solid var(--border-default);
+  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.08);
+  transform: translateX(100%);
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+}
+.panel.open {
+  transform: translateX(0);
+}
+
+.panel-hd {
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.panel-close {
+  border: none;
+  background: #f5f5f4;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.panel-close:hover {
+  background: #ebe8e0;
+}
+
+.panel-body {
+  padding: 1.1rem 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-input);
+}
+
+@media (max-width: 480px) {
+  .panel { width: 100%; max-width: 100%; }
+  .panel-actions { flex-direction: column; }
+}
+
+/* Panel summary boxes (adapted from BiG6 Wireframe - BoxOffice.html's
+   .pay-summary/.pay-box) — auto-fit instead of a fixed 3-column grid since
+   we only have data-backed metrics for 2 today (Total, Email Sent); more
+   can be added later (e.g. paid/due) without changing the layout rule. */
+.pay-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  margin-bottom: 0.875rem;
+}
+.pay-box {
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: var(--surface-input);
+}
+.pay-l {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.pay-v {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── Card (BIG6_DESIGN_CONTEXT §11) ── */
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── Scan input row + QR button (Registration flow, §35) ── */
+.scan-wrap {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.scan-wrap input {
+  flex: 1;
+  min-width: 180px;
+  font-size: 13px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-input);
+  font-family: monospace;
+}
+.qr-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 9px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.qr-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Divider (BIG6_DESIGN_CONTEXT wireframe) ── */
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 0.875rem 0;
+}
+
+/* ── Alerts / banners (§14) ── */
+.alert {
+  padding: 9px 13px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-bottom: 1rem;
+  border: 1px solid;
+  line-height: 1.5;
+}
+.alert.as { background: #dcfce7; color: #16a34a; border-color: #bbf7d0; }
+.alert.aw { background: #fef3c7; color: #d97706; border-color: #fde68a; }
+.alert.ai { background: #dbeafe; color: #2563eb; border-color: #bfdbfe; }
+.alert.ad { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+
+/* ── Attendee rows (§31) ── */
+.att-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 8px;
+}
+.av {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.av-g { background: #dcfce7; color: #166534; }
+.av-a { background: #fef3c7; color: #92400e; }
+.av-b { background: #dbeafe; color: #1e40af; }
+
+/* ── Button row (§13) ── */
+.btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
 }

@@ -1,0 +1,69 @@
+<app-counter-form *ngIf="activeCounterItem"
+                  [shopItem]="activeCounterItem"
+                  (saved)="onCounterFormSaved($event)"
+                  (cancelled)="onCounterFormCancelled()">
+</app-counter-form>
+
+<app-allocate-tent *ngIf="activeAllocateItem"
+                   [shopItem]="activeAllocateItem"
+                   (allocated)="onTentAllocated($event)"
+                   (cancelled)="onAllocateCancelled()">
+</app-allocate-tent>
+
+<ng-container *ngIf="!activeCounterItem && !activeAllocateItem">
+  <div class="att-row" *ngFor="let item of sortedShopcart"
+       [ngClass]="isFestivalPass(item) ? 'att-row-festival' : 'att-row-tent'">
+    <div class="av" [ngClass]="isFestivalPass(item) ? (isDetailsComplete(item) ? 'av-g' : 'av-a') : 'av-b'">{{ attendeeInitials(item) }}</div>
+    <div class="att-info">
+      <div class="att-name">{{ item.name || 'Attendee' }} · <span class="mono">{{ item._id }}</span></div>
+      <div class="att-pass">
+        <mat-icon class="att-type-icon" [ngClass]="isFestivalPass(item) ? 'ti-festival' : 'ti-tent'">
+          {{ isFestivalPass(item) ? 'confirmation_number' : 'hotel' }}
+        </mat-icon>{{ item.item_name }}
+      </div>
+      <div class="att-badges">
+        <!-- Festival Pass: details + admission status -->
+        <ng-container *ngIf="isFestivalPass(item)">
+          <span class="badge" [ngClass]="isDetailsComplete(item) ? 'bg' : 'ba'">
+            {{ isDetailsComplete(item) ? 'Details Complete' : 'Details Pending' }}
+          </span>
+          <span class="badge bx">
+            {{ item.isAdmitted ? 'Checked in' : 'Not arrived' }}
+          </span>
+        </ng-container>
+
+        <!-- Tent Pass: allocation status only — identity mirrors the linked Festival Pass -->
+        <span class="badge" *ngIf="!isFestivalPass(item)" [ngClass]="item.allocatedTentId ? 'bg' : 'bx'">
+          {{ item.allocatedTentId ? ('Tent: ' + (tentNoFor(item) || '…')) : 'Not allocated' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="att-actions">
+      <ng-container *ngIf="isFestivalPass(item); else tentActions">
+        <ng-container *ngIf="isDetailsComplete(item); else incompleteActions">
+          <button class="btn-secondary att-action" *ngIf="!item.isAdmitted" (click)="checkInAttendee(item)">
+            Check In
+          </button>
+        </ng-container>
+        <ng-template #incompleteActions>
+          <button class="btn-secondary att-action" disabled title="Future enhancement">Send form to their Phone</button>
+          <button class="btn-secondary att-action" (click)="openCounterForm(item)">Fill at the Counter</button>
+        </ng-template>
+      </ng-container>
+
+      <ng-template #tentActions>
+        <button class="btn-secondary att-action" *ngIf="!item.allocatedTentId" (click)="openAllocateTent(item)">
+          Allocate Tent
+        </button>
+        <button class="btn-secondary att-action" *ngIf="item.allocatedTentId" (click)="vacateAttendee(item)">
+          Vacate
+        </button>
+      </ng-template>
+
+      <button class="btn-secondary att-action" *ngIf="allowEdit && isDetailsComplete(item)" (click)="openCounterForm(item)">
+        Edit
+      </button>
+    </div>
+  </div>
+</ng-container>

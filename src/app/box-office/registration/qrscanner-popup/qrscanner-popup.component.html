@@ -1,0 +1,11 @@
+<h2 mat-dialog-title>Scan Booking QR</h2>
+
+<mat-dialog-content>
+  <ngx-scanner-qrcode #action="scanner" [config]="config" (event)="onEvent($event, action)"></ngx-scanner-qrcode>
+
+  <p *ngIf="action.isLoading" style="font-size: 12px; color: var(--text-muted);">Loading camera…</p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button class="btn-ghost" (click)="close()">Cancel</button>
+</mat-dialog-actions>

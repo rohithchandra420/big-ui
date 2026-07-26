@@ -1,0 +1,70 @@
+<div class="card">
+  <div class="card-title" style="margin-bottom: 12px;">
+    Allocate Tent — <span class="mono">{{ shopItem._id }}</span> ({{ shopItem.item_name }})
+  </div>
+
+  <div class="section-lbl" style="margin-bottom: 8px;">Link Festival Pass</div>
+  <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+    The occupant's name, phone, email and gender are taken from the linked Festival Pass — no separate form needed for the Tent Pass.
+  </div>
+
+  <div class="filter-bar" style="margin-bottom: 10px;">
+    <input type="text" placeholder="Search by name, phone or email"
+           [(ngModel)]="manualSearchTerm" (keydown.enter)="searchManually()">
+    <button class="btn-secondary" (click)="searchManually()">Search</button>
+  </div>
+
+  <div *ngIf="festivalPassSuggestions.length === 0" style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+    No matches yet — try searching by name, phone or email.
+  </div>
+
+  <div class="att-row" *ngFor="let candidate of festivalPassSuggestions"
+       [class.selected]="selectedFestivalPassId === candidate._id"
+       style="cursor: pointer;"
+       (click)="selectFestivalPass(candidate)">
+    <label class="cb-wrap">
+      <input type="checkbox" [checked]="selectedFestivalPassId === candidate._id" (click)="$event.preventDefault()">
+      <span class="cb-box"></span>
+    </label>
+    <div class="att-info">
+      <div class="att-name">{{ candidate.name || 'Attendee' }} · <span class="mono">{{ candidate._id }}</span></div>
+      <div class="att-pass">
+        Order #{{ candidate.order_id }} · {{ candidate.phone_no }} · {{ candidate.email }}{{ candidate.gender ? ' · ' + candidate.gender : '' }}
+      </div>
+    </div>
+  </div>
+
+  <div class="field" style="max-width: 260px;" *ngIf="needsGender">
+    <label>Gender * <span style="font-weight: 400; color: var(--text-muted);">(missing on this Festival Pass)</span></label>
+    <select [(ngModel)]="localGender">
+      <option value="">Select</option>
+      <option *ngFor="let g of genderOptions" [value]="g">{{ g }}</option>
+    </select>
+  </div>
+
+  <div class="divider"></div>
+  <div class="section-lbl" style="margin-bottom: 8px;">Choose Tent ({{ shopItem.item_name }})</div>
+
+  <div class="field" style="max-width: 280px;">
+    <label>Target tent</label>
+    <select [(ngModel)]="selectedTentId">
+      <option [ngValue]="null">Auto-pick next available</option>
+      <option *ngFor="let t of vacantTents" [value]="t._id">{{ t.tent_no }} ({{ vacancyOf(t) }} free)</option>
+    </select>
+  </div>
+
+  <div class="alert aw" *ngIf="genderMismatchPending">
+    This tent has occupant(s) of a different gender ({{ genderMismatchExisting.join(', ') }}). Confirm with the attendees before proceeding.
+    <div class="btn-row">
+      <button class="btn-ghost" (click)="cancelGenderMismatch()">Cancel</button>
+      <button class="btn-danger" (click)="confirmGenderMismatch()">Confirm &amp; Allocate</button>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-ghost" (click)="cancel()">Back</button>
+    <button class="btn-cta" (click)="allocate()" [disabled]="!selectedFestivalPassId || (needsGender && !localGender) || allocating">
+      {{ allocating ? 'Allocating…' : 'Allocate Tent' }}
+    </button>
+  </div>
+</div>
