@@ -1,0 +1,44 @@
+<div class="card-title" style="margin-bottom: 12px;">
+  Edit Ticket — <span class="mono">{{ ticket._id }}</span>
+</div>
+
+<form [formGroup]="form" class="form-two-col">
+  <div class="field">
+    <label>First name *</label>
+    <input type="text" formControlName="first_name" placeholder="First name">
+    <span class="field-error" *ngIf="form.get('first_name')?.touched && form.get('first_name')?.hasError('required')">
+      First name is required
+    </span>
+  </div>
+
+  <div class="field">
+    <label>Last name *</label>
+    <input type="text" formControlName="last_name" placeholder="Last name">
+    <span class="field-error" *ngIf="form.get('last_name')?.touched && form.get('last_name')?.hasError('required')">
+      Last name is required
+    </span>
+  </div>
+
+  <div class="field">
+    <label>Phone (WhatsApp) *</label>
+    <input type="text" formControlName="phone_no" placeholder="+91">
+    <span class="field-error" *ngIf="form.get('phone_no')?.touched && form.get('phone_no')?.hasError('required')">
+      Phone is required
+    </span>
+  </div>
+
+  <div class="field">
+    <label>Email *</label>
+    <input type="email" formControlName="email" placeholder="email@example.com">
+    <span class="field-error" *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
+      A valid email is required
+    </span>
+  </div>
+</form>
+
+<div class="btn-row">
+  <button class="btn-ghost" (click)="cancel()">Cancel</button>
+  <button class="btn-cta" (click)="save()" [disabled]="form.invalid || saving">
+    {{ saving ? 'Saving…' : 'Save' }}
+  </button>
+</div>

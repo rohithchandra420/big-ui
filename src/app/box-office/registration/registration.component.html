@@ -1,0 +1,82 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Registration</div>
+    <div class="page-ph-sub">Box Office</div>
+  </div>
+  <div style="display: flex; gap: 8px; align-items: center;">
+    <div class="stat stat-compact">
+      <span style="font-size: 11px; color: var(--text-muted);">Checked in</span>
+      <span style="font-size: 14px; font-weight: 600; margin: 0 4px; color: var(--text-primary);">{{ admittedCount }}</span>
+      <span style="font-size: 11px; color: var(--text-muted);">/ {{ totalAttendees }} attendees</span>
+    </div>
+    <button class="btn-cta" *ngIf="!showSpotRegistration" (click)="openSpotRegistration()">+ Spot Registration</button>
+  </div>
+</div>
+
+<app-spot-registration *ngIf="showSpotRegistration"
+                       (registered)="onSpotRegistrationRegistered($event)"
+                       (cancelled)="onSpotRegistrationCancelled()">
+</app-spot-registration>
+
+<ng-container *ngIf="!showSpotRegistration">
+  <div class="card">
+    <div class="card-title">Scan QR code or enter booking ID</div>
+    <div class="scan-wrap">
+      <button class="qr-btn" (click)="openScanner()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="3" height="3"/>
+          <rect x="18" y="14" width="3" height="3"/>
+          <rect x="14" y="18" width="3" height="3"/>
+          <rect x="18" y="18" width="3" height="3"/>
+        </svg>
+        Scan QR
+      </button>
+      <input type="text" placeholder="Order ID, Ticket ID, name, email or phone"
+             [(ngModel)]="searchTerm" (keydown.enter)="lookUp()" />
+      <button class="btn-secondary" (click)="lookUp()" [disabled]="searching">
+        {{ searching ? 'Looking up…' : 'Look Up' }}
+      </button>
+    </div>
+    <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+      Accepts Order ID, Ticket ID, name, email, or phone number.
+    </div>
+  </div>
+
+  <div class="alert ad" *ngIf="searched && searchResults.length === 0">
+    No booking found for "{{ searchTerm }}".
+  </div>
+
+  <div *ngIf="searchResults.length > 1">
+    <div class="section-lbl" style="margin-bottom: 8px;">{{ searchResults.length }} matches — select a booking</div>
+    <div class="card" style="cursor: pointer;" *ngFor="let result of searchResults" (click)="goToBooking(result._id!)">
+      <div style="font-weight: 600; font-size: 13px;">{{ result.first_name }} {{ result.last_name }}</div>
+      <div class="mono" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+        Order ID: {{ result.order_id }} · Ticket ID: {{ result._id }}
+      </div>
+      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">{{ result.email }} · {{ result.phone_no }}</div>
+      <div class="att-badges" style="margin-top: 6px;">
+        <span class="badge" [ngClass]="chip.festival ? 'bg' : 'ba'" *ngFor="let chip of passChips(result)">
+          <mat-icon class="badge-icon">{{ chip.festival ? 'confirmation_number' : 'hotel' }}</mat-icon>{{ chip.label }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat">
+      <div class="stat-l">Pending Admits</div>
+      <div class="stat-n">{{ pendingAdmitsCount }}</div>
+    </div>
+    <div class="stat" [class.alert-stat]="incompleteDetailsCount > 0">
+      <div class="stat-l">Incomplete Details</div>
+      <div class="stat-n">{{ incompleteDetailsCount }}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-l">Spot Registrations</div>
+      <div class="stat-n">{{ spotRegistrationsCount }}</div>
+    </div>
+  </div>
+</ng-container>

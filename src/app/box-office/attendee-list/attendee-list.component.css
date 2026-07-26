@@ -1,0 +1,76 @@
+.att-info {
+  flex: 1;
+  min-width: 0;
+}
+.att-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.att-pass {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+/* .att-badges is a global utility in styles.css — margin-top here is component-specific. */
+.att-badges {
+  margin-top: 4px;
+}
+
+/* Festival Pass vs Tent Pass — same-shaped rows otherwise, so a left accent
+   plus a type icon give an at-a-glance distinction beyond the label text. */
+.att-row-festival {
+  border-left: 3px solid #16a34a;
+}
+.att-row-tent {
+  border-left: 3px solid #d97706;
+}
+.att-type-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  vertical-align: text-bottom;
+  margin-right: 3px;
+}
+.ti-festival {
+  color: #16a34a;
+}
+.ti-tent {
+  color: #d97706;
+}
+.att-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Inline/small button size for attendee-row actions (BIG6_DESIGN_CONTEXT §13) —
+   keeps it from crowding out the details column when sitting inline. */
+.att-action {
+  padding: 6px 10px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* Desktop: action button(s) sit inline on the right, same as the wireframe.
+   Mobile only: avatar+info share the first line, action(s) drop to their
+   own full-width line instead of squeezing next to long labels like
+   "Send form to their Phone". */
+@media (max-width: 600px) {
+  .att-row {
+    flex-wrap: wrap;
+  }
+  .att-action,
+  .att-actions {
+    flex-basis: 100%;
+    margin-top: 8px;
+  }
+  .att-actions {
+    flex-direction: row;
+  }
+  .att-actions button,
+  .att-action {
+    flex: 1;
+  }
+}

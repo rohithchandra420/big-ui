@@ -1,0 +1,83 @@
+<div class="alert ai">Spot registration — new walk-in attendee</div>
+
+<div class="card">
+  <div class="card-title" style="margin-bottom: 12px;">Attendee details</div>
+
+  <form [formGroup]="form">
+    <div class="form-two-col">
+      <div class="field">
+        <label>First name *</label>
+        <input type="text" formControlName="first_name" placeholder="First name">
+        <span class="field-error" *ngIf="form.get('first_name')?.touched && form.get('first_name')?.hasError('required')">
+          First name is required
+        </span>
+      </div>
+
+      <div class="field">
+        <label>Last name *</label>
+        <input type="text" formControlName="last_name" placeholder="Last name">
+        <span class="field-error" *ngIf="form.get('last_name')?.touched && form.get('last_name')?.hasError('required')">
+          Last name is required
+        </span>
+      </div>
+
+      <div class="field">
+        <label>Phone (WhatsApp) *</label>
+        <input type="text" formControlName="phone_no" placeholder="+91">
+        <span class="field-error" *ngIf="form.get('phone_no')?.touched && form.get('phone_no')?.hasError('required')">
+          Phone is required
+        </span>
+      </div>
+
+      <div class="field">
+        <label>Email *</label>
+        <input type="email" formControlName="email" placeholder="email@example.com">
+        <span class="field-error" *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
+          A valid email is required
+        </span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-lbl" style="margin-bottom: 8px;">Passes</div>
+
+    <div formArrayName="shopcart">
+      <div class="spot-item-row" *ngFor="let item of shopcart.controls; let i = index" [formGroupName]="i">
+        <div class="field" style="flex: 2;">
+          <label>Item *</label>
+          <select formControlName="item_name">
+            <option value="">Select item</option>
+            <option *ngFor="let name of itemNameOptions" [value]="name">{{ name }}</option>
+          </select>
+        </div>
+        <div class="field" style="flex: 1;">
+          <label>Quantity *</label>
+          <input type="number" formControlName="quantity" min="1">
+        </div>
+        <button type="button" class="btn-ghost spot-remove" (click)="removeItem(i)" [disabled]="shopcart.length === 1" title="Remove item">✕</button>
+      </div>
+    </div>
+    <button type="button" class="btn-secondary" (click)="addItem()">+ Add another item</button>
+
+    <div class="divider"></div>
+
+    <div class="field" style="max-width: 220px;">
+      <label>Total price collected (₹) *</label>
+      <input type="number" formControlName="totalPrice" placeholder="0" min="0">
+      <span class="field-error" *ngIf="form.get('totalPrice')?.touched && form.get('totalPrice')?.invalid">
+        A valid total price is required
+      </span>
+    </div>
+  </form>
+
+  <div class="alert ai" style="margin-top: 0.875rem; font-size: 11px;">
+    Order ID and Transaction ID are assigned automatically — no need to enter them for a walk-in.
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-ghost" (click)="cancel()">Cancel</button>
+    <button class="btn-cta" (click)="save()" [disabled]="form.invalid || saving">
+      {{ saving ? 'Registering…' : 'Register attendee' }}
+    </button>
+  </div>
+</div>
