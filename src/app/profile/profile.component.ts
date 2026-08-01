@@ -4,6 +4,8 @@ import { ProfileService } from './profile.service';
 import { Subscription, lastValueFrom } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 import { NotificationService } from '../core/notification.service';
+import { DepartmentService, MyAttendanceRecord } from '../core/department.service';
+import { deptShortCode } from '../core/department.utils';
 
 interface PermissionEntry {
   moduleKey: string;
@@ -30,6 +32,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
   permissionEntries: PermissionEntry[] = [];
   readonly superuserRoles = ['DEV', 'DIR'];
 
+  attendanceHistory: MyAttendanceRecord[] = [];
+  loadingAttendance = false;
+  readonly deptShortCode = deptShortCode;
+
   get isSuperuser(): boolean {
     return this.superuserRoles.includes(this.loggedInRole);
   }
@@ -38,7 +44,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private profileService: ProfileService,
     private authService: AuthService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private departmentService: DepartmentService
   ) {}
 
   ngOnInit(): void {
@@ -53,7 +60,22 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.userSub = this.authService.user.subscribe(user => {
       this.loggedInUser = user;
       this.loggedInRole = user?.role || '';
-      if (user?._id) this.loadProfile();
+      if (user?._id) {
+        this.loadProfile();
+        this.loadAttendanceHistory();
+      }
+    });
+  }
+
+  loadAttendanceHistory() {
+    this.loadingAttendance = true;
+    this.departmentService.getMyAttendance().subscribe({
+      next: (records) => {
+        // Most-recent-first for a profile history view.
+        this.attendanceHistory = records.slice().reverse();
+        this.loadingAttendance = false;
+      },
+      error: () => { this.loadingAttendance = false; }
     });
   }
 
