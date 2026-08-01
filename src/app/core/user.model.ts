@@ -11,6 +11,7 @@ export interface UserProfile {
     role: { _id: string; name: string };
     departments: DepartmentAccess[];
     permissions: string[];
+    dateOfJoining?: string;
 }
 
 export class User {

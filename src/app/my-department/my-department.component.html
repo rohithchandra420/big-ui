@@ -1,0 +1,316 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">My Department</div>
+    <div class="page-ph-sub" *ngIf="deptInfo && !isAllView">{{ deptInfo.name }}</div>
+    <div class="page-ph-sub" *ngIf="isAllView">All departments — reporting view</div>
+  </div>
+</div>
+
+<div class="mydept-page">
+
+  <div class="dept-select-row" *ngIf="departments.length > 1">
+    <label class="section-lbl">Department</label>
+    <select [(ngModel)]="selectedDeptId" (change)="onDeptChange()">
+      <option *ngFor="let d of departments" [value]="d._id">{{ d.name }}</option>
+    </select>
+  </div>
+
+  <!-- ── ALL view: cross-department reporting only ─────────── -->
+  <ng-container *ngIf="isAllView">
+
+    <div class="view-tabs">
+      <button class="tab-btn" [class.active]="allViewMode === 'summary'" (click)="setAllViewMode('summary')">Daily Summary</button>
+      <button class="tab-btn" [class.active]="allViewMode === 'matrix'" (click)="setAllViewMode('matrix')">Department Calendar</button>
+      <button class="tab-btn" [class.active]="allViewMode === 'users'" (click)="setAllViewMode('users')">All Users</button>
+    </div>
+
+    <div class="card" *ngIf="allViewMode === 'summary'">
+      <div class="section-lbl">Attendance Summary</div>
+
+      <div class="field inline-field">
+        <label>Date</label>
+        <input type="date" [(ngModel)]="summaryDate" (change)="loadSummary()">
+      </div>
+
+      <div *ngIf="loadingSummary" class="loading-wrap"><mat-spinner diameter="32"></mat-spinner></div>
+
+      <div class="table-scroll" *ngIf="!loadingSummary">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="sticky-name-col">Department</th><th>Volunteers</th><th>Marked</th>
+              <th>Morning</th><th>Afternoon</th><th>Night</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of summaryRows">
+              <td class="sticky-name-col">{{ row.name }}</td>
+              <td>{{ row.volunteerCount }}</td>
+              <td>{{ row.marked }}</td>
+              <td>{{ row.morning }}</td>
+              <td>{{ row.afternoon }}</td>
+              <td>{{ row.night }}</td>
+            </tr>
+            <tr *ngIf="summaryRows.length === 0">
+              <td colspan="6" class="empty-cell">No departments yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Cross-department calendar: departments x every date, per slot marked/eligible, with a totals row -->
+    <div class="card" *ngIf="allViewMode === 'matrix'">
+      <div class="matrix-legend">
+        <span><span class="legend-swatch legend-marked"></span> Marked / Eligible</span>
+        <span class="legend-null">– Department didn't exist yet</span>
+      </div>
+      <p class="legend-note">"Eligible" is computed per slot, not once per day: a person transferred mid-day (e.g. marked in one department for the morning, a different one by night) shifts out of the old department's eligible pool exactly at the slot where that happened, and into the new one's.</p>
+
+      <div *ngIf="loadingAllMatrix" class="loading-wrap"><mat-spinner diameter="32"></mat-spinner></div>
+
+      <div class="table-scroll" #allMatrixScroll *ngIf="!loadingAllMatrix && allMatrix">
+        <table class="data-table matrix-table">
+          <thead>
+            <tr>
+              <th class="sticky-name-col">Department</th>
+              <th *ngFor="let date of allMatrix.dates">{{ formatDateHeader(date) }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of allMatrix.departments">
+              <td class="sticky-name-col">{{ row.name }}</td>
+              <td *ngFor="let date of allMatrix.dates">
+                <span class="cell-null" *ngIf="allMatrixCell(row, date).null">–</span>
+                <span class="slot-counts" *ngIf="!allMatrixCell(row, date).null">
+                  <span class="slot-count" data-tooltip="Morning">{{ allMatrixCell(row, date).morning.marked }}/{{ allMatrixCell(row, date).morning.marked + allMatrixCell(row, date).morning.unmarked }}</span>
+                  <span class="slot-count" data-tooltip="Afternoon">{{ allMatrixCell(row, date).afternoon.marked }}/{{ allMatrixCell(row, date).afternoon.marked + allMatrixCell(row, date).afternoon.unmarked }}</span>
+                  <span class="slot-count" data-tooltip="Night">{{ allMatrixCell(row, date).night.marked }}/{{ allMatrixCell(row, date).night.marked + allMatrixCell(row, date).night.unmarked }}</span>
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="allMatrix.departments.length === 0">
+              <td [attr.colspan]="allMatrix.dates.length + 1" class="empty-cell">No departments yet.</td>
+            </tr>
+            <tr class="matrix-totals-row" *ngIf="allMatrix.departments.length > 0">
+              <td class="sticky-name-col">Total</td>
+              <td *ngFor="let date of allMatrix.dates">
+                <span class="slot-counts">
+                  <span class="slot-count" data-tooltip="Morning">{{ allMatrix.totals[date].morning.marked }}/{{ allMatrix.totals[date].morning.marked + allMatrix.totals[date].morning.unmarked }}</span>
+                  <span class="slot-count" data-tooltip="Afternoon">{{ allMatrix.totals[date].afternoon.marked }}/{{ allMatrix.totals[date].afternoon.marked + allMatrix.totals[date].afternoon.unmarked }}</span>
+                  <span class="slot-count" data-tooltip="Night">{{ allMatrix.totals[date].night.marked }}/{{ allMatrix.totals[date].night.marked + allMatrix.totals[date].night.unmarked }}</span>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Cross-department, per-user history — every attendance-tracked user, every date, department shown on hover -->
+    <div class="card" *ngIf="allViewMode === 'users'">
+      <div class="section-lbl">All Users — Attendance History</div>
+      <div class="matrix-legend">
+        <span><span class="legend-dot legend-marked"></span> Marked (hover a dot for department)</span>
+        <span><span class="legend-dot legend-unmarked"></span> Unmarked</span>
+        <span><span class="legend-dot legend-null-dot"></span> Not applicable</span>
+      </div>
+
+      <div *ngIf="loadingUsersMatrix" class="loading-wrap"><mat-spinner diameter="32"></mat-spinner></div>
+
+      <div class="table-scroll" #usersMatrixScroll *ngIf="!loadingUsersMatrix && usersMatrix">
+        <table class="data-table matrix-table">
+          <thead>
+            <tr>
+              <th class="sticky-name-col">Name</th>
+              <th *ngFor="let date of usersMatrix.dates">{{ formatDateHeader(date) }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of usersMatrix.users">
+              <td class="sticky-name-col">{{ row.name }} <span class="former-tag" *ngIf="!row.current">(transferred)</span></td>
+              <td *ngFor="let date of usersMatrix.dates">
+                <span class="att-dots">
+                  <span class="att-dot" [ngClass]="dotClass(usersMatrixCell(row, date).morning.state)" [data-tooltip]="slotTooltip('Morning', usersMatrixCell(row, date).morning)"></span>
+                  <span class="att-dot" [ngClass]="dotClass(usersMatrixCell(row, date).afternoon.state)" [data-tooltip]="slotTooltip('Afternoon', usersMatrixCell(row, date).afternoon)"></span>
+                  <span class="att-dot" [ngClass]="dotClass(usersMatrixCell(row, date).night.state)" [data-tooltip]="slotTooltip('Night', usersMatrixCell(row, date).night)"></span>
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="usersMatrix.users.length === 0">
+              <td [attr.colspan]="usersMatrix.dates.length + 1" class="empty-cell">No users yet.</td>
+            </tr>
+            <tr class="matrix-totals-row" *ngIf="usersMatrix.users.length > 0">
+              <td class="sticky-name-col">Total marked</td>
+              <td *ngFor="let date of usersMatrix.dates">
+                <span class="slot-counts">
+                  <span class="slot-count" data-tooltip="Morning">{{ usersMatrix.totals[date].morning }}</span>
+                  <span class="slot-count" data-tooltip="Afternoon">{{ usersMatrix.totals[date].afternoon }}</span>
+                  <span class="slot-count" data-tooltip="Night">{{ usersMatrix.totals[date].night }}</span>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <!-- ── Single department view ──────────────────────────────── -->
+  <ng-container *ngIf="!isAllView && selectedDeptId">
+
+    <div class="dept-info-card" *ngIf="deptInfo">
+      <div class="dept-info-hd">
+        <span class="dept-name">{{ deptInfo.name }}</span>
+      </div>
+      <p class="dept-desc" *ngIf="deptInfo.description">{{ deptInfo.description }}</p>
+      <p class="dept-desc muted" *ngIf="!deptInfo.description">No description</p>
+      <div class="meta-row"><span class="meta-label">TL</span><span class="meta-value">{{ tlNames() }}</span></div>
+      <div class="meta-row"><span class="meta-label">Volunteers</span><span class="meta-value">{{ deptInfo.volunteerCount }}</span></div>
+    </div>
+
+    <div class="view-tabs">
+      <button class="tab-btn" [class.active]="viewMode === 'mark'" (click)="setViewMode('mark')">Attendance</button>
+      <button class="tab-btn" [class.active]="viewMode === 'history'" (click)="setViewMode('history')">History</button>
+      <button class="tab-btn" [class.active]="viewMode === 'matrix'" (click)="setViewMode('matrix')">Calendar</button>
+    </div>
+
+    <!-- Attendance grid for one date -->
+    <div class="card" *ngIf="viewMode === 'mark'">
+      <div class="date-nav">
+        <button class="btn-sm-outline" (click)="shiftDate(-1)">‹ Prev</button>
+        <input type="date" [(ngModel)]="selectedDate" (change)="onDateChange()">
+        <button class="btn-sm-outline" (click)="shiftDate(1)">Next ›</button>
+      </div>
+
+      <div *ngIf="loadingRoster" class="loading-wrap"><mat-spinner diameter="32"></mat-spinner></div>
+
+      <div *ngIf="!loadingRoster && roster.length === 0" class="empty-state">
+        <p>No volunteers currently in this department.</p>
+      </div>
+
+      <div class="table-scroll" *ngIf="!loadingRoster && roster.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr><th class="sticky-name-col">Name</th><th>Morning</th><th>Afternoon</th><th>Night</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of roster">
+              <td class="sticky-name-col">{{ entry.name }} <span class="former-tag" *ngIf="!entry.current">(transferred)</span></td>
+              <td>
+                <label class="cb-wrap">
+                  <input type="checkbox" [checked]="entry.morning" (change)="toggleSlot(entry, 'morning')" [disabled]="!canMark">
+                  <span class="cb-box"></span>
+                </label>
+              </td>
+              <td>
+                <label class="cb-wrap">
+                  <input type="checkbox" [checked]="entry.afternoon" (change)="toggleSlot(entry, 'afternoon')" [disabled]="!canMark">
+                  <span class="cb-box"></span>
+                </label>
+              </td>
+              <td>
+                <label class="cb-wrap">
+                  <input type="checkbox" [checked]="entry.night" (change)="toggleSlot(entry, 'night')" [disabled]="!canMark">
+                  <span class="cb-box"></span>
+                </label>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="btn-row" *ngIf="canMark && roster.length > 0">
+        <button class="btn-brand" [disabled]="saving" (click)="saveAttendance()">
+          {{ saving ? 'Saving…' : 'Save Attendance' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Per-volunteer history over a date range -->
+    <div class="card" *ngIf="viewMode === 'history'">
+      <div class="form-two-col">
+        <div class="field">
+          <label>From</label>
+          <input type="date" [(ngModel)]="reportFrom" (change)="loadReport()">
+        </div>
+        <div class="field">
+          <label>To</label>
+          <input type="date" [(ngModel)]="reportTo" (change)="loadReport()">
+        </div>
+      </div>
+
+      <div *ngIf="loadingReport" class="loading-wrap"><mat-spinner diameter="32"></mat-spinner></div>
+
+      <div class="table-scroll" *ngIf="!loadingReport">
+        <table class="data-table">
+          <thead>
+            <tr><th class="sticky-name-col">Name</th><th>Days Marked</th><th>Morning</th><th>Afternoon</th><th>Night</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of reportRows">
+              <td class="sticky-name-col">{{ row.name }}</td>
+              <td>{{ row.daysMarked }}</td>
+              <td>{{ row.morning }}</td>
+              <td>{{ row.afternoon }}</td>
+              <td>{{ row.night }}</td>
+            </tr>
+            <tr *ngIf="reportRows.length === 0">
+              <td colspan="5" class="empty-cell">No volunteers in this department.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Whole-department calendar: users x every date from earliest join to today -->
+    <div class="card" *ngIf="viewMode === 'matrix'">
+      <div class="matrix-legend">
+        <span><span class="legend-dot legend-marked"></span> Marked</span>
+        <span><span class="legend-dot legend-unmarked"></span> Unmarked</span>
+        <span><span class="legend-dot legend-null-dot"></span> Not applicable</span>
+      </div>
+
+      <div *ngIf="loadingMatrix" class="loading-wrap"><mat-spinner diameter="32"></mat-spinner></div>
+
+      <div class="table-scroll" #deptMatrixScroll *ngIf="!loadingMatrix && matrix">
+        <table class="data-table matrix-table">
+          <thead>
+            <tr>
+              <th class="sticky-name-col">Name</th>
+              <th *ngFor="let date of matrix.dates">{{ formatDateHeader(date) }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of matrix.users">
+              <td class="sticky-name-col">{{ row.name }} <span class="former-tag" *ngIf="!row.current">(transferred)</span></td>
+              <td *ngFor="let date of matrix.dates">
+                <span class="att-dots">
+                  <span class="att-dot" [ngClass]="dotClass(matrixCell(row, date).morning)" data-tooltip="Morning"></span>
+                  <span class="att-dot" [ngClass]="dotClass(matrixCell(row, date).afternoon)" data-tooltip="Afternoon"></span>
+                  <span class="att-dot" [ngClass]="dotClass(matrixCell(row, date).night)" data-tooltip="Night"></span>
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="matrix.users.length === 0">
+              <td [attr.colspan]="matrix.dates.length + 1" class="empty-cell">No volunteers in this department.</td>
+            </tr>
+            <tr class="matrix-totals-row" *ngIf="matrix.users.length > 0">
+              <td class="sticky-name-col">Total marked</td>
+              <td *ngFor="let date of matrix.dates">
+                <span class="slot-counts">
+                  <span class="slot-count" data-tooltip="Morning">{{ matrix.totals[date].morning }}</span>
+                  <span class="slot-count" data-tooltip="Afternoon">{{ matrix.totals[date].afternoon }}</span>
+                  <span class="slot-count" data-tooltip="Night">{{ matrix.totals[date].night }}</span>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

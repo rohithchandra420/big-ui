@@ -62,7 +62,8 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
       password: new FormControl(null, Validators.required),
       confirmPassword: new FormControl(null, Validators.required),
       role: new FormControl('', Validators.required),
-      homeDepartment: new FormControl('', Validators.required)
+      homeDepartment: new FormControl('', Validators.required),
+      dateOfJoining: new FormControl(null, Validators.required)
     });
   }
 
@@ -78,6 +79,7 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
         this.setupTLDepartmentContext();
         this.userFrom.get('role')?.disable();
         this.userFrom.get('homeDepartment')?.disable();
+        this.userFrom.get('dateOfJoining')?.disable();
       }
     });
     this.getAllUsers();
@@ -148,7 +150,8 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
       password: this.userFrom.value.password,
       roleName: this.userFrom.value.role,
       departmentIds: homeDepartmentId ? [homeDepartmentId] : [],
-      permissions
+      permissions,
+      dateOfJoining: this.userFrom.value.dateOfJoining
     };
 
     this.adminService.createUser(userDetails).subscribe(res => {
@@ -199,13 +202,15 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     const userDept = user.departments?.[0]?.department;
     const userDeptId = userDept && typeof userDept !== 'string' ? userDept._id : userDept;
     this.userFrom.get('homeDepartment')?.setValue(userDeptId || '');
+    this.userFrom.get('dateOfJoining')?.setValue(user.dateOfJoining ? user.dateOfJoining.substring(0, 10) : null);
 
     if (!this.isTopLevel) {
-      // TL: role and home department are locked, only their own department's
+      // TL: role, home department and DOJ are locked, only their own department's
       // permission chip (already the sole row in `departments`) is editable
       this.roles = [{ _id: '', name: user.role?.name || user.role || '' }];
       this.userFrom.get('role')?.disable();
       this.userFrom.get('homeDepartment')?.disable();
+      this.userFrom.get('dateOfJoining')?.disable();
     }
 
     // Reset all chip rows to none, then restore from user.permissions strings
@@ -239,6 +244,7 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
 
     if (this.isTopLevel) {
       updateDetails.departments = raw.homeDepartment ? [{ departmentId: raw.homeDepartment, access: ['read'] }] : [];
+      updateDetails.dateOfJoining = raw.dateOfJoining;
     }
 
     this.adminService.updateUser(updateDetails).subscribe(() => {
@@ -262,6 +268,7 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
       this.setupTLDepartmentContext();
       this.userFrom.get('role')?.disable();
       this.userFrom.get('homeDepartment')?.disable();
+      this.userFrom.get('dateOfJoining')?.disable();
     }
   }
 

@@ -1,12 +1,12 @@
-<div class="dept-page">
-
-  <div class="page-ph">
-    <div>
-      <div class="page-ph-title">Departments</div>
-      <div class="page-ph-sub">{{ departments.length }} departments</div>
-    </div>
-    <button class="btn-cta" (click)="openCreateDialog()">+ Create Department</button>
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Departments</div>
+    <div class="page-ph-sub">{{ departments.length }} departments</div>
   </div>
+  <button class="btn-cta" (click)="openCreateDialog()">+ Create Department</button>
+</div>
+
+<div class="dept-page">
 
   <div *ngIf="loading" class="loading-wrap">
     <mat-spinner diameter="36"></mat-spinner>

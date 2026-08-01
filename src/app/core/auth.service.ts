@@ -163,6 +163,21 @@ export class AuthService {
         this.router.navigate(['/login']);
     }
 
+    // Called by AuthInterceptorService when an API call comes back 401 while
+    // the app still thinks it's logged in (cookie expired/invalidated
+    // server-side without the SPA knowing). Local cleanup only — deliberately
+    // does NOT call /user/logout, since the server has already invalidated
+    // the session; hitting that endpoint would just 401 again and risk a loop.
+    handleSessionExpired() {
+        if (!this.user.value) return; // already logged out — nothing to do, avoids re-triggering
+        this.loggedIn = false;
+        localStorage.removeItem('IsLoggedIn');
+        localStorage.removeItem('userData');
+        this.user.next(null);
+        this.notificationService.openErrorSnackBar('Your session has expired. Please log in again.');
+        this.router.navigate(['/login']);
+    }
+
     private handleError(errorRes: HttpErrorResponse) {
         let errorMessage =  errorRes.error && errorRes.error.message ? errorRes.error.message :"An unknown error occured";
         if (!errorRes.error || !errorRes.error.message) {

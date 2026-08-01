@@ -95,6 +95,23 @@
 
     </ng-container>
 
+    <!-- My Attendance — compact history from date of joining -->
+    <div class="profile-section">
+      <div class="section-label">My Attendance</div>
+      <p *ngIf="!loadingAttendance && attendanceHistory.length === 0" class="no-data">No attendance recorded yet.</p>
+      <div class="attendance-list" *ngIf="attendanceHistory.length > 0">
+        <div class="attendance-row" *ngFor="let rec of attendanceHistory">
+          <span class="att-date">{{ rec.date | date:'MMM d' }}</span>
+          <span class="att-dept-badge">{{ deptShortCode(rec.department?.name) }}</span>
+          <span class="att-dots">
+            <span class="att-dot" [class.filled]="rec.morning" data-tooltip="Morning"></span>
+            <span class="att-dot" [class.filled]="rec.afternoon" data-tooltip="Afternoon"></span>
+            <span class="att-dot" [class.filled]="rec.night" data-tooltip="Night"></span>
+          </span>
+        </div>
+      </div>
+    </div>
+
     <!-- Save -->
     <div class="profile-actions" *ngIf="isEditMode">
       <button class="btn-brand" (click)="saveProfile()">Save Changes</button>
