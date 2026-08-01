@@ -48,6 +48,15 @@
       Calendar
     </a>
 
+    <a class="nav-item"
+       routerLink="/my-department"
+       routerLinkActive="active"
+       (click)="onNavClick()"
+       *ngIf="isAuthenticated">
+      <span class="nav-dot"></span>
+      My Department
+    </a>
+
     <!-- Box Office group — visible to admin roles, box-office permission, or Box Office dept -->
     <ng-container *ngIf="isAuthenticated && canSeeBoxOffice">
       <div class="nav-group-label">Box Office</div>

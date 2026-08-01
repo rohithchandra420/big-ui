@@ -54,6 +54,7 @@ import { TaskPoolComponent } from './calendar/support/task-pool.component';
 import * as moment from 'moment';
 import { CalendarService } from './calendar/calendar.service';
 import { HasPermissionDirective } from './directives/has-permission.directive';
+import { TooltipDirective } from './directives/tooltip.directive';
 import { ProfileComponent } from './profile/profile.component';
 import { DepartmentsComponent } from './admin/departments/departments.component';
 import { DepartmentDetailComponent } from './admin/departments/department-detail/department-detail.component';
@@ -69,6 +70,7 @@ import { AttendeeListComponent } from './box-office/attendee-list/attendee-list.
 import { TicketEditFormComponent } from './box-office/ticket-edit-form/ticket-edit-form.component';
 import { SpotRegistrationComponent } from './box-office/registration/spot-registration/spot-registration.component';
 import { BulkUploadComponent } from './box-office/bookings/bulk-upload/bulk-upload.component';
+import { MyDepartmentComponent } from './my-department/my-department.component';
 
 // #QRCode Scanner: Necessary to solve the problem of losing internet connection
 LOAD_WASM().subscribe()
@@ -97,6 +99,7 @@ LOAD_WASM().subscribe()
     CalendarComponent,
     TaskPoolComponent,
     HasPermissionDirective,
+    TooltipDirective,
     ProfileComponent,
     DepartmentsComponent,
     DepartmentDetailComponent,
@@ -111,7 +114,8 @@ LOAD_WASM().subscribe()
     AttendeeListComponent,
     TicketEditFormComponent,
     SpotRegistrationComponent,
-    BulkUploadComponent
+    BulkUploadComponent,
+    MyDepartmentComponent
   ],
   imports: [
     BrowserModule,

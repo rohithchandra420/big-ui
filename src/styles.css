@@ -637,8 +637,16 @@ input:disabled {
   height: 2px;
   background: #fff;
 }
-.cb-wrap:hover .cb-box {
+.cb-wrap:hover input:not(:disabled) ~ .cb-box {
   border-color: var(--color-primary);
+}
+
+.cb-wrap input:disabled {
+  cursor: not-allowed;
+}
+.cb-wrap input:disabled ~ .cb-box {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ── Data table (wireframe .tbl pattern, BIG6_DESIGN_CONTEXT §16) ── */
@@ -1006,4 +1014,52 @@ input:disabled {
   margin-top: 1rem;
   flex-wrap: wrap;
   align-items: center;
+}
+
+/* ── Custom tooltip (on-brand replacement for the native `title` attribute,
+   which browsers render as an OS tooltip that can't be styled at all) ──
+   Usage: add data-tooltip="Some text" (or [attr.data-tooltip]="expr" for a
+   dynamic value) to any element instead of title="...". Rendered by
+   TooltipDirective (directives/tooltip.directive.ts) as real DOM nodes
+   (not CSS pseudo-elements) positioned in JS from the element's actual
+   measured size, so it can be clamped to stay within the viewport instead
+   of clipping off the edge of the screen. */
+.app-tooltip-bubble {
+  position: fixed;
+  background: var(--color-primary);
+  color: #fff;
+  border: 1px solid var(--color-secondary);
+  border-radius: 6px;
+  box-shadow: var(--shadow-md);
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* A small rotated square showing only two of its four borders, so it reads
+   as a triangle pointing toward whichever side the tooltip sits on. */
+.app-tooltip-arrow {
+  position: fixed;
+  width: 7px;
+  height: 7px;
+  background: var(--color-primary);
+  pointer-events: none;
+  z-index: 1000;
+  transform: rotate(45deg);
+}
+
+/* Tooltip above the element — arrow points down. */
+.app-tooltip-arrow.arrow-above {
+  border-right: 1px solid var(--color-secondary);
+  border-bottom: 1px solid var(--color-secondary);
+}
+
+/* Tooltip flipped below the element (not enough room above) — arrow points up. */
+.app-tooltip-arrow.arrow-below {
+  border-left: 1px solid var(--color-secondary);
+  border-top: 1px solid var(--color-secondary);
 }

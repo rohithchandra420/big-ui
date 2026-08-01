@@ -58,6 +58,13 @@
       </div>
     </div>
 
+    <div class="form-two-col">
+      <div class="field">
+        <label>Date of Joining *</label>
+        <input type="date" formControlName="dateOfJoining">
+      </div>
+    </div>
+
     <!-- Department Access -->
     <div class="section-divider"></div>
     <div class="section-lbl">Department Access</div>
@@ -126,6 +133,10 @@
         <div class="user-field-row">
           <span class="uf-label">Access</span>
           <span class="uf-value">{{ getAccessLabel(u) }}</span>
+        </div>
+        <div class="user-field-row" *ngIf="u.dateOfJoining">
+          <span class="uf-label">Joined</span>
+          <span class="uf-value">{{ u.dateOfJoining | date:'mediumDate' }}</span>
         </div>
       </div>
 
