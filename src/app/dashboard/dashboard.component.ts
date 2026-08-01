@@ -10,6 +10,7 @@ import { DashboardService } from './dashboard.service';
 import { NotificationService } from '../core/notification.service';
 import { Shopcart } from '../models/ticket.model';
 import { AuthService } from '../core/auth.service';
+import { AdminService } from '../admin/admin.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -20,6 +21,26 @@ export class DashboardComponent implements OnInit {
 
   userDetails: any;
   private userSub: Subscription;
+  isAuthenticated = false;
+  private chartsCreated = false;
+  readonly topLevelRoles = ['DEV', 'DIR', 'ADMIN'];
+
+  get isTopLevel(): boolean {
+    return this.topLevelRoles.includes(this.userDetails?.role || '');
+  }
+
+  // Summary stats — computed alongside the existing per-category counters below
+  totalTicketsSold = 0;
+  totalAdmitted = 0;
+  totalPendingAdmission = 0;
+  totalAccommodationBookings = 0;
+  totalAccommodationAdmitted = 0;
+
+  // Volunteers by department — admin-only (DEV/DIR/ADMIN), sourced from the
+  // existing Manage Departments summary endpoint rather than a new one.
+  departmentCount = 0;
+  totalVolunteers = 0;
+
   chart: any = [];
   title = 'ng-chart';
   shopItemList: Shopcart[];
@@ -77,15 +98,27 @@ export class DashboardComponent implements OnInit {
   RemaingEScooterToAdmit = 0;
 
   constructor(private route: ActivatedRoute, private dashboardService: DashboardService,
-    private notificationService: NotificationService, private authService: AuthService) {
+    private notificationService: NotificationService, private authService: AuthService,
+    private adminService: AdminService) {
     Chart.register(...registerables, ChartDataLabels);
   }
 
   ngOnInit() {
-    this.createDoughnutChart();
-    this.getAllShopItems();
     this.userSub = this.authService.user.subscribe(user => {
       this.userDetails = user;
+      this.isAuthenticated = !!user;
+
+      if (this.isAuthenticated && !this.chartsCreated) {
+        this.chartsCreated = true;
+        // Deferred a tick — the charts live behind *ngIf="isAuthenticated" in
+        // the template, so the canvases don't exist in the DOM yet at the
+        // exact moment this subscription callback runs inside ngOnInit.
+        setTimeout(() => this.createDoughnutChart());
+        this.getAllShopItems();
+        if (this.isTopLevel) {
+          this.loadDepartmentSummary();
+        }
+      }
     });
   }
 
@@ -109,6 +142,8 @@ export class DashboardComponent implements OnInit {
         this.getCaravanPassCount(this.shopItemList);
         this.getEScooterPassCount(this.shopItemList);
 
+        this.computeSummaryStats();
+
         this.getDataForMainChart();
         this.getDataForFestBarChart();
         this.getDataForAccomBarChart();
@@ -122,6 +157,27 @@ export class DashboardComponent implements OnInit {
       console.log(error);
       this.notificationService.openErrorSnackBar(error.error);
     })
+  }
+
+  private computeSummaryStats() {
+    this.totalTicketsSold = this.TotalFestivalPasses + this.TotalWeekendPasses + this.TotalDayPasses;
+    this.totalAdmitted = this.TotalFestPassAdmitted + this.TotalWeekendPassAdmitted + this.TotalDayPassAdmitted;
+    this.totalPendingAdmission = this.totalTicketsSold - this.totalAdmitted;
+
+    this.totalAccommodationBookings = this.TotalPYOTPasses + this.TotalSoloTPasses + this.TotalSharedTPasses +
+      this.TotalFamilyTPasses + this.TotalGTSPPasses + this.TotalGTPWPasses + this.TotalDeluxPasses;
+    this.totalAccommodationAdmitted = this.TotalPYOTPassAdmitted + this.TotalSoloTPassAdmitted + this.TotalSharedTPassAdmitted +
+      this.TotalFamilyTPassAdmitted + this.TotalGTSPPassAdmitted + this.TotalGTPWPassAdmitted + this.TotalDeluxPassAdmitted;
+  }
+
+  private loadDepartmentSummary() {
+    this.adminService.getDepartmentsSummary().subscribe({
+      next: (depts) => {
+        this.departmentCount = depts.length;
+        this.totalVolunteers = depts.reduce((sum, d) => sum + d.volunteerCount, 0);
+      },
+      error: () => {} // non-critical stat — fail silently rather than alarm the user
+    });
   }
 
   getFestivalPassCount(data) {
@@ -314,6 +370,7 @@ export class DashboardComponent implements OnInit {
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             position: 'top',
@@ -416,6 +473,8 @@ export class DashboardComponent implements OnInit {
         ],
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         scales: {
           x: {
             stacked: true,
@@ -476,6 +535,8 @@ export class DashboardComponent implements OnInit {
         ],
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         scales: {
           x: {
             stacked: true,
@@ -535,6 +596,8 @@ export class DashboardComponent implements OnInit {
         ],
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         scales: {
           x: {
             stacked: true,
