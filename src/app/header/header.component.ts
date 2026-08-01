@@ -2,6 +2,7 @@ import { Component, EventEmitter, OnDestroy, OnInit, Output } from "@angular/cor
 import { AuthService } from "../core/auth.service";
 import { User } from "../core/user.model";
 import { Subscription } from "rxjs";
+import { environment } from "src/environments/environment.development";
 
 @Component({
     selector: 'app-header',
@@ -16,6 +17,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     userRole: string = '';
     userName: string = '';
     isAuthenticated = false;
+    readonly appVersion = environment.version;
 
     private currentUser: User | null = null;
     private userSub!: Subscription;

@@ -5,21 +5,57 @@
   </div>
 </div>
 
-<div class="row col-lg-12">
-  <div style="display: flex; justify-content: center; margin: 20px;">
-    <canvas id="mainDataChart" width="400" height="400"></canvas>
+<div class="dashboard-page">
+
+  <!-- Anonymous visitor — no data fetch attempted (would 401), just a way in -->
+  <div class="signin-prompt" *ngIf="!isAuthenticated">
+    <mat-icon class="signin-icon">lock</mat-icon>
+    <p>Sign in to see ticketing, accommodation, and volunteer data.</p>
+    <button class="btn-brand" routerLink="/login">Sign In</button>
   </div>
 
-  <div style="display: flex; justify-content: center; margin: 20px;">
-    <canvas id="festBarChart" width="400" height="400"></canvas>
-  </div>
+  <ng-container *ngIf="isAuthenticated">
 
-  <div style="display: flex; justify-content: center; margin: 20px;">
-    <canvas id="accomodationBarChart" width="400" height="400"></canvas>
-  </div>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-l">Tickets Sold</div>
+        <div class="stat-n">{{ totalTicketsSold }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-l">Admitted</div>
+        <div class="stat-n">{{ totalAdmitted }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-l">Pending Admission</div>
+        <div class="stat-n">{{ totalPendingAdmission }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-l">Accommodation Bookings</div>
+        <div class="stat-n">{{ totalAccommodationBookings }}</div>
+        <div class="stat-s">{{ totalAccommodationAdmitted }} checked in</div>
+      </div>
+      <div class="stat" *ngIf="isTopLevel">
+        <div class="stat-l">Volunteers</div>
+        <div class="stat-n">{{ totalVolunteers }}</div>
+        <div class="stat-s">across {{ departmentCount }} department{{ departmentCount === 1 ? '' : 's' }}</div>
+      </div>
+    </div>
 
-  <div style="display: flex; justify-content: center; margin: 20px;">
-    <canvas id="vehicleBarChart" width="400" height="400"></canvas>
-  </div>
-  
+    <div class="chart-grid">
+      <div class="chart-card">
+        <canvas id="mainDataChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <canvas id="festBarChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <canvas id="accomodationBarChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <canvas id="vehicleBarChart"></canvas>
+      </div>
+    </div>
+
+  </ng-container>
+
 </div>

@@ -9,6 +9,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.7.0] - 2026-08-03
+
+### Added
+- App version now shown as a small, unobtrusive marker in the sidebar footer, kept in sync with this changelog
+- Dashboard: new summary stat row (Tickets Sold, Admitted, Pending Admission, Accommodation Bookings, and — for DEV/DIR/ADMIN — Volunteers by department)
+- Dashboard: a "Sign In" prompt is now shown to anonymous visitors instead of attempting to load data they don't have access to
+- The app now detects an expired/invalidated session on any API call and redirects to `/login` with a notice, instead of silently failing while appearing to still be logged in
+
+### Changed
+- Dashboard layout revamped: charts resized and moved into a responsive grid with proper page margins (previously fixed-size canvases with minimal spacing)
+
+---
+
 ## [1.6.0] - 2026-08-02
 
 ### Added

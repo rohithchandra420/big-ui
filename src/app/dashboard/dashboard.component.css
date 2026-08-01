@@ -1,0 +1,52 @@
+.dashboard-page {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 4px 4px 24px;
+}
+
+/* ── Anonymous state ──────────────────────────────────────── */
+.signin-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-muted);
+}
+
+.signin-icon {
+  font-size: 40px;
+  height: 40px;
+  width: 40px;
+  color: #ccc;
+  margin-bottom: 12px;
+}
+
+.signin-prompt p {
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+
+/* ── Charts ───────────────────────────────────────────────── */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.chart-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xs);
+  padding: 16px;
+  height: 280px;
+  position: relative;
+}
+
+@media (max-width: 600px) {
+  .chart-card {
+    height: 240px;
+  }
+}
