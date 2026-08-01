@@ -9,6 +9,25 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.6.0] - 2026-08-02
+
+### Added
+- **My Department page** (`/my-department`) — accessible by every role, scoped to what each can see/do: DEV/DIR/ADMIN pick any department or an "ALL" cross-department view (Daily Summary / Department Calendar / All Users tabs); TL sees their own department(s); VOL sees their own department read-only
+  - **Attendance** tab — date navigation, per-slot marking with a bulk Save and a conflict-confirmation flow when a slot is already claimed by another department
+  - **History** tab — per-member attendance summary over a date range
+  - **Calendar** tab — a full users-x-dates grid with three-state (marked/unmarked/not-applicable) cells, defaulting scrolled to today
+- `DepartmentService`, `department.utils.ts` (`deptShortCode`)
+- `TooltipDirective` (`[data-tooltip]`) — on-brand tooltip that positions itself to stay within the viewport, replacing the native `title` attribute on the new attendance dots
+- `/profile` — new "My Attendance" section, a compact history of the signed-in user's own attendance since their date of joining
+- Admin > Users create/edit — new required Date of Joining field
+
+### Changed
+- Design-system checkbox styling applied to the new attendance grid (existing `.cb-wrap` pattern, extended with a disabled state)
+- Data tables: cell content centered by default, first column sticky, generalized from the Calendar-style tables to every table on the new page
+- Page header layout fixed on My Department and admin Departments pages so it spans edge-to-edge, matching the rest of the app
+
+---
+
 ## [1.5.0] - 2026-07-27
 
 ### Added
