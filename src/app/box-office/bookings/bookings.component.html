@@ -3,7 +3,10 @@
     <div class="page-ph-title">Bookings</div>
     <div class="page-ph-sub">{{ totalBookings }} booking{{ totalBookings === 1 ? '' : 's' }}</div>
   </div>
-  <button class="btn-cta" (click)="openBulkUpload()">Bulk Upload</button>
+  <div style="display: flex; gap: 8px;">
+    <button class="btn-ghost" (click)="exportBookings()" [disabled]="!bookings.length">Export</button>
+    <button class="btn-cta" (click)="openBulkUpload()">Bulk Upload</button>
+  </div>
 </div>
 
 <div class="stat-row">
