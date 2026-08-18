@@ -9,6 +9,24 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.9.0] - 2026-08-18
+
+### Added
+- **Introducing Events** — new Admin > Events page (list/create/edit Events, inline PassType add/edit/delete) and an active-Event selector in the sidebar, driving which event Box Office/Bookings/Dashboard are scoped to
+- Spot Registration's item picker is now a live PassType dropdown sourced from the active event, replacing the old hardcoded list
+- Bulk Upload: unrecognized item names from the Excel file are now cross-checked against the active event's real PassTypes as soon as the file is parsed — staff can confirm + assign a category to any unrecognized ones right there ("Create N Pass Types & Upload") instead of hitting a hard validation error and having to go create them separately first
+- Dashboard's summary stat row now correctly counts bookings created via the reworked Box Office flow too
+
+### Changed
+- Bookings/Registration search and listing are now scoped to the active event
+- Bookings' Export button (see [1.8.0] below) now also recognizes passes created via the current Box Office flow, not just the legacy format
+
+### Notes
+- The legacy Tickets module (`ticket.details`, old registration form) is unaffected — it still runs on the older, unscoped model, deliberately left untouched
+- Full plan and decision history in INTRODUCING_EVENTS_CONTEXT.md
+
+---
+
 ## [1.8.0] - 2026-08-18
 
 ### Added

@@ -1,0 +1,41 @@
+<h2 mat-dialog-title>Create Event</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form">
+
+    <div class="field">
+      <label>Name *</label>
+      <input type="text" formControlName="name" placeholder="e.g. BloomNight 01">
+      <span class="field-error" *ngIf="form.get('name')?.touched && form.get('name')?.hasError('required')">
+        Name is required
+      </span>
+    </div>
+
+    <div class="field">
+      <label>Description</label>
+      <textarea formControlName="description" rows="3"
+        placeholder="What is this event?"></textarea>
+    </div>
+
+    <div class="form-two-col">
+      <div class="field">
+        <label>Start date</label>
+        <input type="date" formControlName="startDate">
+      </div>
+      <div class="field">
+        <label>End date</label>
+        <input type="date" formControlName="endDate">
+      </div>
+    </div>
+
+    <p class="field-hint">New events start as <strong>Draft</strong> — invisible to TL/VOL until you activate it from the event's detail page.</p>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button class="btn-ghost" (click)="cancel()">Cancel</button>
+  <button class="btn-cta" (click)="save()" [disabled]="form.invalid || saving">
+    {{ saving ? 'Creating…' : 'Create' }}
+  </button>
+</mat-dialog-actions>

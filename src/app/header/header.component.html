@@ -107,12 +107,33 @@
         <span class="nav-dot"></span>
         Departments
       </a>
+
+      <a class="nav-item"
+         routerLink="/admin/events"
+         routerLinkActive="active"
+         (click)="onNavClick()"
+         *ngIf="canSeeManageEvents">
+        <span class="nav-dot"></span>
+        Events
+      </a>
     </ng-container>
 
   </nav>
 
   <!-- Pushes user block to the bottom -->
   <div class="sidebar-spacer"></div>
+
+  <!-- Active-Event selector — which event Box Office/Dashboard/Bookings/
+       Ticket Registry are scoped to. Options are already role-filtered by
+       the backend (TL/VOL only ever see 'active' events). -->
+  <div class="sidebar-event-picker" *ngIf="isAuthenticated && events.length > 0">
+    <label class="event-picker-label">Event</label>
+    <select class="event-picker-select"
+      [ngModel]="activeEvent?._id"
+      (ngModelChange)="onEventChange($event)">
+      <option *ngFor="let event of events" [value]="event._id">{{ event.name }}</option>
+    </select>
+  </div>
 
   <!-- User block at bottom -->
   <div class="sidebar-user" *ngIf="isAuthenticated">

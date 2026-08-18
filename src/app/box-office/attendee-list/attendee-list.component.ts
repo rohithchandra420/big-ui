@@ -83,7 +83,7 @@ export class AttendeeListComponent implements OnChanges {
   }
 
   isFestivalPass(item: Shopcart): boolean {
-    return isFestivalPass(item.item_name);
+    return isFestivalPass(item);
   }
 
   attendeeInitials(item: Shopcart): string {

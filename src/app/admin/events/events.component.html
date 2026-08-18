@@ -1,0 +1,41 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Events</div>
+    <div class="page-ph-sub">{{ events.length }} events</div>
+  </div>
+  <button class="btn-cta" (click)="openCreateDialog()">+ Create Event</button>
+</div>
+
+<div class="event-page">
+
+  <div *ngIf="loading" class="loading-wrap">
+    <mat-spinner diameter="36"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && events.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">celebration</mat-icon>
+    <p>No events yet. Create one to get started.</p>
+  </div>
+
+  <div class="event-grid" *ngIf="!loading && events.length > 0">
+    <div class="event-card" *ngFor="let event of events" (click)="editEvent(event)">
+
+      <div class="event-card-hd">
+        <span class="event-name">{{ event.name }}</span>
+        <span class="status-chip" [class]="'status-' + event.status">{{ statusLabel(event.status) }}</span>
+      </div>
+
+      <div class="event-card-body">
+        <p class="event-desc" *ngIf="event.description">{{ event.description }}</p>
+        <p class="event-desc muted" *ngIf="!event.description">No description</p>
+
+        <div class="meta-row" *ngIf="event.startDate || event.endDate">
+          <span class="meta-label">Dates</span>
+          <span class="meta-value">{{ event.startDate | date:'mediumDate' }} – {{ event.endDate | date:'mediumDate' }}</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

@@ -25,6 +25,8 @@ import { BookingsComponent } from "../box-office/bookings/bookings.component";
 import { RegistrationComponent } from "../box-office/registration/registration.component";
 import { BookingFoundComponent } from "../box-office/registration/booking-found/booking-found.component";
 import { MyDepartmentComponent } from "../my-department/my-department.component";
+import { EventsComponent } from "../admin/events/events.component";
+import { EventDetailComponent } from "../admin/events/event-detail/event-detail.component";
 
 // const profileGuard: CanActivateFn = (
 //     route: ActivatedRouteSnapshot,
@@ -83,7 +85,9 @@ const appRoutes: Routes = [
         { path: 'user', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: UserRegisteryComponent },
         { path: 'tickets', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: TicketRegisteryComponent },
         { path: 'departments', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentsComponent },
-        { path: 'departments/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentDetailComponent }
+        { path: 'departments/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentDetailComponent },
+        { path: 'events', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventsComponent },
+        { path: 'events/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventDetailComponent }
     ]},
     { path: 'error', component: ErrorPageComponent, data: {message: 'Page Under Construction'}},
     //{ path: '**', redirectTo: 'error' },

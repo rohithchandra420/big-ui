@@ -17,3 +17,26 @@
   font-size: 12px;
   color: var(--text-secondary);
 }
+
+.bu-unknown-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.bu-unknown-name {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.bu-unknown-row select {
+  padding: 4px 8px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: inherit;
+  background: #fff;
+}

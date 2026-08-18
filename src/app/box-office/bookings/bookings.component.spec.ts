@@ -3,12 +3,16 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 import { delay } from 'rxjs/operators';
 
 import { BookingsComponent } from './bookings.component';
 import { BoxOfficeService } from '../box-office.service';
+import { EventService } from '../../core/event.service';
 import { Ticket } from '../../models/ticket.model';
+import { EventItem } from '../../models/event.model';
+
+const mockActiveEvent = { _id: 'evt1', name: 'Test Event', description: '', status: 'active' } as EventItem;
 
 const mockBookings: Ticket[] = [
   new Ticket(1, 'Arjun', 'Mehta', 'arjun@example.com', '9000000001', 'TXN1', 'Yes', 100, [
@@ -26,12 +30,19 @@ describe('BookingsComponent', () => {
   let boxOfficeServiceSpy: jasmine.SpyObj<BoxOfficeService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let dialogSpy: jasmine.SpyObj<MatDialog>;
+  let activeEventSubject: BehaviorSubject<EventItem | null>;
+  let eventServiceStub: { activeEvent: BehaviorSubject<EventItem | null>, currentActiveEvent: EventItem | null };
 
   beforeEach(async () => {
     boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['getAllTickets']);
     boxOfficeServiceSpy.getAllTickets.and.returnValue(of(mockBookings as any));
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+    activeEventSubject = new BehaviorSubject<EventItem | null>(mockActiveEvent);
+    eventServiceStub = {
+      activeEvent: activeEventSubject,
+      get currentActiveEvent() { return activeEventSubject.value; }
+    };
 
     await TestBed.configureTestingModule({
       declarations: [BookingsComponent],
@@ -40,6 +51,7 @@ describe('BookingsComponent', () => {
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: MatDialog, useValue: dialogSpy },
+        { provide: EventService, useValue: eventServiceStub },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -302,6 +314,16 @@ describe('BookingsComponent', () => {
     it('returns an empty array for a booking with no shopcart', () => {
       const ticket = new Ticket(4, 'No', 'Items', 'x@example.com', '9', 'TXN4', 'Yes', 0, undefined, 't4');
       expect(component.buildExportRows([ticket])).toEqual([]);
+    });
+
+    it('falls back to passTypeName when item_name is missing (passes created via the current Box Office flow)', () => {
+      const ticket = new Ticket(5, 'Kavya', 'Reddy', 'kavya@example.com', '9000000003', 'TXN5', 'Yes', 200, [
+        { passTypeName: 'Solo Tent', item_quantity: 1, order_id: 5, admissionId: null as any, isAdmitted: false, isActive: true } as any,
+      ], 't5');
+
+      const rows = component.buildExportRows([ticket]);
+
+      expect(rows[0].item_name).toBe('Solo Tent');
     });
   });
 

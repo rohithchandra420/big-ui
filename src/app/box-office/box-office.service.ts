@@ -50,8 +50,10 @@ export class BoxOfficeService {
     // ── Bookings / Registration — duplicated from TicketsService, hitting the /box-office
     //    router (same Ticket/ShopCart models underneath). Modify these independently as
     //    Box Office requirements diverge from Tickets. ──
-    getAllTickets() {
-        return this.http.get<[Ticket]>(this.url + "/box-office/getalltickets");
+    getAllTickets(eventId: string) {
+        return this.http.get<[Ticket]>(this.url + "/box-office/getalltickets", {
+            params: new HttpParams().set('eventId', eventId)
+        });
     }
 
     getTicketById(ticketId: string) {
@@ -75,9 +77,9 @@ export class BoxOfficeService {
         return this.http.delete<Shopcart>(this.url + "/box-office/deleteTicket/" + ticketId);
     }
 
-    searchTickets(query: string) {
+    searchTickets(query: string, eventId: string) {
         return this.http.get<Ticket[]>(this.url + "/box-office/search", {
-            params: new HttpParams().set('q', query)
+            params: new HttpParams().set('q', query).set('eventId', eventId)
         });
     }
 

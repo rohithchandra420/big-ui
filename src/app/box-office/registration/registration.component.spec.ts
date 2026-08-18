@@ -2,11 +2,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 
 import { RegistrationComponent } from './registration.component';
 import { BoxOfficeService } from '../box-office.service';
+import { EventService } from '../../core/event.service';
 import { Ticket } from '../../models/ticket.model';
+import { EventItem } from '../../models/event.model';
+
+const mockActiveEvent = { _id: 'evt1', name: 'Test Event', description: '', status: 'active' } as EventItem;
 
 const mockBookings: Ticket[] = [
   new Ticket(1, 'Arjun', 'Mehta', 'arjun@example.com', '9000000001', 'TXN1', 'Yes', 100, [
@@ -24,12 +28,19 @@ describe('RegistrationComponent', () => {
   let boxOfficeServiceSpy: jasmine.SpyObj<BoxOfficeService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let dialogSpy: jasmine.SpyObj<MatDialog>;
+  let activeEventSubject: BehaviorSubject<EventItem | null>;
+  let eventServiceStub: { activeEvent: BehaviorSubject<EventItem | null>, currentActiveEvent: EventItem | null };
 
   beforeEach(async () => {
     boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['getAllTickets', 'searchTickets']);
     boxOfficeServiceSpy.getAllTickets.and.returnValue(of(mockBookings as any));
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+    activeEventSubject = new BehaviorSubject<EventItem | null>(mockActiveEvent);
+    eventServiceStub = {
+      activeEvent: activeEventSubject,
+      get currentActiveEvent() { return activeEventSubject.value; }
+    };
 
     await TestBed.configureTestingModule({
       declarations: [RegistrationComponent],
@@ -37,6 +48,7 @@ describe('RegistrationComponent', () => {
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: MatDialog, useValue: dialogSpy },
+        { provide: EventService, useValue: eventServiceStub },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -46,8 +58,8 @@ describe('RegistrationComponent', () => {
     fixture.detectChanges();
   });
 
-  it('loads bookings on init', () => {
-    expect(boxOfficeServiceSpy.getAllTickets).toHaveBeenCalled();
+  it('loads bookings on init, scoped to the active event', () => {
+    expect(boxOfficeServiceSpy.getAllTickets).toHaveBeenCalledWith('evt1');
     expect(component.bookings).toEqual(mockBookings);
   });
 
@@ -95,7 +107,7 @@ describe('RegistrationComponent', () => {
 
       component.lookUp();
 
-      expect(boxOfficeServiceSpy.searchTickets).toHaveBeenCalledWith('Arjun');
+      expect(boxOfficeServiceSpy.searchTickets).toHaveBeenCalledWith('Arjun', 'evt1');
       expect(routerSpy.navigate).toHaveBeenCalledWith(['/box-office/registration', 't1']);
       expect(component.searching).toBeFalse();
       expect(component.searched).toBeTrue();
