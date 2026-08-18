@@ -287,4 +287,28 @@ describe('BookingsComponent', () => {
       expect(boxOfficeServiceSpy.getAllTickets).not.toHaveBeenCalled();
     });
   });
+
+  describe('buildExportRows()', () => {
+    it('flattens one row per shopcart item, matching the Bulk Upload import column shape', () => {
+      const rows = component.buildExportRows(mockBookings);
+
+      expect(rows).toEqual([
+        { order_id: 1, item_name: 'Festival Ticket', item_quantity: 1, billing_first_name: 'Arjun', billing_last_name: 'Mehta', phone_no: '9000000001', billing_email: 'arjun@example.com', transaction_id: 'TXN1', order_total: 100 },
+        { order_id: 1, item_name: 'Camping', item_quantity: 1, billing_first_name: 'Arjun', billing_last_name: 'Mehta', phone_no: '9000000001', billing_email: 'arjun@example.com', transaction_id: 'TXN1', order_total: 100 },
+        { order_id: 2, item_name: 'Day Pass', item_quantity: 1, billing_first_name: 'Priya', billing_last_name: 'Nair', phone_no: '9000000002', billing_email: 'priya@example.com', transaction_id: 'TXN2', order_total: 50 },
+      ]);
+    });
+
+    it('returns an empty array for a booking with no shopcart', () => {
+      const ticket = new Ticket(4, 'No', 'Items', 'x@example.com', '9', 'TXN4', 'Yes', 0, undefined, 't4');
+      expect(component.buildExportRows([ticket])).toEqual([]);
+    });
+  });
+
+  describe('exportBookings()', () => {
+    it('does nothing when there are no bookings loaded', () => {
+      component.bookings = [];
+      expect(() => component.exportBookings()).not.toThrow();
+    });
+  });
 });

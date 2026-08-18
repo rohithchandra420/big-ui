@@ -187,6 +187,51 @@ export class BookingsComponent implements OnInit {
     });
   }
 
+  // Quick v1 backup/export — one row per pass, same column shape Bulk
+  // Upload imports (order_id/item_name/item_quantity/billing_first_name/
+  // billing_last_name/phone_no/billing_email/transaction_id/order_total),
+  // so an exported file can be re-uploaded as-is later. Exports every
+  // currently-loaded booking, not just the filtered/paged view — this is
+  // meant as a full backup, not a report. Requested 2026-08-18 specifically
+  // as a safety net to pull existing UAT data out before the Introducing
+  // Events epic (separate branch) changes the underlying data model —
+  // deliberately built here, on develop, rather than on that branch, so it
+  // still works once deployed (that branch's Bookings requires an eventId
+  // old bookings won't have). Intentionally minimal — user has said this
+  // will be extended/reworked later.
+  buildExportRows(bookings: Ticket[]): any[] {
+    const rows: any[] = [];
+    bookings.forEach(ticket => {
+      (ticket.shopcart || []).forEach(item => {
+        rows.push({
+          order_id: ticket.order_id,
+          item_name: item.item_name,
+          item_quantity: item.item_quantity,
+          billing_first_name: ticket.first_name,
+          billing_last_name: ticket.last_name,
+          phone_no: ticket.phone_no,
+          billing_email: ticket.email,
+          transaction_id: ticket.transaction_id,
+          order_total: ticket.totalPrice,
+        });
+      });
+    });
+    return rows;
+  }
+
+  exportBookings() {
+    if (!this.bookings.length) return;
+    const rows = this.buildExportRows(this.bookings);
+
+    import('xlsx').then(XLSX => {
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Bookings');
+      const dateStamp = new Date().toISOString().substring(0, 10);
+      XLSX.writeFile(workbook, `bookings-export-${dateStamp}.xlsx`);
+    });
+  }
+
   @HostListener('document:keydown.escape')
   onEscape() {
     if (this.panelOpen) {

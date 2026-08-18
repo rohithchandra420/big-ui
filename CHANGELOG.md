@@ -9,6 +9,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.8.0] - 2026-08-18
+
+### Added
+- Bookings page: new "Export" button next to Bulk Upload — exports all currently-loaded bookings as an .xlsx file, one row per pass, in the same column format Bulk Upload imports (so the file can be re-uploaded as-is later). Intentionally minimal for now; expected to be extended.
+
+---
+
 ## [1.7.0] - 2026-08-03
 
 ### Added
