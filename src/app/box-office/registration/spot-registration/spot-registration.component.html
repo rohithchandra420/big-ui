@@ -45,9 +45,9 @@
       <div class="spot-item-row" *ngFor="let item of shopcart.controls; let i = index" [formGroupName]="i">
         <div class="field" style="flex: 2;">
           <label>Item *</label>
-          <select formControlName="item_name">
+          <select formControlName="passTypeId">
             <option value="">Select item</option>
-            <option *ngFor="let name of itemNameOptions" [value]="name">{{ name }}</option>
+            <option *ngFor="let pt of passTypeOptions" [value]="pt._id">{{ pt.name }}</option>
           </select>
         </div>
         <div class="field" style="flex: 1;">

@@ -34,10 +34,11 @@ describe('BoxOfficeService', () => {
 
     afterEach(() => httpMock.verify());
 
-    it('getAllTickets() hits /api/box-office/getalltickets', () => {
-        service.getAllTickets().subscribe();
-        const req = httpMock.expectOne('/api/box-office/getalltickets');
+    it('getAllTickets() sends eventId as a GET query param to /api/box-office/getalltickets', () => {
+        service.getAllTickets('evt1').subscribe();
+        const req = httpMock.expectOne(r => r.url === '/api/box-office/getalltickets');
         expect(req.request.method).toBe('GET');
+        expect(req.request.params.get('eventId')).toBe('evt1');
         req.flush([]);
     });
 
@@ -80,11 +81,12 @@ describe('BoxOfficeService', () => {
         req.flush({});
     });
 
-    it('searchTickets() sends q as a GET query param to /api/box-office/search', () => {
-        service.searchTickets('Arjun Mehta').subscribe();
+    it('searchTickets() sends q and eventId as GET query params to /api/box-office/search', () => {
+        service.searchTickets('Arjun Mehta', 'evt1').subscribe();
         const req = httpMock.expectOne(r => r.url === '/api/box-office/search');
         expect(req.request.method).toBe('GET');
         expect(req.request.params.get('q')).toBe('Arjun Mehta');
+        expect(req.request.params.get('eventId')).toBe('evt1');
         req.flush([]);
     });
 

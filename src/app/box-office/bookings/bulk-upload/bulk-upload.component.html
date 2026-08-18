@@ -36,6 +36,17 @@
     </div>
   </div>
 
+  <div class="alert aw" style="margin-top: 12px;" *ngIf="unknownPassNames.length">
+    <strong>{{ unknownPassNames.length }} pass name{{ unknownPassNames.length > 1 ? 's' : '' }} not on this event yet:</strong>
+    <div class="bu-unknown-row" *ngFor="let name of unknownPassNames">
+      <span class="bu-unknown-name">{{ name }}</span>
+      <select [(ngModel)]="newPassTypeCategories[name]" [ngModelOptions]="{standalone: true}">
+        <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+      </select>
+    </div>
+    <p class="field-hint">Pick a category for each — confirming will create these as new pass types on the active event, then upload.</p>
+  </div>
+
   <div class="alert ad" style="margin-top: 12px;" *ngIf="validationErrors.length">
     <strong>Validation failed:</strong>
     <ul style="margin: 6px 0 0; padding-left: 18px;">
@@ -51,6 +62,6 @@
 <mat-dialog-actions align="end">
   <button class="btn-ghost" (click)="cancel()">Cancel</button>
   <button class="btn-cta" (click)="upload()" [disabled]="!selectedFile || uploading">
-    {{ uploading ? 'Uploading…' : 'Upload' }}
+    {{ uploadLabel }}
   </button>
 </mat-dialog-actions>

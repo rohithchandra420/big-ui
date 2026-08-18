@@ -1,4 +1,5 @@
 export type Gender = 'Male' | 'Female' | 'Prefer not to say';
+export type PassCategory = 'festival' | 'tent' | 'addon';
 
 export class Shopcart {
     public item_name: string;
@@ -14,6 +15,14 @@ export class Shopcart {
     public gender?: Gender | null;
     public allocatedTentId?: string | null;
     public linkedPassId?: string | null;
+    // Introducing Events (see INTRODUCING_EVENTS_CONTEXT.md) — item_name
+    // above stays authoritative for the legacy Tickets module (untouched,
+    // decision #3), these are populated for anything created through the
+    // current Box Office flow instead.
+    public event?: string;
+    public passType?: string;
+    public category?: PassCategory;
+    public passTypeName?: string;
 
     constructor(item_name: string, item_quantity: number, order_id: number, admissionId: string,
          isAdmitted: boolean, isActive:boolean, name?: string, phone_no?: string, email?: string,  _id?: string,
@@ -45,6 +54,7 @@ export class Ticket {
     public totalPrice: number;
     public shopcart?: Shopcart[];
     public _id?: string;
+    public event?: string; // Introducing Events — see Shopcart.event above
 
     
    constructor(order_id: number, first_name: string, last_name: string, email: string, phone_no:string, transaction_id: string, 

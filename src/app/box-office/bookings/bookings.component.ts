@@ -7,6 +7,7 @@ import { Ticket } from '../../models/ticket.model';
 import { BoxOfficeService } from '../box-office.service';
 import { isSpotRegistration, passSummary as buildPassSummary } from '../box-office.utils';
 import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
+import { EventService } from '../../core/event.service';
 
 type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | null;
 
@@ -37,16 +38,25 @@ export class BookingsComponent implements OnInit {
   constructor(
     private boxOfficeService: BoxOfficeService,
     private router: Router,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private eventService: EventService
   ) { }
 
   ngOnInit() {
-    this.loadBookings();
+    // Reload whenever the active event changes, not just on page load —
+    // Bookings is scoped to whichever event the sidebar selector currently
+    // points at.
+    this.eventService.activeEvent.subscribe(() => this.loadBookings());
   }
 
   loadBookings() {
+    const activeEvent = this.eventService.currentActiveEvent;
+    if (!activeEvent) {
+      this.bookings = [];
+      return;
+    }
     this.loading = true;
-    this.boxOfficeService.getAllTickets().subscribe({
+    this.boxOfficeService.getAllTickets(activeEvent._id).subscribe({
       next: (res) => {
         this.bookings = res;
         this.loading = false;
@@ -203,7 +213,12 @@ export class BookingsComponent implements OnInit {
       }
     }, 300);
 
-    this.boxOfficeService.getAllTickets().subscribe({
+    const activeEvent = this.eventService.currentActiveEvent;
+    if (!activeEvent) {
+      this.panelOpen = false;
+      return;
+    }
+    this.boxOfficeService.getAllTickets(activeEvent._id).subscribe({
       next: (res) => {
         settled = true;
         clearTimeout(fallback);

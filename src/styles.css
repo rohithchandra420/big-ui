@@ -455,6 +455,13 @@ input:disabled {
   margin-top: 2px;
 }
 
+/* ── Field informational hint (neutral, not an error) ───── */
+.field-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
 /* ── Dialog warning banner ──────────────────────────────── */
 .warn-banner {
   display: flex;

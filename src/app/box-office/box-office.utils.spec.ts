@@ -3,15 +3,25 @@ import { Shopcart, Ticket } from '../models/ticket.model';
 
 describe('box-office.utils', () => {
   describe('isFestivalPass()', () => {
-    it('is true for Festival Ticket/Weekend pass/Day Pass', () => {
-      expect(isFestivalPass('Festival Ticket')).toBeTrue();
-      expect(isFestivalPass('Weekend pass')).toBeTrue();
-      expect(isFestivalPass('Day Pass')).toBeTrue();
+    it('is true when category is festival', () => {
+      expect(isFestivalPass({ category: 'festival' } as Shopcart)).toBeTrue();
     });
 
-    it('is false for tent pass types', () => {
-      expect(isFestivalPass('Shared Tent')).toBeFalse();
-      expect(isFestivalPass('Solo Tent')).toBeFalse();
+    it('is false when category is tent or addon', () => {
+      expect(isFestivalPass({ category: 'tent' } as Shopcart)).toBeFalse();
+      expect(isFestivalPass({ category: 'addon' } as Shopcart)).toBeFalse();
+    });
+
+    it('falls back to the legacy item_name match when category is missing (legacy Tickets module items)', () => {
+      expect(isFestivalPass({ item_name: 'Festival Ticket' } as Shopcart)).toBeTrue();
+      expect(isFestivalPass({ item_name: 'Weekend pass' } as Shopcart)).toBeTrue();
+      expect(isFestivalPass({ item_name: 'Day Pass' } as Shopcart)).toBeTrue();
+      expect(isFestivalPass({ item_name: 'Shared Tent' } as Shopcart)).toBeFalse();
+      expect(isFestivalPass({ item_name: 'Solo Tent' } as Shopcart)).toBeFalse();
+    });
+
+    it('prefers category over item_name when both are present', () => {
+      expect(isFestivalPass({ category: 'tent', item_name: 'Festival Ticket' } as Shopcart)).toBeFalse();
     });
   });
 

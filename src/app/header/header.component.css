@@ -100,6 +100,34 @@
   min-height: 1rem;
 }
 
+/* ── Active-Event picker ─────────────────────────────────── */
+.sidebar-event-picker {
+  padding: 10px 1rem;
+  border-top: 1px solid #e5e5e5;
+  flex-shrink: 0;
+}
+
+.event-picker-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.event-picker-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #1a1a1a;
+  background: #fff;
+}
+
 /* ── User block at bottom ────────────────────────────────── */
 .sidebar-user {
   display: flex;
