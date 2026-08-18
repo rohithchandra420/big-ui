@@ -1,0 +1,137 @@
+<div class="detail-page">
+
+  <div *ngIf="loading" class="loading-wrap">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading && detail">
+
+    <div class="top-bar">
+      <button class="btn-back" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon> Events
+      </button>
+      <button class="btn-edit" *ngIf="!editMode" (click)="enterEditMode()">
+        <mat-icon>edit</mat-icon> Edit
+      </button>
+    </div>
+
+    <!-- ── VIEW MODE ─────────────────────────────────────── -->
+    <ng-container *ngIf="!editMode">
+      <div class="event-title-row">
+        <h2 class="event-title">{{ detail.name }}</h2>
+        <span class="status-chip" [class]="'status-' + detail.status">{{ detail.status | titlecase }}</span>
+      </div>
+      <p class="event-desc" *ngIf="detail.description">{{ detail.description }}</p>
+      <p class="event-desc muted" *ngIf="!detail.description">No description</p>
+      <p class="event-dates" *ngIf="detail.startDate || detail.endDate">
+        {{ detail.startDate | date:'mediumDate' }} – {{ detail.endDate | date:'mediumDate' }}
+      </p>
+
+      <section class="section">
+        <div class="section-hd">
+          <h3 class="section-title">
+            <mat-icon class="section-icon teal">confirmation_number</mat-icon>
+            Pass Types ({{ detail.passTypes.length }})
+          </h3>
+          <button class="btn-sm-outline" *ngIf="!addingPassType" (click)="startAddPassType()">+ Add Pass Type</button>
+        </div>
+
+        <div class="pass-type-list" *ngIf="detail.passTypes.length > 0">
+          <div class="pass-type-row" *ngFor="let pt of detail.passTypes">
+
+            <ng-container *ngIf="editingPassTypeId !== pt._id">
+              <span class="pt-name">{{ pt.name }}</span>
+              <span class="cat-chip" [class]="'cat-' + pt.category">{{ pt.category }}</span>
+              <div class="pt-actions">
+                <button class="btn-sm-outline" (click)="startEditPassType(pt)">Edit</button>
+                <button class="btn-sm-danger" (click)="deletePassType(pt)">Delete</button>
+              </div>
+            </ng-container>
+
+            <form class="pt-edit-form" *ngIf="editingPassTypeId === pt._id" [formGroup]="editPassTypeForm">
+              <input type="text" formControlName="name" class="pt-inline-input">
+              <select formControlName="category" class="pt-inline-select">
+                <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+              </select>
+              <div class="pt-actions">
+                <button class="btn-sm-outline" (click)="cancelEditPassType()">Cancel</button>
+                <button class="btn-sm-outline" [disabled]="editPassTypeForm.invalid" (click)="saveEditPassType(pt)">Save</button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+        <p class="empty-text" *ngIf="detail.passTypes.length === 0 && !addingPassType">No pass types yet.</p>
+
+        <form class="pt-add-form" *ngIf="addingPassType" [formGroup]="passTypeForm">
+          <input type="text" formControlName="name" placeholder="e.g. Festival Ticket" class="pt-inline-input">
+          <select formControlName="category" class="pt-inline-select">
+            <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+          </select>
+          <div class="pt-actions">
+            <button class="btn-ghost" (click)="cancelAddPassType()">Cancel</button>
+            <button class="btn-cta" [disabled]="passTypeForm.invalid || savingPassType" (click)="savePassType()">
+              {{ savingPassType ? 'Adding…' : 'Add' }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section" *ngIf="detail.tents.length > 0">
+        <h3 class="section-title">
+          <mat-icon class="section-icon pink">cabin</mat-icon>
+          Tents ({{ detail.tents.length }})
+        </h3>
+        <p class="field-hint">Full tent management stays on the Accommodation page for now — this is just a count.</p>
+      </section>
+
+      <div class="danger-zone">
+        <button class="btn-danger" (click)="deleteEvent()">Delete Event</button>
+      </div>
+    </ng-container>
+
+    <!-- ── EDIT MODE ──────────────────────────────────────── -->
+    <ng-container *ngIf="editMode">
+      <form [formGroup]="editForm">
+
+        <div class="field">
+          <label>Name *</label>
+          <input type="text" formControlName="name">
+          <span class="field-error" *ngIf="editForm.get('name')?.hasError('required')">Name is required</span>
+        </div>
+
+        <div class="field">
+          <label>Description</label>
+          <textarea formControlName="description" rows="3"></textarea>
+        </div>
+
+        <div class="form-two-col">
+          <div class="field">
+            <label>Start date</label>
+            <input type="date" formControlName="startDate">
+          </div>
+          <div class="field">
+            <label>End date</label>
+            <input type="date" formControlName="endDate">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Status</label>
+          <select formControlName="status">
+            <option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</option>
+          </select>
+          <p class="field-hint">Only <strong>Active</strong> events are visible to TL/VOL — Draft and Archived are admin-only.</p>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" (click)="cancelEdit()">Cancel</button>
+          <button type="button" class="btn-cta" [disabled]="editForm.invalid || saving" (click)="save()">
+            {{ saving ? 'Saving…' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </ng-container>
+
+  </ng-container>
+</div>

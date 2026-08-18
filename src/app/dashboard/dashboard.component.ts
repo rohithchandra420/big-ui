@@ -180,9 +180,22 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  // Introducing Events: items created via the current Box Office flow carry
+  // passTypeName instead of item_name (see INTRODUCING_EVENTS_CONTEXT.md) —
+  // /getAllShopItems (legacy, untouched per decision #3) returns the whole
+  // ShopCart collection regardless of which flow created each item, so
+  // these three getters (feeding the Enhancement#1 summary stat row) match
+  // on either field. The rest of this file's per-accommodation-type getters
+  // are part of Dashboard's already-flagged-deferred V1 Bootstrap section
+  // (see CLAUDE.md) and are left as pure item_name matches for now — a full
+  // dynamic per-PassType breakdown is a separate, larger redesign task.
+  private matchesPassName(pass: Shopcart, name: string): boolean {
+    return pass.item_name === name || pass.passTypeName === name;
+  }
+
   getFestivalPassCount(data) {
     const totalFestPasses = data.filter(pass => {
-      return pass.item_name == "Festival Ticket";
+      return this.matchesPassName(pass, "Festival Ticket");
     });
 
     this.TotalFestivalPasses = totalFestPasses.length;
@@ -196,7 +209,7 @@ export class DashboardComponent implements OnInit {
 
   getWeekendPassCount(data) {
     const totalWeekendPasses = data.filter(pass => {
-      return pass.item_name == "Weekend pass";
+      return this.matchesPassName(pass, "Weekend pass");
     });
 
     this.TotalWeekendPasses = totalWeekendPasses.length;
@@ -210,7 +223,7 @@ export class DashboardComponent implements OnInit {
 
   getDayPassCount(data) {
     const totalDayPasses = data.filter(pass => {
-      return pass.item_name == "Day Pass";
+      return this.matchesPassName(pass, "Day Pass");
     });
 
     this.TotalDayPasses = totalDayPasses.length;

@@ -1,29 +1,22 @@
 import { Shopcart, Ticket } from '../models/ticket.model';
 
-// Same list used across ticket.js/boxOffice.js/tenting.js on the backend —
-// kept in sync manually, matching how the backend already repeats this list.
-export const FESTIVAL_PASS_NAMES = ['Festival Ticket', 'Weekend pass', 'Day Pass'];
+// Introducing Events (see INTRODUCING_EVENTS_CONTEXT.md) — replaces the old
+// hardcoded FESTIVAL_PASS_NAMES/ALL_ITEM_NAMES lists. Which passes exist and
+// what category they belong to is now data (PassType, via EventService),
+// not code. isFestivalPass() below reads item.category, set by the backend
+// on every ShopCart item created through the current Box Office flow.
+//
+// Falls back to the old FESTIVAL_PASS_NAMES name-match only when category
+// is missing — covers ShopCart items created through the legacy Tickets
+// module (ticket.js/excelUpload.js, deliberately left untouched, decision
+// #3), which never gets category populated. Remove this fallback once that
+// legacy path is ever retired.
+const LEGACY_FESTIVAL_PASS_NAMES = ['Festival Ticket', 'Weekend pass', 'Day Pass'];
 
-// Same item_name options as the old BoxOfficeComponent's "Register Participant"
-// shopcart dropdown (box-office.component.html) — reused as-is for Spot Registration.
-export const ALL_ITEM_NAMES = [
-    'Festival Ticket',
-    'Weekend pass',
-    'Day Pass',
-    'PYOT (Pitch Your Own Tent)',
-    'Shared Tent',
-    'Solo Tent',
-    'Family Tent',
-    'Glamping Tent For 1 Person.',
-    'Glamping Tent with Private Washroom.',
-    'Deluxe room near Shoolagiri',
-    'Car/Caravan Pass',
-    'Ola electric scooter',
-];
-
-/** True for Festival Ticket/Weekend pass/Day Pass items, false for Tent Pass items. */
-export function isFestivalPass(itemName: string): boolean {
-    return FESTIVAL_PASS_NAMES.includes(itemName);
+/** True for Festival Pass items (category 'festival'), false for Tent/addon items. */
+export function isFestivalPass(item: Pick<Shopcart, 'category' | 'item_name'>): boolean {
+    if (item.category) return item.category === 'festival';
+    return LEGACY_FESTIVAL_PASS_NAMES.includes(item.item_name);
 }
 
 // Spot Registration has no dedicated "source" field on Ticket — instead the backend
@@ -34,13 +27,23 @@ export function isSpotRegistration(ticket: Ticket): boolean {
     return !!ticket.transaction_id?.startsWith('SPOT-');
 }
 
-function groupPasses(shopcart: Shopcart[] | undefined): { name: string; count: number }[] {
+// Display name for a pass item — passTypeName (new Box Office flow) with a
+// fallback to item_name (legacy Tickets module items).
+function displayName(item: Shopcart): string {
+    return item.passTypeName || item.item_name;
+}
+
+function groupPasses(shopcart: Shopcart[] | undefined): { name: string; festival: boolean; count: number }[] {
     if (!shopcart?.length) {
         return [];
     }
-    const counts = new Map<string, number>();
-    shopcart.forEach(item => counts.set(item.item_name, (counts.get(item.item_name) ?? 0) + 1));
-    return Array.from(counts.entries()).map(([name, count]) => ({ name, count }));
+    const counts = new Map<string, { festival: boolean; count: number }>();
+    shopcart.forEach(item => {
+        const name = displayName(item);
+        const existing = counts.get(name);
+        counts.set(name, { festival: isFestivalPass(item), count: (existing?.count ?? 0) + 1 });
+    });
+    return Array.from(counts.entries()).map(([name, { festival, count }]) => ({ name, festival, count }));
 }
 
 /** Groups shopcart item names with counts, e.g. ["Festival Ticket", "Camping ×2"]. */
@@ -61,8 +64,8 @@ export interface PassChip {
 
 /** Same grouping as passChips(), tagged with pass type so callers can color/icon the chip by type. */
 export function passChipsTyped(shopcart: Shopcart[] | undefined): PassChip[] {
-    return groupPasses(shopcart).map(({ name, count }) => ({
+    return groupPasses(shopcart).map(({ name, count, festival }) => ({
         label: count > 1 ? `${name} ×${count}` : name,
-        festival: isFestivalPass(name)
+        festival
     }));
 }

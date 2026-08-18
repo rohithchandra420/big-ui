@@ -6,6 +6,7 @@ import { Ticket } from '../../models/ticket.model';
 import { BoxOfficeService } from '../box-office.service';
 import { BoxOfficeQrscannerPopupComponent } from './qrscanner-popup/qrscanner-popup.component';
 import { isSpotRegistration, passChipsTyped as buildPassChips, PassChip } from '../box-office.utils';
+import { EventService } from '../../core/event.service';
 
 @Component({
   selector: 'app-registration',
@@ -34,20 +35,25 @@ export class RegistrationComponent implements OnInit {
   constructor(
     private boxOfficeService: BoxOfficeService,
     private router: Router,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private eventService: EventService
   ) { }
 
   ngOnInit() {
-    this.boxOfficeService.getAllTickets().subscribe({
-      next: (res) => {
-        this.bookings = res;
-      }
+    this.eventService.activeEvent.subscribe(event => {
+      if (!event) { this.bookings = []; return; }
+      this.boxOfficeService.getAllTickets(event._id).subscribe({
+        next: (res) => {
+          this.bookings = res;
+        }
+      });
     });
   }
 
   lookUp() {
     const term = this.searchTerm.trim();
-    if (!term) {
+    const activeEvent = this.eventService.currentActiveEvent;
+    if (!term || !activeEvent) {
       return;
     }
 
@@ -55,7 +61,7 @@ export class RegistrationComponent implements OnInit {
     this.searched = false;
     this.searchResults = [];
 
-    this.boxOfficeService.searchTickets(term).subscribe({
+    this.boxOfficeService.searchTickets(term, activeEvent._id).subscribe({
       next: (res) => {
         this.searching = false;
         this.searched = true;

@@ -7,6 +7,7 @@ import { Ticket } from '../../models/ticket.model';
 import { BoxOfficeService } from '../box-office.service';
 import { isSpotRegistration, passSummary as buildPassSummary } from '../box-office.utils';
 import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
+import { EventService } from '../../core/event.service';
 
 type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | null;
 
@@ -37,16 +38,25 @@ export class BookingsComponent implements OnInit {
   constructor(
     private boxOfficeService: BoxOfficeService,
     private router: Router,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private eventService: EventService
   ) { }
 
   ngOnInit() {
-    this.loadBookings();
+    // Reload whenever the active event changes, not just on page load —
+    // Bookings is scoped to whichever event the sidebar selector currently
+    // points at.
+    this.eventService.activeEvent.subscribe(() => this.loadBookings());
   }
 
   loadBookings() {
+    const activeEvent = this.eventService.currentActiveEvent;
+    if (!activeEvent) {
+      this.bookings = [];
+      return;
+    }
     this.loading = true;
-    this.boxOfficeService.getAllTickets().subscribe({
+    this.boxOfficeService.getAllTickets(activeEvent._id).subscribe({
       next: (res) => {
         this.bookings = res;
         this.loading = false;
@@ -187,6 +197,53 @@ export class BookingsComponent implements OnInit {
     });
   }
 
+  // Quick v1 backup/export — one row per pass, same column shape Bulk
+  // Upload imports (order_id/item_name/item_quantity/billing_first_name/
+  // billing_last_name/phone_no/billing_email/transaction_id/order_total),
+  // so an exported file can be re-uploaded as-is later. Exports every
+  // currently-loaded booking, not just the filtered/paged view — this is
+  // meant as a full backup, not a report. Originally built on develop
+  // (pre-Introducing-Events) as a safety net to pull existing UAT data out
+  // before that epic's data model changed; now that both are merged here
+  // together, Bookings is event-scoped, so item_name falls back to
+  // passTypeName for passes created via the current Box Office flow (same
+  // fallback pattern as box-office.utils.ts's isFestivalPass) — otherwise
+  // every export row going forward would have an empty pass name.
+  // Intentionally minimal — user has said this will be extended/reworked
+  // later.
+  buildExportRows(bookings: Ticket[]): any[] {
+    const rows: any[] = [];
+    bookings.forEach(ticket => {
+      (ticket.shopcart || []).forEach(item => {
+        rows.push({
+          order_id: ticket.order_id,
+          item_name: item.passTypeName || item.item_name,
+          item_quantity: item.item_quantity,
+          billing_first_name: ticket.first_name,
+          billing_last_name: ticket.last_name,
+          phone_no: ticket.phone_no,
+          billing_email: ticket.email,
+          transaction_id: ticket.transaction_id,
+          order_total: ticket.totalPrice,
+        });
+      });
+    });
+    return rows;
+  }
+
+  exportBookings() {
+    if (!this.bookings.length) return;
+    const rows = this.buildExportRows(this.bookings);
+
+    import('xlsx').then(XLSX => {
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Bookings');
+      const dateStamp = new Date().toISOString().substring(0, 10);
+      XLSX.writeFile(workbook, `bookings-export-${dateStamp}.xlsx`);
+    });
+  }
+
   @HostListener('document:keydown.escape')
   onEscape() {
     if (this.panelOpen) {
@@ -203,7 +260,12 @@ export class BookingsComponent implements OnInit {
       }
     }, 300);
 
-    this.boxOfficeService.getAllTickets().subscribe({
+    const activeEvent = this.eventService.currentActiveEvent;
+    if (!activeEvent) {
+      this.panelOpen = false;
+      return;
+    }
+    this.boxOfficeService.getAllTickets(activeEvent._id).subscribe({
       next: (res) => {
         settled = true;
         clearTimeout(fallback);
