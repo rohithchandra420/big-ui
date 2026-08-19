@@ -49,10 +49,11 @@ describe('AccomodationService', () => {
         req.flush({} as TentAllocationResult);
     });
 
-    it('suggestFestivalPassMatches() sends only the provided params as query params', () => {
-        service.suggestFestivalPassMatches({ name: 'Kavya', phone: '9000000000' }).subscribe();
+    it('suggestFestivalPassMatches() sends eventId plus only the provided params as query params', () => {
+        service.suggestFestivalPassMatches('event1', { name: 'Kavya', phone: '9000000000' }).subscribe();
         const req = httpMock.expectOne(r => r.url === '/api/suggestFestivalPassMatches');
         expect(req.request.method).toBe('GET');
+        expect(req.request.params.get('eventId')).toBe('event1');
         expect(req.request.params.get('name')).toBe('Kavya');
         expect(req.request.params.get('phone')).toBe('9000000000');
         expect(req.request.params.has('email')).toBeFalse();

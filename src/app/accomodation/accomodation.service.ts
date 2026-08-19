@@ -60,8 +60,10 @@ export class AccomodationService {
         return this.http.post<TentAllocationResult>(this.url + '/vacateTentSlot', { shopcartId });
     }
 
-    suggestFestivalPassMatches(params: { name?: string; phone?: string; email?: string }) {
-        let httpParams = new HttpParams();
+    // eventId is required server-side (validated in tenting.js) — the caller
+    // must supply the active event's id, e.g. via EventService.currentActiveEvent.
+    suggestFestivalPassMatches(eventId: string, params: { name?: string; phone?: string; email?: string }) {
+        let httpParams = new HttpParams().set('eventId', eventId);
         if (params.name) httpParams = httpParams.set('name', params.name);
         if (params.phone) httpParams = httpParams.set('phone', params.phone);
         if (params.email) httpParams = httpParams.set('email', params.email);

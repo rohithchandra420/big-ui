@@ -30,11 +30,23 @@ export class EventService {
   // Dashboard, Bookings, Ticket Registry.
   activeEvent = new BehaviorSubject<EventItem | null>(null);
 
+  // Guards against a startup race: currentUser$ is a BehaviorSubject seeded
+  // with null, so subscribing here always replays that initial null first —
+  // typically before AppComponent.ngOnInit() has even called autoLogin() to
+  // restore the session (child component constructors, which is what gets
+  // this service injected and constructed, run before the parent's ngOnInit
+  // in Angular's lifecycle). Without this flag, that spurious startup null
+  // was read as "logged out" on every single page refresh, wiping the
+  // persisted active-event id moments before autoLogin() restored the real
+  // user. Only treat null as a real logout once we've actually seen a user.
+  private sawUser = false;
+
   constructor(private http: HttpClient, private authService: AuthService) {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
+        this.sawUser = true;
         this.loadEvents();
-      } else {
+      } else if (this.sawUser) {
         this.clearActiveEvent();
       }
     });

@@ -4,6 +4,7 @@ import { Gender, Shopcart } from '../../../models/ticket.model';
 import { Tent } from '../../../models/tent.model';
 import { AccomodationService, TentAllocationResult } from '../../../accomodation/accomodation.service';
 import { NotificationService } from '../../../core/notification.service';
+import { EventService } from '../../../core/event.service';
 
 @Component({
   selector: 'app-allocate-tent',
@@ -34,7 +35,8 @@ export class AllocateTentComponent implements OnInit {
 
   constructor(
     private accomodationService: AccomodationService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private eventService: EventService
   ) { }
 
   ngOnInit() {
@@ -46,8 +48,14 @@ export class AllocateTentComponent implements OnInit {
     this.loadVacantTents();
   }
 
-  private loadSuggestions(params: { name?: string; phone?: string; email?: string }) {
-    this.accomodationService.suggestFestivalPassMatches(params).subscribe({
+  private loadSuggestions(params: { name?: string; phone?: string; email?: string }, notifyIfNoEvent = false) {
+    const activeEvent = this.eventService.currentActiveEvent;
+    if (!activeEvent) {
+      this.festivalPassSuggestions = [];
+      if (notifyIfNoEvent) this.notificationService.openErrorSnackBar('No event selected');
+      return;
+    }
+    this.accomodationService.suggestFestivalPassMatches(activeEvent._id, params).subscribe({
       next: (res) => this.festivalPassSuggestions = res,
       error: () => this.festivalPassSuggestions = []
     });
@@ -65,7 +73,7 @@ export class AllocateTentComponent implements OnInit {
     if (!term) {
       return;
     }
-    this.loadSuggestions({ name: term, phone: term, email: term });
+    this.loadSuggestions({ name: term, phone: term, email: term }, true);
   }
 
   get selectedFestivalPass(): Shopcart | null {
