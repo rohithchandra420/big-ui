@@ -6,8 +6,10 @@ import { of, throwError } from 'rxjs';
 import { AllocateTentComponent } from './allocate-tent.component';
 import { AccomodationService } from '../../../accomodation/accomodation.service';
 import { NotificationService } from '../../../core/notification.service';
+import { EventService } from '../../../core/event.service';
 import { Shopcart } from '../../../models/ticket.model';
 import { Tent } from '../../../models/tent.model';
+import { EventItem } from '../../../models/event.model';
 
 const mockShopItem: Shopcart = {
   _id: 't1', item_name: 'Shared Tent', item_quantity: 1, order_id: 1,
@@ -15,11 +17,14 @@ const mockShopItem: Shopcart = {
   name: '', phone_no: '', email: '', gender: null
 } as any;
 
+const mockActiveEvent = { _id: 'event1', name: 'Test Event' } as EventItem;
+
 describe('AllocateTentComponent', () => {
   let component: AllocateTentComponent;
   let fixture: ComponentFixture<AllocateTentComponent>;
   let accomodationServiceSpy: jasmine.SpyObj<AccomodationService>;
   let notificationSpy: jasmine.SpyObj<NotificationService>;
+  let eventServiceStub: { currentActiveEvent: EventItem | null };
 
   beforeEach(async () => {
     accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', [
@@ -28,6 +33,7 @@ describe('AllocateTentComponent', () => {
     accomodationServiceSpy.suggestFestivalPassMatches.and.returnValue(of([]));
     accomodationServiceSpy.getAvailableTents.and.returnValue(of([]));
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
+    eventServiceStub = { currentActiveEvent: mockActiveEvent };
 
     await TestBed.configureTestingModule({
       declarations: [AllocateTentComponent],
@@ -35,6 +41,7 @@ describe('AllocateTentComponent', () => {
       providers: [
         { provide: AccomodationService, useValue: accomodationServiceSpy },
         { provide: NotificationService, useValue: notificationSpy },
+        { provide: EventService, useValue: eventServiceStub },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -45,8 +52,8 @@ describe('AllocateTentComponent', () => {
     fixture.detectChanges();
   });
 
-  it('loads suggestions and vacant tents using the shop item\'s own details', () => {
-    expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith({
+  it('loads suggestions and vacant tents using the shop item\'s own details plus the active event id', () => {
+    expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', {
       name: '', phone: '', email: ''
     });
     expect(accomodationServiceSpy.getAvailableTents).toHaveBeenCalledWith('Shared Tent');
@@ -55,7 +62,7 @@ describe('AllocateTentComponent', () => {
   it('searchManually() re-queries suggestions using the typed term for all three fields', () => {
     component.manualSearchTerm = 'Kavya';
     component.searchManually();
-    expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith({
+    expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', {
       name: 'Kavya', phone: 'Kavya', email: 'Kavya'
     });
   });
@@ -65,6 +72,27 @@ describe('AllocateTentComponent', () => {
     component.manualSearchTerm = '   ';
     component.searchManually();
     expect(accomodationServiceSpy.suggestFestivalPassMatches).not.toHaveBeenCalled();
+  });
+
+  it('does not call suggestFestivalPassMatches when there is no active event', () => {
+    eventServiceStub.currentActiveEvent = null;
+    accomodationServiceSpy.suggestFestivalPassMatches.calls.reset();
+
+    component.ngOnInit();
+
+    expect(accomodationServiceSpy.suggestFestivalPassMatches).not.toHaveBeenCalled();
+    expect(component.festivalPassSuggestions).toEqual([]);
+  });
+
+  it('searchManually() shows an error toast when there is no active event', () => {
+    accomodationServiceSpy.suggestFestivalPassMatches.calls.reset();
+    eventServiceStub.currentActiveEvent = null;
+    component.manualSearchTerm = 'Kavya';
+
+    component.searchManually();
+
+    expect(accomodationServiceSpy.suggestFestivalPassMatches).not.toHaveBeenCalled();
+    expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('No event selected');
   });
 
   it('selectFestivalPass() toggles selection and pre-fills gender from the candidate', () => {

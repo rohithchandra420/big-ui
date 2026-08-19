@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { BehaviorSubject } from 'rxjs';
 
@@ -99,6 +100,34 @@ describe('EventService', () => {
         expect(service.currentEvents).toEqual([]);
         expect(service.currentActiveEvent).toBeNull();
         expect(localStorage.getItem('activeEventId')).toBeNull();
+    });
+
+    it('does not wipe a persisted active-event id on the transient startup null before autoLogin resolves', () => {
+        // currentUser$ is a BehaviorSubject seeded with null — subscribing
+        // (which happens the instant this service is constructed) always
+        // replays that null synchronously, before AuthService.autoLogin()
+        // has had a chance to push the real restored user. A page refresh
+        // with an already-selected event is exactly this sequence: seed
+        // localStorage first, *then* construct the service — bypassing
+        // Angular DI here (`new EventService(...)`, not TestBed.inject) so
+        // construction timing is under this test's control, same as a real
+        // page load where this service's constructor runs before
+        // AppComponent.ngOnInit() calls autoLogin().
+        localStorage.setItem('activeEventId', 'evt2');
+
+        const freshUserSubject = new BehaviorSubject<User | null>(null);
+        const http = TestBed.inject(HttpClient);
+        const freshService = new EventService(http, { currentUser$: freshUserSubject.asObservable() } as AuthService);
+
+        // The constructor's subscription has already fired with the initial
+        // null by this point — it must not have cleared the persisted id.
+        expect(localStorage.getItem('activeEventId')).toBe('evt2');
+
+        // autoLogin() resolves for real.
+        freshUserSubject.next({ name: 'Test' } as User);
+        httpMock.expectOne('/api/admin/events').flush(mockEvents);
+
+        expect(freshService.currentActiveEvent).toEqual(mockEvents[1]);
     });
 
     it('getEventDetail() hits GET /api/admin/events/:id', () => {
