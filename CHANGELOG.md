@@ -7,6 +7,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [1.9.1] - 2026-08-19
+
 ### Fixed
 - Allocate Tent's "suggest matching Festival Pass" lookup was silently returning zero matches always — the backend's `/suggestFestivalPassMatches` endpoint requires `eventId` (added when Events/PassTypes were introduced), but the frontend caller never sent one, so every call failed validation and the error was swallowed. Now sends the active event's id.
 - The active Event selection didn't survive a page refresh, always resetting to the first event in the list — a startup race cleared the persisted selection before the restored session was recognized. Now persists correctly until manually changed.
