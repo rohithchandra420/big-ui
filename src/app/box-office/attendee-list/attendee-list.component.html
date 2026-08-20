@@ -6,6 +6,7 @@
 
 <app-allocate-tent *ngIf="activeAllocateItem"
                    [shopItem]="activeAllocateItem"
+                   [ticket]="ticket"
                    (allocated)="onTentAllocated($event)"
                    (cancelled)="onAllocateCancelled()">
 </app-allocate-tent>
@@ -15,7 +16,7 @@
        [ngClass]="isFestivalPass(item) ? 'att-row-festival' : 'att-row-tent'">
     <div class="av" [ngClass]="isFestivalPass(item) ? (isDetailsComplete(item) ? 'av-g' : 'av-a') : 'av-b'">{{ attendeeInitials(item) }}</div>
     <div class="att-info">
-      <div class="att-name">{{ item.name || 'Attendee' }} · <span class="mono">{{ item._id }}</span></div>
+      <div class="att-name">{{ item.name || 'Attendee' }}</div>
       <div class="att-pass">
         <mat-icon class="att-type-icon" [ngClass]="isFestivalPass(item) ? 'ti-festival' : 'ti-tent'">
           {{ isFestivalPass(item) ? 'confirmation_number' : 'hotel' }}

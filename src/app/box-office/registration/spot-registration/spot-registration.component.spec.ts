@@ -9,6 +9,8 @@ import { NotificationService } from '../../../core/notification.service';
 import { EventService } from '../../../core/event.service';
 import { Ticket } from '../../../models/ticket.model';
 import { EventDetail, EventItem } from '../../../models/event.model';
+import { AppSelectComponent } from '../../../shared/app-select/app-select.component';
+import { AppOptionComponent } from '../../../shared/app-select/app-option.component';
 
 const mockActiveEvent = { _id: 'evt1', name: 'Test Event', description: '', status: 'active' } as EventItem;
 const mockEventDetail: EventDetail = {
@@ -35,7 +37,7 @@ describe('SpotRegistrationComponent', () => {
     eventServiceSpy.getEventDetail.and.returnValue(of(mockEventDetail));
 
     await TestBed.configureTestingModule({
-      declarations: [SpotRegistrationComponent],
+      declarations: [SpotRegistrationComponent, AppSelectComponent, AppOptionComponent],
       imports: [ReactiveFormsModule],
       providers: [
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },

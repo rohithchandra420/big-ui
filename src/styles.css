@@ -198,6 +198,26 @@ input:disabled {
   transition: border-color 0.12s;
 }
 
+/* Bug fix (2026-08-20) — every dropdown box in the app, not just ones inside
+   a .field wrapper (filter-bar selects, inline table-edit selects, the
+   sidebar event picker, etc. each had their own slightly-different ad-hoc
+   style). box-sizing here is the fix for boxes rendering a few px wider than
+   their container (border/padding was being added on top of a 100% width
+   instead of included in it); the :focus rule gives every dropdown the same
+   green border + shadow every text input already has, app-wide, without
+   having to hunt down and edit each ad-hoc select class individually.
+   Doesn't reach into the native dropdown *panel* itself (browser-controlled,
+   can't be fully styled/width-constrained via CSS) — if that's still a
+   problem after this, the next step is a custom dropdown component. */
+select {
+  box-sizing: border-box;
+}
+select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(30, 70, 56, 0.1);
+}
+
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
@@ -925,6 +945,11 @@ input:disabled {
   border-radius: 12px;
   padding: 1.25rem;
   margin-bottom: 1rem;
+  /* Bug fix (2026-08-20) — bring every .card-using form (Spot Registration,
+     Counter Form, Allocate Tent, Department/Event edit forms) to the same
+     visual weight as .form-card (Register New User), which already had this
+     shadow. One shared rule instead of duplicating it per component. */
+  box-shadow: var(--shadow-sm);
 }
 .card-title {
   font-size: 13px;

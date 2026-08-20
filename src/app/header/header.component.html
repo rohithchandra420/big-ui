@@ -143,11 +143,11 @@
        the backend (TL/VOL only ever see 'active' events). -->
   <div class="sidebar-event-picker" *ngIf="isAuthenticated && events.length > 0">
     <label class="event-picker-label">Event</label>
-    <select class="event-picker-select"
+    <app-select
       [ngModel]="activeEvent?._id"
       (ngModelChange)="onEventChange($event)">
-      <option *ngFor="let event of events" [value]="event._id">{{ event.name }}</option>
-    </select>
+      <app-option *ngFor="let event of events" [value]="event._id">{{ event.name }}</app-option>
+    </app-select>
   </div>
 
   <!-- User block at bottom -->

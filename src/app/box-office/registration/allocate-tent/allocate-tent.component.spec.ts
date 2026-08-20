@@ -10,11 +10,18 @@ import { EventService } from '../../../core/event.service';
 import { Shopcart } from '../../../models/ticket.model';
 import { Tent } from '../../../models/tent.model';
 import { EventItem } from '../../../models/event.model';
+import { AppSelectComponent } from '../../../shared/app-select/app-select.component';
+import { AppOptionComponent } from '../../../shared/app-select/app-option.component';
 
+// Bug fix (2026-08-20, follow-up): a Tent Pass now genuinely starts blank
+// (see boxOffice.js), so this fixture carries real identity fields — as if
+// this item still had older, pre-fix data — specifically so the "auto-search
+// on init" tests below stay meaningful. The blank-item, no-auto-search case
+// gets its own dedicated fixture further down.
 const mockShopItem: Shopcart = {
   _id: 't1', item_name: 'Shared Tent', passType: 'pt1', item_quantity: 1, order_id: 1,
   admissionId: null as any, isAdmitted: false, isActive: true,
-  name: '', phone_no: '', email: '', gender: null
+  name: 'Existing Attendee', phone_no: '9000000001', email: 'existing@example.com', gender: null
 } as any;
 
 const mockActiveEvent = { _id: 'event1', name: 'Test Event' } as EventItem;
@@ -36,7 +43,7 @@ describe('AllocateTentComponent', () => {
     eventServiceStub = { currentActiveEvent: mockActiveEvent };
 
     await TestBed.configureTestingModule({
-      declarations: [AllocateTentComponent],
+      declarations: [AllocateTentComponent, AppSelectComponent, AppOptionComponent],
       imports: [FormsModule],
       providers: [
         { provide: AccomodationService, useValue: accomodationServiceSpy },
@@ -54,9 +61,85 @@ describe('AllocateTentComponent', () => {
 
   it('loads suggestions and vacant tents using the shop item\'s own details plus the active event id', () => {
     expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', {
-      name: '', phone: '', email: ''
+      name: 'Existing Attendee', phone: '9000000001', email: 'existing@example.com'
     });
     expect(accomodationServiceSpy.getAvailableTents).toHaveBeenCalledWith('pt1');
+  });
+
+  // Bug fix (2026-08-20, follow-up): a blank Tent Pass (the new normal after
+  // the boxOffice.js fix) used to auto-search using its own blank/placeholder
+  // details, which exact-matched every OTHER blank Festival Pass event-wide —
+  // "other attendees" showing up as suggestions. Auto-search is now skipped
+  // entirely when there's nothing meaningful to search on.
+  describe('auto-search guard for a blank shop item', () => {
+    const blankItem = { ...mockShopItem, name: '', phone_no: '', email: '' } as Shopcart;
+
+    it('does not auto-search on init for a genuinely blank item', () => {
+      accomodationServiceSpy.suggestFestivalPassMatches.calls.reset();
+      (component as any).shopItem = blankItem;
+
+      component.ngOnInit();
+
+      expect(accomodationServiceSpy.suggestFestivalPassMatches).not.toHaveBeenCalled();
+      expect(component.festivalPassSuggestions).toEqual([]);
+    });
+
+    it('does not auto-search when phone_no is still the old "+91" filler value', () => {
+      accomodationServiceSpy.suggestFestivalPassMatches.calls.reset();
+      (component as any).shopItem = { ...blankItem, phone_no: '+91' };
+
+      component.ngOnInit();
+
+      expect(accomodationServiceSpy.suggestFestivalPassMatches).not.toHaveBeenCalled();
+    });
+
+    it('still auto-searches for a blank item once staff types a manual search term', () => {
+      (component as any).shopItem = blankItem;
+      component.manualSearchTerm = 'Kavya';
+
+      component.searchManually();
+
+      expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', {
+        name: 'Kavya', phone: 'Kavya', email: 'Kavya'
+      });
+    });
+
+    // Same-day follow-up: falls back to the parent Ticket's buyer details
+    // instead of just showing nothing, since a blank Tent Pass still belongs
+    // to a real booking and the buyer is very often the right match.
+    it('falls back to the parent ticket\'s buyer details when the item itself is blank', () => {
+      accomodationServiceSpy.suggestFestivalPassMatches.calls.reset();
+      component.shopItem = blankItem;
+      component.ticket = { first_name: 'Ravi', last_name: 'Kumar', phone_no: '9123456780', email: 'ravi@example.com' } as any;
+
+      component.ngOnInit();
+
+      expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', {
+        name: 'Ravi Kumar', phone: '9123456780', email: 'ravi@example.com'
+      });
+    });
+
+    it('does not fall back to the ticket when it also has nothing searchable (defensive)', () => {
+      accomodationServiceSpy.suggestFestivalPassMatches.calls.reset();
+      component.shopItem = blankItem;
+      component.ticket = { first_name: '', last_name: '', phone_no: '', email: '' } as any;
+
+      component.ngOnInit();
+
+      expect(accomodationServiceSpy.suggestFestivalPassMatches).not.toHaveBeenCalled();
+    });
+
+    it('prefers the shop item\'s own details over the ticket\'s when the item already has some', () => {
+      accomodationServiceSpy.suggestFestivalPassMatches.calls.reset();
+      component.shopItem = mockShopItem; // has its own name/phone/email
+      component.ticket = { first_name: 'Someone', last_name: 'Else', phone_no: '9999999999', email: 'else@example.com' } as any;
+
+      component.ngOnInit();
+
+      expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', {
+        name: 'Existing Attendee', phone: '9000000001', email: 'existing@example.com'
+      });
+    });
   });
 
   it('does not call getAvailableTents when the shop item has no passType (legacy/unmigrated data)', () => {

@@ -105,15 +105,13 @@ describe('BulkUploadComponent', () => {
     // same reason noted above — but selectedSheetName itself is set synchronously
     // before that async parse even starts, so it's directly testable.
     it('onSheetSelectChange does nothing before a workbook has been parsed', () => {
-      const event = { target: { value: 'February' } } as unknown as Event;
-      component.onSheetSelectChange(event);
+      component.onSheetSelectChange('February');
       expect(component.selectedSheetName).toBeNull();
     });
 
     it('onSheetSelectChange updates selectedSheetName once a workbook exists', () => {
       (component as any).workbook = { Sheets: { January: {}, February: {} } };
-      const event = { target: { value: 'February' } } as unknown as Event;
-      component.onSheetSelectChange(event);
+      component.onSheetSelectChange('February');
       expect(component.selectedSheetName).toBe('February');
     });
   });

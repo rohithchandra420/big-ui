@@ -14,13 +14,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - **Accommodation Restructure** — replaces the legacy, broken `/accomodation` "Tenting" page with a new top-level "Accommodation" section:
   - **Setup** page — pick an existing Tent-category PassType, batch-create numbered physical units (capacity + quantity); one-time inline Code prompt for a PassType that doesn't have one yet
-  - Setup's per-PassType occupancy summary cards — unit/slot availability shown as ratios, Wholly Vacant/Full counts, and a Male/Female/Mixed breakdown for both Partially Filled and Filled units
+  - Setup's per-PassType occupancy summary cards — Units open/total and Slots vacant/total as ratios, Wholly Vacant and Full as plain counts, and a matching Male/Female/Mixed breakdown for both Partially Filled and Filled units
   - **Inventory** page — searchable/filterable list of every physical unit (search by Accom No or occupant name; filter by Type and by Occupancy status), natural/numeric Accom No sort (SH1, SH2 … SH9, SH10), row colour-coding by occupancy, a Gender column, a per-event-persisted type filter, and inline Edit (rename/recapacity) / Delete
   - Inventory rows with occupants expand to a colour-coded detail card per occupant (name, gender, phone, email, order #, admission status)
   - Allocated tent now shown directly on the Festival Pass row in Box Office's attendee list, mirroring the tent-pass side
+- **Custom dropdown component** (`app-select`/`app-option`) replacing native `<select>` across the app (Users, Department/Event edit, Setup, Inventory, Header's event picker, Allocate Tent, Spot Registration, Counter Form, Bulk Upload, My Department, Calendar) — native dropdown panels can't be reliably width-constrained via CSS in any browser, so this is a from-scratch, native-styled replacement with a panel guaranteed to match its trigger's width, rather than adopting Angular Material's `mat-select`
+- **Design consistency pass** — Users and Setup's create forms, and their pages generally, are now properly centered (were sitting flush-left); every form across the app now shares the same card treatment (background, rounded corners, shadow) as Users' "Register New User" form, including Department Edit and Event Edit which previously had none
+
+### Changed
+- Bookings' detail panel now shows "Attendees (N) / Passes (M)" instead of a single ambiguous count — N is actual people (Festival Passes), M is total items including Tent Passes
+- Allocate Tent's Festival Pass auto-suggestion now falls back to the booking's own buyer details when the Tent Pass item itself has none to search on, instead of showing nothing
 
 ### Fixed
 - Allocate Tent's vacant-tents picker was silently always empty — it queried by a stale free-text item name instead of the real PassType id, so staff could never pick a specific tent (allocation itself still worked via the backend's auto-pick fallback)
+- Allocate Tent's Festival Pass auto-suggestion could return unrelated attendees — it searched using the Tent Pass item's own (blank) details, which after the `boxOffice.js` pre-fill fix could exact-match every other blank item event-wide
+- Allocate Tent's Festival Pass checkbox occasionally didn't visually mark despite the click registering — a decorative checkbox nested inside an already-clickable row could double-fire the same toggle, cancelling itself back out
+- Removed the internal ShopCart id from two attendee-facing displays (Box Office's attendee list, Allocate Tent's suggestion list) — no operational value, was just confusing
+- Dropdown boxes app-wide now have consistent rounded corners, borders, and a focus highlight matching every other input
 
 ### Notes
 - The old `/accomodation` route still redirects to the new Inventory page

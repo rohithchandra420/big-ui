@@ -29,9 +29,9 @@
 
     <div *ngIf="mode==='instance'" class="mt-2">
       <label>Assigned volunteer (instance)</label>
-      <select class="form-select" [(ngModel)]="instanceVolunteerId">
-        <option *ngFor="let v of volunteers" [value]="v._id">{{v.name}}</option>
-      </select>
+      <app-select [(ngModel)]="instanceVolunteerId">
+        <app-option *ngFor="let v of volunteers" [value]="v._id">{{v.name}}</app-option>
+      </app-select>
     </div>
   </div>
 
