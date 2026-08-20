@@ -27,18 +27,22 @@ export class EventDetailComponent implements OnInit {
     status: new FormControl<EventStatus>('draft')
   });
 
-  // New pass type form, shown inline below the pass type list
+  // New pass type form, shown inline below the pass type list. `code` is
+  // only really meaningful for category 'tent' (see ACCOMMODATION_CONTEXT.md
+  // decision #11) but shown for every category — harmless if unused.
   addingPassType = false;
   passTypeForm = new FormGroup({
     name: new FormControl('', Validators.required),
-    category: new FormControl<PassTypeCategory>('festival', Validators.required)
+    category: new FormControl<PassTypeCategory>('festival', Validators.required),
+    code: new FormControl('', Validators.maxLength(4))
   });
   savingPassType = false;
 
   editingPassTypeId: string | null = null;
   editPassTypeForm = new FormGroup({
     name: new FormControl('', Validators.required),
-    category: new FormControl<PassTypeCategory>('festival', Validators.required)
+    category: new FormControl<PassTypeCategory>('festival', Validators.required),
+    code: new FormControl('', Validators.maxLength(4))
   });
 
   constructor(
@@ -122,7 +126,7 @@ export class EventDetailComponent implements OnInit {
   // ── Pass types ────────────────────────────────────────────
 
   startAddPassType() {
-    this.passTypeForm.reset({ name: '', category: 'festival' });
+    this.passTypeForm.reset({ name: '', category: 'festival', code: '' });
     this.addingPassType = true;
   }
 
@@ -133,8 +137,8 @@ export class EventDetailComponent implements OnInit {
   savePassType() {
     if (!this.detail || this.passTypeForm.invalid || this.savingPassType) return;
     this.savingPassType = true;
-    const { name, category } = this.passTypeForm.value;
-    this.eventService.createPassType(this.detail._id, { name: name!.trim(), category: category! }).subscribe({
+    const { name, category, code } = this.passTypeForm.value;
+    this.eventService.createPassType(this.detail._id, { name: name!.trim(), category: category!, code: code?.trim() || undefined }).subscribe({
       next: () => {
         this.savingPassType = false;
         this.addingPassType = false;
@@ -150,7 +154,7 @@ export class EventDetailComponent implements OnInit {
 
   startEditPassType(pt: PassType) {
     this.editingPassTypeId = pt._id;
-    this.editPassTypeForm.setValue({ name: pt.name, category: pt.category });
+    this.editPassTypeForm.setValue({ name: pt.name, category: pt.category, code: pt.code || '' });
   }
 
   cancelEditPassType() {
@@ -159,8 +163,8 @@ export class EventDetailComponent implements OnInit {
 
   saveEditPassType(pt: PassType) {
     if (!this.detail || this.editPassTypeForm.invalid) return;
-    const { name, category } = this.editPassTypeForm.value;
-    this.eventService.updatePassType(this.detail._id, pt._id, { name: name!.trim(), category: category! }).subscribe({
+    const { name, category, code } = this.editPassTypeForm.value;
+    this.eventService.updatePassType(this.detail._id, pt._id, { name: name!.trim(), category: category!, code: code?.trim() || '' }).subscribe({
       next: () => {
         this.editingPassTypeId = null;
         this.notificationService.openSucessSnackBar('Pass type updated');

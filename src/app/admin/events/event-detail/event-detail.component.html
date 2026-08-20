@@ -42,6 +42,7 @@
             <ng-container *ngIf="editingPassTypeId !== pt._id">
               <span class="pt-name">{{ pt.name }}</span>
               <span class="cat-chip" [class]="'cat-' + pt.category">{{ pt.category }}</span>
+              <span class="code-chip" *ngIf="pt.category === 'tent'" [class.code-chip-unset]="!pt.code">{{ pt.code || 'no code' }}</span>
               <div class="pt-actions">
                 <button class="btn-sm-outline" (click)="startEditPassType(pt)">Edit</button>
                 <button class="btn-sm-danger" (click)="deletePassType(pt)">Delete</button>
@@ -53,6 +54,10 @@
               <select formControlName="category" class="pt-inline-select">
                 <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
               </select>
+              <input type="text" formControlName="code" placeholder="Code" maxlength="4"
+                class="pt-inline-input pt-code-input"
+                *ngIf="editPassTypeForm.value.category === 'tent'"
+                title="Short prefix used to number tent units, e.g. SO -> SO1, SO2...">
               <div class="pt-actions">
                 <button class="btn-sm-outline" (click)="cancelEditPassType()">Cancel</button>
                 <button class="btn-sm-outline" [disabled]="editPassTypeForm.invalid" (click)="saveEditPassType(pt)">Save</button>
@@ -68,6 +73,10 @@
           <select formControlName="category" class="pt-inline-select">
             <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
           </select>
+          <input type="text" formControlName="code" placeholder="Code" maxlength="4"
+            class="pt-inline-input pt-code-input"
+            *ngIf="passTypeForm.value.category === 'tent'"
+            title="Short prefix used to number tent units, e.g. SO -> SO1, SO2... Can also be set later.">
           <div class="pt-actions">
             <button class="btn-ghost" (click)="cancelAddPassType()">Cancel</button>
             <button class="btn-cta" [disabled]="passTypeForm.invalid || savingPassType" (click)="savePassType()">

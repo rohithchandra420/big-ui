@@ -31,15 +31,6 @@
     </a>
 
     <a class="nav-item"
-       routerLink="/accomodation"
-       routerLinkActive="active"
-       (click)="onNavClick()"
-       *ngIf="isAuthenticated">
-      <span class="nav-dot"></span>
-      Tenting
-    </a>
-
-    <a class="nav-item"
        routerLink="/calendar"
        routerLinkActive="active"
        (click)="onNavClick()"
@@ -75,6 +66,30 @@
          (click)="onNavClick()">
         <span class="nav-dot"></span>
         Registration
+      </a>
+    </ng-container>
+
+    <!-- Accommodation group — Inventory visible broadly (Box-Office-style
+         gate), Setup admin-only. See ACCOMMODATION_CONTEXT.md decision #9. -->
+    <ng-container *ngIf="isAuthenticated && (canSeeAccommodationInventory || canSeeAccommodationSetup)">
+      <div class="nav-group-label">Accommodation</div>
+
+      <a class="nav-item"
+         routerLink="/accommodation/inventory"
+         routerLinkActive="active"
+         (click)="onNavClick()"
+         *ngIf="canSeeAccommodationInventory">
+        <span class="nav-dot"></span>
+        Inventory
+      </a>
+
+      <a class="nav-item"
+         routerLink="/accommodation/setup"
+         routerLinkActive="active"
+         (click)="onNavClick()"
+         *ngIf="canSeeAccommodationSetup">
+        <span class="nav-dot"></span>
+        Setup
       </a>
     </ng-container>
 

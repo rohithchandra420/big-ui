@@ -176,6 +176,22 @@
 .cat-tent { background: #fef3c7; color: #92400e; }
 .cat-addon { background: #e0e7ff; color: #3730a3; }
 
+.code-chip {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+}
+.code-chip-unset { color: var(--text-secondary); font-style: italic; font-weight: 400; }
+
+.pt-code-input { flex: none; width: 70px; text-transform: uppercase; }
+
 .pt-actions {
   display: flex;
   gap: 6px;

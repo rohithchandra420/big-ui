@@ -61,8 +61,17 @@ export class AllocateTentComponent implements OnInit {
     });
   }
 
+  // Was calling getAvailableTents(this.shopItem.item_name) — item_name is a
+  // free-text label (e.g. "Solo Tent"), but the backend endpoint requires a
+  // real passType id since Introducing Events, so this always 400'd and the
+  // picker silently showed zero vacant tents. allocate() still worked
+  // because the backend auto-picks any vacant tent of the right type when no
+  // explicit tentId is sent — but staff lost the ability to choose a
+  // specific tent, and any visibility into what was actually vacant. Found
+  // while building the Accommodation epic (ACCOMMODATION_CONTEXT.md).
   private loadVacantTents() {
-    this.accomodationService.getAvailableTents(this.shopItem.item_name).subscribe({
+    if (!this.shopItem.passType) { this.vacantTents = []; return; }
+    this.accomodationService.getAvailableTents(this.shopItem.passType).subscribe({
       next: (res) => this.vacantTents = res,
       error: () => this.vacantTents = []
     });

@@ -1,0 +1,181 @@
+.setup-body {
+  /* Widened from 480px so the summary cards below have room to sit
+     side-by-side — the form itself keeps the original narrower width. */
+  max-width: 900px;
+  padding: 24px;
+}
+
+.setup-form {
+  max-width: 480px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* Enhancement (2026-08-20) — per-PassType inventory summary cards. Now sits
+   below the Create Units form (was above it). */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.summary-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.summary-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.summary-card-code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: #f3f4f6;
+  border-radius: 20px;
+  padding: 2px 7px;
+}
+
+/* Each card is 3 grouped rows (2026-08-20 restructure): an overview row
+   (units still open/total, wholly vacant, slots vacant), then "Partially
+   Filled" and "Filled" — each explicitly headed and carrying the same
+   Male/Female/Mixed breakdown — separated by a subtle divider so the three
+   rows read as distinct sections instead of one flat list of tiles. */
+.summary-group {
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed var(--border-subtle);
+}
+.summary-group:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Rows 1 & 2 — no header, 2 tiles directly in a 2-column grid. (Was a single
+   3-tile row; split in two after the 3-tile row overflowed narrower cards.) */
+.summary-group-pair {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+/* Rows 2 & 3 — a small caption above a 3-column Male/Female/Mixed grid. */
+.summary-group-hdr {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+.summary-group-hdr.hdr-partial { color: #b45309; }
+.summary-group-hdr.hdr-full { color: #16a34a; }
+
+.summary-group-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.summary-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.summary-stat mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  flex-shrink: 0;
+}
+
+.summary-stat > div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.summary-n {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.summary-l {
+  font-size: 9.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Subtle tint per stat category — overview tiles neutral gray, except Full
+   (row 2) which gets the same green as the "Filled" row header below, since
+   it's that row's aggregate count. Male/Female/Mixed tiles use the same
+   blue/pink/amber regardless of which row they're in, since the row header
+   (amber "Partially Filled" / green "Filled") already carries the
+   occupancy-state distinction. */
+.st-neutral { background: #f3f4f6; }
+.st-neutral mat-icon { color: #6b7280; }
+
+.st-full { background: #dcfce7; }
+.st-full mat-icon { color: #16a34a; }
+
+.st-male { background: #dbeafe; }
+.st-male mat-icon { color: #2563eb; }
+
+.st-female { background: #fce7f3; }
+.st-female mat-icon { color: #db2777; }
+
+.st-mixed { background: #fef3c7; }
+.st-mixed mat-icon { color: #b45309; }
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.created-summary {
+  margin-top: 24px;
+}
+
+.created-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chip {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #dcfce7;
+  color: #166534;
+}
+
+@media (max-width: 600px) {
+  .setup-body { padding: 16px; max-width: 100%; }
+}

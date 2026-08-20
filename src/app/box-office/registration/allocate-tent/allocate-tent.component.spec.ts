@@ -12,7 +12,7 @@ import { Tent } from '../../../models/tent.model';
 import { EventItem } from '../../../models/event.model';
 
 const mockShopItem: Shopcart = {
-  _id: 't1', item_name: 'Shared Tent', item_quantity: 1, order_id: 1,
+  _id: 't1', item_name: 'Shared Tent', passType: 'pt1', item_quantity: 1, order_id: 1,
   admissionId: null as any, isAdmitted: false, isActive: true,
   name: '', phone_no: '', email: '', gender: null
 } as any;
@@ -56,7 +56,17 @@ describe('AllocateTentComponent', () => {
     expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', {
       name: '', phone: '', email: ''
     });
-    expect(accomodationServiceSpy.getAvailableTents).toHaveBeenCalledWith('Shared Tent');
+    expect(accomodationServiceSpy.getAvailableTents).toHaveBeenCalledWith('pt1');
+  });
+
+  it('does not call getAvailableTents when the shop item has no passType (legacy/unmigrated data)', () => {
+    accomodationServiceSpy.getAvailableTents.calls.reset();
+    (component as any).shopItem = { ...mockShopItem, passType: undefined };
+
+    (component as any).loadVacantTents();
+
+    expect(accomodationServiceSpy.getAvailableTents).not.toHaveBeenCalled();
+    expect(component.vacantTents).toEqual([]);
   });
 
   it('searchManually() re-queries suggestions using the typed term for all three fields', () => {

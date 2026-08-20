@@ -27,6 +27,8 @@ import { BookingFoundComponent } from "../box-office/registration/booking-found/
 import { MyDepartmentComponent } from "../my-department/my-department.component";
 import { EventsComponent } from "../admin/events/events.component";
 import { EventDetailComponent } from "../admin/events/event-detail/event-detail.component";
+import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
+import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
 
 // const profileGuard: CanActivateFn = (
 //     route: ActivatedRouteSnapshot,
@@ -80,7 +82,12 @@ const appRoutes: Routes = [
     { path: 'tickets', canActivate:[AuthGuard] ,component: TicketsComponent },
     { path: 'calendar', canActivate:[AuthGuard] ,component: CalendarComponent },
     { path: 'tickets/details/:id', component: TicketDetailsComponent },
-    { path: 'accomodation', canActivate:[AuthGuard] ,component: AccomodationComponent },
+    // Old spelling, kept as a redirect for anyone with the URL bookmarked —
+    // see ACCOMMODATION_CONTEXT.md decision #10. AccomodationComponent
+    // itself is retired (unrouted, not deleted).
+    { path: 'accomodation', redirectTo: 'accommodation/inventory', pathMatch: 'full' },
+    { path: 'accommodation/setup', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: AccommodationSetupComponent },
+    { path: 'accommodation/inventory', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: AccommodationInventoryComponent },
     { path: 'admin', canActivate:[AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: AdminComponent, children: [
         { path: 'user', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: UserRegisteryComponent },
         { path: 'tickets', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: TicketRegisteryComponent },

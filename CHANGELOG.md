@@ -9,6 +9,25 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.10.0] - 2026-08-20
+
+### Added
+- **Accommodation Restructure** — replaces the legacy, broken `/accomodation` "Tenting" page with a new top-level "Accommodation" section:
+  - **Setup** page — pick an existing Tent-category PassType, batch-create numbered physical units (capacity + quantity); one-time inline Code prompt for a PassType that doesn't have one yet
+  - Setup's per-PassType occupancy summary cards — unit/slot availability shown as ratios, Wholly Vacant/Full counts, and a Male/Female/Mixed breakdown for both Partially Filled and Filled units
+  - **Inventory** page — searchable/filterable list of every physical unit (search by Accom No or occupant name; filter by Type and by Occupancy status), natural/numeric Accom No sort (SH1, SH2 … SH9, SH10), row colour-coding by occupancy, a Gender column, a per-event-persisted type filter, and inline Edit (rename/recapacity) / Delete
+  - Inventory rows with occupants expand to a colour-coded detail card per occupant (name, gender, phone, email, order #, admission status)
+  - Allocated tent now shown directly on the Festival Pass row in Box Office's attendee list, mirroring the tent-pass side
+
+### Fixed
+- Allocate Tent's vacant-tents picker was silently always empty — it queried by a stale free-text item name instead of the real PassType id, so staff could never pick a specific tent (allocation itself still worked via the backend's auto-pick fallback)
+
+### Notes
+- The old `/accomodation` route still redirects to the new Inventory page
+- Full plan and decision history in ACCOMMODATION_CONTEXT.md
+
+---
+
 ## [1.9.1] - 2026-08-19
 
 ### Fixed
