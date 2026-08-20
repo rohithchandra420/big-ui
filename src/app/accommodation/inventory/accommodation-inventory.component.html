@@ -14,15 +14,15 @@
     <div class="filter-bar">
       <input type="text" placeholder="Search Accom No or occupant name…" [(ngModel)]="searchTerm" />
     </div>
-    <select class="type-filter" [ngModel]="selectedType" (ngModelChange)="setTypeFilter($event)">
-      <option *ngFor="let t of types" [value]="t">{{ t }}</option>
-    </select>
+    <app-select style="max-width: 200px;" [ngModel]="selectedType" (ngModelChange)="setTypeFilter($event)">
+      <app-option *ngFor="let t of types" [value]="t">{{ t }}</app-option>
+    </app-select>
     <!-- Enhancement (2026-08-20) — occupancy filter, paired with the row
          background colouring below. Not persisted (unlike the type filter)
          since that wasn't asked for here. -->
-    <select class="type-filter" [(ngModel)]="selectedOccupancy">
-      <option *ngFor="let o of occupancyOptions" [value]="o">{{ o }}</option>
-    </select>
+    <app-select style="max-width: 200px;" [(ngModel)]="selectedOccupancy">
+      <app-option *ngFor="let o of occupancyOptions" [value]="o">{{ o }}</app-option>
+    </app-select>
   </div>
 
   <div class="tbl-scroll">

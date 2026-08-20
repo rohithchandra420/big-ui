@@ -10,7 +10,7 @@
 .type-filter {
   padding: 8px 10px;
   border: 1px solid var(--border-default);
-  border-radius: 6px;
+  border-radius: 8px; /* was 6px — bug fix (2026-08-20), matches .field select */
   font-size: 13px;
   font-family: inherit;
   color: var(--text-primary);

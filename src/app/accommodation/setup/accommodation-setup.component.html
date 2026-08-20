@@ -15,10 +15,10 @@
 
     <div class="field">
       <label>Tent Pass Type *</label>
-      <select formControlName="passTypeId" (change)="onPassTypeChange()">
-        <option value="" disabled selected>Select a tent pass type…</option>
-        <option *ngFor="let pt of tentPassTypes" [value]="pt._id">{{ pt.name }}{{ pt.code ? ' (' + pt.code + ')' : '' }}</option>
-      </select>
+      <app-select formControlName="passTypeId" (valueChange)="onPassTypeChange()">
+        <app-option value="" [disabled]="true">Select a tent pass type…</app-option>
+        <app-option *ngFor="let pt of tentPassTypes" [value]="pt._id">{{ pt.name }}{{ pt.code ? ' (' + pt.code + ')' : '' }}</app-option>
+      </app-select>
       <p class="field-hint" *ngIf="!loading && tentPassTypes.length === 0">
         No tent-category pass types exist for this event yet — create one under Admin &gt; Events first.
       </p>

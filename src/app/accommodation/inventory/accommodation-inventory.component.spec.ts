@@ -11,6 +11,8 @@ import { NotificationService } from '../../core/notification.service';
 import { EventItem } from '../../models/event.model';
 import { Tent } from '../../models/tent.model';
 import { User } from '../../core/user.model';
+import { AppSelectComponent } from '../../shared/app-select/app-select.component';
+import { AppOptionComponent } from '../../shared/app-select/app-option.component';
 
 const mockEvent = { _id: 'event1', name: 'Test Event' } as EventItem;
 
@@ -64,7 +66,7 @@ describe('AccommodationInventoryComponent', () => {
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
 
     await TestBed.configureTestingModule({
-      declarations: [AccommodationInventoryComponent],
+      declarations: [AccommodationInventoryComponent, AppSelectComponent, AppOptionComponent],
       imports: [FormsModule, ReactiveFormsModule],
       providers: [
         { provide: AccomodationService, useValue: accomodationServiceSpy },

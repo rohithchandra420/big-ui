@@ -9,6 +9,8 @@ import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
 import { EventItem, EventDetail, PassType } from '../../models/event.model';
 import { Tent } from '../../models/tent.model';
+import { AppSelectComponent } from '../../shared/app-select/app-select.component';
+import { AppOptionComponent } from '../../shared/app-select/app-option.component';
 
 describe('suggestPassTypeCode()', () => {
   it('takes the first two letters of the first word for a multi-word name', () => {
@@ -165,7 +167,7 @@ describe('AccommodationSetupComponent', () => {
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
 
     await TestBed.configureTestingModule({
-      declarations: [AccommodationSetupComponent],
+      declarations: [AccommodationSetupComponent, AppSelectComponent, AppOptionComponent],
       imports: [ReactiveFormsModule],
       providers: [
         { provide: AccomodationService, useValue: accomodationServiceSpy },

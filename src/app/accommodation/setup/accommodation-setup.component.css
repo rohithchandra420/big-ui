@@ -3,6 +3,9 @@
      side-by-side — the form itself keeps the original narrower width. */
   max-width: 900px;
   padding: 24px;
+  /* Bug fix (2026-08-20) — was left-aligned, missing the margin:0 auto every
+     other page's container already has alongside its max-width. */
+  margin: 0 auto;
 }
 
 .setup-form {
@@ -11,6 +14,9 @@
   border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 20px;
+  /* Bug fix (2026-08-20) — was flush-left within .setup-body, same issue as
+     Register New User's .form-card before that same fix. */
+  margin: 0 auto;
 }
 
 /* Enhancement (2026-08-20) — per-PassType inventory summary cards. Now sits
