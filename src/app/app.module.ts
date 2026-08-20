@@ -74,6 +74,10 @@ import { MyDepartmentComponent } from './my-department/my-department.component';
 import { EventsComponent } from './admin/events/events.component';
 import { EventDetailComponent } from './admin/events/event-detail/event-detail.component';
 import { EventCreateDialogComponent } from './admin/events/event-create-dialog/event-create-dialog.component';
+import { AccommodationSetupComponent } from './accommodation/setup/accommodation-setup.component';
+import { AccommodationInventoryComponent } from './accommodation/inventory/accommodation-inventory.component';
+import { AppSelectComponent } from './shared/app-select/app-select.component';
+import { AppOptionComponent } from './shared/app-select/app-option.component';
 
 // #QRCode Scanner: Necessary to solve the problem of losing internet connection
 LOAD_WASM().subscribe()
@@ -121,7 +125,11 @@ LOAD_WASM().subscribe()
     MyDepartmentComponent,
     EventsComponent,
     EventDetailComponent,
-    EventCreateDialogComponent
+    EventCreateDialogComponent,
+    AccommodationSetupComponent,
+    AccommodationInventoryComponent,
+    AppSelectComponent,
+    AppOptionComponent
   ],
   imports: [
     BrowserModule,

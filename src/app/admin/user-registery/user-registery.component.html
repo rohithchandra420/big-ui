@@ -6,6 +6,12 @@
   </div>
 </div>
 
+
+<!-- Bug fix (2026-08-20): page content had no centering wrapper, unlike
+     every other page (.dept-page, .dashboard-page, etc. all use
+     max-width + margin:0 auto) — was sitting flush left instead. -->
+<div class="user-page">
+
 <!-- ── Create / Edit form ─────────────────────────────────── -->
 <div class="form-card" *ngIf="canCreateUsers || isEditMode">
 
@@ -44,17 +50,17 @@
     <div class="form-two-col">
       <div class="field">
         <label>Role *</label>
-        <select formControlName="role">
-          <option value="" disabled>Select a role</option>
-          <option *ngFor="let r of roles" [value]="r.name">{{ r.name }}</option>
-        </select>
+        <app-select formControlName="role">
+          <app-option value="" [disabled]="true">Select a role</app-option>
+          <app-option *ngFor="let r of roles" [value]="r.name">{{ r.name }}</app-option>
+        </app-select>
       </div>
       <div class="field">
         <label>Home Department</label>
-        <select formControlName="homeDepartment">
-          <option value="" disabled>Select a department</option>
-          <option *ngFor="let d of departments" [value]="d._id">{{ d.name }}</option>
-        </select>
+        <app-select formControlName="homeDepartment">
+          <app-option value="" [disabled]="true">Select a department</app-option>
+          <app-option *ngFor="let d of departments" [value]="d._id">{{ d.name }}</app-option>
+        </app-select>
       </div>
     </div>
 
@@ -150,4 +156,6 @@
       </div>
     </div>
   </div>
+</div>
+
 </div>

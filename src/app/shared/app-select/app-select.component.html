@@ -1,0 +1,27 @@
+<div class="app-select-trigger"
+     tabindex="0"
+     [class.disabled]="disabled"
+     [class.open]="open"
+     [class.placeholder]="!selectedOption"
+     [attr.aria-expanded]="open"
+     role="combobox"
+     (click)="toggle()">
+  <span class="app-select-label">{{ displayLabel }}</span>
+  <mat-icon class="app-select-chevron">expand_more</mat-icon>
+</div>
+
+<ul class="app-select-panel" *ngIf="open" role="listbox">
+  <li *ngFor="let opt of options"
+      class="app-select-option"
+      role="option"
+      [class.selected]="opt.value === value"
+      [class.disabled]="opt.disabled"
+      [attr.aria-selected]="opt.value === value"
+      (click)="selectOption(opt)">
+    {{ opt.label }}
+  </li>
+</ul>
+
+<!-- Attaches the projected <app-option> children to the DOM (each is
+     display:none on its own host) so their textContent is readable. -->
+<ng-content></ng-content>

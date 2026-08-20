@@ -42,6 +42,7 @@
             <ng-container *ngIf="editingPassTypeId !== pt._id">
               <span class="pt-name">{{ pt.name }}</span>
               <span class="cat-chip" [class]="'cat-' + pt.category">{{ pt.category }}</span>
+              <span class="code-chip" *ngIf="pt.category === 'tent'" [class.code-chip-unset]="!pt.code">{{ pt.code || 'no code' }}</span>
               <div class="pt-actions">
                 <button class="btn-sm-outline" (click)="startEditPassType(pt)">Edit</button>
                 <button class="btn-sm-danger" (click)="deletePassType(pt)">Delete</button>
@@ -50,9 +51,13 @@
 
             <form class="pt-edit-form" *ngIf="editingPassTypeId === pt._id" [formGroup]="editPassTypeForm">
               <input type="text" formControlName="name" class="pt-inline-input">
-              <select formControlName="category" class="pt-inline-select">
-                <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
-              </select>
+              <app-select formControlName="category">
+                <app-option *ngFor="let c of categories" [value]="c">{{ c }}</app-option>
+              </app-select>
+              <input type="text" formControlName="code" placeholder="Code" maxlength="4"
+                class="pt-inline-input pt-code-input"
+                *ngIf="editPassTypeForm.value.category === 'tent'"
+                title="Short prefix used to number tent units, e.g. SO -> SO1, SO2...">
               <div class="pt-actions">
                 <button class="btn-sm-outline" (click)="cancelEditPassType()">Cancel</button>
                 <button class="btn-sm-outline" [disabled]="editPassTypeForm.invalid" (click)="saveEditPassType(pt)">Save</button>
@@ -65,9 +70,13 @@
 
         <form class="pt-add-form" *ngIf="addingPassType" [formGroup]="passTypeForm">
           <input type="text" formControlName="name" placeholder="e.g. Festival Ticket" class="pt-inline-input">
-          <select formControlName="category" class="pt-inline-select">
-            <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
-          </select>
+          <app-select formControlName="category">
+            <app-option *ngFor="let c of categories" [value]="c">{{ c }}</app-option>
+          </app-select>
+          <input type="text" formControlName="code" placeholder="Code" maxlength="4"
+            class="pt-inline-input pt-code-input"
+            *ngIf="passTypeForm.value.category === 'tent'"
+            title="Short prefix used to number tent units, e.g. SO -> SO1, SO2... Can also be set later.">
           <div class="pt-actions">
             <button class="btn-ghost" (click)="cancelAddPassType()">Cancel</button>
             <button class="btn-cta" [disabled]="passTypeForm.invalid || savingPassType" (click)="savePassType()">
@@ -92,7 +101,7 @@
 
     <!-- ── EDIT MODE ──────────────────────────────────────── -->
     <ng-container *ngIf="editMode">
-      <form [formGroup]="editForm">
+      <form [formGroup]="editForm" class="card">
 
         <div class="field">
           <label>Name *</label>
@@ -118,9 +127,9 @@
 
         <div class="field">
           <label>Status</label>
-          <select formControlName="status">
-            <option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</option>
-          </select>
+          <app-select formControlName="status">
+            <app-option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</app-option>
+          </app-select>
           <p class="field-hint">Only <strong>Active</strong> events are visible to TL/VOL — Draft and Archived are admin-only.</p>
         </div>
 

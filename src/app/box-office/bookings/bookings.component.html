@@ -151,7 +151,7 @@
       </div>
 
       <div class="divider"></div>
-      <div class="section-lbl">Attendees ({{ activeBooking.shopcart?.length || 0 }})</div>
+      <div class="section-lbl">Attendees ({{ festivalPassCount(activeBooking.shopcart) }}) / Passes ({{ activeBooking.shopcart?.length || 0 }})</div>
       <app-attendee-list [ticket]="activeBooking" [allowEdit]="true"></app-attendee-list>
     </ng-container>
 

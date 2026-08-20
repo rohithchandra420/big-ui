@@ -60,12 +60,12 @@
                         : startsWithToday
                         }}
                     </h3>
-                    <select #viewDayOptionSelect1 class="form-select d-none d-md-block d-xl-none" [ngModel]="viewDays"
-                        (change)="viewDaysOptionChanged(viewDayOptionSelect1.value)">
-                        <option [value]="1">One Day</option>
-                        <option [value]="3">Three Days</option>
-                        <option [value]="7">One Week</option>
-                    </select>
+                    <app-select class="d-none d-md-block d-xl-none" [ngModel]="viewDays"
+                        (valueChange)="viewDaysOptionChanged($event)">
+                        <app-option [value]="1">One Day</app-option>
+                        <app-option [value]="3">Three Days</app-option>
+                        <app-option [value]="7">One Week</app-option>
+                    </app-select>
                 </div>
 
 
@@ -73,12 +73,12 @@
                     <div class="row">
                         <!-- Mobile View -->
                         <div class="col-6 d-md-none d-xl-flex col-xl-6 valign-center text-right">
-                            <select #viewDayOptionSelect2 class="form-select m-1" [ngModel]="viewDays"
-                                (change)="viewDaysOptionChanged(viewDayOptionSelect2.value)">
-                                <option [value]="1">One Day</option>
-                                <option [value]="3">Three Days</option>
-                                <option [value]="7">One Week</option>
-                            </select>
+                            <app-select class="m-1" [ngModel]="viewDays"
+                                (valueChange)="viewDaysOptionChanged($event)">
+                                <app-option [value]="1">One Day</app-option>
+                                <app-option [value]="3">Three Days</app-option>
+                                <app-option [value]="7">One Week</app-option>
+                            </app-select>
                         </div>
 
                         <div class="col-6 col-md-12 col-xl-6">

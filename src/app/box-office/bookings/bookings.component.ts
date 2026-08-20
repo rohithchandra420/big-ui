@@ -5,7 +5,8 @@ import { MatDialog } from '@angular/material/dialog';
 
 import { Ticket } from '../../models/ticket.model';
 import { BoxOfficeService } from '../box-office.service';
-import { isSpotRegistration, passSummary as buildPassSummary } from '../box-office.utils';
+import { isFestivalPass, isSpotRegistration, passSummary as buildPassSummary } from '../box-office.utils';
+import { Shopcart } from '../../models/ticket.model';
 import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
 import { EventService } from '../../core/event.service';
 
@@ -85,6 +86,14 @@ export class BookingsComponent implements OnInit {
 
   passSummary(booking: Ticket): string {
     return buildPassSummary(booking.shopcart);
+  }
+
+  /** Bug fix (2026-08-20) — the detail panel's "Attendees" count was just the
+   *  raw shopcart length, which double-counts Tent Pass items alongside the
+   *  Festival Pass each is paired with. Split into the actual attendee count
+   *  (Festival Passes — one per person) and the total pass/item count. */
+  festivalPassCount(shopcart: Shopcart[] | undefined): number {
+    return (shopcart || []).filter(item => isFestivalPass(item)).length;
   }
 
   get spotRegistrationCount(): number {

@@ -19,12 +19,23 @@ export class AccomodationService {
     constructor(private http: HttpClient) {
     }
 
-    createTents(tentData) {
-        return this.http.post<[Tent]>(this.url + '/createTents', tentData);
+    // Batch-creates numbered units against one existing Tent-category
+    // PassType — see ACCOMMODATION_CONTEXT.md decisions #1, #2. 400s with
+    // { code: 'NO_PASSTYPE_CODE' } if the PassType has no code set yet.
+    createTents(payload: { eventId: string; passTypeId: string; capacity: number; quantity: number }) {
+        return this.http.post<Tent[]>(this.url + '/createTents', payload);
     }
 
-    getAllTents() {
-        return this.http.get<[Tent]>(this.url + '/getAllTents');
+    getAllTents(eventId: string) {
+        return this.http.get<Tent[]>(this.url + '/getAllTents', { params: new HttpParams().set('eventId', eventId) });
+    }
+
+    updateTent(tentId: string, payload: { tent_no?: string; capcity?: number }) {
+        return this.http.patch<Tent>(this.url + '/updateTent/' + tentId, payload);
+    }
+
+    deleteTent(tentId: string) {
+        return this.http.delete<{ message: string }>(this.url + '/deleteTent/' + tentId);
     }
 
     getAllFestivalTickets() {
@@ -36,10 +47,10 @@ export class AccomodationService {
     }
 
     // ── Shared allocate/vacate/suggest — used by Box Office Registration now
-    //    and the future Tenting page later. Deliberately NOT duplicated into
-    //    BoxOfficeService — see BOX_OFFICE_CONTEXT.md decision #7. ──
-    getAvailableTents(tentType: string) {
-        return this.http.get<Tent[]>(this.url + '/getAllVacantTentsByType/' + tentType);
+    //    and the Accommodation Inventory page too. Deliberately NOT duplicated
+    //    into BoxOfficeService — see BOX_OFFICE_CONTEXT.md decision #7. ──
+    getAvailableTents(passTypeId: string) {
+        return this.http.get<Tent[]>(this.url + '/getAllVacantTentsByType/' + passTypeId);
     }
 
     getTentById(tentId: string) {
