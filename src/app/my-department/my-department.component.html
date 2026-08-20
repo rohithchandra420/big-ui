@@ -10,9 +10,9 @@
 
   <div class="dept-select-row" *ngIf="departments.length > 1">
     <label class="section-lbl">Department</label>
-    <select [(ngModel)]="selectedDeptId" (change)="onDeptChange()">
-      <option *ngFor="let d of departments" [value]="d._id">{{ d.name }}</option>
-    </select>
+    <app-select [(ngModel)]="selectedDeptId" (valueChange)="onDeptChange()" style="max-width: 260px;">
+      <app-option *ngFor="let d of departments" [value]="d._id">{{ d.name }}</app-option>
+    </app-select>
   </div>
 
   <!-- ── ALL view: cross-department reporting only ─────────── -->

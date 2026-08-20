@@ -48,17 +48,17 @@
 
     <!-- ── EDIT MODE ──────────────────────────────────────── -->
     <ng-container *ngIf="editMode">
-      <form [formGroup]="editForm" class="edit-form">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Name</mat-label>
-          <input matInput formControlName="name" />
-          <mat-error *ngIf="editForm.get('name')?.hasError('required')">Name is required</mat-error>
-        </mat-form-field>
+      <form [formGroup]="editForm" class="edit-form card">
+        <div class="field">
+          <label>Name *</label>
+          <input type="text" formControlName="name" placeholder="Department name">
+          <span class="field-error" *ngIf="editForm.get('name')?.touched && editForm.get('name')?.hasError('required')">Name is required</span>
+        </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Description</mat-label>
-          <textarea matInput formControlName="description" rows="3"></textarea>
-        </mat-form-field>
+        <div class="field">
+          <label>Description</label>
+          <textarea formControlName="description" rows="3" placeholder="Optional description"></textarea>
+        </div>
       </form>
 
       <!-- TL Section -->

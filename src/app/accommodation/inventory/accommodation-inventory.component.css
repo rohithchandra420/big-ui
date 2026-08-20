@@ -1,0 +1,170 @@
+.warn-banner { margin: 20px; }
+
+.tbl-filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.type-filter {
+  padding: 8px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px; /* was 6px — bug fix (2026-08-20), matches .field select */
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: #fff;
+}
+
+.pt-inline-input {
+  padding: 6px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: #fff;
+  width: 100%;
+}
+.cap-input { max-width: 80px; }
+
+.tbl-actions {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn-sm-outline {
+  padding: 5px 12px;
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-sm-outline:hover:not(:disabled) { background: var(--color-primary); color: #fff; }
+.btn-sm-outline:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-sm-danger {
+  padding: 5px 12px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-sm-danger:hover { background: #fecaca; }
+
+.empty-row {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 24px !important;
+}
+
+/* Enhancement (2026-08-20) — row background by occupancy status, same
+   `.tbl tr.xxx td` pattern the global .selected row style already uses.
+   Vacant = neutral (nothing going on), Full = green (done), Partial = amber
+   (still needs attention/more occupants) — same colour language as the
+   Setup page's summary cards. */
+.tbl tr.row-vacant td { background: #f9fafb; }
+.tbl tr.row-full td { background: #f0fdf4; }
+.tbl tr.row-partial td { background: #fffbeb; }
+
+/* Enhancement (2026-08-20, follow-up #5) — occupant-detail expand toggle and
+   its detail row. Cards use flex-wrap (not a fixed grid) so they reflow to
+   one column on a narrow viewport instead of forcing the table wider. */
+.occupant-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.occupant-cell.expandable { cursor: pointer; }
+
+.occupant-cell .chevron {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: transform 0.15s ease;
+}
+.occupant-cell .chevron.open { transform: rotate(180deg); }
+
+.occupant-detail-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px 4px;
+}
+
+.occupant-card {
+  flex: 1 1 180px;
+  min-width: 160px;
+  max-width: 260px;
+  background: #fff;
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--border-default);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* Same blue/pink/amber language as the Setup page's summary cards
+   (.st-male/.st-female/.st-mixed) — coloured by this occupant's own gender.
+   "Mixed" doesn't apply to a single person, so the third colour instead
+   covers "Prefer not to say" or no gender on file. */
+.occupant-card.gender-male { border-left-color: #2563eb; background: #eff6ff; }
+.occupant-card.gender-female { border-left-color: #db2777; background: #fdf2f8; }
+.occupant-card.gender-other { border-left-color: #b45309; background: #fffbeb; }
+
+.occupant-gender-row { font-weight: 600; }
+.occupant-card.gender-male .occupant-gender-row { color: #2563eb; }
+.occupant-card.gender-female .occupant-gender-row { color: #db2777; }
+.occupant-card.gender-other .occupant-gender-row { color: #b45309; }
+.occupant-card.gender-male .occupant-gender-row mat-icon { color: #2563eb; }
+.occupant-card.gender-female .occupant-gender-row mat-icon { color: #db2777; }
+.occupant-card.gender-other .occupant-gender-row mat-icon { color: #b45309; }
+
+.occupant-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.occupant-card-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 2px 0;
+}
+.occupant-card-row mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.badge-admit {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.badge-admit.in { background: #dcfce7; color: #166534; }
+.badge-admit.out { background: #f3f4f6; color: #6b7280; }
+
+@media (max-width: 700px) {
+  .tbl-filters { flex-direction: column; align-items: stretch; }
+  .occupant-card { flex-basis: 100%; max-width: 100%; }
+}

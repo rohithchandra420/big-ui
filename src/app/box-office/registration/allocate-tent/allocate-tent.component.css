@@ -1,0 +1,9 @@
+/* Bug fix (2026-08-20) — see the comment on the checkbox in the template.
+   Makes the .cb-wrap checkbox purely decorative here: every click in its
+   16x16px area passes straight through to the .att-row's own (click)
+   handler instead of also being handled independently by the checkbox
+   itself, which is what caused the occasional "click registers but the box
+   doesn't mark" double-fire/self-cancel. */
+.cb-wrap-inert {
+  pointer-events: none;
+}

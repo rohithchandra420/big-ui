@@ -98,6 +98,18 @@ describe('BookingsComponent', () => {
     });
   });
 
+  describe('festivalPassCount() (bug fix 2026-08-20)', () => {
+    it('counts only Festival Pass items, not the whole shopcart', () => {
+      // mockBookings[0]'s shopcart is 1 Festival Ticket + 1 Camping (Tent) item.
+      expect(component.festivalPassCount(mockBookings[0].shopcart)).toBe(1);
+    });
+
+    it('returns 0 for an empty or undefined shopcart', () => {
+      expect(component.festivalPassCount([])).toBe(0);
+      expect(component.festivalPassCount(undefined)).toBe(0);
+    });
+  });
+
   describe('filteredBookings', () => {
     it('returns all bookings with no filter or search', () => {
       expect(component.filteredBookings.length).toBe(2);

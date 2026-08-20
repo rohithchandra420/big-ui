@@ -18,11 +18,43 @@ describe('AccomodationService', () => {
 
     afterEach(() => httpMock.verify());
 
-    it('getAvailableTents() hits /api/getAllVacantTentsByType/:type', () => {
-        service.getAvailableTents('Shared Tent').subscribe();
-        const req = httpMock.expectOne('/api/getAllVacantTentsByType/Shared Tent');
+    it('getAvailableTents() hits /api/getAllVacantTentsByType/:passTypeId', () => {
+        service.getAvailableTents('passtype1').subscribe();
+        const req = httpMock.expectOne('/api/getAllVacantTentsByType/passtype1');
         expect(req.request.method).toBe('GET');
         req.flush([]);
+    });
+
+    it('getAllTents() sends eventId as a query param', () => {
+        service.getAllTents('event1').subscribe();
+        const req = httpMock.expectOne(r => r.url === '/api/getAllTents');
+        expect(req.request.method).toBe('GET');
+        expect(req.request.params.get('eventId')).toBe('event1');
+        req.flush([]);
+    });
+
+    it('createTents() posts the batch payload to /api/createTents', () => {
+        const payload = { eventId: 'event1', passTypeId: 'pt1', capacity: 2, quantity: 5 };
+        service.createTents(payload).subscribe();
+        const req = httpMock.expectOne('/api/createTents');
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual(payload);
+        req.flush([]);
+    });
+
+    it('updateTent() patches /api/updateTent/:id', () => {
+        service.updateTent('tent1', { tent_no: 'SO5' }).subscribe();
+        const req = httpMock.expectOne('/api/updateTent/tent1');
+        expect(req.request.method).toBe('PATCH');
+        expect(req.request.body).toEqual({ tent_no: 'SO5' });
+        req.flush({});
+    });
+
+    it('deleteTent() sends DELETE to /api/deleteTent/:id', () => {
+        service.deleteTent('tent1').subscribe();
+        const req = httpMock.expectOne('/api/deleteTent/tent1');
+        expect(req.request.method).toBe('DELETE');
+        req.flush({ message: 'Tent deleted successfully' });
     });
 
     it('getTentById() hits /api/getTentById/:id', () => {

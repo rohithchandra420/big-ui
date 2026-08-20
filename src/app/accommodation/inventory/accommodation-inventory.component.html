@@ -1,0 +1,111 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Accommodation</div>
+    <div class="page-ph-sub">Inventory — {{ tents.length }} unit{{ tents.length === 1 ? '' : 's' }}</div>
+  </div>
+</div>
+
+<div class="warn-banner" *ngIf="noActiveEvent">
+  No event selected. Choose one from the Event picker in the sidebar first.
+</div>
+
+<div class="tbl-container" *ngIf="!noActiveEvent">
+  <div class="tbl-filters">
+    <div class="filter-bar">
+      <input type="text" placeholder="Search Accom No or occupant name…" [(ngModel)]="searchTerm" />
+    </div>
+    <app-select style="max-width: 200px;" [ngModel]="selectedType" (ngModelChange)="setTypeFilter($event)">
+      <app-option *ngFor="let t of types" [value]="t">{{ t }}</app-option>
+    </app-select>
+    <!-- Enhancement (2026-08-20) — occupancy filter, paired with the row
+         background colouring below. Not persisted (unlike the type filter)
+         since that wasn't asked for here. -->
+    <app-select style="max-width: 200px;" [(ngModel)]="selectedOccupancy">
+      <app-option *ngFor="let o of occupancyOptions" [value]="o">{{ o }}</app-option>
+    </app-select>
+  </div>
+
+  <div class="tbl-scroll">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Accom No</th>
+          <th>Type</th>
+          <th>Capacity</th>
+          <th>Occupants</th>
+          <th>Gender</th>
+          <th *ngIf="canManage"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let tent of filteredTents">
+
+          <!-- Enhancement (2026-08-20): row background by occupancy status —
+               vacant/partial/full — for at-a-glance scanning. -->
+          <tr *ngIf="editingTentId !== tent._id" [ngClass]="'row-' + occupancyStatus(tent)">
+            <td>{{ tent.tent_no }}</td>
+            <td>{{ passTypeName(tent) }}</td>
+            <td>{{ tent.capcity }}</td>
+            <!-- Enhancement (2026-08-20, follow-up #5) — clicking an occupied
+                 cell expands the detail row below it; a vacant one (no
+                 chevron) isn't clickable, toggleExpand() no-ops anyway. -->
+            <td>
+              <div class="occupant-cell" [class.expandable]="occupantCount(tent) > 0" (click)="toggleExpand(tent)">
+                <mat-icon *ngIf="occupantCount(tent) > 0" class="chevron" [class.open]="expandedTentId === tent._id">expand_more</mat-icon>
+                <span>{{ occupantCount(tent) }}/{{ tent.capcity }} — {{ occupantNames(tent) }}</span>
+              </div>
+            </td>
+            <td>{{ genderComposition(tent) }}</td>
+            <td *ngIf="canManage" class="tbl-actions">
+              <button class="btn-sm-outline" (click)="startEdit(tent)">Edit</button>
+              <button class="btn-sm-danger" (click)="deleteTent(tent)">Delete</button>
+            </td>
+          </tr>
+
+          <!-- Enhancement (2026-08-20, follow-up #5) — occupant detail row.
+               Frontend-only: getAllTents already returns full occupant docs,
+               nothing new to fetch. Cards flex-wrap so this reflows on
+               mobile instead of forcing extra table columns. -->
+          <tr *ngIf="expandedTentId === tent._id" class="occupant-detail-row" [ngClass]="'row-' + occupancyStatus(tent)">
+            <td [attr.colspan]="canManage ? 6 : 5">
+              <div class="occupant-detail-grid">
+                <div class="occupant-card"
+                     [class.gender-male]="o.gender === 'Male'"
+                     [class.gender-female]="o.gender === 'Female'"
+                     [class.gender-other]="o.gender !== 'Male' && o.gender !== 'Female'"
+                     *ngFor="let o of occupantsList(tent)">
+                  <div class="occupant-card-name">{{ o.name || '(no name)' }}</div>
+                  <div class="occupant-card-row occupant-gender-row"><mat-icon>wc</mat-icon>{{ o.gender || '—' }}</div>
+                  <div class="occupant-card-row"><mat-icon>call</mat-icon>{{ o.phone_no || '—' }}</div>
+                  <div class="occupant-card-row"><mat-icon>mail</mat-icon>{{ o.email || '—' }}</div>
+                  <div class="occupant-card-row"><mat-icon>receipt_long</mat-icon>Order #{{ o.order_id }}</div>
+                  <div class="occupant-card-row">
+                    <span class="badge-admit" [class.in]="o.isAdmitted" [class.out]="!o.isAdmitted">
+                      {{ o.isAdmitted ? 'Checked in' : 'Not checked in' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="editingTentId === tent._id" [formGroup]="editForm" [ngClass]="'row-' + occupancyStatus(tent)">
+            <td><input type="text" formControlName="tent_no" class="pt-inline-input"></td>
+            <td>{{ passTypeName(tent) }}</td>
+            <td><input type="number" formControlName="capcity" min="1" class="pt-inline-input cap-input"></td>
+            <td colspan="2">{{ occupantCount(tent) }}/{{ tent.capcity }} — {{ occupantNames(tent) }}</td>
+            <td class="tbl-actions">
+              <button class="btn-sm-outline" (click)="cancelEdit()">Cancel</button>
+              <button class="btn-sm-outline" [disabled]="editForm.invalid" (click)="saveEdit(tent)">Save</button>
+            </td>
+          </tr>
+
+        </ng-container>
+
+        <tr *ngIf="!loading && filteredTents.length === 0">
+          <td [attr.colspan]="canManage ? 6 : 5" class="empty-row">No tents match.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

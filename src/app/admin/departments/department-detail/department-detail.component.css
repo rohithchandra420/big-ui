@@ -143,15 +143,15 @@
   margin-bottom: 8px;
 }
 
-.full-width { width: 100%; }
-
 .search-field {
   width: 100%;
   max-width: 360px;
 }
 
-/* MDC overrides for mat-form-field in edit mode */
-.edit-form .mat-mdc-form-field,
+/* MDC overrides for mat-form-field in edit mode — only the TL/Volunteer
+   autocomplete search fields still use Material (autocomplete isn't part of
+   the native .field pattern anywhere in the app); Name/Description switched
+   to native .field inputs (2026-08-20 bug fix). */
 .section .mat-mdc-form-field {
   --mdc-outlined-text-field-input-text-color: #1a1a1a;
   --mdc-outlined-text-field-outline-color: #c8c8c8;

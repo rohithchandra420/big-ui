@@ -1,0 +1,136 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Accommodation</div>
+    <div class="page-ph-sub">Setup — create tent inventory</div>
+  </div>
+</div>
+
+<div class="setup-body">
+
+  <div class="warn-banner" *ngIf="noActiveEvent">
+    No event selected. Choose one from the Event picker in the sidebar first.
+  </div>
+
+  <form class="setup-form" *ngIf="!noActiveEvent" [formGroup]="form" (ngSubmit)="submit()">
+
+    <div class="field">
+      <label>Tent Pass Type *</label>
+      <app-select formControlName="passTypeId" (valueChange)="onPassTypeChange()">
+        <app-option value="" [disabled]="true">Select a tent pass type…</app-option>
+        <app-option *ngFor="let pt of tentPassTypes" [value]="pt._id">{{ pt.name }}{{ pt.code ? ' (' + pt.code + ')' : '' }}</app-option>
+      </app-select>
+      <p class="field-hint" *ngIf="!loading && tentPassTypes.length === 0">
+        No tent-category pass types exist for this event yet — create one under Admin &gt; Events first.
+      </p>
+    </div>
+
+    <div class="field" *ngIf="needsCode">
+      <label>Code *</label>
+      <input type="text" formControlName="code" maxlength="4" placeholder="e.g. SO">
+      <p class="field-hint">
+        "{{ selectedPassType?.name }}" has no code yet — this prefixes every unit's Accom No (e.g. SO1, SO2…) and is saved onto the pass type permanently, only asked once.
+      </p>
+    </div>
+
+    <div class="form-two-col">
+      <div class="field">
+        <label>Capacity per unit *</label>
+        <input type="number" formControlName="capacity" min="1" placeholder="e.g. 2">
+        <span class="field-error" *ngIf="form.get('capacity')?.touched && form.get('capacity')?.invalid">Required, at least 1</span>
+      </div>
+      <div class="field">
+        <label>Quantity *</label>
+        <input type="number" formControlName="quantity" min="1" placeholder="e.g. 10">
+        <span class="field-error" *ngIf="form.get('quantity')?.touched && form.get('quantity')?.invalid">Required, at least 1</span>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-cta" [disabled]="form.invalid || creating">
+        {{ creating ? 'Creating…' : 'Create Units' }}
+      </button>
+    </div>
+  </form>
+
+  <div class="created-summary" *ngIf="lastCreated as tents">
+    <div class="section-lbl">Just created</div>
+    <div class="created-chips">
+      <span class="chip" *ngFor="let t of tents">{{ t.tent_no }}</span>
+    </div>
+  </div>
+
+  <!-- Enhancement (2026-08-20, ACCOMMODATION_CONTEXT.md follow-up #2,
+       restructured twice same day — this pass splits the old 3-tile Row 1
+       into two 2-tile rows, since 3 tiles was overflowing the card at
+       narrower widths). One card per tent PassType, refreshed on load and
+       after every create.
+       Row 1: Units (open/total) and Slots (vacant/total) — both ratios.
+       Row 2: Wholly Vacant and Full (= fullMale+fullFemale+fullMixed) —
+       plain counts. Row 3 "Partially Filled" and Row 4 "Filled" each carry
+       the same Male/Female/Mixed breakdown, so the two occupancy states read
+       the same way side by side. -->
+  <div class="summary-grid" *ngIf="!noActiveEvent && summaries.length > 0">
+    <div class="summary-card" *ngFor="let s of summaries">
+      <div class="summary-card-title">{{ s.name }}<span class="summary-card-code" *ngIf="s.code">{{ s.code }}</span></div>
+
+      <div class="summary-group summary-group-pair">
+        <div class="summary-stat st-neutral">
+          <mat-icon>cabin</mat-icon>
+          <div><span class="summary-n">{{ s.totalUnits - s.fullUnits }}/{{ s.totalUnits }}</span><span class="summary-l">Units open/total</span></div>
+        </div>
+        <div class="summary-stat st-neutral">
+          <mat-icon>event_seat</mat-icon>
+          <div><span class="summary-n">{{ s.vacantSlots }}/{{ s.totalCapacity }}</span><span class="summary-l">Slots vacant/total</span></div>
+        </div>
+      </div>
+
+      <div class="summary-group summary-group-pair">
+        <div class="summary-stat st-neutral">
+          <mat-icon>radio_button_unchecked</mat-icon>
+          <div><span class="summary-n">{{ s.whollyVacantUnits }}</span><span class="summary-l">Wholly vacant</span></div>
+        </div>
+        <div class="summary-stat st-full">
+          <mat-icon>check_circle</mat-icon>
+          <div><span class="summary-n">{{ s.fullUnits }}</span><span class="summary-l">Full</span></div>
+        </div>
+      </div>
+
+      <div class="summary-group">
+        <div class="summary-group-hdr hdr-partial">Partially Filled</div>
+        <div class="summary-group-row">
+          <div class="summary-stat st-male">
+            <mat-icon>male</mat-icon>
+            <div><span class="summary-n">{{ s.partiallyFilledMaleUnits }}</span><span class="summary-l">Male</span></div>
+          </div>
+          <div class="summary-stat st-female">
+            <mat-icon>female</mat-icon>
+            <div><span class="summary-n">{{ s.partiallyFilledFemaleUnits }}</span><span class="summary-l">Female</span></div>
+          </div>
+          <div class="summary-stat st-mixed">
+            <mat-icon>wc</mat-icon>
+            <div><span class="summary-n">{{ s.partiallyFilledMixedUnits }}</span><span class="summary-l">Mixed</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-group">
+        <div class="summary-group-hdr hdr-full">Filled</div>
+        <div class="summary-group-row">
+          <div class="summary-stat st-male">
+            <mat-icon>male</mat-icon>
+            <div><span class="summary-n">{{ s.fullMaleUnits }}</span><span class="summary-l">Male</span></div>
+          </div>
+          <div class="summary-stat st-female">
+            <mat-icon>female</mat-icon>
+            <div><span class="summary-n">{{ s.fullFemaleUnits }}</span><span class="summary-l">Female</span></div>
+          </div>
+          <div class="summary-stat st-mixed">
+            <mat-icon>wc</mat-icon>
+            <div><span class="summary-n">{{ s.fullMixedUnits }}</span><span class="summary-l">Mixed</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

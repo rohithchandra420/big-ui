@@ -24,9 +24,9 @@
 
   <div class="field" *ngIf="sheetNames.length > 1" style="margin-top: 12px;">
     <label>Sheet to upload *</label>
-    <select (change)="onSheetSelectChange($event)">
-      <option *ngFor="let name of sheetNames" [value]="name" [selected]="name === selectedSheetName">{{ name }}</option>
-    </select>
+    <app-select [ngModel]="selectedSheetName" (valueChange)="onSheetSelectChange($event)">
+      <app-option *ngFor="let name of sheetNames" [value]="name">{{ name }}</app-option>
+    </app-select>
   </div>
 
   <div class="card" *ngIf="preview" style="background: var(--surface-input); margin-top: 12px; margin-bottom: 0;">

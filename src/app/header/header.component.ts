@@ -44,6 +44,24 @@ export class HeaderComponent implements OnInit, OnDestroy {
                this.authService.hasDepartmentAccess(this.currentUser, 'Box Office');
     }
 
+    /** Accommodation Setup creates real inventory — admin roles only, matching
+     *  the backend's adminAuth on /createTents. See ACCOMMODATION_CONTEXT.md
+     *  decision #9. */
+    get canSeeAccommodationSetup(): boolean {
+        return ['DEV', 'DIR', 'ADMIN'].includes(this.userRole);
+    }
+
+    /** Inventory (view) is broader — same shape as canSeeBoxOffice, reusing
+     *  the Box Office permission/department rather than a standalone
+     *  "Accommodation" one, since tent inventory is logistically Box Office's
+     *  concern too (and AllocateTentComponent already lives in that flow). */
+    get canSeeAccommodationInventory(): boolean {
+        if (!this.currentUser) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(this.userRole)) return true;
+        return this.authService.hasPermission(this.currentUser, 'box-office:read') ||
+               this.authService.hasDepartmentAccess(this.currentUser, 'Box Office');
+    }
+
     get canSeeAdminMenu(): boolean {
         return this.adminMenuRoles.includes(this.userRole);
     }

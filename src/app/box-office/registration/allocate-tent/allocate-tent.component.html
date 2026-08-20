@@ -22,12 +22,22 @@
        [class.selected]="selectedFestivalPassId === candidate._id"
        style="cursor: pointer;"
        (click)="selectFestivalPass(candidate)">
-    <label class="cb-wrap">
-      <input type="checkbox" [checked]="selectedFestivalPassId === candidate._id" (click)="$event.preventDefault()">
+    <!-- Bug fix (2026-08-20): this checkbox is purely a visual reflection of
+         selectedFestivalPassId — the whole row above is what's actually
+         clickable. It used to have its own (click)="$event.preventDefault()"
+         to stop the native checkbox from toggling independently, but that
+         let the click still bubble into the row's own (click) handler on
+         top of whatever the label's built-in "activate the wrapped control"
+         behaviour did — occasionally firing selectFestivalPass() twice for
+         one click, which cancels itself back out (select, then immediately
+         deselect). .cb-wrap-inert makes the whole control non-interactive so
+         every click in this area goes through exactly once, via the row. -->
+    <label class="cb-wrap cb-wrap-inert">
+      <input type="checkbox" [checked]="selectedFestivalPassId === candidate._id" tabindex="-1">
       <span class="cb-box"></span>
     </label>
     <div class="att-info">
-      <div class="att-name">{{ candidate.name || 'Attendee' }} · <span class="mono">{{ candidate._id }}</span></div>
+      <div class="att-name">{{ candidate.name || 'Attendee' }}</div>
       <div class="att-pass">
         Order #{{ candidate.order_id }} · {{ candidate.phone_no }} · {{ candidate.email }}{{ candidate.gender ? ' · ' + candidate.gender : '' }}
       </div>
@@ -36,10 +46,10 @@
 
   <div class="field" style="max-width: 260px;" *ngIf="needsGender">
     <label>Gender * <span style="font-weight: 400; color: var(--text-muted);">(missing on this Festival Pass)</span></label>
-    <select [(ngModel)]="localGender">
-      <option value="">Select</option>
-      <option *ngFor="let g of genderOptions" [value]="g">{{ g }}</option>
-    </select>
+    <app-select [(ngModel)]="localGender">
+      <app-option value="">Select</app-option>
+      <app-option *ngFor="let g of genderOptions" [value]="g">{{ g }}</app-option>
+    </app-select>
   </div>
 
   <div class="divider"></div>
@@ -47,10 +57,10 @@
 
   <div class="field" style="max-width: 280px;">
     <label>Target tent</label>
-    <select [(ngModel)]="selectedTentId">
-      <option [ngValue]="null">Auto-pick next available</option>
-      <option *ngFor="let t of vacantTents" [value]="t._id">{{ t.tent_no }} ({{ vacancyOf(t) }} free)</option>
-    </select>
+    <app-select [(ngModel)]="selectedTentId">
+      <app-option [value]="null">Auto-pick next available</app-option>
+      <app-option *ngFor="let t of vacantTents" [value]="t._id">{{ t.tent_no }} ({{ vacancyOf(t) }} free)</app-option>
+    </app-select>
   </div>
 
   <div class="alert aw" *ngIf="genderMismatchPending">

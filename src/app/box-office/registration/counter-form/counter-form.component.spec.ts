@@ -7,6 +7,8 @@ import { CounterFormComponent } from './counter-form.component';
 import { BoxOfficeService } from '../../box-office.service';
 import { NotificationService } from '../../../core/notification.service';
 import { Shopcart } from '../../../models/ticket.model';
+import { AppSelectComponent } from '../../../shared/app-select/app-select.component';
+import { AppOptionComponent } from '../../../shared/app-select/app-option.component';
 
 const mockShopItem: Shopcart = {
   _id: 's1', item_name: 'Festival Ticket', item_quantity: 1, order_id: 1,
@@ -25,7 +27,7 @@ describe('CounterFormComponent', () => {
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
 
     await TestBed.configureTestingModule({
-      declarations: [CounterFormComponent],
+      declarations: [CounterFormComponent, AppSelectComponent, AppOptionComponent],
       imports: [ReactiveFormsModule],
       providers: [
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },

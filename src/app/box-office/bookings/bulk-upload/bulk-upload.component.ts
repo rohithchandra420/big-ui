@@ -155,8 +155,11 @@ export class BulkUploadComponent implements OnInit {
     reader.readAsArrayBuffer(file);
   }
 
-  onSheetSelectChange(event: Event) {
-    this.selectSheet((event.target as HTMLSelectElement).value);
+  // Bug fix (2026-08-20, follow-up to Bug #3): used to read the native
+  // <select>'s change Event and pull .value off event.target — app-select
+  // isn't a real <select>, so it emits the new value directly instead.
+  onSheetSelectChange(sheetName: string) {
+    this.selectSheet(sheetName);
   }
 
   private selectSheet(sheetName: string) {

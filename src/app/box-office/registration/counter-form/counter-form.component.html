@@ -34,10 +34,10 @@
 
     <div class="field">
       <label>Gender (optional)</label>
-      <select formControlName="gender">
-        <option value="">Not specified</option>
-        <option *ngFor="let option of genderOptions" [value]="option">{{ option }}</option>
-      </select>
+      <app-select formControlName="gender">
+        <app-option value="">Not specified</app-option>
+        <app-option *ngFor="let option of genderOptions" [value]="option">{{ option }}</app-option>
+      </app-select>
     </div>
   </form>
 
