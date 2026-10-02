@@ -78,6 +78,7 @@ import { AccommodationSetupComponent } from './accommodation/setup/accommodation
 import { AccommodationInventoryComponent } from './accommodation/inventory/accommodation-inventory.component';
 import { AppSelectComponent } from './shared/app-select/app-select.component';
 import { AppOptionComponent } from './shared/app-select/app-option.component';
+import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.component';
 
 // #QRCode Scanner: Necessary to solve the problem of losing internet connection
 LOAD_WASM().subscribe()
@@ -129,7 +130,8 @@ LOAD_WASM().subscribe()
     AccommodationSetupComponent,
     AccommodationInventoryComponent,
     AppSelectComponent,
-    AppOptionComponent
+    AppOptionComponent,
+    ConfirmDialogComponent
   ],
   imports: [
     BrowserModule,

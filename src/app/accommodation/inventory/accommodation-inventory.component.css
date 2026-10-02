@@ -145,6 +145,13 @@
   color: var(--text-secondary);
   padding: 2px 0;
 }
+
+/* Enhancement (2026-08-20 follow-up #3) — Vacate button, full-width at the
+   bottom of the card, separated from the detail rows above it. */
+.occupant-vacate-btn {
+  width: 100%;
+  margin-top: 8px;
+}
 .occupant-card-row mat-icon {
   font-size: 14px;
   width: 14px;

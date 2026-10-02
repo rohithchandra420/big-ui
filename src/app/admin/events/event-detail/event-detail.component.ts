@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { EventService } from '../../../core/event.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventDetail, EventStatus, PassType, PassTypeCategory } from '../../../models/event.model';
+import { ConfirmationService } from '../../../shared/confirm-dialog/confirmation.service';
 
 @Component({
   selector: 'app-event-detail',
@@ -49,7 +50,8 @@ export class EventDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private eventService: EventService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit() {
@@ -108,14 +110,21 @@ export class EventDetailComponent implements OnInit {
 
   deleteEvent() {
     if (!this.detail) return;
-    if (!window.confirm(`Delete "${this.detail.name}"? This cannot be undone.`)) return;
-    this.eventService.deleteEvent(this.detail._id).subscribe({
-      next: () => {
-        this.notificationService.openSucessSnackBar('Event deleted');
-        this.eventService.loadEvents();
-        this.router.navigate(['/admin/events']);
-      },
-      error: (err) => this.notificationService.openErrorSnackBar(err?.error?.message || 'Error deleting event')
+    this.confirmationService.confirm({
+      title: 'Delete event',
+      message: `Delete "${this.detail.name}"? This cannot be undone.`,
+      confirmText: 'Delete',
+      danger: true,
+    }).subscribe(confirmed => {
+      if (!confirmed || !this.detail) return;
+      this.eventService.deleteEvent(this.detail._id).subscribe({
+        next: () => {
+          this.notificationService.openSucessSnackBar('Event deleted');
+          this.eventService.loadEvents();
+          this.router.navigate(['/admin/events']);
+        },
+        error: (err) => this.notificationService.openErrorSnackBar(err?.error?.message || 'Error deleting event')
+      });
     });
   }
 
@@ -176,13 +185,20 @@ export class EventDetailComponent implements OnInit {
 
   deletePassType(pt: PassType) {
     if (!this.detail) return;
-    if (!window.confirm(`Delete pass type "${pt.name}"?`)) return;
-    this.eventService.deletePassType(this.detail._id, pt._id).subscribe({
-      next: () => {
-        this.notificationService.openSucessSnackBar('Pass type deleted');
-        this.loadDetail(this.detail!._id);
-      },
-      error: (err) => this.notificationService.openErrorSnackBar(err?.error?.message || 'Error deleting pass type')
+    this.confirmationService.confirm({
+      title: 'Delete pass type',
+      message: `Delete pass type "${pt.name}"?`,
+      confirmText: 'Delete',
+      danger: true,
+    }).subscribe(confirmed => {
+      if (!confirmed || !this.detail) return;
+      this.eventService.deletePassType(this.detail._id, pt._id).subscribe({
+        next: () => {
+          this.notificationService.openSucessSnackBar('Pass type deleted');
+          this.loadDetail(this.detail!._id);
+        },
+        error: (err) => this.notificationService.openErrorSnackBar(err?.error?.message || 'Error deleting pass type')
+      });
     });
   }
 }

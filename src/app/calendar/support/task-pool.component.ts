@@ -2,6 +2,7 @@ import { Component, Output, EventEmitter, Input, OnInit } from '@angular/core';
 
 import { Task, User } from '../../core/model';
 import { TaskService } from '../task.service';
+import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
 
 @Component({
   selector: 'app-task-pool',
@@ -29,7 +30,7 @@ export class TaskPoolComponent implements OnInit {
   tasks: Task[];
   @Output() editTask = new EventEmitter<Task>();
 
-  constructor(private taskService: TaskService){}
+  constructor(private taskService: TaskService, private confirmationService: ConfirmationService){}
 
   ngOnInit(){ this.load(); }
 
@@ -38,8 +39,14 @@ export class TaskPoolComponent implements OnInit {
   edit(t: Task){ this.editTask.emit(t); }
 
   deleteTask(t: Task){
-    if(confirm('Delete task?')){
+    this.confirmationService.confirm({
+      title: 'Delete task',
+      message: 'Delete task?',
+      confirmText: 'Delete',
+      danger: true,
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
       this.taskService.deleteTask(t._id).subscribe(()=> this.load());
-    }
+    });
   }
 }
