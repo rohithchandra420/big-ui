@@ -9,6 +9,7 @@ import { EventDetailComponent } from './event-detail.component';
 import { EventService } from '../../../core/event.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventDetail } from '../../../models/event.model';
+import { ConfirmationService } from '../../../shared/confirm-dialog/confirmation.service';
 
 const mockDetail: EventDetail = {
   _id: 'evt1', name: 'BiG 6.0', description: 'Main festival', status: 'draft',
@@ -25,6 +26,7 @@ describe('EventDetailComponent', () => {
   let fixture: ComponentFixture<EventDetailComponent>;
   let eventServiceSpy: jasmine.SpyObj<EventService>;
   let notificationSpy: jasmine.SpyObj<NotificationService>;
+  let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
   let router: Router;
 
   beforeEach(async () => {
@@ -33,6 +35,7 @@ describe('EventDetailComponent', () => {
       'createPassType', 'updatePassType', 'deletePassType'
     ]);
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
+    confirmationServiceSpy = jasmine.createSpyObj('ConfirmationService', ['confirm']);
     eventServiceSpy.getEventDetail.and.returnValue(of(mockDetail));
 
     await TestBed.configureTestingModule({
@@ -41,6 +44,7 @@ describe('EventDetailComponent', () => {
       providers: [
         { provide: EventService, useValue: eventServiceSpy },
         { provide: NotificationService, useValue: notificationSpy },
+        { provide: ConfirmationService, useValue: confirmationServiceSpy },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'evt1' } } } },
       ],
       schemas: [NO_ERRORS_SCHEMA]
@@ -115,13 +119,24 @@ describe('EventDetailComponent', () => {
 
   describe('deleteEvent()', () => {
     it('does nothing when the confirm dialog is declined', () => {
-      spyOn(window, 'confirm').and.returnValue(false);
+      confirmationServiceSpy.confirm.and.returnValue(of(false));
       component.deleteEvent();
       expect(eventServiceSpy.deleteEvent).not.toHaveBeenCalled();
     });
 
+    it('asks via the generic ConfirmationService, styled as a destructive action', () => {
+      confirmationServiceSpy.confirm.and.returnValue(of(false));
+      component.deleteEvent();
+      expect(confirmationServiceSpy.confirm).toHaveBeenCalledWith({
+        title: 'Delete event',
+        message: 'Delete "BiG 6.0"? This cannot be undone.',
+        confirmText: 'Delete',
+        danger: true,
+      });
+    });
+
     it('deletes the event, refreshes the list, and navigates back when confirmed', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+      confirmationServiceSpy.confirm.and.returnValue(of(true));
       const navSpy = spyOn(router, 'navigate');
       eventServiceSpy.deleteEvent.and.returnValue(of({ message: 'Event deleted successfully' }));
 
@@ -134,7 +149,7 @@ describe('EventDetailComponent', () => {
     });
 
     it('shows the block message when the event has real bookings', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+      confirmationServiceSpy.confirm.and.returnValue(of(true));
       eventServiceSpy.deleteEvent.and.returnValue(throwError(() => ({
         error: { message: 'This event has 3 booking(s) and cannot be deleted.', count: 3 }
       })));
@@ -229,13 +244,24 @@ describe('EventDetailComponent', () => {
     });
 
     it('deletePassType() does nothing when the confirm dialog is declined', () => {
-      spyOn(window, 'confirm').and.returnValue(false);
+      confirmationServiceSpy.confirm.and.returnValue(of(false));
       component.deletePassType(mockDetail.passTypes[0]);
       expect(eventServiceSpy.deletePassType).not.toHaveBeenCalled();
     });
 
+    it('deletePassType() asks via the generic ConfirmationService, styled as a destructive action', () => {
+      confirmationServiceSpy.confirm.and.returnValue(of(false));
+      component.deletePassType(mockDetail.passTypes[0]);
+      expect(confirmationServiceSpy.confirm).toHaveBeenCalledWith({
+        title: 'Delete pass type',
+        message: 'Delete pass type "Festival Ticket"?',
+        confirmText: 'Delete',
+        danger: true,
+      });
+    });
+
     it('deletePassType() deletes and reloads detail when confirmed', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+      confirmationServiceSpy.confirm.and.returnValue(of(true));
       eventServiceSpy.deletePassType.and.returnValue(of({ message: 'Pass type deleted successfully' }));
 
       component.deletePassType(mockDetail.passTypes[0]);
@@ -245,7 +271,7 @@ describe('EventDetailComponent', () => {
     });
 
     it('deletePassType() shows the block message when the pass type has real bookings', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+      confirmationServiceSpy.confirm.and.returnValue(of(true));
       eventServiceSpy.deletePassType.and.returnValue(throwError(() => ({
         error: { message: 'This pass type has 2 booking(s) using it and cannot be deleted.', count: 2 }
       })));

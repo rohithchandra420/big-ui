@@ -9,6 +9,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.0] - 2026-10-02
+
+### Added
+- **Inventory: vacate an occupant directly** — closes out the Accommodation Restructure's parked follow-up #3. Vacate-only (no reassignment/swap — that still goes through Box Office's Allocate Tent, which owns the gender/linked-pass logic), reusing the existing `vacateTentSlot` endpoint with no new backend surface, so a concurrent action from Box Office resolves exactly as it already does between two Box Office staff.
+- **Generic confirm-dialog component** (`app-confirm-dialog`/`ConfirmationService`, `shared/confirm-dialog/`) replacing `window.confirm()` app-wide (Inventory's Vacate and Delete, Event Detail's Delete Event and Delete Pass Type, My Department's attendance-conflict overwrite prompt, Task Pool's Delete Task) — styled consistently via the app's existing global MatDialog overrides, no new CSS needed for the dialog shell itself.
+
+### Changed
+- Dialog title bar is now the brand dark green with white text, app-wide (every `MatDialog` in the app shares this one global style) — was plain text on a light background with a thin border.
+
+---
+
 ## [1.10.0] - 2026-08-20
 
 ### Added

@@ -84,6 +84,12 @@
                       {{ o.isAdmitted ? 'Checked in' : 'Not checked in' }}
                     </span>
                   </div>
+                  <!-- Enhancement (2026-08-20 follow-up #3) — vacate-only;
+                       moving to a different tent still goes through Box
+                       Office's AllocateTentComponent. -->
+                  <button *ngIf="canManage" class="btn-sm-danger occupant-vacate-btn" (click)="vacateOccupant(o, tent)">
+                    Vacate
+                  </button>
                 </div>
               </div>
             </td>

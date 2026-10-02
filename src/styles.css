@@ -256,15 +256,21 @@ select:focus {
   background: var(--surface-card) !important;
   border: 1px solid var(--border-default) !important;
   box-shadow: var(--shadow-lg) !important;
+  overflow: hidden !important; /* clips the title's own corners below to match */
 }
 
+/* Enhancement (2026-10-02) — title bar is now the brand dark green with white
+   text, app-wide (every MatDialog uses this same global rule). Rounded only
+   at the top to match the dialog surface's own corners; border-bottom
+   dropped since the colour block itself now separates title from content. */
 .mat-mdc-dialog-title {
   font-size: 14px !important;
   font-weight: 600 !important;
-  color: var(--text-primary) !important;
+  color: #ffffff !important;
+  background: var(--color-primary) !important;
   padding: 1rem 1.25rem !important;
   margin: 0 !important;
-  border-bottom: 1px solid var(--border-default);
+  border-radius: 14px 14px 0 0;
   line-height: 1.4 !important;
 }
 
@@ -523,6 +529,11 @@ select:focus {
   font-size: 13px;
   color: var(--text-secondary);
   margin: 4px 0 0;
+  /* Enhancement (2026-10-02) — some confirm messages (e.g. My Department's
+     attendance-conflict prompt) build a multi-line summary with \n; without
+     this, those newlines would collapse into one line like any other HTML
+     text. Doesn't affect ordinary single-line messages. */
+  white-space: pre-line;
 }
 
 /* ── Section label ──────────────────────────────────────── */
