@@ -9,6 +9,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.12.0] - 2026-10-03
+
+### Removed
+- **Legacy Tickets module** (`/tickets`, `/tickets/details/:id`) — ticket lookup, QR admission scanning, tent allocation, and the "Tickets" sidebar link. Fully superseded by Box Office's registration/check-in/tent-allocation flow; confirmed with stakeholders that no tickets from the pre-Introducing-Events era still need to be viewable through this screen. Backend (`ticket.js`/`excelUpload.js`) deliberately left in place for now.
+- **Bare `/box-office` dashboard** (the old, pre-restructure landing page) — already had no nav link pointing to it (orphaned, reachable only by direct URL); removed alongside Tickets since it shared `TicketsService`.
+- **Calendar module** (`/calendar`, Task Pool, Task Edit, and the "Calendar" sidebar link) — was never wired to a real backend (`task.service.ts`/`calendar.service.ts` only ever had commented-out placeholder API calls, no `/calendar` or `/task` route exists in big-api), carried unremoved demo-scaffold leftovers (placeholder text, the stock Angular logo, an unfinished "Angular Calendar Scheduler Demo" title, Italian button labels) from the third-party `angular-calendar`/`angular-calendar-scheduler` starter it was built from. Not being pursued further.
+
+### Notes
+- 24 files deleted, 3 trimmed (`app.module.ts`, `core/app-routing.module.ts`, `header/header.component.html`). 406/406 tests passing (unchanged — none of the removed components had test coverage), both dev and production builds clean; production bundle size dropped and is no longer over the configured budget.
+- One pre-existing, unrelated issue surfaced in passing: the already-orphaned `app/registration/` folder (not declared in `app.module.ts`, not routed, already flagged for manual deletion) imports from the now-removed `tickets/tickets.service.ts`. Harmless — it was never part of the compiled app either way — but left as-is pending its own decision.
+
+---
+
 ## [1.11.0] - 2026-10-02
 
 ### Added
