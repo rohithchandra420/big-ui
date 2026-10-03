@@ -24,7 +24,6 @@ import { AppComponent } from './app.component';
 import { HeaderComponent } from './header/header.component';
 import { HomeComponent } from './home/home.component';
 import { LoginComponent } from './login/login.component';
-import { BoxOfficeComponent } from './box-office/box-office.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { AuthService } from './core/auth.service';
 import { AuthGuard } from './core/auth-guard.service';
@@ -32,27 +31,19 @@ import { ErrorPageComponent } from './error-page/error-page.component';
 import { AdminComponent } from './admin/admin.component';
 import { AuthInterceptorService } from './core/auth-interceptor.service';
 import { AlertComponent } from './alert/alert.component';
-import { TicketsComponent } from './tickets/tickets.component';
-import { TicketsService } from './tickets/tickets.service';
 import { NotificationService } from './core/notification.service';
-import { TicketDetailsComponent } from './tickets/ticket.details/ticket.details.component';
-import { QrscannerPopupComponent } from './tickets/qrscanner-popup/qrscanner-popup.component';
 import { DashboardService } from './dashboard/dashboard.service';
 import { AccomodationComponent } from './accomodation/accomodation.component';
 import { AccomodationService } from './accomodation/accomodation.service';
 import { UtcToLocalTimePipe } from './pipes/utc-to-local-time.pipe';
-import { TentDetailsPopUp } from './tickets/ticket.details/tent.details.popup/tent.details.popup.component';
 import { OccupantPopupComponent } from './accomodation/occupant-popup/occupant-popup.component';
 import { AdminMenuComponent } from './admin/admin-menu/admin-menu.component';
 import { UserRegisteryComponent } from './admin/user-registery/user-registery.component';
 import { TicketRegisteryComponent } from './admin/ticket-registery/ticket-registery.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
-import { CalendarComponent } from './calendar/calendar.component';
-import { TaskPoolComponent } from './calendar/support/task-pool.component';
 
 import * as moment from 'moment';
-import { CalendarService } from './calendar/calendar.service';
 import { HasPermissionDirective } from './directives/has-permission.directive';
 import { TooltipDirective } from './directives/tooltip.directive';
 import { ProfileComponent } from './profile/profile.component';
@@ -90,22 +81,15 @@ LOAD_WASM().subscribe()
     AlertComponent,
     HomeComponent,
     LoginComponent,
-    BoxOfficeComponent,
     DashboardComponent,
     ErrorPageComponent,
     AdminComponent,
-    TicketsComponent,
-    TicketDetailsComponent,
-    QrscannerPopupComponent,
     AccomodationComponent,
     UtcToLocalTimePipe,
-    TentDetailsPopUp,
     OccupantPopupComponent,
     AdminMenuComponent,
     UserRegisteryComponent,
     TicketRegisteryComponent,
-    CalendarComponent,
-    TaskPoolComponent,
     HasPermissionDirective,
     TooltipDirective,
     ProfileComponent,
@@ -162,13 +146,11 @@ LOAD_WASM().subscribe()
     }),
   ],
   providers: [
-    AuthService, 
+    AuthService,
     AuthGuard,
-    TicketsService, 
     NotificationService,
     DashboardService,
     AccomodationService,
-    CalendarService,
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true },
     { provide: LOCALE_ID, useValue: 'en-US' },
     { provide: MOMENT, useValue: moment },
