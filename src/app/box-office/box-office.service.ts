@@ -15,30 +15,10 @@ export class BoxOfficeService {
 
     constructor(private http: HttpClient, private authService: AuthService) { }
 
-    // ── Old upload/register form (BoxOfficeComponent) — untouched, deferred (see Task 2/10).
-    //    Hits the SHARED /createTicket in ticket.js (not /box-office/*) — do not repoint
-    //    this at the Box Office duplicate, the old form's behavior must stay exactly as-is. ──
-    createTicket(ticketDetails: Ticket) {
-        return this.http.post<Ticket>(this.url + "/createTicket", ticketDetails);
-    }
-
     // ── Spot Registration — hits the Box Office duplicate (/box-office/createTicket),
     //    which allows omitting order_id/transaction_id so the backend auto-assigns them. ──
     createBoxOfficeTicket(ticketDetails: Partial<Ticket>) {
         return this.http.post<Ticket>(this.url + "/box-office/createTicket", ticketDetails);
-    }
-
-    getTicketsById(ticketId: string) {
-        return this.http.get<Ticket>(this.url + "/getTicketById/" + ticketId, {
-            params: new HttpParams().set('id', ticketId),
-            responseType: 'json'
-        });
-    }
-
-    // ── Old upload form (BoxOfficeComponent) — untouched, deferred. Hits the SHARED,
-    //    adminAuth-only /uploadexcel in excelUpload.js — do not repoint this either. ──
-    uploadExcel(excelFile: FormData) {
-        return this.http.post(this.url + "/uploadexcel", excelFile);
     }
 
     // ── Bulk Upload of Bookings — hits the Box Office duplicate (/box-office/uploadExcel),

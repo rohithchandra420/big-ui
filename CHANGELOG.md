@@ -9,6 +9,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.13.0] - 2026-10-04
+
+### Removed
+- **Orphaned `app/registration/` folder** — never declared in `app.module.ts` or routed; was importing the `TicketsService` removed in 1.12.0.
+- **Retired legacy Tenting page** (`AccomodationComponent` + `OccupantPopupComponent`) — unrouted since 1.10.0, superseded by Accommodation Setup/Inventory. `AccomodationService` is kept (still used by Accommodation and Box Office); the old `/accomodation` URL still redirects to Inventory.
+- **Ticket Registry placeholder** (`/admin/tickets` and its "Tickets" admin sidebar link) — an empty scaffold page with no functionality.
+- Unused service methods with no remaining callers: `BoxOfficeService.createTicket`, `getTicketsById`, `uploadExcel`; `AccomodationService.getAllFestivalTickets`, `removeOccupant` (vacating a tent slot goes through `vacateTentSlot`, unchanged).
+
+### Fixed
+- Sidebar version marker was stuck at `v1.9.1` (not bumped in 1.10.0–1.12.0); now `v1.13.0`.
+
+### Notes
+- 13 files deleted, 6 trimmed. 406/406 tests passing, production build clean.
+- Paired with big-api 1.9.0, which removes the matching unused backend endpoints.
+
+---
+
 ## [1.12.0] - 2026-10-03
 
 ### Removed

@@ -30,7 +30,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
     activeEvent: EventItem | null = null;
 
     readonly adminMenuRoles   = ['DEV', 'DIR', 'ADMIN', 'TL'];
-    readonly ticketManagerRoles = ['DEV', 'DIR', 'ADMIN'];
     readonly manageDeptsRoles = ['DEV', 'DIR', 'ADMIN'];
     readonly manageEventsRoles = ['DEV', 'DIR', 'ADMIN'];
 
@@ -64,10 +63,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
     get canSeeAdminMenu(): boolean {
         return this.adminMenuRoles.includes(this.userRole);
-    }
-
-    get canSeeTicketRegistry(): boolean {
-        return this.ticketManagerRoles.includes(this.userRole);
     }
 
     get canSeeManageDepts(): boolean {
