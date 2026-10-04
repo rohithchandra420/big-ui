@@ -33,13 +33,10 @@ import { AuthInterceptorService } from './core/auth-interceptor.service';
 import { AlertComponent } from './alert/alert.component';
 import { NotificationService } from './core/notification.service';
 import { DashboardService } from './dashboard/dashboard.service';
-import { AccomodationComponent } from './accomodation/accomodation.component';
 import { AccomodationService } from './accomodation/accomodation.service';
 import { UtcToLocalTimePipe } from './pipes/utc-to-local-time.pipe';
-import { OccupantPopupComponent } from './accomodation/occupant-popup/occupant-popup.component';
 import { AdminMenuComponent } from './admin/admin-menu/admin-menu.component';
 import { UserRegisteryComponent } from './admin/user-registery/user-registery.component';
-import { TicketRegisteryComponent } from './admin/ticket-registery/ticket-registery.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -84,12 +81,9 @@ LOAD_WASM().subscribe()
     DashboardComponent,
     ErrorPageComponent,
     AdminComponent,
-    AccomodationComponent,
     UtcToLocalTimePipe,
-    OccupantPopupComponent,
     AdminMenuComponent,
     UserRegisteryComponent,
-    TicketRegisteryComponent,
     HasPermissionDirective,
     TooltipDirective,
     ProfileComponent,
