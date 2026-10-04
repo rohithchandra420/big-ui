@@ -9,6 +9,47 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.13.0] - 2026-10-04
+
+### Removed
+- **Orphaned `app/registration/` folder** — never declared in `app.module.ts` or routed; was importing the `TicketsService` removed in 1.12.0.
+- **Retired legacy Tenting page** (`AccomodationComponent` + `OccupantPopupComponent`) — unrouted since 1.10.0, superseded by Accommodation Setup/Inventory. `AccomodationService` is kept (still used by Accommodation and Box Office); the old `/accomodation` URL still redirects to Inventory.
+- **Ticket Registry placeholder** (`/admin/tickets` and its "Tickets" admin sidebar link) — an empty scaffold page with no functionality.
+- Unused service methods with no remaining callers: `BoxOfficeService.createTicket`, `getTicketsById`, `uploadExcel`; `AccomodationService.getAllFestivalTickets`, `removeOccupant` (vacating a tent slot goes through `vacateTentSlot`, unchanged).
+
+### Fixed
+- Sidebar version marker was stuck at `v1.9.1` (not bumped in 1.10.0–1.12.0); now `v1.13.0`.
+
+### Notes
+- 13 files deleted, 6 trimmed. 406/406 tests passing, production build clean.
+- Paired with big-api 1.9.0, which removes the matching unused backend endpoints.
+
+---
+
+## [1.12.0] - 2026-10-03
+
+### Removed
+- **Legacy Tickets module** (`/tickets`, `/tickets/details/:id`) — ticket lookup, QR admission scanning, tent allocation, and the "Tickets" sidebar link. Fully superseded by Box Office's registration/check-in/tent-allocation flow; confirmed with stakeholders that no tickets from the pre-Introducing-Events era still need to be viewable through this screen. Backend (`ticket.js`/`excelUpload.js`) deliberately left in place for now.
+- **Bare `/box-office` dashboard** (the old, pre-restructure landing page) — already had no nav link pointing to it (orphaned, reachable only by direct URL); removed alongside Tickets since it shared `TicketsService`.
+- **Calendar module** (`/calendar`, Task Pool, Task Edit, and the "Calendar" sidebar link) — was never wired to a real backend (`task.service.ts`/`calendar.service.ts` only ever had commented-out placeholder API calls, no `/calendar` or `/task` route exists in big-api), carried unremoved demo-scaffold leftovers (placeholder text, the stock Angular logo, an unfinished "Angular Calendar Scheduler Demo" title, Italian button labels) from the third-party `angular-calendar`/`angular-calendar-scheduler` starter it was built from. Not being pursued further.
+
+### Notes
+- 24 files deleted, 3 trimmed (`app.module.ts`, `core/app-routing.module.ts`, `header/header.component.html`). 406/406 tests passing (unchanged — none of the removed components had test coverage), both dev and production builds clean; production bundle size dropped and is no longer over the configured budget.
+- One pre-existing, unrelated issue surfaced in passing: the already-orphaned `app/registration/` folder (not declared in `app.module.ts`, not routed, already flagged for manual deletion) imports from the now-removed `tickets/tickets.service.ts`. Harmless — it was never part of the compiled app either way — but left as-is pending its own decision.
+
+---
+
+## [1.11.0] - 2026-10-02
+
+### Added
+- **Inventory: vacate an occupant directly** — closes out the Accommodation Restructure's parked follow-up #3. Vacate-only (no reassignment/swap — that still goes through Box Office's Allocate Tent, which owns the gender/linked-pass logic), reusing the existing `vacateTentSlot` endpoint with no new backend surface, so a concurrent action from Box Office resolves exactly as it already does between two Box Office staff.
+- **Generic confirm-dialog component** (`app-confirm-dialog`/`ConfirmationService`, `shared/confirm-dialog/`) replacing `window.confirm()` app-wide (Inventory's Vacate and Delete, Event Detail's Delete Event and Delete Pass Type, My Department's attendance-conflict overwrite prompt, Task Pool's Delete Task) — styled consistently via the app's existing global MatDialog overrides, no new CSS needed for the dialog shell itself.
+
+### Changed
+- Dialog title bar is now the brand dark green with white text, app-wide (every `MatDialog` in the app shares this one global style) — was plain text on a light background with a thin border.
+
+---
+
 ## [1.10.0] - 2026-08-20
 
 ### Added

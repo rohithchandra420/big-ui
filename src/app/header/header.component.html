@@ -22,24 +22,6 @@
     </a>
 
     <a class="nav-item"
-       routerLink="/tickets"
-       routerLinkActive="active"
-       (click)="onNavClick()"
-       *ngIf="isAuthenticated">
-      <span class="nav-dot"></span>
-      Tickets
-    </a>
-
-    <a class="nav-item"
-       routerLink="/calendar"
-       routerLinkActive="active"
-       (click)="onNavClick()"
-       *ngIf="isAuthenticated">
-      <span class="nav-dot"></span>
-      Calendar
-    </a>
-
-    <a class="nav-item"
        routerLink="/my-department"
        routerLinkActive="active"
        (click)="onNavClick()"
@@ -103,15 +85,6 @@
          (click)="onNavClick()">
         <span class="nav-dot"></span>
         Users
-      </a>
-
-      <a class="nav-item"
-         routerLink="/admin/tickets"
-         routerLinkActive="active"
-         (click)="onNavClick()"
-         *ngIf="canSeeTicketRegistry">
-        <span class="nav-dot"></span>
-        Tickets
       </a>
 
       <a class="nav-item"

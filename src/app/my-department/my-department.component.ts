@@ -20,6 +20,7 @@ import {
   UsersMatrixCell,
   SlotState
 } from '../core/department.service';
+import { ConfirmationService } from '../shared/confirm-dialog/confirmation.service';
 
 type ViewMode = 'mark' | 'history' | 'matrix';
 type AllViewMode = 'summary' | 'matrix' | 'users';
@@ -92,7 +93,8 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
   constructor(
     private departmentService: DepartmentService,
     private authService: AuthService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit() {
@@ -222,17 +224,20 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
             deptName: c.existingDepartment?.name || 'another department'
           }));
           const summary = toConfirm.map(c => `${c.name} — ${c.slot} (already marked by ${c.deptName})`).join('\n');
-          const confirmed = window.confirm(
-            `Already marked elsewhere:\n\n${summary}\n\nOverwrite with this department's marking?`
-          );
+          this.confirmationService.confirm({
+            title: 'Overwrite attendance',
+            message: `Already marked elsewhere:\n\n${summary}\n\nOverwrite with this department's marking?`,
+            confirmText: 'Overwrite',
+            danger: true,
+          }).subscribe(confirmed => {
+            if (confirmed) {
+              this.saveAttendance(toConfirm.map(c => ({ userId: c.userId, slot: c.slot })));
+              return;
+            }
 
-          if (confirmed) {
-            this.saveAttendance(toConfirm.map(c => ({ userId: c.userId, slot: c.slot })));
-            return;
-          }
-
-          this.notificationService.openErrorSnackBar('Attendance saved — conflicting slot(s) left unchanged');
-          this.loadRoster();
+            this.notificationService.openErrorSnackBar('Attendance saved — conflicting slot(s) left unchanged');
+            this.loadRoster();
+          });
           return;
         }
 

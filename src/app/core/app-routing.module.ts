@@ -4,19 +4,13 @@ import { ActivatedRouteSnapshot, CanActivateChildFn, CanActivateFn, Router, Rout
 import { DashboardComponent } from "../dashboard/dashboard.component";
 import { HomeComponent } from "../home/home.component";
 import { LoginComponent } from "../login/login.component";
-import { BoxOfficeComponent } from "../box-office/box-office.component";
 import { Observable } from "rxjs";
 import { AuthService } from "./auth.service";
 import { AuthGuard } from "./auth-guard.service";
 import { ErrorPageComponent } from "../error-page/error-page.component";
 import { AuthResolver } from "./auth-resolver.service";
 import { AdminComponent } from "../admin/admin.component";
-import { TicketsComponent } from "../tickets/tickets.component";
-import { TicketDetailsComponent } from "../tickets/ticket.details/ticket.details.component";
-import { AccomodationComponent } from "../accomodation/accomodation.component";
 import { UserRegisteryComponent } from "../admin/user-registery/user-registery.component";
-import { TicketRegisteryComponent } from "../admin/ticket-registery/ticket-registery.component";
-import { CalendarComponent } from "../calendar/calendar.component";
 import { AuthPermissionGuard } from "./auth-permission-guard.service";
 import { ProfileComponent } from "../profile/profile.component";
 import { DepartmentsComponent } from "../admin/departments/departments.component";
@@ -75,22 +69,17 @@ const appRoutes: Routes = [
     { path: 'dashboard', redirectTo: '',  pathMatch: 'full'},
     { path: 'profile', canActivate:[AuthGuard] ,component: ProfileComponent },
     { path: 'my-department', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL', 'VOL'] }, component: MyDepartmentComponent },
-    { path: 'box-office', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BoxOfficeComponent },
     { path: 'box-office/bookings', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BookingsComponent },
     { path: 'box-office/registration', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: RegistrationComponent },
     { path: 'box-office/registration/:id', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BookingFoundComponent },
-    { path: 'tickets', canActivate:[AuthGuard] ,component: TicketsComponent },
-    { path: 'calendar', canActivate:[AuthGuard] ,component: CalendarComponent },
-    { path: 'tickets/details/:id', component: TicketDetailsComponent },
     // Old spelling, kept as a redirect for anyone with the URL bookmarked —
     // see ACCOMMODATION_CONTEXT.md decision #10. AccomodationComponent
-    // itself is retired (unrouted, not deleted).
+    // itself was deleted in v1.13.0 (legacy cleanup).
     { path: 'accomodation', redirectTo: 'accommodation/inventory', pathMatch: 'full' },
     { path: 'accommodation/setup', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: AccommodationSetupComponent },
     { path: 'accommodation/inventory', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: AccommodationInventoryComponent },
     { path: 'admin', canActivate:[AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: AdminComponent, children: [
         { path: 'user', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: UserRegisteryComponent },
-        { path: 'tickets', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: TicketRegisteryComponent },
         { path: 'departments', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentsComponent },
         { path: 'departments/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentDetailComponent },
         { path: 'events', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventsComponent },

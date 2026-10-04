@@ -13,6 +13,7 @@ import { Tent } from '../../models/tent.model';
 import { User } from '../../core/user.model';
 import { AppSelectComponent } from '../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../shared/app-select/app-option.component';
+import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
 
 const mockEvent = { _id: 'event1', name: 'Test Event' } as EventItem;
 
@@ -52,10 +53,11 @@ describe('AccommodationInventoryComponent', () => {
   let eventServiceStub: { activeEvent: BehaviorSubject<EventItem | null>; currentActiveEvent: EventItem | null };
   let authServiceStub: { currentUser: User | null; hasPermission: jasmine.Spy };
   let notificationSpy: jasmine.SpyObj<NotificationService>;
+  let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
 
   beforeEach(async () => {
     localStorage.removeItem('accommodationInventoryTypeFilter:event1');
-    accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', ['getAllTents', 'updateTent', 'deleteTent']);
+    accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', ['getAllTents', 'updateTent', 'deleteTent', 'vacateTentSlot']);
     accomodationServiceSpy.getAllTents.and.returnValue(of(mockTents));
     activeEventSubject = new BehaviorSubject<EventItem | null>(mockEvent);
     eventServiceStub = {
@@ -64,6 +66,7 @@ describe('AccommodationInventoryComponent', () => {
     } as any;
     authServiceStub = { currentUser: { role: 'ADMIN' } as User, hasPermission: jasmine.createSpy('hasPermission').and.returnValue(false) };
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
+    confirmationServiceSpy = jasmine.createSpyObj('ConfirmationService', ['confirm']);
 
     await TestBed.configureTestingModule({
       declarations: [AccommodationInventoryComponent, AppSelectComponent, AppOptionComponent],
@@ -73,6 +76,7 @@ describe('AccommodationInventoryComponent', () => {
         { provide: EventService, useValue: eventServiceStub },
         { provide: AuthService, useValue: authServiceStub },
         { provide: NotificationService, useValue: notificationSpy },
+        { provide: ConfirmationService, useValue: confirmationServiceSpy },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -316,13 +320,24 @@ describe('AccommodationInventoryComponent', () => {
 
   describe('deleteTent', () => {
     it('does nothing if the user cancels the confirm dialog', () => {
-      spyOn(window, 'confirm').and.returnValue(false);
+      confirmationServiceSpy.confirm.and.returnValue(of(false));
       component.deleteTent(mockTents[0]);
       expect(accomodationServiceSpy.deleteTent).not.toHaveBeenCalled();
     });
 
+    it('asks via the generic ConfirmationService, styled as a destructive action', () => {
+      confirmationServiceSpy.confirm.and.returnValue(of(false));
+      component.deleteTent(mockTents[1]);
+      expect(confirmationServiceSpy.confirm).toHaveBeenCalledWith({
+        title: 'Delete tent',
+        message: 'Delete tent "SO1"?',
+        confirmText: 'Delete',
+        danger: true,
+      });
+    });
+
     it('deletes and reloads on confirm', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+      confirmationServiceSpy.confirm.and.returnValue(of(true));
       accomodationServiceSpy.deleteTent.and.returnValue(of({ message: 'Tent deleted successfully' }));
 
       component.deleteTent(mockTents[1]);
@@ -332,12 +347,62 @@ describe('AccommodationInventoryComponent', () => {
     });
 
     it('shows an error toast when blocked by occupancy', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+      confirmationServiceSpy.confirm.and.returnValue(of(true));
       accomodationServiceSpy.deleteTent.and.returnValue(throwError(() => ({ error: { message: "Can't delete a tent with 1 occupant(s) checked in — vacate them first" } })));
 
       component.deleteTent(mockTents[0]);
 
       expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith("Can't delete a tent with 1 occupant(s) checked in — vacate them first");
+    });
+  });
+
+  // Enhancement (2026-08-20 follow-up #3) — vacate an occupant directly from
+  // Inventory, reusing the same vacateTentSlot endpoint Box Office already
+  // calls. Confirmed first, matching this page's own deleteTent() above.
+  describe('vacateOccupant', () => {
+    const occupant = { _id: 'occ1', name: 'Ananya Rao' } as any;
+    const tent = { _id: 't1', tent_no: 'SH1' } as any;
+
+    it('does nothing if the user cancels the confirm dialog', () => {
+      confirmationServiceSpy.confirm.and.returnValue(of(false));
+      component.vacateOccupant(occupant, tent);
+      expect(accomodationServiceSpy.vacateTentSlot).not.toHaveBeenCalled();
+    });
+
+    it('asks via the generic ConfirmationService, naming the occupant and the tent, styled as a destructive action', () => {
+      confirmationServiceSpy.confirm.and.returnValue(of(false));
+      component.vacateOccupant(occupant, tent);
+      expect(confirmationServiceSpy.confirm).toHaveBeenCalledWith({
+        title: 'Vacate occupant',
+        message: 'Vacate "Ananya Rao" from tent SH1?',
+        confirmText: 'Vacate',
+        danger: true,
+      });
+    });
+
+    it('vacates and reloads on confirm', () => {
+      confirmationServiceSpy.confirm.and.returnValue(of(true));
+      accomodationServiceSpy.vacateTentSlot.and.returnValue(of({ tentPassItem: {} } as any));
+
+      component.vacateOccupant(occupant, tent);
+
+      expect(accomodationServiceSpy.vacateTentSlot).toHaveBeenCalledWith('occ1');
+      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Occupant vacated');
+    });
+
+    it('shows an error toast when the server rejects the vacate', () => {
+      confirmationServiceSpy.confirm.and.returnValue(of(true));
+      accomodationServiceSpy.vacateTentSlot.and.returnValue(throwError(() => ({ error: { message: 'Failed to vacate tent' } })));
+
+      component.vacateOccupant(occupant, tent);
+
+      expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('Failed to vacate tent');
+    });
+
+    it('does nothing if the occupant has no id', () => {
+      component.vacateOccupant({ name: 'No Id' } as any, tent);
+      expect(confirmationServiceSpy.confirm).not.toHaveBeenCalled();
+      expect(accomodationServiceSpy.vacateTentSlot).not.toHaveBeenCalled();
     });
   });
 });

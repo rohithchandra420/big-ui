@@ -38,14 +38,6 @@ export class AccomodationService {
         return this.http.delete<{ message: string }>(this.url + '/deleteTent/' + tentId);
     }
 
-    getAllFestivalTickets() {
-        return this.http.get<[[Shopcart]]>(this.url + '/getAllFestivalTickets');
-    }
-
-    removeOccupant(tentDetails) {
-        return this.http.post<Tent>(this.url + '/removeOccupant', tentDetails);
-    }
-
     // ── Shared allocate/vacate/suggest — used by Box Office Registration now
     //    and the Accommodation Inventory page too. Deliberately NOT duplicated
     //    into BoxOfficeService — see BOX_OFFICE_CONTEXT.md decision #7. ──

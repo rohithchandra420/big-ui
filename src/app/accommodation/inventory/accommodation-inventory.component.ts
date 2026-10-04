@@ -8,6 +8,7 @@ import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
 import { Tent, TentPassType } from '../../models/tent.model';
 import { Shopcart } from '../../models/ticket.model';
+import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
 
 // Enhancement (2026-08-20, ACCOMMODATION_CONTEXT.md follow-up #4). Scoped per
 // event — same pattern EventService already uses for the active event itself
@@ -72,6 +73,7 @@ export class AccommodationInventoryComponent implements OnInit, OnDestroy {
     private eventService: EventService,
     private authService: AuthService,
     private notificationService: NotificationService,
+    private confirmationService: ConfirmationService,
   ) { }
 
   // Subscribes rather than reading currentActiveEvent once — see the
@@ -241,13 +243,58 @@ export class AccommodationInventoryComponent implements OnInit, OnDestroy {
 
   deleteTent(tent: Tent) {
     if (!tent._id) return;
-    if (!window.confirm(`Delete tent "${tent.tent_no}"?`)) return;
-    this.accomodationService.deleteTent(tent._id).subscribe({
-      next: () => {
-        this.notificationService.openSucessSnackBar('Tent deleted');
-        this.loadTents();
-      },
-      error: (err) => this.notificationService.openErrorSnackBar(err?.error?.message || 'Error deleting tent')
+    this.confirmationService.confirm({
+      title: 'Delete tent',
+      message: `Delete tent "${tent.tent_no}"?`,
+      confirmText: 'Delete',
+      danger: true,
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.accomodationService.deleteTent(tent._id!).subscribe({
+        next: () => {
+          this.notificationService.openSucessSnackBar('Tent deleted');
+          this.loadTents();
+        },
+        error: (err) => this.notificationService.openErrorSnackBar(err?.error?.message || 'Error deleting tent')
+      });
+    });
+  }
+
+  /** Enhancement (2026-08-20 follow-up #3) — lets staff vacate an occupant
+   *  directly from Inventory instead of needing to go to Box Office for it.
+   *  Reuses the same vacateTentSlot endpoint Box Office's AttendeeListComponent
+   *  already calls — no new backend surface, same atomic DB update, so a
+   *  concurrent action from Box Office on the same tent is handled exactly as
+   *  it already is between two Box Office staff today. Confirmed first,
+   *  matching this page's own deleteTent() above (Box Office's identical
+   *  button has no confirm step, but this page already established one for
+   *  its own destructive action). Deliberately vacate-only, no reassignment —
+   *  moving someone to a different tent still goes through Box Office's
+   *  AllocateTentComponent, which already owns the more complex gender/linked-
+   *  pass logic for that.
+   *
+   *  Enhancement (2026-10-02) — confirm prompt is now the app's own
+   *  ConfirmDialogComponent (MatDialog-based, on-brand) instead of the
+   *  native window.confirm(), as a trial run of that new generic component
+   *  before migrating other confirm() call sites to it. Message now also
+   *  names the tent being vacated from, not just the occupant.
+   */
+  vacateOccupant(occupant: Shopcart, tent: Tent) {
+    if (!occupant._id) return;
+    this.confirmationService.confirm({
+      title: 'Vacate occupant',
+      message: `Vacate "${occupant.name || 'this occupant'}" from tent ${tent.tent_no}?`,
+      confirmText: 'Vacate',
+      danger: true,
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.accomodationService.vacateTentSlot(occupant._id!).subscribe({
+        next: () => {
+          this.notificationService.openSucessSnackBar('Occupant vacated');
+          this.loadTents();
+        },
+        error: (err) => this.notificationService.openErrorSnackBar(err?.error?.message || 'Error vacating occupant')
+      });
     });
   }
 }
