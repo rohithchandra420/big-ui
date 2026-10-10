@@ -11,13 +11,14 @@ export interface DeptInfo {
   _id: string;
   name: string;
   description: string;
-  tls: { _id: string; name: string }[];
+  tls: { _id: string; name: string; avatarVersion?: number }[];
   volunteerCount: number;
-  volunteers: { _id: string; name: string }[];
+  volunteers: { _id: string; name: string; avatarVersion?: number }[];
 }
 
 export interface AttendanceRosterEntry {
   userId: string;
+  avatarVersion?: number;
   name: string;
   // False when this person has since transferred to a different department —
   // grandfathered in so their same-day history stays visible/editable here.
@@ -51,6 +52,7 @@ export interface MarkAttendanceResponse {
 
 export interface AttendanceReportRow {
   userId: string;
+  avatarVersion?: number;
   name: string;
   morning: number;
   afternoon: number;
@@ -102,6 +104,7 @@ export interface AttendanceMatrixCell {
 
 export interface AttendanceMatrixRow {
   userId: string;
+  avatarVersion?: number;
   name: string;
   current: boolean;
   cells: { [date: string]: AttendanceMatrixCell };
@@ -174,6 +177,7 @@ export interface UsersMatrixCell {
 
 export interface UsersMatrixRow {
   userId: string;
+  avatarVersion?: number;
   name: string;
   current: boolean;
   cells: { [date: string]: UsersMatrixCell };

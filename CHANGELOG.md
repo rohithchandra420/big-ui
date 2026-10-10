@@ -9,6 +9,36 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.14.0] - 2026-10-10
+
+### Added
+- **Users page redesign** (Admin > Users), now laid out like Bookings:
+  - full-width page;
+  - a summary row of tappable cards that filter the table: Admins, Team Leads, Volunteers, No Department, and Deactivated (DEV/DIR only);
+  - search by name or email, plus Role, Department and Status (Active / Deactivated / All, DEV/DIR only) filters, and a Clear button;
+  - a paged table, sorted by name;
+  - a right-side panel that shows the user's full details first (department, access level, dates, per-department access), with **Edit**, **Delete** and **Reactivate** actions. "+ New User" opens the same panel in create mode.
+- **Delete user** with a confirmation that explains the outcome before anything happens: either a permanent delete (no records), or deactivation (has records, which are kept). DEV/DIR can **Reactivate** a deactivated user.
+- **Profile photos.**
+  - Upload from the device or take one with the camera, then drag and zoom to position a round crop. The photo is compressed in the browser to about 3–6 KB.
+  - Shown in the Users table and panel, the sidebar, My Profile, Departments (cards and detail chips) and My Department (TL row and every people table). The person's initial remains the fallback.
+  - Users change their own photo on My Profile; admin roles can change anyone's from the Users panel.
+  - Photos load once and are cached, so they aren't downloaded again on later views.
+- Reusable building blocks for future features: an image cropper (circle or square crop) and a photo picker dialog (upload or camera, then crop), both in `shared/`.
+
+### Changed
+- The Users page's create/edit form moved into its own `UserFormComponent`. It also now checks that the password and confirm-password fields match, which it didn't before.
+- Production build: the initial bundle's warning budget was raised from 2 MB to 2.1 MB. The error limit is unchanged.
+
+### Removed
+- The non-functional "Change photo" placeholder on My Profile (it previewed a file but never saved it), replaced by the real photo feature.
+
+### Notes
+- Paired with big-api 1.10.0, which adds delete/deactivate/reactivate and the profile photo endpoints.
+- 476/476 tests passing (70 new); production build clean.
+
+---
+
 ## [1.13.0] - 2026-10-04
 
 ### Removed

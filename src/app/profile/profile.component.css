@@ -28,27 +28,37 @@
   flex-shrink: 0;
 }
 
+/* Size/colour come from <app-user-avatar>; this keeps the lift shadow */
 .profile-avatar {
-  width: 72px;
-  height: 72px;
   border-radius: 50%;
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 28px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   box-shadow: var(--shadow-sm);
 }
 
-.avatar-upload-label {
+.avatar-actions {
+  display: flex;
+  gap: 10px;
   margin-top: 6px;
+}
+
+.avatar-upload-label {
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
   font-size: 11px;
   color: var(--color-primary);
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.avatar-upload-label:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.avatar-upload-label.avatar-remove {
+  color: #b91c1c;
 }
 
 .profile-title {

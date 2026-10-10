@@ -1,0 +1,84 @@
+.pp-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.pp-choose {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 360px) {
+  .pp-choose { grid-template-columns: 1fr; }
+}
+
+.pp-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 18px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--surface-card);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.pp-option:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--surface-input);
+}
+
+.pp-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pp-option-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.pp-option-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pp-option-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.pp-camera {
+  display: flex;
+  justify-content: center;
+}
+
+.pp-video-wrap {
+  overflow: hidden;
+  border-radius: 10px;
+  background: #1a1a1a;
+}
+
+.pp-video-wrap.pp-video-circle {
+  border-radius: 50%;
+}
+
+.pp-video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Selfie-style mirror — capture() saves it mirrored the same way */
+  transform: scaleX(-1);
+  display: block;
+}

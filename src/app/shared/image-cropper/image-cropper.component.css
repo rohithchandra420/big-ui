@@ -1,0 +1,88 @@
+.cropper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.crop-viewport {
+  position: relative;
+  overflow: hidden;
+  background: #1a1a1a;
+  border-radius: 10px;
+  cursor: grab;
+  /* Pointer events drive drag/pinch — stop the browser scrolling/zooming the page */
+  touch-action: none;
+  user-select: none;
+  /* Never let CSS shrink it — the crop maths assumes exactly viewportSize px.
+     Callers pick a viewportSize that fits (see PhotoPickerDialogComponent). */
+  flex-shrink: 0;
+}
+
+.crop-viewport:active {
+  cursor: grabbing;
+}
+
+.crop-viewport:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.crop-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  max-width: none;
+  pointer-events: none;
+}
+
+/* Darkens everything outside the crop area. The square variant still shows a
+   thin frame so the edge is visible on light photos. */
+.crop-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+}
+
+.crop-mask-circle {
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+}
+
+.crop-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ddd;
+  font-size: 12px;
+}
+
+.zoom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 260px;
+}
+
+.zoom-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--color-primary);
+}
+
+.zoom-icon {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  width: 12px;
+  text-align: center;
+}
+
+.crop-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
