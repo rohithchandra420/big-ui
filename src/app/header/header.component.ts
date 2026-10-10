@@ -1,6 +1,7 @@
 import { Component, EventEmitter, OnDestroy, OnInit, Output } from "@angular/core";
 import { AuthService } from "../core/auth.service";
 import { EventService } from "../core/event.service";
+import { AvatarService } from "../core/avatar.service";
 import { User } from "../core/user.model";
 import { EventItem } from "../models/event.model";
 import { Subscription } from "rxjs";
@@ -18,6 +19,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
     userRole: string = '';
     userName: string = '';
+    userId = '';
+    /** The stored session user doesn't carry avatarVersion, so it's fetched
+     *  once per login; changes made this session arrive via AvatarService. */
+    avatarVersion = 0;
     isAuthenticated = false;
     readonly appVersion = environment.version;
 
@@ -33,7 +38,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
     readonly manageDeptsRoles = ['DEV', 'DIR', 'ADMIN'];
     readonly manageEventsRoles = ['DEV', 'DIR', 'ADMIN'];
 
-    constructor(private authService: AuthService, private eventService: EventService) {}
+    constructor(
+        private authService: AuthService,
+        private eventService: EventService,
+        private avatarService: AvatarService
+    ) {}
 
     /** Box Office is visible to admin roles, or users with the permission/department access */
     get canSeeBoxOffice(): boolean {
@@ -84,6 +93,17 @@ export class HeaderComponent implements OnInit, OnDestroy {
             this.userName = user ? user.name : 'Guest';
             this.isAuthenticated = !!user;
             this.userRole = user ? user.role : '';
+
+            const id = user?._id || '';
+            if (id !== this.userId) {
+                this.userId = id;
+                this.avatarVersion = 0;
+                if (id) {
+                    this.avatarService.fetchVersion(id).subscribe(v => {
+                        if (this.userId === id) this.avatarVersion = v;
+                    });
+                }
+            }
         });
         this.eventsSub = this.eventService.events.subscribe(events => this.events = events);
         this.activeEventSub = this.eventService.activeEvent.subscribe(event => this.activeEvent = event);

@@ -128,7 +128,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let row of usersMatrix.users">
-              <td class="sticky-name-col">{{ row.name }} <span class="former-tag" *ngIf="!row.current">(transferred)</span></td>
+              <td class="sticky-name-col"><span class="name-cell"><app-user-avatar [userId]="row.userId" [name]="row.name" [version]="row.avatarVersion" [size]="20" [muted]="!row.current"></app-user-avatar>{{ row.name }} <span class="former-tag" *ngIf="!row.current">(transferred)</span></span></td>
               <td *ngFor="let date of usersMatrix.dates">
                 <span class="att-dots">
                   <span class="att-dot" [ngClass]="dotClass(usersMatrixCell(row, date).morning.state)" [data-tooltip]="slotTooltip('Morning', usersMatrixCell(row, date).morning)"></span>
@@ -166,7 +166,18 @@
       </div>
       <p class="dept-desc" *ngIf="deptInfo.description">{{ deptInfo.description }}</p>
       <p class="dept-desc muted" *ngIf="!deptInfo.description">No description</p>
-      <div class="meta-row"><span class="meta-label">TL</span><span class="meta-value">{{ tlNames() }}</span></div>
+      <div class="meta-row">
+        <span class="meta-label">TL</span>
+        <span class="meta-value">
+          <span class="tl-list" *ngIf="deptInfo.tls.length; else noTl">
+            <span class="name-cell" *ngFor="let t of deptInfo.tls">
+              <app-user-avatar [userId]="t._id" [name]="t.name" [version]="t.avatarVersion" [size]="18"></app-user-avatar>
+              {{ t.name }}
+            </span>
+          </span>
+          <ng-template #noTl>—</ng-template>
+        </span>
+      </div>
       <div class="meta-row"><span class="meta-label">Volunteers</span><span class="meta-value">{{ deptInfo.volunteerCount }}</span></div>
     </div>
 
@@ -197,7 +208,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let entry of roster">
-              <td class="sticky-name-col">{{ entry.name }} <span class="former-tag" *ngIf="!entry.current">(transferred)</span></td>
+              <td class="sticky-name-col"><span class="name-cell"><app-user-avatar [userId]="entry.userId" [name]="entry.name" [version]="entry.avatarVersion" [size]="20" [muted]="!entry.current"></app-user-avatar>{{ entry.name }} <span class="former-tag" *ngIf="!entry.current">(transferred)</span></span></td>
               <td>
                 <label class="cb-wrap">
                   <input type="checkbox" [checked]="entry.morning" (change)="toggleSlot(entry, 'morning')" [disabled]="!canMark">
@@ -250,7 +261,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let row of reportRows">
-              <td class="sticky-name-col">{{ row.name }}</td>
+              <td class="sticky-name-col"><span class="name-cell"><app-user-avatar [userId]="row.userId" [name]="row.name" [version]="row.avatarVersion" [size]="20"></app-user-avatar>{{ row.name }}</span></td>
               <td>{{ row.daysMarked }}</td>
               <td>{{ row.morning }}</td>
               <td>{{ row.afternoon }}</td>
@@ -284,7 +295,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let row of matrix.users">
-              <td class="sticky-name-col">{{ row.name }} <span class="former-tag" *ngIf="!row.current">(transferred)</span></td>
+              <td class="sticky-name-col"><span class="name-cell"><app-user-avatar [userId]="row.userId" [name]="row.name" [version]="row.avatarVersion" [size]="20" [muted]="!row.current"></app-user-avatar>{{ row.name }} <span class="former-tag" *ngIf="!row.current">(transferred)</span></span></td>
               <td *ngFor="let date of matrix.dates">
                 <span class="att-dots">
                   <span class="att-dot" [ngClass]="dotClass(matrixCell(row, date).morning)" data-tooltip="Morning"></span>

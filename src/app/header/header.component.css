@@ -159,17 +159,9 @@
 }
 
 /* Avatar circle */
+/* Size/colour come from <app-user-avatar>; this just keeps the lift shadow */
 .user-avatar {
-  width: 28px;
-  height: 28px;
   border-radius: 50%;
-  background: var(--color-primary);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
   flex-shrink: 0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }

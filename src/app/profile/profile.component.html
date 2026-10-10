@@ -11,13 +11,18 @@
     <!-- Header -->
     <div class="profile-header">
       <div class="profile-avatar-wrap">
-        <div class="profile-avatar">
-          {{ (profileForm.get('name')?.value || 'U').charAt(0).toUpperCase() }}
+        <app-user-avatar class="profile-avatar"
+                         [userId]="loggedInUser?._id"
+                         [name]="profileForm.get('name')?.value || 'U'"
+                         [version]="profileData?.avatarVersion"
+                         [size]="72"></app-user-avatar>
+        <div class="avatar-actions">
+          <button type="button" class="avatar-upload-label" [disabled]="photoBusy" (click)="changePhoto()">
+            {{ hasPhoto ? 'Change photo' : 'Add photo' }}
+          </button>
+          <button type="button" class="avatar-upload-label avatar-remove" *ngIf="hasPhoto"
+                  [disabled]="photoBusy" (click)="removePhoto()">Remove</button>
         </div>
-        <label *ngIf="isEditMode" class="avatar-upload-label">
-          Change photo
-          <input type="file" (change)="onFileSelect($event)" accept="image/*" hidden>
-        </label>
       </div>
       <div class="profile-title">
         <div>

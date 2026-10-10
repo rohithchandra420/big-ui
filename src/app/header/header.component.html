@@ -126,7 +126,8 @@
   <!-- User block at bottom -->
   <div class="sidebar-user" *ngIf="isAuthenticated">
     <a class="user-info" routerLink="/profile" (click)="onNavClick()" title="View profile">
-      <div class="user-avatar">{{ userName.charAt(0) | uppercase }}</div>
+      <app-user-avatar class="user-avatar" [userId]="userId" [name]="userName"
+                       [version]="avatarVersion" [size]="28"></app-user-avatar>
       <div class="user-details">
         <div class="user-name-text">{{ userName }}</div>
         <div class="user-role-text">{{ userRole }}</div>

@@ -1,0 +1,85 @@
+/* Lives inside the 440px side panel, so fields stack in one column except the
+   short pairs (passwords, role/department) which use .form-two-col. */
+.user-form .field {
+  margin-bottom: 12px;
+}
+
+/* ── Department access table ─────────────────────────────── */
+.dept-access-table {
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.dept-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 8px;
+}
+
+.dept-row:last-child {
+  border-bottom: none;
+}
+
+.dept-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.chip-group {
+  display: flex;
+  gap: 6px;
+}
+
+.access-chip {
+  padding: 3px 12px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #555;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+
+.access-chip.chip-inactive {
+  border-color: #ddd;
+  background: #fff;
+  color: #999;
+}
+
+.access-chip:hover {
+  border-color: #999;
+  color: #1a1a1a;
+}
+
+.access-chip.chip-read {
+  background: #dcfce7;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.access-chip.chip-write {
+  background: #dbeafe;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.access-chip.chip-manage {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.form-actions {
+  justify-content: flex-end;
+  margin-top: 16px;
+}

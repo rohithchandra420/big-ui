@@ -225,6 +225,20 @@
   z-index: 1;
 }
 
+/* Avatar + name, used in every people column and the TL row */
+.name-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.tl-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
 .matrix-totals-row td {
   font-weight: 600;
   color: var(--text-primary);

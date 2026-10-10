@@ -106,8 +106,9 @@
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 12px;
+  gap: 6px;
+  /* Tighter left padding — the avatar sits flush against the pill's edge */
+  padding: 3px 12px 3px 4px;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 500;

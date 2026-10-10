@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AdminService, DeptDetail } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
 
-interface UserChip { _id: string; name: string; departments?: any[]; }
+interface UserChip { _id: string; name: string; avatarVersion?: number; departments?: any[]; }
 
 @Component({
   selector: 'app-department-detail',
@@ -112,7 +112,7 @@ export class DepartmentDetailComponent implements OnInit {
       .filter(u => ['TL', 'DIR', 'ADMIN'].includes(u.role?.name || ''))
       .filter(u => !existingIds.has(u._id))
       .filter(u => u.name.toLowerCase().includes(s))
-      .map(u => ({ _id: u._id, name: u.name }));
+      .map(u => ({ _id: u._id, name: u.name, avatarVersion: u.avatarVersion }));
   }
 
   // Return VOL users that match search and are not already added
@@ -123,12 +123,12 @@ export class DepartmentDetailComponent implements OnInit {
       .filter(u => u.role?.name === 'VOL')
       .filter(u => !existingIds.has(u._id))
       .filter(u => u.name.toLowerCase().includes(s))
-      .map(u => ({ _id: u._id, name: u.name, departments: u.departments }));
+      .map(u => ({ _id: u._id, name: u.name, avatarVersion: u.avatarVersion, departments: u.departments }));
   }
 
   // Add a TL chip and refresh the filtered options list
   onTlSelected(user: UserChip) {
-    this.editedTls.push({ _id: user._id, name: user.name });
+    this.editedTls.push({ _id: user._id, name: user.name, avatarVersion: user.avatarVersion });
     this.tlSearchCtrl.setValue('');
     this.filteredTlOptions = this.filterTlUsers('');
   }
@@ -136,7 +136,7 @@ export class DepartmentDetailComponent implements OnInit {
   // Add a VOL chip; if they belong to a different dept, record a reassignment warning
   onVolSelected(user: UserChip) {
     const fullUser = this.allUsers.find(u => u._id === user._id);
-    this.editedVolunteers.push({ _id: user._id, name: user.name, departments: fullUser?.departments });
+    this.editedVolunteers.push({ _id: user._id, name: user.name, avatarVersion: fullUser?.avatarVersion, departments: fullUser?.departments });
 
     const depts: any[] = fullUser?.departments || [];
     const otherDept = depts.find(da => {

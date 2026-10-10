@@ -29,7 +29,10 @@
           Team Leaders
         </h3>
         <div class="chip-row" *ngIf="detail.tls.length > 0; else noTls">
-          <span class="chip chip-tl" *ngFor="let t of detail.tls">{{ t.name }}</span>
+          <span class="chip chip-tl" *ngFor="let t of detail.tls">
+            <app-user-avatar [userId]="t._id" [name]="t.name" [version]="t.avatarVersion" [size]="18"></app-user-avatar>
+            {{ t.name }}
+          </span>
         </div>
         <ng-template #noTls><p class="empty-text">No team leaders assigned</p></ng-template>
       </section>
@@ -40,7 +43,10 @@
           Volunteers ({{ detail.volunteers.length }})
         </h3>
         <div class="chip-row" *ngIf="detail.volunteers.length > 0; else noVols">
-          <span class="chip chip-vol" *ngFor="let v of detail.volunteers">{{ v.name }}</span>
+          <span class="chip chip-vol" *ngFor="let v of detail.volunteers">
+            <app-user-avatar [userId]="v._id" [name]="v.name" [version]="v.avatarVersion" [size]="18"></app-user-avatar>
+            {{ v.name }}
+          </span>
         </div>
         <ng-template #noVols><p class="empty-text">No volunteers assigned</p></ng-template>
       </section>
@@ -69,6 +75,7 @@
         </h3>
         <div class="chip-row">
           <span class="chip chip-tl removable" *ngFor="let t of editedTls">
+            <app-user-avatar [userId]="t._id" [name]="t.name" [version]="t.avatarVersion" [size]="18"></app-user-avatar>
             {{ t.name }}
             <button class="chip-remove" (click)="removeTl(t._id)" title="Remove">×</button>
           </span>
@@ -96,6 +103,7 @@
         </h3>
         <div class="chip-row">
           <span class="chip chip-vol removable" *ngFor="let v of editedVolunteers">
+            <app-user-avatar [userId]="v._id" [name]="v.name" [version]="v.avatarVersion" [size]="18"></app-user-avatar>
             {{ v.name }}
             <button class="chip-remove" (click)="removeVol(v._id)" title="Remove">×</button>
           </span>

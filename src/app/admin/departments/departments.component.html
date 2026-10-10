@@ -30,7 +30,15 @@
 
         <div class="meta-row">
           <span class="meta-label">TL</span>
-          <span class="meta-value">{{ tlNames(dept) || '—' }}</span>
+          <span class="meta-value">
+            <span class="tl-list" *ngIf="dept.tls.length; else noTl">
+              <span class="tl-item" *ngFor="let t of dept.tls">
+                <app-user-avatar [userId]="t._id" [name]="t.name" [version]="t.avatarVersion" [size]="18"></app-user-avatar>
+                {{ t.name }}
+              </span>
+            </span>
+            <ng-template #noTl>—</ng-template>
+          </span>
         </div>
         <div class="meta-row">
           <span class="meta-label">Volunteers</span>
