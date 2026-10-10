@@ -6,6 +6,8 @@ import { AuthService } from '../core/auth.service';
 import { NotificationService } from '../core/notification.service';
 import { DepartmentService, MyAttendanceRecord } from '../core/department.service';
 import { deptShortCode } from '../core/department.utils';
+import { AvatarService } from '../core/avatar.service';
+import { ConfirmationService } from '../shared/confirm-dialog/confirmation.service';
 
 interface PermissionEntry {
   moduleKey: string;
@@ -26,7 +28,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   loggedInUser: any;
   loggedInRole: string = '';
   profileData: any;
-  profilePreview: string = 'assets/default-user.png';
+  photoBusy = false;
 
   memberDepartments: string[] = [];
   permissionEntries: PermissionEntry[] = [];
@@ -45,7 +47,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private profileService: ProfileService,
     private authService: AuthService,
     private notificationService: NotificationService,
-    private departmentService: DepartmentService
+    private departmentService: DepartmentService,
+    private avatarService: AvatarService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit(): void {
@@ -143,13 +147,50 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
 
-  onFileSelect(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => { this.profilePreview = reader.result as string; };
-      reader.readAsDataURL(file);
-    }
+  get hasPhoto(): boolean {
+    return !!this.loggedInUser?._id
+      && this.avatarService.effectiveVersion(this.loggedInUser._id, this.profileData?.avatarVersion) > 0;
+  }
+
+  changePhoto() {
+    if (!this.loggedInUser?._id || this.photoBusy) return;
+    this.photoBusy = true;
+    this.avatarService.changePhoto(this.loggedInUser._id, 'Your profile photo').subscribe({
+      next: version => {
+        if (this.profileData) this.profileData.avatarVersion = version;
+        this.notificationService.openSucessSnackBar('Photo updated');
+      },
+      error: err => {
+        this.photoBusy = false;
+        this.notificationService.openErrorSnackBar(err?.error?.message || 'Could not save photo');
+      },
+      // Also fires when the picker is cancelled
+      complete: () => this.photoBusy = false
+    });
+  }
+
+  removePhoto() {
+    if (!this.loggedInUser?._id || this.photoBusy) return;
+    this.confirmationService.confirm({
+      title: 'Remove Photo',
+      message: 'Remove your profile photo? Your initial will be shown instead.',
+      confirmText: 'Remove',
+      danger: true
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.photoBusy = true;
+      this.avatarService.remove(this.loggedInUser._id).subscribe({
+        next: () => {
+          this.photoBusy = false;
+          if (this.profileData) this.profileData.avatarVersion = 0;
+          this.notificationService.openSucessSnackBar('Photo removed');
+        },
+        error: err => {
+          this.photoBusy = false;
+          this.notificationService.openErrorSnackBar(err?.error?.message || 'Could not remove photo');
+        }
+      });
+    });
   }
 
   ngOnDestroy() {

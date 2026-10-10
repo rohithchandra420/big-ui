@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>{{ title }}</h2>
+
+<mat-dialog-content>
+  <div class="pp-error" *ngIf="error">{{ error }}</div>
+
+  <!-- Step 1: choose a source -->
+  <div class="pp-choose" *ngIf="step === 'choose'">
+    <button type="button" class="pp-option" (click)="chooseFile()">
+      <span class="pp-option-icon" aria-hidden="true">🖼️</span>
+      <span class="pp-option-label">Upload photo</span>
+      <span class="pp-option-sub">From your device</span>
+    </button>
+    <button type="button" class="pp-option" (click)="startCamera()" [disabled]="!cameraSupported">
+      <span class="pp-option-icon" aria-hidden="true">📷</span>
+      <span class="pp-option-label">Take photo</span>
+      <span class="pp-option-sub">{{ cameraSupported ? 'Use your camera' : 'Not available in this browser' }}</span>
+    </button>
+    <input #fileInput type="file" accept="image/*" hidden (change)="onFileSelected($event)">
+  </div>
+
+  <!-- Step 2: live camera -->
+  <div class="pp-camera" *ngIf="step === 'camera'">
+    <div class="pp-video-wrap" [class.pp-video-circle]="shape === 'circle'"
+         [style.width.px]="viewportSize" [style.height.px]="viewportSize">
+      <video #video autoplay playsinline muted></video>
+    </div>
+  </div>
+
+  <!-- Step 3: crop -->
+  <div *ngIf="step === 'crop'">
+    <app-image-cropper [imageSrc]="imageSrc"
+                       [shape]="shape"
+                       [viewportSize]="viewportSize"
+                       (loadError)="onCropLoadError()">
+    </app-image-cropper>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button class="btn-ghost" *ngIf="step === 'choose'" (click)="cancel()">Cancel</button>
+
+  <ng-container *ngIf="step === 'camera'">
+    <button class="btn-ghost" (click)="back()">Back</button>
+    <button class="btn-cta" (click)="capture()">Capture</button>
+  </ng-container>
+
+  <ng-container *ngIf="step === 'crop'">
+    <button class="btn-ghost" (click)="back()" [disabled]="saving">Back</button>
+    <button class="btn-cta" (click)="save()" [disabled]="saving">{{ saving ? 'Saving…' : 'Save Photo' }}</button>
+  </ng-container>
+</mat-dialog-actions>

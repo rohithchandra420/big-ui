@@ -1,0 +1,36 @@
+<div class="cropper">
+  <div class="crop-viewport"
+       tabindex="0"
+       role="application"
+       aria-label="Photo crop area. Drag or use arrow keys to move, plus and minus to zoom."
+       [style.width.px]="viewportSize"
+       [style.height.px]="viewportSize"
+       (pointerdown)="onPointerDown($event)"
+       (pointermove)="onPointerMove($event)"
+       (pointerup)="onPointerUp($event)"
+       (pointercancel)="onPointerUp($event)"
+       (wheel)="onWheel($event)"
+       (keydown)="onKeydown($event)">
+    <img *ngIf="loaded && image"
+         class="crop-img"
+         [src]="imageSrc"
+         alt=""
+         draggable="false"
+         [style.width.px]="image.naturalWidth"
+         [style.height.px]="image.naturalHeight"
+         [style.transform]="transform">
+    <div class="crop-mask" [class.crop-mask-circle]="shape === 'circle'"></div>
+    <div class="crop-loading" *ngIf="!loaded">Loading…</div>
+  </div>
+
+  <div class="zoom-row" *ngIf="loaded">
+    <span class="zoom-icon" aria-hidden="true">−</span>
+    <input type="range"
+           aria-label="Zoom"
+           [min]="1" [max]="maxZoom" step="0.01"
+           [value]="zoom"
+           (input)="onSlider($any($event.target).value)">
+    <span class="zoom-icon" aria-hidden="true">+</span>
+  </div>
+  <div class="crop-hint" *ngIf="loaded">Drag to position · scroll or pinch to zoom</div>
+</div>

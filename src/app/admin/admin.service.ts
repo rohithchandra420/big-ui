@@ -6,7 +6,7 @@ export interface DeptSummary {
   _id: string;
   name: string;
   description: string;
-  tls: { _id: string; name: string }[];
+  tls: { _id: string; name: string; avatarVersion?: number }[];
   volunteerCount: number;
 }
 
@@ -14,8 +14,16 @@ export interface DeptDetail {
   _id: string;
   name: string;
   description: string;
-  tls: { _id: string; name: string }[];
-  volunteers: { _id: string; name: string; departments: any[] }[];
+  tls: { _id: string; name: string; avatarVersion?: number }[];
+  volunteers: { _id: string; name: string; avatarVersion?: number; departments: any[] }[];
+}
+
+export interface UserDeleteCheck {
+  action: 'delete' | 'deactivate';
+  hasHistory: boolean;
+  attendanceCount: number;
+  attendanceMarkedCount: number;
+  eventsCreatedCount: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -56,8 +64,12 @@ export class AdminService {
         return this.http.post<any>(this.url + "/createUser", userDetails);
     }
 
-    getAllUsers() {
-        return this.http.get<any[]>(this.url + '/getAllUsers');
+    /** includeInactive is only honoured server-side for DEV/DIR — it's how the
+     *  Users page shows deactivated users to them. Every other caller wants
+     *  live users only, so it defaults to false. */
+    getAllUsers(includeInactive = false) {
+        const query = includeInactive ? '?includeInactive=true' : '';
+        return this.http.get<any[]>(this.url + '/getAllUsers' + query);
     }
 
     updateUser(updatedUser: any) {
@@ -68,7 +80,17 @@ export class AdminService {
         return this.http.patch<any>(this.url + '/updateDepartmentAccess', payload);
     }
 
+    /** Tells the confirm prompt whether Delete will hard-delete or deactivate. */
+    checkDeleteUser(userId: string) {
+        return this.http.get<UserDeleteCheck>(this.url + '/deleteUser/' + userId + '/check');
+    }
+
+    /** Hard-deletes a user with no history; deactivates one who has history. */
     deleteUser(userId: string) {
-        return this.http.delete(this.url + '/deleteUser/' + userId);
+        return this.http.delete<{ result: 'deleted' | 'deactivated' }>(this.url + '/deleteUser/' + userId);
+    }
+
+    reactivateUser(userId: string) {
+        return this.http.patch<any>(this.url + '/reactivateUser/' + userId, {});
     }
 }

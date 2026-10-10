@@ -1,0 +1,9 @@
+<span class="ua"
+      [class.ua-muted]="muted"
+      [style.width.px]="size"
+      [style.height.px]="size"
+      [style.font-size.px]="fontSize"
+      [attr.title]="name || null">
+  <img *ngIf="photoUrl; else initialTpl" [src]="photoUrl" [alt]="name" (error)="onImageError()">
+  <ng-template #initialTpl>{{ initial }}</ng-template>
+</span>

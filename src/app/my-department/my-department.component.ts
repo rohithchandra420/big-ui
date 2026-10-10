@@ -383,10 +383,6 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
   }
 
-  tlNames(): string {
-    return this.deptInfo?.tls.map(t => t.name).join(', ') || '—';
-  }
-
   private today(): string {
     return new Date().toISOString().substring(0, 10);
   }

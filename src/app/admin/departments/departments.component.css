@@ -102,6 +102,18 @@
   flex: 1;
 }
 
+.tl-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.tl-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 /* ── Card actions ────────────────────────────────────────── */
 .dept-card-actions {
   display: flex;

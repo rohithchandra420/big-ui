@@ -37,6 +37,7 @@ import { AccomodationService } from './accomodation/accomodation.service';
 import { UtcToLocalTimePipe } from './pipes/utc-to-local-time.pipe';
 import { AdminMenuComponent } from './admin/admin-menu/admin-menu.component';
 import { UserRegisteryComponent } from './admin/user-registery/user-registery.component';
+import { UserFormComponent } from './admin/user-registery/user-form/user-form.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -67,6 +68,9 @@ import { AccommodationInventoryComponent } from './accommodation/inventory/accom
 import { AppSelectComponent } from './shared/app-select/app-select.component';
 import { AppOptionComponent } from './shared/app-select/app-option.component';
 import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.component';
+import { UserAvatarComponent } from './shared/user-avatar/user-avatar.component';
+// ImageCropperComponent / PhotoPickerDialogComponent are standalone — no
+// declaration needed here; AvatarService.changePhoto() opens the picker.
 
 // #QRCode Scanner: Necessary to solve the problem of losing internet connection
 LOAD_WASM().subscribe()
@@ -84,6 +88,7 @@ LOAD_WASM().subscribe()
     UtcToLocalTimePipe,
     AdminMenuComponent,
     UserRegisteryComponent,
+    UserFormComponent,
     HasPermissionDirective,
     TooltipDirective,
     ProfileComponent,
@@ -109,7 +114,8 @@ LOAD_WASM().subscribe()
     AccommodationInventoryComponent,
     AppSelectComponent,
     AppOptionComponent,
-    ConfirmDialogComponent
+    ConfirmDialogComponent,
+    UserAvatarComponent
   ],
   imports: [
     BrowserModule,
