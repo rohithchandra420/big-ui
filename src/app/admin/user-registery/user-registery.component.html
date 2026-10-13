@@ -58,13 +58,13 @@
 
           <app-select class="filter-select" [(ngModel)]="roleFilter" (ngModelChange)="onFilterChange()">
             <app-option value="">All roles</app-option>
-            <app-option *ngFor="let r of roleFilterOptions" [value]="r">{{ r }}</app-option>
+            <app-option *ngFor="let r of roleFilterOptions; trackBy: trackRoleOption" [value]="r">{{ r }}</app-option>
           </app-select>
 
           <app-select class="filter-select" *ngIf="deptFilterOptions.length > 1"
                       [(ngModel)]="deptFilter" (ngModelChange)="onFilterChange()">
             <app-option value="">All departments</app-option>
-            <app-option *ngFor="let d of deptFilterOptions" [value]="d._id">{{ d.name }}</app-option>
+            <app-option *ngFor="let d of deptFilterOptions; trackBy: trackDeptOption" [value]="d._id">{{ d.name }}</app-option>
           </app-select>
 
           <app-select class="filter-select" *ngIf="canSeeDeactivated"
