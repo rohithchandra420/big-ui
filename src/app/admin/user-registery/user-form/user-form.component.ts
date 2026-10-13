@@ -67,11 +67,24 @@ export class UserFormComponent implements OnInit {
   }
 
   /** A TL doesn't get the roles list (no /admin/roles access) — fall back to
-   *  the edited user's own role so the locked dropdown still shows it. */
+   *  the edited user's own role so the locked dropdown still shows it.
+   *  Bug fix (v1.14.1): the fallback is cached, not rebuilt on every read — a
+   *  fresh array/object each change-detection pass made *ngFor re-create the
+   *  <app-option> every pass, the same freeze as the Users page filters. */
   get roleOptions(): { _id: string; name: string }[] {
     if (this.roles.length) return this.roles;
-    const own = this.user?.role?.name || this.user?.role;
-    return own ? [{ _id: '', name: own }] : [];
+    const own = this.user?.role?.name || this.user?.role || '';
+    if (own !== this.fallbackRoleName) {
+      this.fallbackRoleName = own;
+      this.fallbackRoleOptions = own ? [{ _id: '', name: own }] : [];
+    }
+    return this.fallbackRoleOptions;
+  }
+  private fallbackRoleName = '';
+  private fallbackRoleOptions: { _id: string; name: string }[] = [];
+
+  trackRole(_: number, r: { name: string }): string {
+    return r.name;
   }
 
   ngOnInit() {

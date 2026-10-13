@@ -29,7 +29,7 @@
       <label>Role *</label>
       <app-select formControlName="role">
         <app-option value="" [disabled]="true">Select a role</app-option>
-        <app-option *ngFor="let r of roleOptions" [value]="r.name">{{ r.name }}</app-option>
+        <app-option *ngFor="let r of roleOptions; trackBy: trackRole" [value]="r.name">{{ r.name }}</app-option>
       </app-select>
     </div>
     <div class="field">

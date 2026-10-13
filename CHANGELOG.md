@@ -9,6 +9,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.14.1] - 2026-10-13
+
+### Fixed
+- **Users page could freeze the whole app.** Opening Admin > Users often left the browser tab unresponsive. The Department filter rebuilt its option list as brand-new objects on every screen update, so the dropdown's options were torn down and re-created endlessly and the page locked up. The Role and Department filter options are now built once each time the user list loads, and both dropdowns track their options by value.
+- Same pattern fixed in the user edit form's locked Role dropdown, the one a Team Lead sees when editing a user.
+
+### Notes
+- 6 new regression tests. 482/482 passing.
+- Sidebar version marker bumped to `v1.14.1`.
+
+---
+
 ## [1.14.0] - 2026-10-10
 
 ### Added
