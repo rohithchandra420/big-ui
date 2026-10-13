@@ -204,6 +204,45 @@ describe('UserRegisteryComponent', () => {
     it('lists roles in DEV, DIR, ADMIN, TL, VOL order', () => {
       expect(component.roleFilterOptions).toEqual(['DEV', 'ADMIN', 'TL', 'VOL']);
     });
+
+    it('lists each home department once, sorted by name', () => {
+      const names = component.deptFilterOptions.map(d => d.name);
+      expect(new Set(component.deptFilterOptions.map(d => d._id)).size).toBe(names.length);
+      expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+      expect(names.length).toBeGreaterThan(1);
+    });
+
+    // Regression (v1.14.1): deptFilterOptions used to be a getter returning new
+    // objects every change-detection pass, so *ngFor re-created every
+    // <app-option> each pass — which froze the whole tab on UAT.
+    it('keeps the same filter option objects across reads', () => {
+      expect(component.deptFilterOptions).toBe(component.deptFilterOptions);
+      expect(component.roleFilterOptions).toBe(component.roleFilterOptions);
+      expect(component.deptFilterOptions[0]).toBe(component.deptFilterOptions[0]);
+    });
+
+    it('does not re-create the dropdown options on repeated change detection', () => {
+      fixture.detectChanges();
+      const before = Array.from(fixture.nativeElement.querySelectorAll('app-option'));
+      expect(before.length).toBeGreaterThan(0);
+      fixture.detectChanges();
+      fixture.detectChanges();
+      const after = Array.from(fixture.nativeElement.querySelectorAll('app-option'));
+      expect(after.length).toBe(before.length);
+      after.forEach((el, i) => expect(el).toBe(before[i]));
+    });
+
+    it('rebuilds the filter options when the user list reloads', () => {
+      const old = component.deptFilterOptions;
+      component.loadUsers();
+      expect(component.deptFilterOptions).not.toBe(old);
+      expect(component.deptFilterOptions).toEqual(old);
+    });
+
+    it('tracks filter options by role name and department id', () => {
+      expect(component.trackRoleOption(0, 'TL')).toBe('TL');
+      expect(component.trackDeptOption(0, { _id: 'd-ops' })).toBe('d-ops');
+    });
   });
 
   describe('panel', () => {

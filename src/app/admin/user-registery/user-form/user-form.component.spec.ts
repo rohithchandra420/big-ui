@@ -172,6 +172,14 @@ describe('UserFormComponent', () => {
       expect(component.roleOptions.map(r => r.name)).toEqual(['VOL']);
     });
 
+    // Regression (v1.14.1): the fallback used to be a new array/object on every
+    // read, so *ngFor re-created the <app-option> every change-detection pass.
+    it('returns the same fallback role options on every read', () => {
+      expect(component.roleOptions).toBe(component.roleOptions);
+      expect(component.roleOptions[0]).toBe(component.roleOptions[0]);
+      expect(component.trackRole(0, { name: 'VOL' })).toBe('VOL');
+    });
+
     it('does not send department or date of joining', () => {
       adminSpy.updateUser.and.returnValue(of(editedUser));
 

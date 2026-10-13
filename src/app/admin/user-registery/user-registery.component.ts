@@ -122,6 +122,7 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     this.adminService.getAllUsers(this.canSeeDeactivated).subscribe({
       next: res => {
         this.users = res || [];
+        this.rebuildFilterOptions();
         this.loading = false;
         // Keep the open panel pointed at the fresh copy of the same user
         if (this.activeUser?._id) {
@@ -259,19 +260,38 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     return this.activeUsers.filter(u => !this.homeDeptId(u)).length;
   }
 
-  get roleFilterOptions(): string[] {
+  /**
+   * Filter dropdown options. Deliberately plain fields rebuilt only when the
+   * user list changes — NOT getters. Bug fix (v1.14.1): as a getter,
+   * deptFilterOptions returned brand-new objects on every change-detection
+   * pass, so *ngFor tore down and re-created every <app-option> (each with
+   * projected content) on every pass, which hung Angular's view insertion and
+   * froze the whole tab on UAT. Any list fed to an *ngFor of <app-option>
+   * must keep stable object identities.
+   */
+  roleFilterOptions: string[] = [];
+  deptFilterOptions: { _id: string; name: string }[] = [];
+
+  private rebuildFilterOptions() {
     const names = Array.from(new Set(this.users.map(u => this.roleName(u)).filter(Boolean)));
     const rank = (r: string) => ROLE_ORDER.indexOf(r) === -1 ? ROLE_ORDER.length : ROLE_ORDER.indexOf(r);
-    return names.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
-  }
+    this.roleFilterOptions = names.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 
-  get deptFilterOptions(): { _id: string; name: string }[] {
     const byId = new Map<string, string>();
     this.users.forEach(u => {
       const id = this.homeDeptId(u);
       if (id) byId.set(id, this.homeDeptName(u) || id);
     });
-    return Array.from(byId, ([_id, name]) => ({ _id, name })).sort((a, b) => a.name.localeCompare(b.name));
+    this.deptFilterOptions = Array.from(byId, ([_id, name]) => ({ _id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  trackRoleOption(_: number, role: string): string {
+    return role;
+  }
+
+  trackDeptOption(_: number, dept: { _id: string }): string {
+    return dept._id;
   }
 
   get filteredUsers(): any[] {
