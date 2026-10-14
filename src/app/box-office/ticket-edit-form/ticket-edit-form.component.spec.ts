@@ -8,7 +8,7 @@ import { BoxOfficeService } from '../box-office.service';
 import { NotificationService } from '../../core/notification.service';
 import { Ticket } from '../../models/ticket.model';
 
-const mockTicket: Ticket = new Ticket(1, 'Arjun', 'Mehta', 'arjun@example.com', '9000000001', 'TXN1', 'Yes', 100, [], 't1');
+const mockTicket: Ticket = new Ticket(1, 'Arjun', 'Mehta', 'arjun@example.com', '9000000001', 'TXN1', 'sent', 100, [], 't1');
 
 describe('TicketEditFormComponent', () => {
   let component: TicketEditFormComponent;

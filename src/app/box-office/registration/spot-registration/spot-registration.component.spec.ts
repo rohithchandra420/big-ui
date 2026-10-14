@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 
 import { SpotRegistrationComponent } from './spot-registration.component';
@@ -11,6 +11,9 @@ import { Ticket } from '../../../models/ticket.model';
 import { EventDetail, EventItem } from '../../../models/event.model';
 import { AppSelectComponent } from '../../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../../shared/app-select/app-option.component';
+import { EmailService } from '../../../core/email.service';
+import { EmailBatchTrackerService } from '../../../core/email-batch-tracker.service';
+import { EmailBatch, EmailConfig } from '../../../models/email.model';
 
 const mockActiveEvent = { _id: 'evt1', name: 'Test Event', description: '', status: 'active' } as EventItem;
 const mockEventDetail: EventDetail = {
@@ -26,6 +29,9 @@ describe('SpotRegistrationComponent', () => {
   let notificationSpy: jasmine.SpyObj<NotificationService>;
   let activeEventSubject: BehaviorSubject<EventItem | null>;
   let eventServiceSpy: jasmine.SpyObj<EventService> & { activeEvent: BehaviorSubject<EventItem | null>, currentActiveEvent: EventItem | null };
+  let emailServiceSpy: jasmine.SpyObj<EmailService>;
+  let trackerSpy: jasmine.SpyObj<EmailBatchTrackerService>;
+  const batch: EmailBatch = { id: 'b1', type: 'ticket', total: 1, done: 0, sent: 0, failed: 0, skipped: 0, finished: false, startedAt: '', finishedAt: null };
 
   beforeEach(async () => {
     boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['createBoxOfficeTicket']);
@@ -36,13 +42,21 @@ describe('SpotRegistrationComponent', () => {
     Object.defineProperty(eventServiceSpy, 'currentActiveEvent', { get: () => activeEventSubject.value });
     eventServiceSpy.getEventDetail.and.returnValue(of(mockEventDetail));
 
+    emailServiceSpy = jasmine.createSpyObj('EmailService', ['getConfig', 'sendTicketEmails']);
+    // Default: this user can't send — existing tests stay email-free.
+    emailServiceSpy.getConfig.and.returnValue(of({ canSend: false } as EmailConfig));
+    emailServiceSpy.sendTicketEmails.and.returnValue(of(batch));
+    trackerSpy = jasmine.createSpyObj('EmailBatchTrackerService', ['track']);
+
     await TestBed.configureTestingModule({
       declarations: [SpotRegistrationComponent, AppSelectComponent, AppOptionComponent],
-      imports: [ReactiveFormsModule],
+      imports: [ReactiveFormsModule, FormsModule],
       providers: [
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },
         { provide: NotificationService, useValue: notificationSpy },
         { provide: EventService, useValue: eventServiceSpy },
+        { provide: EmailService, useValue: emailServiceSpy },
+        { provide: EmailBatchTrackerService, useValue: trackerSpy },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -86,7 +100,7 @@ describe('SpotRegistrationComponent', () => {
       totalPrice: 4000,
       shopcart: [{ passTypeId: 'pt1', quantity: 1 }]
     });
-    const created = new Ticket(501, 'Walkin', 'Guest', 'walkin@example.com', '9000000099', 'SPOT-123', 'Not Yet', 4000, [], 't501');
+    const created = new Ticket(501, 'Walkin', 'Guest', 'walkin@example.com', '9000000099', 'SPOT-123', 'not_sent', 4000, [], 't501');
     boxOfficeServiceSpy.createBoxOfficeTicket.and.returnValue(of(created));
     const registeredSpy = spyOn(component.registered, 'emit');
 
@@ -137,5 +151,58 @@ describe('SpotRegistrationComponent', () => {
     const cancelledSpy = spyOn(component.cancelled, 'emit');
     component.cancel();
     expect(cancelledSpy).toHaveBeenCalled();
+  });
+
+  describe('Email ticket to buyer (Email epic)', () => {
+    const fill = () => component.form.setValue({
+      first_name: 'Walkin', last_name: 'Guest', email: 'walkin@example.com', phone_no: '9000000099',
+      totalPrice: 4000, shopcart: [{ passTypeId: 'pt1', quantity: 1 }]
+    });
+    const created = () => new Ticket(501, 'Walkin', 'Guest', 'walkin@example.com', '9000000099', 'SPOT-123', 'not_sent', 4000, [], 't501');
+
+    beforeEach(() => {
+      boxOfficeServiceSpy.createBoxOfficeTicket.and.returnValue(of(created()));
+      fill();
+    });
+
+    it('emails the ticket after registering when ticked', () => {
+      component.emailConfig = { canSend: true, canSendTicket: true, safeMode: false };
+      component.save();
+      expect(emailServiceSpy.sendTicketEmails).toHaveBeenCalledWith(['t501'], 'unsent', undefined);
+      expect(trackerSpy.track).toHaveBeenCalledWith(batch, 'Ticket email · Walkin Guest');
+    });
+
+    it('does not email when unticked', () => {
+      component.emailConfig = { canSend: true, canSendTicket: true, safeMode: false };
+      component.emailTicket = false;
+      component.save();
+      expect(emailServiceSpy.sendTicketEmails).not.toHaveBeenCalled();
+    });
+
+    it('does not email for people who cannot send', () => {
+      component.save();
+      expect(boxOfficeServiceSpy.createBoxOfficeTicket).toHaveBeenCalled();
+      expect(emailServiceSpy.sendTicketEmails).not.toHaveBeenCalled();
+    });
+
+    it('in test mode, needs a tester address and sends only to it', () => {
+      component.emailConfig = { canSend: true, canSendTicket: true, safeMode: true };
+      component.tester = '';
+      component.save();
+      expect(boxOfficeServiceSpy.createBoxOfficeTicket).not.toHaveBeenCalled();
+
+      component.tester = 'tester@example.com';
+      component.save();
+      expect(emailServiceSpy.sendTicketEmails).toHaveBeenCalledWith(['t501'], 'unsent', 'tester@example.com');
+    });
+
+    it('still completes the registration when the email cannot be sent', () => {
+      component.emailConfig = { canSend: true, canSendTicket: true, safeMode: false };
+      emailServiceSpy.sendTicketEmails.and.returnValue(throwError(() => ({ error: { message: 'Daily email limit reached' } })));
+      const registeredSpy = spyOn(component.registered, 'emit');
+      component.save();
+      expect(registeredSpy).toHaveBeenCalled();
+      expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith(jasmine.stringMatching(/Daily email limit reached/));
+    });
   });
 });

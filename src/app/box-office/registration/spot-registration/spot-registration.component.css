@@ -20,3 +20,30 @@
     flex-wrap: wrap;
   }
 }
+
+/* Email epic — "Email ticket to buyer" option */
+.spot-email {
+  margin-top: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.spot-email-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.spot-email-text {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.spot-tester { max-width: 360px; }
+.spot-test-tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 500;
+}

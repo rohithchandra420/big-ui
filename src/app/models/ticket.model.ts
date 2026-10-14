@@ -43,6 +43,16 @@ export class Shopcart {
     }
 }
 
+/** Ticket Email delivery state (Email epic, see EMAIL_CONTEXT.md). Replaces
+ *  the old free-text `hasEmailSent: 'Yes' | 'Not Yet'`. */
+export type TicketEmailStatus = 'not_sent' | 'sending' | 'sent' | 'bounced' | 'failed' | 'no_email';
+
+export interface TicketEmail {
+    status: TicketEmailStatus;
+    sentAt?: string | null;
+    error?: string | null;
+}
+
 export class Ticket {
     public order_id: number;
     public first_name: string;
@@ -50,22 +60,22 @@ export class Ticket {
     public email: string;
     public phone_no: string;
     public transaction_id: string;
-    public hasEmailSent: string;
+    public ticketEmail: TicketEmail;
     public totalPrice: number;
     public shopcart?: Shopcart[];
     public _id?: string;
     public event?: string; // Introducing Events — see Shopcart.event above
 
-    
-   constructor(order_id: number, first_name: string, last_name: string, email: string, phone_no:string, transaction_id: string, 
-    hasEmailSent: string , totalPrice: number, shopcart?: Shopcart[], _id?: string) {
+
+   constructor(order_id: number, first_name: string, last_name: string, email: string, phone_no:string, transaction_id: string,
+    ticketEmailStatus: TicketEmailStatus, totalPrice: number, shopcart?: Shopcart[], _id?: string) {
     this.order_id = order_id;
     this.first_name = first_name;
     this.last_name = last_name;
     this.email = email;
     this.phone_no = phone_no;
     this.transaction_id = transaction_id;
-    this.hasEmailSent = hasEmailSent;    
+    this.ticketEmail = { status: ticketEmailStatus };
     this.totalPrice = totalPrice;
     this.shopcart = shopcart;
     this._id = _id;

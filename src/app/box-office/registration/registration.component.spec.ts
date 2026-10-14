@@ -13,11 +13,11 @@ import { EventItem } from '../../models/event.model';
 const mockActiveEvent = { _id: 'evt1', name: 'Test Event', description: '', status: 'active' } as EventItem;
 
 const mockBookings: Ticket[] = [
-  new Ticket(1, 'Arjun', 'Mehta', 'arjun@example.com', '9000000001', 'TXN1', 'Yes', 100, [
+  new Ticket(1, 'Arjun', 'Mehta', 'arjun@example.com', '9000000001', 'TXN1', 'sent', 100, [
     { item_name: 'Festival Ticket', item_quantity: 1, order_id: 1, admissionId: null as any, isAdmitted: true, isActive: true, name: 'Arjun Mehta', phone_no: '9000000001', email: 'arjun@example.com' } as any,
     { item_name: 'Camping', item_quantity: 1, order_id: 1, admissionId: null as any, isAdmitted: false, isActive: true, name: '', phone_no: '', email: '' } as any,
   ], 't1'),
-  new Ticket(2, 'Priya', 'Nair', 'priya@example.com', '9000000002', 'TXN2', 'Not Yet', 50, [
+  new Ticket(2, 'Priya', 'Nair', 'priya@example.com', '9000000002', 'TXN2', 'not_sent', 50, [
     { item_name: 'Day Pass', item_quantity: 1, order_id: 2, admissionId: null as any, isAdmitted: false, isActive: true, name: 'Priya Nair', phone_no: '9000000002', email: '' } as any,
   ], 't2'),
 ];
@@ -82,7 +82,7 @@ describe('RegistrationComponent', () => {
   it('computes spotRegistrationsCount for tickets with a SPOT- transaction_id', () => {
     component.bookings = [
       ...mockBookings,
-      new Ticket(3, 'Walkin', 'Guest', 'walkin@example.com', '9000000099', 'SPOT-123', 'Not Yet', 10, [], 't3'),
+      new Ticket(3, 'Walkin', 'Guest', 'walkin@example.com', '9000000099', 'SPOT-123', 'not_sent', 10, [], 't3'),
     ];
     expect(component.spotRegistrationsCount).toBe(1);
   });

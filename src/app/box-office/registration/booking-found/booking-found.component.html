@@ -27,6 +27,10 @@
 
   <app-attendee-list [ticket]="ticket" [allowEdit]="true"></app-attendee-list>
 
+  <div class="divider"></div>
+  <app-email-actions [ticket]="ticket"></app-email-actions>
+  <app-email-history [ticketId]="ticket._id"></app-email-history>
+
   <div class="btn-row">
     <button class="btn-ghost" (click)="goBack()">Back</button>
   </div>

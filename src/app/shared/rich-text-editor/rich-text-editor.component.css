@@ -1,0 +1,76 @@
+.rte {
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--surface-card);
+  overflow: hidden;
+}
+
+.rte-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-input);
+}
+
+.rte-btn {
+  min-width: 32px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.rte-btn:hover { background: var(--border-subtle); border-color: var(--border-default); }
+
+.rte-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border-default);
+  margin: 0 2px;
+}
+
+.rte-link {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.rte-link input {
+  flex: 1 1 200px;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--surface-card);
+}
+
+.rte-area {
+  min-height: 180px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  outline: none;
+}
+.rte-area:focus { box-shadow: inset 0 0 0 2px rgba(30, 70, 56, 0.15); }
+.rte-area.rte-empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+.rte-area ::ng-deep a { color: var(--color-primary); text-decoration: underline; }
+.rte-area ::ng-deep ul,
+.rte-area ::ng-deep ol { padding-left: 22px; margin: 4px 0; }
+.rte-area ::ng-deep p { margin: 0 0 6px; }

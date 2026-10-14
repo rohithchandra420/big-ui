@@ -102,7 +102,7 @@ export class EventService {
     return this.http.post<EventItem>(this.url + '/admin/events', data);
   }
 
-  updateEvent(id: string, data: Partial<{ name: string; description: string; startDate: string; endDate: string; status: string }>) {
+  updateEvent(id: string, data: Partial<{ name: string; description: string; startDate: string; endDate: string; status: string; ticketEmail: { subject: string; intro: string } }>) {
     return this.http.patch<EventItem>(this.url + '/admin/events/' + id, data);
   }
 

@@ -1,14 +1,21 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
+import { Observable, Subscription } from 'rxjs';
 
-import { Ticket } from '../../models/ticket.model';
+import { Ticket, TicketEmailStatus } from '../../models/ticket.model';
 import { BoxOfficeService } from '../box-office.service';
-import { isFestivalPass, isSpotRegistration, passSummary as buildPassSummary } from '../box-office.utils';
+import {
+  isFestivalPass, isSpotRegistration, passSummary as buildPassSummary,
+  ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, TICKET_EMAIL_FILTER_OPTIONS
+} from '../box-office.utils';
 import { Shopcart } from '../../models/ticket.model';
 import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
 import { EventService } from '../../core/event.service';
+import { EmailService } from '../../core/email.service';
+import { EmailBatchTrackerService } from '../../core/email-batch-tracker.service';
+import { EmailDialogsService } from '../email/email-dialogs.service';
 
 type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | null;
 
@@ -17,13 +24,16 @@ type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | null;
   templateUrl: './bookings.component.html',
   styleUrls: ['./bookings.component.css']
 })
-export class BookingsComponent implements OnInit {
+export class BookingsComponent implements OnInit, OnDestroy {
 
   bookings: Ticket[] = [];
   loading = false;
 
   activeFilter: BookingsStatFilter = null;
   searchTerm = '';
+  /** Ticket Email status dropdown; '' = all. Combines with the stat cards and search. */
+  emailStatusFilter: TicketEmailStatus | '' = '';
+  readonly emailStatusOptions = TICKET_EMAIL_FILTER_OPTIONS;
 
   selectedIds = new Set<string>();
 
@@ -36,18 +46,36 @@ export class BookingsComponent implements OnInit {
   refreshing = false;
   editingTicket = false;
 
+  /** Email epic — DEV/DIR/ADMIN or a Box Office TL (decided server-side). */
+  canSendEmail$!: Observable<boolean>;
+  canSendTicket$!: Observable<boolean>;
+  canSendCustom$!: Observable<boolean>;
+  private subs: Subscription[] = [];
+
   constructor(
     private boxOfficeService: BoxOfficeService,
     private router: Router,
     private dialog: MatDialog,
-    private eventService: EventService
+    private eventService: EventService,
+    private emailService: EmailService,
+    private emailDialogs: EmailDialogsService,
+    private emailTracker: EmailBatchTrackerService
   ) { }
 
   ngOnInit() {
     // Reload whenever the active event changes, not just on page load —
     // Bookings is scoped to whichever event the sidebar selector currently
     // points at.
-    this.eventService.activeEvent.subscribe(() => this.loadBookings());
+    this.subs.push(this.eventService.activeEvent.subscribe(() => this.loadBookings()));
+    this.canSendEmail$ = this.emailService.canSend();
+    this.canSendTicket$ = this.emailService.canSendTicket();
+    this.canSendCustom$ = this.emailService.canSendCustom();
+    // A background email send finished — pick up the new Ticket Email statuses.
+    this.subs.push(this.emailTracker.finished$.subscribe(() => this.loadBookings()));
+  }
+
+  ngOnDestroy() {
+    this.subs.forEach(s => s.unsubscribe());
   }
 
   loadBookings() {
@@ -61,6 +89,10 @@ export class BookingsComponent implements OnInit {
       next: (res) => {
         this.bookings = res;
         this.loading = false;
+        // Keep the open panel on the fresh copy of the same booking.
+        if (this.activeBooking?._id) {
+          this.activeBooking = this.bookings.find(b => b._id === this.activeBooking!._id) || this.activeBooking;
+        }
       },
       error: () => {
         this.loading = false;
@@ -73,7 +105,7 @@ export class BookingsComponent implements OnInit {
   }
 
   get emailsSentCount(): number {
-    return this.bookings.filter(b => b.hasEmailSent === 'Yes').length;
+    return this.bookings.filter(b => ticketEmailStatus(b) === 'sent').length;
   }
 
   get admittedCount(): number {
@@ -96,6 +128,49 @@ export class BookingsComponent implements OnInit {
     return (shopcart || []).filter(item => isFestivalPass(item)).length;
   }
 
+  // ── Ticket Email status (Email epic) ──────────────────
+
+  trackOption(_: number, o: { value: string }): string {
+    return o.value;
+  }
+
+  emailStatusLabel(booking: Ticket): string {
+    return ticketEmailLabel(ticketEmailStatus(booking));
+  }
+
+  emailStatusBadge(booking: Ticket): string {
+    return ticketEmailBadge(ticketEmailStatus(booking));
+  }
+
+  emailStatusError(booking: Ticket): string {
+    const status = ticketEmailStatus(booking);
+    return status === 'failed' || status === 'no_email' || status === 'bounced' ? (booking.ticketEmail?.error || '') : '';
+  }
+
+  /** Selected bookings, in table order — read on click, never from the template. */
+  private selectedBookings(): Ticket[] {
+    return this.bookings.filter(b => b._id && this.selectedIds.has(b._id));
+  }
+
+  sendTicketEmails() {
+    const tickets = this.selectedBookings();
+    if (!tickets.length) return;
+    this.emailDialogs.openTicketEmail(tickets).subscribe(batch => {
+      if (batch) this.loadBookings();
+    });
+  }
+
+  sendCustomEmails() {
+    const tickets = this.selectedBookings();
+    if (!tickets.length) return;
+    this.emailDialogs.openCustomEmail(tickets).subscribe();
+  }
+
+  /** A single-booking send started from the detail panel. */
+  onPanelEmailStarted() {
+    this.loadBookings();
+  }
+
   get spotRegistrationCount(): number {
     return this.bookings.filter(b => isSpotRegistration(b)).length;
   }
@@ -104,11 +179,15 @@ export class BookingsComponent implements OnInit {
     let result = this.bookings;
 
     if (this.activeFilter === 'emailSent') {
-      result = result.filter(b => b.hasEmailSent === 'Yes');
+      result = result.filter(b => ticketEmailStatus(b) === 'sent');
     } else if (this.activeFilter === 'admitted') {
       result = result.filter(b => b.shopcart?.some(item => item.isAdmitted));
     } else if (this.activeFilter === 'spotRegistration') {
       result = result.filter(b => isSpotRegistration(b));
+    }
+
+    if (this.emailStatusFilter) {
+      result = result.filter(b => ticketEmailStatus(b) === this.emailStatusFilter);
     }
 
     const term = this.searchTerm.trim().toLowerCase();

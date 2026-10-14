@@ -1,4 +1,4 @@
-import { isFestivalPass, isSpotRegistration, passChips, passChipsTyped, passSummary } from './box-office.utils';
+import { isFestivalPass, isSpotRegistration, passChips, passChipsTyped, passSummary, ticketEmailStatus, ticketEmailLabel, ticketEmailBadge } from './box-office.utils';
 import { Shopcart, Ticket } from '../models/ticket.model';
 
 describe('box-office.utils', () => {
@@ -88,5 +88,21 @@ describe('box-office.utils', () => {
         { label: 'Camping ×2', festival: false },
       ]);
     });
+  });
+});
+
+describe('Ticket Email status helpers (Email epic)', () => {
+  it('reads a missing status as not sent', () => {
+    expect(ticketEmailStatus(null)).toBe('not_sent');
+    expect(ticketEmailStatus({ ticketEmail: undefined } as any)).toBe('not_sent');
+    expect(ticketEmailStatus({ ticketEmail: { status: 'failed' } })).toBe('failed');
+  });
+
+  it('labels and colours every status', () => {
+    expect(['not_sent', 'sending', 'sent', 'failed', 'no_email'].map(s => ticketEmailLabel(s as any)))
+      .toEqual(['Not sent', 'Sending…', 'Sent', 'Failed', 'No email']);
+    expect(ticketEmailBadge('sent')).toBe('bg');
+    expect(ticketEmailBadge('failed')).toBe('br');
+    expect(ticketEmailBadge('no_email')).toBe('ba');
   });
 });

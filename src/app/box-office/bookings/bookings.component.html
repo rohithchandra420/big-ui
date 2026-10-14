@@ -11,7 +11,7 @@
 
 <div class="stat-row">
   <div class="stat tap" [class.act]="activeFilter === 'emailSent'" (click)="toggleFilter('emailSent')">
-    <div class="stat-l">Emails Sent</div>
+    <div class="stat-l">Ticket Emails Sent</div>
     <div class="stat-n">{{ emailsSentCount }}</div>
     <div class="stat-s">tap to view →</div>
   </div>
@@ -34,12 +34,25 @@
     <div class="filter-bar">
       <input type="text" placeholder="Search name, email, order ID or ticket ID..."
              [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
+      <app-select class="email-status-filter" [(ngModel)]="emailStatusFilter" (ngModelChange)="onSearchChange()">
+        <app-option value="">All Ticket Email statuses</app-option>
+        <app-option *ngFor="let o of emailStatusOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
+      </app-select>
     </div>
   </div>
 
   <div class="seg-bar">
     <span class="seg-txt">{{ segText }}</span>
-    <button class="btn-secondary" title="Bulk actions coming soon">Bulk action</button>
+    <ng-container *ngIf="canSendEmail$ | async">
+      <button class="btn-secondary" [matMenuTriggerFor]="emailMenu" [disabled]="selectedIds.size === 0"
+              [title]="selectedIds.size === 0 ? 'Select bookings first' : 'Email the selected bookings'">
+        Email ▾
+      </button>
+      <mat-menu #emailMenu="matMenu" xPosition="before">
+        <button mat-menu-item *ngIf="canSendTicket$ | async" (click)="sendTicketEmails()">Send Ticket Email</button>
+        <button mat-menu-item *ngIf="canSendCustom$ | async" (click)="sendCustomEmails()">Send Custom Email</button>
+      </mat-menu>
+    </ng-container>
   </div>
 
   <div class="tbl-scroll bookings-tbl-scroll">
@@ -62,7 +75,7 @@
           <th>Ticket ID</th>
           <th>Passes</th>
           <th>Amount</th>
-          <th>Email Sent</th>
+          <th>Ticket Email</th>
           <th>Admitted</th>
         </tr>
       </thead>
@@ -85,7 +98,7 @@
           <td>{{ passSummary(booking) }}</td>
           <td>₹{{ booking.totalPrice }}</td>
           <td>
-            <span class="badge" [ngClass]="booking.hasEmailSent === 'Yes' ? 'bg' : 'bx'">{{ booking.hasEmailSent }}</span>
+            <span class="badge" [ngClass]="emailStatusBadge(booking)" [data-tooltip]="emailStatusError(booking)">{{ emailStatusLabel(booking) }}</span>
           </td>
           <td>
             <span class="badge" [ngClass]="admittedCountFor(booking) > 0 ? 'bg' : 'bx'">{{ admittedCountFor(booking) }} / {{ booking.shopcart?.length || 0 }}</span>
@@ -139,20 +152,25 @@
           <div class="pay-v">₹{{ activeBooking.totalPrice }}</div>
         </div>
         <div class="pay-box">
-          <div class="pay-l">Email Sent</div>
+          <div class="pay-l">Ticket Email</div>
           <div class="pay-v">
-            <span class="badge" [ngClass]="activeBooking.hasEmailSent === 'Yes' ? 'bg' : 'bx'">{{ activeBooking.hasEmailSent }}</span>
+            <span class="badge" [ngClass]="emailStatusBadge(activeBooking)">{{ emailStatusLabel(activeBooking) }}</span>
           </div>
+          <div class="pay-err" *ngIf="emailStatusError(activeBooking)">{{ emailStatusError(activeBooking) }}</div>
         </div>
       </div>
 
       <div class="btn-row" style="margin-top: 8px;">
         <button class="btn-secondary" (click)="editingTicket = true">Edit Ticket</button>
       </div>
+      <app-email-actions [ticket]="activeBooking" (sent)="onPanelEmailStarted()"></app-email-actions>
 
       <div class="divider"></div>
       <div class="section-lbl">Attendees ({{ festivalPassCount(activeBooking.shopcart) }}) / Passes ({{ activeBooking.shopcart?.length || 0 }})</div>
       <app-attendee-list [ticket]="activeBooking" [allowEdit]="true"></app-attendee-list>
+
+      <div class="divider"></div>
+      <app-email-history [ticketId]="activeBooking._id"></app-email-history>
     </ng-container>
 
     <ng-template #editForm>
