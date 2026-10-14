@@ -22,6 +22,9 @@ export interface EventItem {
   endDate?: string;
   status: EventStatus;
   createdBy?: string;
+  /** Ticket Email wording for this edition (Email epic). Empty = the
+   *  default built from the event name. */
+  ticketEmail?: { subject: string; intro: string };
 }
 
 // Response shape of GET /admin/events/:id — the plain EventItem plus its

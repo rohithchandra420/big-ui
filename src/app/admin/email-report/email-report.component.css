@@ -1,0 +1,184 @@
+/* Full-width, like Bookings and Users (table-style list page). */
+.report-page {
+  width: 100%;
+}
+
+/* ── Filters ─────────────────────────────────────────────── */
+.filter-select {
+  width: 170px;
+  max-width: 100%;
+}
+
+.date-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.date-filter input {
+  width: 140px;
+}
+
+.clear-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .filter-bar input,
+  .filter-select,
+  .date-filter,
+  .date-filter input {
+    width: 100%;
+  }
+}
+
+/* ── Table ───────────────────────────────────────────────── */
+/* Estimated like bookings.component.css: viewport minus header, cards,
+   filters and footer. */
+.report-tbl-scroll {
+  max-height: calc(100vh - 400px);
+}
+
+@media (max-width: 768px) {
+  .report-tbl-scroll {
+    max-height: calc(100vh - 480px);
+  }
+}
+
+.recipient {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.recipient-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.recipient-sub {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.recipient-sub.test-to {
+  color: #92400e;
+}
+
+.subject-cell {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.empty-row {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 24px;
+}
+
+.loading-txt {
+  color: var(--text-faint);
+  margin-left: 6px;
+}
+
+/* ── Panel ───────────────────────────────────────────────── */
+.panel-hd-main {
+  min-width: 0;
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.panel-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.detail-list {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 0.875rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12px;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-l {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.detail-v {
+  color: var(--text-primary);
+  text-align: right;
+  word-break: break-word;
+}
+
+.empty-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.timeline {
+  list-style: none;
+  margin: 0 0 0.875rem;
+  padding: 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.timeline li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--border-subtle);
+}
+
+.tl-time {
+  color: var(--text-muted);
+  min-width: 100px;
+}
+
+.tl-event {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.tl-reason {
+  color: #991b1b;
+  flex-basis: 100%;
+}
+
+.body-frame {
+  width: 100%;
+  height: 320px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: #fff;
+  margin-bottom: 8px;
+}

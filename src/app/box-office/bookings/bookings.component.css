@@ -11,3 +11,24 @@
     max-height: calc(100vh - 440px);
   }
 }
+
+/* Ticket Email failure reason under the status in the detail panel. */
+.pay-err {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #991b1b;
+  word-break: break-word;
+}
+
+/* Ticket Email status filter, next to the search box (same sizing as the Users page filters). */
+.email-status-filter {
+  width: 220px;
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .filter-bar input,
+  .email-status-filter {
+    width: 100%;
+  }
+}

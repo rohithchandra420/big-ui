@@ -62,6 +62,7 @@ import { BulkUploadComponent } from './box-office/bookings/bulk-upload/bulk-uplo
 import { MyDepartmentComponent } from './my-department/my-department.component';
 import { EventsComponent } from './admin/events/events.component';
 import { EventDetailComponent } from './admin/events/event-detail/event-detail.component';
+import { EmailReportComponent } from './admin/email-report/email-report.component';
 import { EventCreateDialogComponent } from './admin/events/event-create-dialog/event-create-dialog.component';
 import { AccommodationSetupComponent } from './accommodation/setup/accommodation-setup.component';
 import { AccommodationInventoryComponent } from './accommodation/inventory/accommodation-inventory.component';
@@ -69,6 +70,12 @@ import { AppSelectComponent } from './shared/app-select/app-select.component';
 import { AppOptionComponent } from './shared/app-select/app-option.component';
 import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.component';
 import { UserAvatarComponent } from './shared/user-avatar/user-avatar.component';
+import { RichTextEditorComponent } from './shared/rich-text-editor/rich-text-editor.component';
+import { TicketEmailDialogComponent } from './box-office/email/ticket-email-dialog/ticket-email-dialog.component';
+import { CustomEmailDialogComponent } from './box-office/email/custom-email-dialog/custom-email-dialog.component';
+import { EmailProgressComponent } from './box-office/email/email-progress/email-progress.component';
+import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
+import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
 // ImageCropperComponent / PhotoPickerDialogComponent are standalone — no
 // declaration needed here; AvatarService.changePhoto() opens the picker.
 
@@ -109,13 +116,20 @@ LOAD_WASM().subscribe()
     MyDepartmentComponent,
     EventsComponent,
     EventDetailComponent,
+    EmailReportComponent,
     EventCreateDialogComponent,
     AccommodationSetupComponent,
     AccommodationInventoryComponent,
     AppSelectComponent,
     AppOptionComponent,
     ConfirmDialogComponent,
-    UserAvatarComponent
+    UserAvatarComponent,
+    RichTextEditorComponent,
+    TicketEmailDialogComponent,
+    CustomEmailDialogComponent,
+    EmailProgressComponent,
+    EmailActionsComponent,
+    EmailHistoryComponent
   ],
   imports: [
     BrowserModule,

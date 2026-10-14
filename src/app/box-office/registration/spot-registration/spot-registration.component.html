@@ -70,13 +70,27 @@
     </div>
   </form>
 
+  <div class="spot-email" *ngIf="emailConfig?.canSendTicket">
+    <label class="cb-wrap spot-email-row">
+      <input type="checkbox" [(ngModel)]="emailTicket">
+      <span class="cb-box"></span>
+      <span class="spot-email-text">Email ticket to buyer</span>
+    </label>
+    <div class="field spot-tester" *ngIf="testerNeeded">
+      <label for="spotTester">Tester email * <span class="spot-test-tag">test mode</span></label>
+      <input id="spotTester" type="email" [(ngModel)]="tester" placeholder="you@example.com">
+      <span class="field-hint">In test mode the ticket email goes only to this address.</span>
+      <span class="field-error" *ngIf="tester && !testerValid">Enter a valid email address.</span>
+    </div>
+  </div>
+
   <div class="alert ai" style="margin-top: 0.875rem; font-size: 11px;">
     Order ID and Transaction ID are assigned automatically — no need to enter them for a walk-in.
   </div>
 
   <div class="btn-row">
     <button class="btn-ghost" (click)="cancel()">Cancel</button>
-    <button class="btn-cta" (click)="save()" [disabled]="form.invalid || saving">
+    <button class="btn-cta" (click)="save()" [disabled]="form.invalid || saving || !testerValid">
       {{ saving ? 'Registering…' : 'Register attendee' }}
     </button>
   </div>

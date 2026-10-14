@@ -1,4 +1,4 @@
-import { Shopcart, Ticket } from '../models/ticket.model';
+import { Shopcart, Ticket, TicketEmailStatus } from '../models/ticket.model';
 
 // Introducing Events (see INTRODUCING_EVENTS_CONTEXT.md) — replaces the old
 // hardcoded FESTIVAL_PASS_NAMES/ALL_ITEM_NAMES lists. Which passes exist and
@@ -68,4 +68,45 @@ export function passChipsTyped(shopcart: Shopcart[] | undefined): PassChip[] {
         label: count > 1 ? `${name} ×${count}` : name,
         festival
     }));
+}
+
+// ── Ticket Email status (Email epic, see EMAIL_CONTEXT.md) ──────────────
+
+const TICKET_EMAIL_LABELS: Record<TicketEmailStatus, string> = {
+    not_sent: 'Not sent',
+    sending: 'Sending…',
+    sent: 'Sent',
+    // Set by the Brevo webhook: the address doesn't work (hard bounce/blocked/invalid)
+    bounced: 'Bounced',
+    failed: 'Failed',
+    no_email: 'No email'
+};
+
+const TICKET_EMAIL_BADGES: Record<TicketEmailStatus, string> = {
+    not_sent: 'bx',
+    sending: 'bb',
+    sent: 'bg',
+    bounced: 'br',
+    failed: 'br',
+    no_email: 'ba'
+};
+
+/** Fixed order for the Bookings "Ticket Email" filter. A constant list — never
+ *  rebuild it in a getter (see the *ngFor / <app-option> identity rule). */
+export const TICKET_EMAIL_FILTER_OPTIONS: { value: TicketEmailStatus; label: string }[] =
+    (['not_sent', 'sending', 'sent', 'bounced', 'failed', 'no_email'] as TicketEmailStatus[])
+        .map(value => ({ value, label: TICKET_EMAIL_LABELS[value] }));
+
+/** A booking's Ticket Email status; anything missing reads as not sent. */
+export function ticketEmailStatus(ticket: Pick<Ticket, 'ticketEmail'> | null | undefined): TicketEmailStatus {
+    return ticket?.ticketEmail?.status || 'not_sent';
+}
+
+export function ticketEmailLabel(status: TicketEmailStatus): string {
+    return TICKET_EMAIL_LABELS[status] || TICKET_EMAIL_LABELS.not_sent;
+}
+
+/** Global .badge colour class for a status. */
+export function ticketEmailBadge(status: TicketEmailStatus): string {
+    return TICKET_EMAIL_BADGES[status] || 'bx';
 }

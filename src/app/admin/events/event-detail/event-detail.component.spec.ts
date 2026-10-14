@@ -115,6 +115,40 @@ describe('EventDetailComponent', () => {
 
       expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('Bad status');
     });
+
+    // Email epic — per-event Ticket Email wording
+    it('enterEditMode() fills the ticket email wording (empty when using the default)', () => {
+      component.enterEditMode();
+      expect(component.editForm.value.emailSubject).toBe('');
+      expect(component.editForm.value.emailIntro).toBe('');
+
+      component.detail = { ...mockDetail, ticketEmail: { subject: 'Your {event} tickets', intro: 'Welcome!' } };
+      component.enterEditMode();
+      expect(component.editForm.value.emailSubject).toBe('Your {event} tickets');
+      expect(component.hasCustomEmailWording).toBeTrue();
+    });
+
+    it('save() sends the trimmed ticket email wording', () => {
+      component.enterEditMode();
+      component.editForm.patchValue({ emailSubject: '  Your {event} tickets  ', emailIntro: ' Welcome! ' });
+      eventServiceSpy.updateEvent.and.returnValue(of(mockDetail as any));
+      component.save();
+      expect(eventServiceSpy.updateEvent).toHaveBeenCalledWith('evt1', jasmine.objectContaining({
+        ticketEmail: { subject: 'Your {event} tickets', intro: 'Welcome!' }
+      }));
+    });
+
+    it('shows the default wording based on the event name', () => {
+      component.enterEditMode();
+      expect(component.defaultEmailSubject).toBe('BiG 6.0 Tickets - Order #{order_id}');
+      expect(component.defaultEmailIntro).toContain('Here are your tickets to BiG 6.0!');
+    });
+
+    it('rejects an over-long subject', () => {
+      component.enterEditMode();
+      component.editForm.patchValue({ emailSubject: 'x'.repeat(201) });
+      expect(component.editForm.invalid).toBeTrue();
+    });
   });
 
   describe('deleteEvent()', () => {

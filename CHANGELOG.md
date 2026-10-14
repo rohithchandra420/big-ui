@@ -9,6 +9,34 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.15.0] - 2026-10-14
+
+### Added
+- **Email on the Bookings page.** The placeholder "Bulk action" button is now an **Email ▾** menu for the selected bookings: **Send Ticket Email** and **Send Custom Email**. **Send Ticket Email** is shown to DEV, DIR, ADMIN, Box Office Team Leads and anyone with Box Office Manage access; **Send Custom Email** to DEV, DIR and ADMIN only.
+- **Ticket Email dialog** — shows how many selected bookings are not sent yet, already sent, or have no buyer email; choose "send only to the not-sent" or "resend to all"; shows what is left of today's email allowance; "Send test to me".
+- **Custom Email dialog** — subject, a small formatting editor (bold, italic, lists, links), clickable placeholders (`{name}`, `{first_name}`, `{last_name}`, `{order_id}`, `{event}`), optional ticket details + QR, a live preview of the exact email, and "Send test to me".
+- **Background sending with a progress card** that stays visible while moving between pages; Bookings refreshes itself when a send finishes. Sends with failures stay on screen until dismissed.
+- **Booking detail panel and Booking Found** get "Send Ticket Email" / "Custom Email" buttons and the booking's **Email history**.
+- **Spot Registration** — "Email ticket to buyer" option (on by default) sends the new booking's ticket email straight after registering.
+- **Test mode** — when the server is in test mode, every send asks for a tester email address and goes only there, with a clear banner.
+- **Admin › Events** — per-event Ticket Email subject and intro, with the default wording shown as a hint.
+- **Admin › Email Report** (DEV, DIR, ADMIN only) — every email the platform has sent, in the Bookings layout: summary cards (Sent, Delivered, Bounced, Failed, Opened), search, filters (type, send status, delivery, event, sender, date range), a paged table, and a side panel with the full details, the delivery timeline and — for custom emails — the message as written. **Export** downloads the filtered list as Excel (up to 5,000 rows).
+- **Delivery status** — once the mail provider reports back, email history shows Delivered / Bounced / Marked spam etc. instead of just "Sent", with the reason for a bounce and an approximate "opened" time.
+- **Ticket Email status filter** on Bookings (Not sent / Sending / Sent / Bounced / Failed / No email), alongside search and the summary cards.
+- Reusable `app-rich-text-editor` component (`shared/`).
+
+### Changed
+- The **Email Sent** column and stat card are now **Ticket Email**, with statuses Not sent / Sending… / Sent / Bounced / Failed (hover for the reason) / No email.
+- The gate **QR scanner** now checks every scanned code with the server; edited or made-up codes are rejected with a message and the scanner keeps running.
+- Booking email state renamed from `hasEmailSent` to `ticketEmail` (matches big-api 1.11.0).
+- Production build: the initial bundle's warning budget was raised from 2.1 MB to 2.2 MB (the error limit is unchanged).
+
+### Notes
+- 101 new tests; 583/583 passing. Production bundle about 2.10 MB (warning budget 2.2 MB).
+- Requires big-api 1.11.0.
+
+---
+
 ## [1.14.1] - 2026-10-13
 
 ### Fixed

@@ -2,6 +2,7 @@ import { Component, EventEmitter, OnDestroy, OnInit, Output } from "@angular/cor
 import { AuthService } from "../core/auth.service";
 import { EventService } from "../core/event.service";
 import { AvatarService } from "../core/avatar.service";
+import { EmailService } from "../core/email.service";
 import { User } from "../core/user.model";
 import { EventItem } from "../models/event.model";
 import { Subscription } from "rxjs";
@@ -24,6 +25,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
      *  once per login; changes made this session arrive via AvatarService. */
     avatarVersion = 0;
     isAuthenticated = false;
+    /** Admin > Email Report link: same rule as sending (DEV/DIR/ADMIN or a Box
+     *  Office TL), answered by the backend via EmailService. */
+    canSeeEmailReport = false;
     readonly appVersion = environment.version;
 
     private currentUser: User | null = null;
@@ -41,7 +45,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     constructor(
         private authService: AuthService,
         private eventService: EventService,
-        private avatarService: AvatarService
+        private avatarService: AvatarService,
+        private emailService: EmailService
     ) {}
 
     /** Box Office is visible to admin roles, or users with the permission/department access */
@@ -98,9 +103,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
             if (id !== this.userId) {
                 this.userId = id;
                 this.avatarVersion = 0;
+                this.canSeeEmailReport = false;
                 if (id) {
                     this.avatarService.fetchVersion(id).subscribe(v => {
                         if (this.userId === id) this.avatarVersion = v;
+                    });
+                    // refresh=true: never reuse the previous user's cached answer
+                    this.emailService.getConfig(true).subscribe(c => {
+                        if (this.userId === id) this.canSeeEmailReport = !!c.canViewReport;
                     });
                 }
             }

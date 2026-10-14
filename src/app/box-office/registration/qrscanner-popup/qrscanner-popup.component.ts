@@ -2,6 +2,8 @@ import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { NgxScannerQrcodeComponent, ScannerQRCodeConfig, ScannerQRCodeResult } from 'ngx-scanner-qrcode';
 
+import { BoxOfficeService } from '../../box-office.service';
+
 @Component({
   selector: 'app-box-office-qrscanner-popup',
   templateUrl: './qrscanner-popup.component.html',
@@ -20,7 +22,16 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit {
 
   @ViewChild('action') action!: NgxScannerQrcodeComponent;
 
-  constructor(public dialogRef: MatDialogRef<BoxOfficeQrscannerPopupComponent>) { }
+  /** Shown under the camera when a scanned code is rejected. */
+  message = '';
+  private checking = false;
+  /** The scanner reports the same code many times a second — don't re-check a code just rejected. */
+  private lastRejected = '';
+
+  constructor(
+    public dialogRef: MatDialogRef<BoxOfficeQrscannerPopupComponent>,
+    private boxOfficeService: BoxOfficeService
+  ) { }
 
   ngAfterViewInit(): void {
     this.action.isReady.subscribe(() => {
@@ -32,21 +43,26 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit {
     });
   }
 
-  // On a successful scan, close the dialog immediately with the ticket id —
-  // unlike the Tickets version, there's no manual "Copy" step here; the caller
-  // navigates straight to the Booking Found page.
+  // Email epic: ticket QRs are signed, and only big-api holds the key, so
+  // every scan is checked there. A valid code closes the dialog with the
+  // booking id (the caller opens Booking Found); a rejected one shows the
+  // reason and keeps the camera running for the next attempt.
   onEvent(results: ScannerQRCodeResult[], action?: any): void {
-    try {
-      const data = JSON.parse(results[0].value);
-      const keys = Object.keys(data);
-      const validKeys = keys.includes('_id') && keys.includes('oid') && keys.includes('tid');
-      if (validKeys) {
+    const text = results?.[0]?.value;
+    if (!text || this.checking || text === this.lastRejected) return;
+    this.checking = true;
+    this.boxOfficeService.verifyQr(text).subscribe({
+      next: res => {
+        this.checking = false;
         action?.stop();
-        this.dialogRef.close(data._id);
+        this.dialogRef.close(res.ticketId);
+      },
+      error: err => {
+        this.checking = false;
+        this.lastRejected = text;
+        this.message = err?.error?.message || 'Could not check this QR code. Please try again.';
       }
-    } catch {
-      // Not a recognized booking QR payload — keep scanning.
-    }
+    });
   }
 
   close(): void {
