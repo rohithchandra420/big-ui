@@ -6,6 +6,10 @@ import { BoxOfficeService } from '../../box-office.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventService } from '../../../core/event.service';
 import { PassType } from '../../../models/event.model';
+import { EmailConfig } from '../../../models/email.model';
+import { EmailService } from '../../../core/email.service';
+import { EmailBatchTrackerService } from '../../../core/email-batch-tracker.service';
+import { isValidEmail, recallTester, rememberTester } from '../../email/email-tester';
 
 /**
  * On-the-spot ticket creation for walk-ins with no prior online booking.
@@ -35,10 +39,18 @@ export class SpotRegistrationComponent implements OnInit {
   form!: FormGroup;
   saving = false;
 
+  // Email epic — "Email ticket to buyer" right after registering (default on
+  // for people who can send). In test mode the email goes to a tester address.
+  emailConfig: EmailConfig | null = null;
+  emailTicket = true;
+  tester = recallTester();
+
   constructor(
     private boxOfficeService: BoxOfficeService,
     private notificationService: NotificationService,
-    private eventService: EventService
+    private eventService: EventService,
+    private emailService: EmailService,
+    private emailTracker: EmailBatchTrackerService
   ) { }
 
   ngOnInit() {
@@ -51,6 +63,19 @@ export class SpotRegistrationComponent implements OnInit {
       shopcart: new FormArray([this.newItemGroup()]),
     });
     this.loadPassTypes();
+    this.emailService.getConfig(true).subscribe(config => this.emailConfig = config);
+  }
+
+  get willEmail(): boolean {
+    return !!this.emailConfig?.canSendTicket && this.emailTicket;
+  }
+
+  get testerNeeded(): boolean {
+    return this.willEmail && !!this.emailConfig?.safeMode;
+  }
+
+  get testerValid(): boolean {
+    return !this.testerNeeded || isValidEmail(this.tester);
   }
 
   private loadPassTypes() {
@@ -92,7 +117,7 @@ export class SpotRegistrationComponent implements OnInit {
 
   save() {
     const activeEvent = this.eventService.currentActiveEvent;
-    if (this.form.invalid || this.saving || !activeEvent) {
+    if (this.form.invalid || this.saving || !activeEvent || !this.testerValid) {
       if (!activeEvent) this.notificationService.openErrorSnackBar('No event selected');
       return;
     }
@@ -106,7 +131,6 @@ export class SpotRegistrationComponent implements OnInit {
       email: email!.trim(),
       phone_no: phone_no!.trim(),
       totalPrice: Number(totalPrice),
-      hasEmailSent: 'Not Yet',
       shopcart: shopcart,
     };
 
@@ -114,12 +138,25 @@ export class SpotRegistrationComponent implements OnInit {
       next: (created) => {
         this.saving = false;
         this.notificationService.openSucessSnackBar('Registered — Order #' + created.order_id);
+        if (this.willEmail && created._id) this.emailTicketFor(created);
         this.registered.emit(created);
       },
       error: (err) => {
         this.saving = false;
         this.notificationService.openErrorSnackBar(err?.error?.message || 'Failed to register attendee');
       }
+    });
+  }
+
+  /** Sends the new booking's Ticket Email in the background; the progress
+   *  card follows it. Registration has already succeeded either way. */
+  private emailTicketFor(created: Ticket) {
+    const tester = this.testerNeeded ? this.tester.trim() : undefined;
+    if (tester) rememberTester(tester);
+    this.emailService.sendTicketEmails([created._id!], 'unsent', tester).subscribe({
+      next: batch => this.emailTracker.track(batch, `Ticket email · ${created.first_name} ${created.last_name}`.trim()),
+      error: err => this.notificationService.openErrorSnackBar(
+        'Registered, but the ticket email could not be sent: ' + (err?.error?.message || 'please try again from Booking Found'))
     });
   }
 

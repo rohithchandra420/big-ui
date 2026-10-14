@@ -1,0 +1,79 @@
+<h2 mat-dialog-title>Custom Email</h2>
+
+<mat-dialog-content class="email-dlg">
+  <div class="test-banner" *ngIf="safeMode">
+    <strong>Test mode</strong> — emails go <u>only</u> to the tester address below, never to the buyers.
+  </div>
+
+  <p class="lead">
+    To {{ recipients.length }} buyer{{ recipients.length === 1 ? '' : 's' }}<span *ngIf="noEmail.length"> ·
+    {{ noEmail.length }} without an email will be skipped</span>. The festival banner and footer are added automatically.
+  </p>
+
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" class="tab" [class.on]="tab === 'write'" [attr.aria-selected]="tab === 'write'"
+            (click)="tab = 'write'">Write</button>
+    <button type="button" role="tab" class="tab" [class.on]="tab === 'preview'" [attr.aria-selected]="tab === 'preview'"
+            [disabled]="!contentValid" (click)="showPreview()">Preview</button>
+  </div>
+
+  <ng-container *ngIf="tab === 'write'">
+    <div class="field">
+      <label for="subject">Subject *</label>
+      <input id="subject" #subjectInput type="text" [(ngModel)]="subject" maxlength="200"
+             placeholder="e.g. Gate timings for {event}" (focus)="focus('subject')">
+    </div>
+
+    <div class="ph-row">
+      <span class="ph-label">Insert:</span>
+      <button type="button" class="ph-chip" *ngFor="let p of placeholders"
+              (mousedown)="$event.preventDefault()" (click)="insertPlaceholder(p)">{{ '{' + p + '}' }}</button>
+    </div>
+
+    <div (focusin)="focus('body')">
+      <app-rich-text-editor [value]="bodyHtml" (valueChange)="bodyHtml = $event"
+                            placeholder="Write your message…"></app-rich-text-editor>
+    </div>
+
+    <label class="cb-wrap include-row">
+      <input type="checkbox" [(ngModel)]="includeTicket">
+      <span class="cb-box"></span>
+      <span class="cb-text">Include ticket details and QR code</span>
+    </label>
+  </ng-container>
+
+  <ng-container *ngIf="tab === 'preview'">
+    <div class="preview-meta" *ngIf="previewSubject">
+      <div><span class="pm-l">To</span> {{ previewTo }}<span class="pm-hint"> (first selected booking)</span></div>
+      <div><span class="pm-l">Subject</span> {{ previewSubject }}</div>
+    </div>
+    <div class="preview-loading" *ngIf="previewing">Building preview…</div>
+    <iframe class="preview-frame" *ngIf="previewHtml" [srcdoc]="previewHtml" sandbox="" title="Email preview"></iframe>
+  </ng-container>
+
+  <div class="field" *ngIf="safeMode">
+    <label for="ctester">Tester email *</label>
+    <input id="ctester" type="email" [(ngModel)]="tester" placeholder="you@example.com" autocomplete="email">
+    <div class="field-error" *ngIf="tester && !testerValid">Enter a valid email address.</div>
+  </div>
+
+  <div class="quota" *ngIf="remaining !== null">
+    {{ remaining }} of {{ data.config.dailyCap }} emails left in the next 24 hours.
+  </div>
+  <div class="warn-banner" *ngIf="overCap">
+    That's more than today's allowance — select fewer bookings or try again later.
+  </div>
+  <div class="field-error" *ngIf="error">{{ error }}</div>
+</mat-dialog-content>
+
+<mat-dialog-actions class="email-actions">
+  <button class="btn-ghost" (click)="sendTest()" [disabled]="testing || !contentValid"
+          title="Sends one copy to your own email address">
+    {{ testing ? 'Sending test…' : 'Send test to me' }}
+  </button>
+  <span class="spacer"></span>
+  <button class="btn-ghost" (click)="cancel()">Cancel</button>
+  <button class="btn-cta" (click)="send()" [disabled]="!canSend">
+    {{ sending ? 'Starting…' : 'Send to ' + recipients.length }}
+  </button>
+</mat-dialog-actions>

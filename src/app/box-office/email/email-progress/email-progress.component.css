@@ -1,0 +1,74 @@
+.ep-stack {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+}
+
+.ep-card {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-left: 4px solid var(--color-primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.ep-card.ep-done { border-left-color: #16a34a; }
+.ep-card.ep-warn { border-left-color: #dc2626; }
+
+.ep-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ep-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ep-close {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 4px;
+}
+
+.ep-text {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ep-bar {
+  margin-top: 8px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+.ep-fill {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+/* Phone: full-width along the bottom, clear of the screen edge. */
+@media (max-width: 600px) {
+  .ep-stack {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: auto;
+  }
+}

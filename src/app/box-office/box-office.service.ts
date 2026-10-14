@@ -70,6 +70,13 @@ export class BoxOfficeService {
         });
     }
 
+    /** Email epic — ticket QRs are signed server-side; the gate sends what it
+     *  scanned and gets back the booking to open (or a 400/404 with a reason). */
+    verifyQr(payload: string) {
+        return this.http.post<{ ticketId: string; orderId: number; event?: string; signed: boolean }>(
+            this.url + "/box-office/verifyQr", { payload });
+    }
+
     checkIn(shopItemId: string) {
         return this.http.post<Shopcart>(this.url + "/box-office/checkIn", { _id: shopItemId });
     }

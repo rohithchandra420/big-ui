@@ -21,6 +21,8 @@ import { BookingFoundComponent } from "../box-office/registration/booking-found/
 import { MyDepartmentComponent } from "../my-department/my-department.component";
 import { EventsComponent } from "../admin/events/events.component";
 import { EventDetailComponent } from "../admin/events/event-detail/event-detail.component";
+import { EmailReportComponent } from "../admin/email-report/email-report.component";
+import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
 
@@ -83,7 +85,9 @@ const appRoutes: Routes = [
         { path: 'departments', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentsComponent },
         { path: 'departments/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentDetailComponent },
         { path: 'events', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventsComponent },
-        { path: 'events/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventDetailComponent }
+        { path: 'events/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventDetailComponent },
+        // Same rule as sending email: DEV/DIR/ADMIN or a Box Office TL (decided by the backend)
+        { path: 'email-report', canActivate: [EmailAccessGuard], component: EmailReportComponent }
     ]},
     { path: 'error', component: ErrorPageComponent, data: {message: 'Page Under Construction'}},
     //{ path: '**', redirectTo: 'error' },

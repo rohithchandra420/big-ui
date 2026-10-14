@@ -1,0 +1,31 @@
+<div class="rte">
+  <div class="rte-toolbar" role="toolbar" aria-label="Formatting">
+    <button type="button" class="rte-btn" title="Bold" aria-label="Bold" (mousedown)="exec('bold', $event)"><b>B</b></button>
+    <button type="button" class="rte-btn" title="Italic" aria-label="Italic" (mousedown)="exec('italic', $event)"><i>I</i></button>
+    <span class="rte-sep"></span>
+    <button type="button" class="rte-btn" title="Bulleted list" aria-label="Bulleted list" (mousedown)="exec('insertUnorderedList', $event)">• List</button>
+    <button type="button" class="rte-btn" title="Numbered list" aria-label="Numbered list" (mousedown)="exec('insertOrderedList', $event)">1. List</button>
+    <span class="rte-sep"></span>
+    <button type="button" class="rte-btn" title="Add link" aria-label="Add link" (mousedown)="openLink($event)">Link</button>
+    <button type="button" class="rte-btn" title="Remove link" aria-label="Remove link" (mousedown)="exec('unlink', $event)">Unlink</button>
+    <button type="button" class="rte-btn" title="Clear formatting" aria-label="Clear formatting" (mousedown)="exec('removeFormat', $event)">Clear</button>
+  </div>
+
+  <div class="rte-link" *ngIf="linkOpen">
+    <input type="url" [(ngModel)]="linkUrl" placeholder="https://…" aria-label="Link address"
+           (keydown.enter)="$event.preventDefault(); applyLink()" (keydown.escape)="closeLink()">
+    <button type="button" class="btn-cta" [disabled]="!linkValid" (click)="applyLink()">Add</button>
+    <button type="button" class="btn-ghost" (click)="closeLink()">Cancel</button>
+  </div>
+
+  <div #area
+       class="rte-area"
+       contenteditable="true"
+       role="textbox"
+       aria-multiline="true"
+       [attr.aria-label]="placeholder || 'Message'"
+       [attr.data-placeholder]="placeholder"
+       [class.rte-empty]="isEmpty"
+       (input)="onInput()"
+       (paste)="onPaste($event)"></div>
+</div>

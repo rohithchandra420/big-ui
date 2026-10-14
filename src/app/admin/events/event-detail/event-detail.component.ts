@@ -25,7 +25,10 @@ export class EventDetailComponent implements OnInit {
     description: new FormControl(''),
     startDate: new FormControl(''),
     endDate: new FormControl(''),
-    status: new FormControl<EventStatus>('draft')
+    status: new FormControl<EventStatus>('draft'),
+    // Email epic — this edition's Ticket Email wording (empty = default).
+    emailSubject: new FormControl('', Validators.maxLength(200)),
+    emailIntro: new FormControl('', Validators.maxLength(2000))
   });
 
   // New pass type form, shown inline below the pass type list. `code` is
@@ -74,9 +77,28 @@ export class EventDetailComponent implements OnInit {
       description: this.detail.description || '',
       startDate: this.detail.startDate ? this.detail.startDate.substring(0, 10) : '',
       endDate: this.detail.endDate ? this.detail.endDate.substring(0, 10) : '',
-      status: this.detail.status
+      status: this.detail.status,
+      emailSubject: this.detail.ticketEmail?.subject || '',
+      emailIntro: this.detail.ticketEmail?.intro || ''
     });
     this.editMode = true;
+  }
+
+  // ── Ticket email wording (Email epic) — mirrors big-api's defaults ──
+
+  get defaultEmailSubject(): string {
+    const name = this.editForm.value.name || this.detail?.name || 'Bloom in Green';
+    return `${name} Tickets - Order #{order_id}`;
+  }
+
+  get defaultEmailIntro(): string {
+    const name = this.editForm.value.name || this.detail?.name || 'the festival';
+    return `Here are your tickets to ${name}! We're thrilled to have you join us and to welcome you to the BiG community. `
+      + 'If you have any questions, feel free to reach out. Enjoy the festival!';
+  }
+
+  get hasCustomEmailWording(): boolean {
+    return !!(this.detail?.ticketEmail?.subject || this.detail?.ticketEmail?.intro);
   }
 
   cancelEdit() {
@@ -86,13 +108,14 @@ export class EventDetailComponent implements OnInit {
   save() {
     if (!this.detail || this.editForm.invalid || this.saving) return;
     this.saving = true;
-    const { name, description, startDate, endDate, status } = this.editForm.value;
+    const { name, description, startDate, endDate, status, emailSubject, emailIntro } = this.editForm.value;
     this.eventService.updateEvent(this.detail._id, {
       name: name!.trim(),
       description: description || '',
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      status: status || undefined
+      status: status || undefined,
+      ticketEmail: { subject: (emailSubject || '').trim(), intro: (emailIntro || '').trim() }
     }).subscribe({
       next: () => {
         this.saving = false;

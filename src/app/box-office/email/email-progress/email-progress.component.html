@@ -1,0 +1,25 @@
+<div class="ep-stack" *ngIf="items.length" aria-live="polite">
+  <div class="ep-card" *ngFor="let t of items; trackBy: trackById"
+       [class.ep-done]="t.batch.finished && !t.batch.failed"
+       [class.ep-warn]="t.batch.finished && (t.batch.failed || t.lost)">
+    <div class="ep-head">
+      <span class="ep-title">{{ t.label }}</span>
+      <button class="ep-close" (click)="dismiss(t.batch.id)" aria-label="Dismiss" title="Dismiss">✕</button>
+    </div>
+
+    <ng-container *ngIf="!t.batch.finished">
+      <div class="ep-text">Sending… {{ t.batch.done }} / {{ t.batch.total }}</div>
+      <div class="ep-bar" role="progressbar" [attr.aria-valuenow]="percent(t)" aria-valuemin="0" aria-valuemax="100">
+        <div class="ep-fill" [style.width.%]="percent(t)"></div>
+      </div>
+    </ng-container>
+
+    <div class="ep-text" *ngIf="t.batch.finished && !t.lost">
+      Done: {{ t.batch.sent }} sent<span *ngIf="t.batch.failed"> · <strong>{{ t.batch.failed }} failed</strong></span><span
+            *ngIf="t.batch.skipped"> · {{ t.batch.skipped }} skipped</span>
+    </div>
+    <div class="ep-text" *ngIf="t.lost">
+      Lost track of this send — check the Ticket Email column or the Email Report.
+    </div>
+  </div>
+</div>

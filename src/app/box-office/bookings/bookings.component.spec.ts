@@ -3,7 +3,9 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { BehaviorSubject, of, Subject, throwError } from 'rxjs';
+import { MatMenuModule } from '@angular/material/menu';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { delay } from 'rxjs/operators';
 
 import { BookingsComponent } from './bookings.component';
@@ -11,15 +13,23 @@ import { BoxOfficeService } from '../box-office.service';
 import { EventService } from '../../core/event.service';
 import { Ticket } from '../../models/ticket.model';
 import { EventItem } from '../../models/event.model';
+import { EmailBatch } from '../../models/email.model';
+import { EmailService } from '../../core/email.service';
+import { EmailBatchTrackerService } from '../../core/email-batch-tracker.service';
+import { EmailDialogsService } from '../email/email-dialogs.service';
+import { AppSelectComponent } from '../../shared/app-select/app-select.component';
+import { AppOptionComponent } from '../../shared/app-select/app-option.component';
+
+const mockBatch: EmailBatch = { id: 'b1', type: 'ticket', total: 1, done: 0, sent: 0, failed: 0, skipped: 0, finished: false, startedAt: '', finishedAt: null };
 
 const mockActiveEvent = { _id: 'evt1', name: 'Test Event', description: '', status: 'active' } as EventItem;
 
 const mockBookings: Ticket[] = [
-  new Ticket(1, 'Arjun', 'Mehta', 'arjun@example.com', '9000000001', 'TXN1', 'Yes', 100, [
+  new Ticket(1, 'Arjun', 'Mehta', 'arjun@example.com', '9000000001', 'TXN1', 'sent', 100, [
     { item_name: 'Festival Ticket', item_quantity: 1, order_id: 1, admissionId: null as any, isAdmitted: true, isActive: true } as any,
     { item_name: 'Camping', item_quantity: 1, order_id: 1, admissionId: null as any, isAdmitted: false, isActive: true } as any,
   ], 't1'),
-  new Ticket(2, 'Priya', 'Nair', 'priya@example.com', '9000000002', 'TXN2', 'Not Yet', 50, [
+  new Ticket(2, 'Priya', 'Nair', 'priya@example.com', '9000000002', 'TXN2', 'not_sent', 50, [
     { item_name: 'Day Pass', item_quantity: 1, order_id: 2, admissionId: null as any, isAdmitted: false, isActive: true } as any,
   ], 't2'),
 ];
@@ -32,6 +42,9 @@ describe('BookingsComponent', () => {
   let dialogSpy: jasmine.SpyObj<MatDialog>;
   let activeEventSubject: BehaviorSubject<EventItem | null>;
   let eventServiceStub: { activeEvent: BehaviorSubject<EventItem | null>, currentActiveEvent: EventItem | null };
+  let canSend: boolean;
+  let emailDialogsSpy: jasmine.SpyObj<EmailDialogsService>;
+  let finished$: Subject<EmailBatch>;
 
   beforeEach(async () => {
     boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['getAllTickets']);
@@ -44,14 +57,25 @@ describe('BookingsComponent', () => {
       get currentActiveEvent() { return activeEventSubject.value; }
     };
 
+    canSend = true;
+    emailDialogsSpy = jasmine.createSpyObj('EmailDialogsService', ['openTicketEmail', 'openCustomEmail']);
+    emailDialogsSpy.openTicketEmail.and.returnValue(of(mockBatch));
+    emailDialogsSpy.openCustomEmail.and.returnValue(of({ ...mockBatch, type: 'custom' } as EmailBatch));
+    finished$ = new Subject<EmailBatch>();
+
     await TestBed.configureTestingModule({
-      declarations: [BookingsComponent],
-      imports: [FormsModule],
+      // app-select/app-option declared for real: the Ticket Email filter binds
+      // [(ngModel)] on <app-select>, which needs its value accessor.
+      declarations: [BookingsComponent, AppSelectComponent, AppOptionComponent],
+      imports: [FormsModule, MatMenuModule, NoopAnimationsModule],
       providers: [
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: MatDialog, useValue: dialogSpy },
         { provide: EventService, useValue: eventServiceStub },
+        { provide: EmailService, useValue: { canSend: () => of(canSend), canSendTicket: () => of(canSend), canSendCustom: () => of(canSend) } },
+        { provide: EmailDialogsService, useValue: emailDialogsSpy },
+        { provide: EmailBatchTrackerService, useValue: { finished$: finished$.asObservable() } },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -72,7 +96,7 @@ describe('BookingsComponent', () => {
     expect(component.loading).toBeFalse();
   });
 
-  it('computes emailsSentCount from hasEmailSent', () => {
+  it('computes emailsSentCount from the Ticket Email status', () => {
     expect(component.emailsSentCount).toBe(1);
   });
 
@@ -83,7 +107,7 @@ describe('BookingsComponent', () => {
   it('computes spotRegistrationCount for tickets with a SPOT- transaction_id', () => {
     component.bookings = [
       ...mockBookings,
-      new Ticket(3, 'Walkin', 'Guest', 'walkin@example.com', '9000000099', 'SPOT-123', 'Not Yet', 10, [], 't3'),
+      new Ticket(3, 'Walkin', 'Guest', 'walkin@example.com', '9000000099', 'SPOT-123', 'not_sent', 10, [], 't3'),
     ];
     expect(component.spotRegistrationCount).toBe(1);
   });
@@ -128,7 +152,7 @@ describe('BookingsComponent', () => {
     it('filters to spot-registered bookings when that stat is active', () => {
       component.bookings = [
         ...mockBookings,
-        new Ticket(3, 'Walkin', 'Guest', 'walkin@example.com', '9000000099', 'SPOT-123', 'Not Yet', 10, [], 't3'),
+        new Ticket(3, 'Walkin', 'Guest', 'walkin@example.com', '9000000099', 'SPOT-123', 'not_sent', 10, [], 't3'),
       ];
       component.toggleFilter('spotRegistration');
       expect(component.filteredBookings.map(b => b._id)).toEqual(['t3']);
@@ -144,6 +168,37 @@ describe('BookingsComponent', () => {
     it('filters by search term across name, email and ticket id', () => {
       component.searchTerm = 'priya';
       expect(component.filteredBookings.map(b => b._id)).toEqual(['t2']);
+    });
+
+    it('filters by Ticket Email status', () => {
+      component.emailStatusFilter = 'sent';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['t1']);
+      component.emailStatusFilter = 'not_sent';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['t2']);
+      component.emailStatusFilter = 'bounced';
+      expect(component.filteredBookings.length).toBe(0);
+      component.emailStatusFilter = '';
+      expect(component.filteredBookings.length).toBe(2);
+    });
+
+    it('combines the Ticket Email status filter with search', () => {
+      component.emailStatusFilter = 'sent';
+      component.searchTerm = 'priya';
+      expect(component.filteredBookings.length).toBe(0);
+    });
+
+    it('offers every Ticket Email status, including Bounced, as a fixed list', () => {
+      expect(component.emailStatusOptions.map(o => o.value))
+        .toEqual(['not_sent', 'sending', 'sent', 'bounced', 'failed', 'no_email']);
+      // Same array every change-detection pass (no re-created <app-option>s)
+      expect(component.emailStatusOptions).toBe(component.emailStatusOptions);
+    });
+
+    it('shows the bounce reason for a bounced booking', () => {
+      const bounced = { ...mockBookings[0], ticketEmail: { status: 'bounced', error: 'mailbox does not exist' } } as any;
+      expect(component.emailStatusLabel(bounced)).toBe('Bounced');
+      expect(component.emailStatusBadge(bounced)).toBe('br');
+      expect(component.emailStatusError(bounced)).toBe('mailbox does not exist');
     });
   });
 
@@ -324,12 +379,12 @@ describe('BookingsComponent', () => {
     });
 
     it('returns an empty array for a booking with no shopcart', () => {
-      const ticket = new Ticket(4, 'No', 'Items', 'x@example.com', '9', 'TXN4', 'Yes', 0, undefined, 't4');
+      const ticket = new Ticket(4, 'No', 'Items', 'x@example.com', '9', 'TXN4', 'sent', 0, undefined, 't4');
       expect(component.buildExportRows([ticket])).toEqual([]);
     });
 
     it('falls back to passTypeName when item_name is missing (passes created via the current Box Office flow)', () => {
-      const ticket = new Ticket(5, 'Kavya', 'Reddy', 'kavya@example.com', '9000000003', 'TXN5', 'Yes', 200, [
+      const ticket = new Ticket(5, 'Kavya', 'Reddy', 'kavya@example.com', '9000000003', 'TXN5', 'sent', 200, [
         { passTypeName: 'Solo Tent', item_quantity: 1, order_id: 5, admissionId: null as any, isAdmitted: false, isActive: true } as any,
       ], 't5');
 
@@ -343,6 +398,76 @@ describe('BookingsComponent', () => {
     it('does nothing when there are no bookings loaded', () => {
       component.bookings = [];
       expect(() => component.exportBookings()).not.toThrow();
+    });
+  });
+
+  describe('emails (Email epic)', () => {
+    it('shows the Email menu only to people who can send', () => {
+      const btn = () => Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button'))
+        .find(b => b.textContent?.includes('Email ▾'));
+      expect(btn()).toBeTruthy();
+      expect(btn()!.disabled).toBeTrue();
+      component.toggleRow('t1');
+      fixture.detectChanges();
+      expect(btn()!.disabled).toBeFalse();
+    });
+
+    it('hides the Email menu when the user cannot send', () => {
+      canSend = false;
+      component.ngOnInit();
+      fixture.detectChanges();
+      const btn = Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button'))
+        .find(b => b.textContent?.includes('Email ▾'));
+      expect(btn).toBeUndefined();
+    });
+
+    it('sends Ticket Emails for the selected bookings and reloads', () => {
+      component.toggleRow('t2');
+      component.toggleRow('t1');
+      boxOfficeServiceSpy.getAllTickets.calls.reset();
+      component.sendTicketEmails();
+      const tickets = emailDialogsSpy.openTicketEmail.calls.mostRecent().args[0];
+      expect(tickets.map(t => t._id)).toEqual(['t1', 't2']);
+      expect(boxOfficeServiceSpy.getAllTickets).toHaveBeenCalled();
+    });
+
+    it('does nothing with no bookings selected', () => {
+      component.sendTicketEmails();
+      component.sendCustomEmails();
+      expect(emailDialogsSpy.openTicketEmail).not.toHaveBeenCalled();
+      expect(emailDialogsSpy.openCustomEmail).not.toHaveBeenCalled();
+    });
+
+    it('opens the Custom Email dialog for the selection', () => {
+      component.toggleRow('t2');
+      component.sendCustomEmails();
+      expect(emailDialogsSpy.openCustomEmail.calls.mostRecent().args[0].map(t => t._id)).toEqual(['t2']);
+    });
+
+    it('reloads bookings when a background send finishes', () => {
+      boxOfficeServiceSpy.getAllTickets.calls.reset();
+      finished$.next({ ...mockBatch, finished: true });
+      expect(boxOfficeServiceSpy.getAllTickets).toHaveBeenCalled();
+    });
+
+    it('keeps the open panel on the fresh copy after a reload', () => {
+      component.openPanel(mockBookings[1]);
+      const fresh = mockBookings.map(b => Object.assign(Object.create(Object.getPrototypeOf(b)), b));
+      fresh[1].ticketEmail = { status: 'sent' };
+      boxOfficeServiceSpy.getAllTickets.and.returnValue(of(fresh as any));
+      component.loadBookings();
+      expect(component.activeBooking).toBe(fresh[1]);
+    });
+
+    it('labels the Ticket Email status and explains failures', () => {
+      const t = new Ticket(9, 'A', 'B', 'a@example.com', '9', 'TXN9', 'failed', 1, [], 't9');
+      t.ticketEmail.error = 'Mailbox full';
+      expect(component.emailStatusLabel(t)).toBe('Failed');
+      expect(component.emailStatusBadge(t)).toBe('br');
+      expect(component.emailStatusError(t)).toBe('Mailbox full');
+      expect(component.emailStatusLabel(mockBookings[0])).toBe('Sent');
+      expect(component.emailStatusError(mockBookings[0])).toBe('');
+      expect(component.emailStatusLabel({ ticketEmail: undefined } as any)).toBe('Not sent');
     });
   });
 });

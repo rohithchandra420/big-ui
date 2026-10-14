@@ -23,6 +23,7 @@
       </div>
       <p class="event-desc" *ngIf="detail.description">{{ detail.description }}</p>
       <p class="event-desc muted" *ngIf="!detail.description">No description</p>
+      <p class="event-desc muted">Ticket email: {{ hasCustomEmailWording ? 'custom wording' : 'default wording' }}</p>
       <p class="event-dates" *ngIf="detail.startDate || detail.endDate">
         {{ detail.startDate | date:'mediumDate' }} – {{ detail.endDate | date:'mediumDate' }}
       </p>
@@ -131,6 +132,25 @@
             <app-option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</app-option>
           </app-select>
           <p class="field-hint">Only <strong>Active</strong> events are visible to TL/VOL — Draft and Archived are admin-only.</p>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-lbl">Ticket email</div>
+        <p class="field-hint" style="margin-top: 0;">
+          Wording of the ticket email buyers get for this event. Leave empty to use the default shown in grey.
+          You can use {{ "{name}" }}, {{ "{first_name}" }}, {{ "{order_id}" }} and {{ "{event}" }}.
+        </p>
+
+        <div class="field">
+          <label>Subject</label>
+          <input type="text" formControlName="emailSubject" maxlength="200" [placeholder]="defaultEmailSubject">
+          <span class="field-error" *ngIf="editForm.get('emailSubject')?.hasError('maxlength')">200 characters at most</span>
+        </div>
+
+        <div class="field">
+          <label>Intro paragraph</label>
+          <textarea formControlName="emailIntro" rows="4" maxlength="2000" [placeholder]="defaultEmailIntro"></textarea>
+          <span class="field-error" *ngIf="editForm.get('emailIntro')?.hasError('maxlength')">2000 characters at most</span>
         </div>
 
         <div class="form-actions">

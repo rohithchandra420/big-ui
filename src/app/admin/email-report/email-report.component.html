@@ -1,0 +1,222 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Email Report</div>
+    <div class="page-ph-sub">{{ total }} email{{ total === 1 ? '' : 's' }}{{ hasFilters ? ' (filtered)' : '' }}</div>
+  </div>
+  <button class="btn-ghost" (click)="exportReport()" [disabled]="exporting || total === 0">
+    {{ exporting ? 'Exporting…' : 'Export' }}
+  </button>
+</div>
+
+<div class="report-page">
+
+  <!-- ── Summary (tap to filter) ──────────────────────────── -->
+  <div class="stat-row">
+    <div class="stat tap" [class.act]="isCardActive('sent')" (click)="toggleCard('sent')">
+      <div class="stat-l">Sent</div>
+      <div class="stat-n">{{ cardCount('sent') }}</div>
+      <div class="stat-s">handed to Brevo</div>
+    </div>
+    <div class="stat tap" [class.act]="isCardActive('delivered')" (click)="toggleCard('delivered')">
+      <div class="stat-l">Delivered</div>
+      <div class="stat-n">{{ cardCount('delivered') }}</div>
+      <div class="stat-s">tap to view →</div>
+    </div>
+    <div class="stat tap" [class.act]="isCardActive('bounced')" (click)="toggleCard('bounced')">
+      <div class="stat-l">Bounced</div>
+      <div class="stat-n">{{ cardCount('bounced') }}</div>
+      <div class="stat-s">address didn't work</div>
+    </div>
+    <div class="stat tap" [class.act]="isCardActive('failed')" (click)="toggleCard('failed')">
+      <div class="stat-l">Failed</div>
+      <div class="stat-n">{{ cardCount('failed') }}</div>
+      <div class="stat-s">couldn't be sent</div>
+    </div>
+    <div class="stat tap" [class.act]="isCardActive('opened')" (click)="toggleCard('opened')"
+         data-tooltip="Approximate — some mail apps open images automatically, others block them">
+      <div class="stat-l">Opened (approx.)</div>
+      <div class="stat-n">{{ cardCount('opened') }}</div>
+      <div class="stat-s">tap to view →</div>
+    </div>
+  </div>
+
+  <!-- ── Table ────────────────────────────────────────────── -->
+  <div class="tbl-container">
+    <div class="tbl-filters">
+      <div class="filter-bar">
+        <input type="text" placeholder="Search recipient, email, order # or subject..."
+               [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
+
+        <app-select class="filter-select" [(ngModel)]="typeFilter" (ngModelChange)="onFilterChange()">
+          <app-option value="">All types</app-option>
+          <app-option *ngFor="let o of typeOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
+        </app-select>
+
+        <app-select class="filter-select" [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
+          <app-option value="">Any send status</app-option>
+          <app-option *ngFor="let o of statusOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
+        </app-select>
+
+        <app-select class="filter-select" [(ngModel)]="deliveryFilter" (ngModelChange)="onFilterChange()">
+          <app-option value="">Any delivery</app-option>
+          <app-option *ngFor="let o of deliveryOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
+        </app-select>
+
+        <app-select class="filter-select" *ngIf="events.length > 1" [(ngModel)]="eventFilter" (ngModelChange)="onFilterChange()">
+          <app-option value="">All events</app-option>
+          <app-option *ngFor="let ev of events; trackBy: trackById" [value]="ev._id">{{ ev.name }}</app-option>
+        </app-select>
+
+        <app-select class="filter-select" *ngIf="senders.length > 1" [(ngModel)]="senderFilter" (ngModelChange)="onFilterChange()">
+          <app-option value="">Anyone</app-option>
+          <app-option *ngFor="let s of senders; trackBy: trackById" [value]="s._id">{{ s.name }}</app-option>
+        </app-select>
+
+        <label class="date-filter">
+          <span>From</span>
+          <input type="date" [(ngModel)]="fromDate" (ngModelChange)="onFilterChange()" [max]="toDate || null" />
+        </label>
+        <label class="date-filter">
+          <span>To</span>
+          <input type="date" [(ngModel)]="toDate" (ngModelChange)="onFilterChange()" [min]="fromDate || null" />
+        </label>
+
+        <button class="btn-ghost clear-btn" *ngIf="hasFilters" (click)="clearFilters()">Clear</button>
+      </div>
+    </div>
+
+    <div class="tbl-scroll report-tbl-scroll">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Recipient</th>
+            <th>Order #</th>
+            <th>Subject</th>
+            <th>Status</th>
+            <th>Sent by</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of items; trackBy: trackById"
+              [class.selected]="panelOpen && active?._id === e._id"
+              (click)="openEmail(e)">
+            <td>{{ (e.sentAt || e.createdAt) | date:'d MMM y, h:mm a' }}</td>
+            <td><span class="badge bb">{{ typeLabel(e) }}</span></td>
+            <td>
+              <div class="recipient">
+                <span class="recipient-name">{{ e.recipientName || e.to }}</span>
+                <span class="recipient-sub" *ngIf="e.recipientName">{{ e.to }}</span>
+                <span class="recipient-sub test-to" *ngIf="e.redirectedTo">test → {{ e.redirectedTo }}</span>
+              </div>
+            </td>
+            <td class="mono">{{ e.orderId ?? '—' }}</td>
+            <td class="subject-cell" [attr.title]="e.subject">{{ e.subject || '—' }}</td>
+            <td><span class="badge" [ngClass]="statusBadge(e)" [data-tooltip]="problem(e)">{{ statusLabel(e) }}</span></td>
+            <td>{{ senderName(e) || '—' }}</td>
+          </tr>
+          <tr *ngIf="!loading && items.length === 0">
+            <td colspan="7" class="empty-row">No emails found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tbl-foot">
+      <span>
+        {{ total }} email{{ total === 1 ? '' : 's' }}
+        <span *ngIf="loading" class="loading-txt">Loading…</span>
+      </span>
+      <mat-paginator [length]="total"
+                     [pageSize]="pageSize"
+                     [pageSizeOptions]="pageSizeOptions"
+                     [pageIndex]="pageIndex"
+                     [selectConfig]="{ panelClass: 'app-select-panel' }"
+                     (page)="onPageChange($event)">
+      </mat-paginator>
+    </div>
+  </div>
+</div>
+
+<!-- ── Side panel ───────────────────────────────────────────── -->
+<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
+
+<div class="panel" [class.open]="panelOpen">
+  <ng-container *ngIf="active">
+    <div class="panel-hd">
+      <div class="panel-hd-main">
+        <div class="panel-title">{{ active.subject || '(no subject)' }}</div>
+        <div class="panel-badges">
+          <span class="badge bb">{{ typeLabel(active) }}</span>
+          <span class="badge" [ngClass]="statusBadge(active)">{{ statusLabel(active) }}</span>
+        </div>
+      </div>
+      <button class="panel-close" (click)="closePanel()" aria-label="Close" title="Close">✕</button>
+    </div>
+
+    <div class="panel-body">
+      <div class="warn-banner" *ngIf="problem(active) as p">{{ p }}</div>
+
+      <div class="section-lbl">Details</div>
+      <div class="detail-list">
+        <div class="detail-row"><span class="detail-l">Recipient</span><span class="detail-v">{{ active.recipientName || '—' }}</span></div>
+        <div class="detail-row"><span class="detail-l">Email</span><span class="detail-v">{{ active.to || '—' }}</span></div>
+        <div class="detail-row" *ngIf="active.redirectedTo">
+          <span class="detail-l">Sent to (test)</span><span class="detail-v">{{ active.redirectedTo }}</span>
+        </div>
+        <div class="detail-row"><span class="detail-l">Order #</span><span class="detail-v">{{ active.orderId ?? '—' }}</span></div>
+        <div class="detail-row"><span class="detail-l">Event</span><span class="detail-v">{{ eventName(active) || '—' }}</span></div>
+        <div class="detail-row"><span class="detail-l">Send status</span><span class="detail-v">{{ sendStatusLabel(active) }}</span></div>
+        <div class="detail-row"><span class="detail-l">Sent by</span><span class="detail-v">{{ senderName(active) || '—' }}</span></div>
+        <div class="detail-row"><span class="detail-l">Created</span><span class="detail-v">{{ active.createdAt | date:'d MMM y, h:mm:ss a' }}</span></div>
+        <div class="detail-row"><span class="detail-l">Sent</span><span class="detail-v">{{ active.sentAt ? (active.sentAt | date:'d MMM y, h:mm:ss a') : '—' }}</span></div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-lbl">Delivery</div>
+      <ng-container *ngIf="active.delivery?.status; else noDelivery">
+        <div class="detail-list">
+          <div class="detail-row"><span class="detail-l">Outcome</span><span class="detail-v">{{ statusLabel(active) }}</span></div>
+          <div class="detail-row" *ngIf="active.delivery?.deliveredAt">
+            <span class="detail-l">Delivered</span><span class="detail-v">{{ active.delivery?.deliveredAt | date:'d MMM y, h:mm a' }}</span>
+          </div>
+          <div class="detail-row" *ngIf="active.delivery?.firstOpenedAt">
+            <span class="detail-l">First opened (approx.)</span>
+            <span class="detail-v">{{ active.delivery?.firstOpenedAt | date:'d MMM y, h:mm a' }} · {{ active.delivery?.openCount || 0 }}×</span>
+          </div>
+          <div class="detail-row" *ngIf="active.delivery?.firstClickedAt">
+            <span class="detail-l">First click</span>
+            <span class="detail-v">{{ active.delivery?.firstClickedAt | date:'d MMM y, h:mm a' }} · {{ active.delivery?.clickCount || 0 }}×</span>
+          </div>
+        </div>
+        <ul class="timeline" *ngIf="active.delivery?.events?.length">
+          <li *ngFor="let ev of active.delivery?.events">
+            <span class="tl-time">{{ ev.at | date:'d MMM, h:mm a' }}</span>
+            <span class="tl-event">{{ ev.event }}</span>
+            <span class="tl-reason" *ngIf="ev.reason">{{ ev.reason }}</span>
+          </li>
+        </ul>
+      </ng-container>
+      <ng-template #noDelivery>
+        <div class="empty-note" *ngIf="active.status === 'sent'">No delivery report from Brevo yet.</div>
+        <div class="empty-note" *ngIf="active.status !== 'sent'">Not delivered: the email wasn't sent.</div>
+      </ng-template>
+
+      <div class="divider"></div>
+      <div class="section-lbl">Message</div>
+      <div class="empty-note" *ngIf="active.type === 'ticket'">
+        Standard Ticket Email: ticket details, pass list and the booking QR code. The full content isn't stored.
+      </div>
+      <div class="empty-note" *ngIf="active.type !== 'ticket' && activeLoading">Loading…</div>
+      <ng-container *ngIf="active.type !== 'ticket' && !activeLoading">
+        <iframe class="body-frame" *ngIf="activeBody; else noBody" [srcdoc]="activeBody" sandbox="" title="Email message"></iframe>
+        <ng-template #noBody>
+          <div class="empty-note">{{ active.includeTicket ? 'Ticket details and QR only.' : 'No message stored.' }}</div>
+        </ng-template>
+        <div class="empty-note" *ngIf="activeBody && active.includeTicket">Ticket details and QR were included below this message.</div>
+        <div class="empty-note" *ngIf="activeBody">Placeholders like {{ '{' }}name{{ '}' }} were filled in per recipient when sent.</div>
+      </ng-container>
+    </div>
+  </ng-container>
+</div>

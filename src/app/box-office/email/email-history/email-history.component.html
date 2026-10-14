@@ -1,0 +1,23 @@
+<ng-container *ngIf="canSend">
+  <div class="section-lbl">Email history</div>
+
+  <div class="eh-empty" *ngIf="!loading && !items.length">No emails sent for this booking yet.</div>
+  <div class="eh-empty" *ngIf="loading && !items.length">Loading…</div>
+
+  <ul class="eh-list" *ngIf="items.length">
+    <li class="eh-item" *ngFor="let e of items; trackBy: trackById">
+      <div class="eh-top">
+        <span class="badge bb">{{ typeLabel(e) }}</span>
+        <span class="eh-subject" [attr.title]="e.subject">{{ e.subject || '(no subject yet)' }}</span>
+        <span class="badge" [ngClass]="statusBadge(e)" [data-tooltip]="problem(e)">{{ statusLabel(e) }}</span>
+      </div>
+      <div class="eh-meta">
+        {{ (e.sentAt || e.createdAt) | date:'d MMM, h:mm a' }}<span *ngIf="senderName(e)"> · by {{ senderName(e) }}</span>
+        <span *ngIf="e.redirectedTo"> · test → {{ e.redirectedTo }}</span>
+        <span *ngIf="openedAt(e) as opened"
+              data-tooltip="Approximate — some mail apps open images automatically, others block them"> · opened {{ opened | date:'d MMM, h:mm a' }} (approx.)</span>
+      </div>
+      <div class="eh-error" *ngIf="problem(e) as p">{{ p }}</div>
+    </li>
+  </ul>
+</ng-container>
