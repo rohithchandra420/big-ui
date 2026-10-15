@@ -15,7 +15,7 @@
     <div class="stat tap" [class.act]="isCardActive('sent')" (click)="toggleCard('sent')">
       <div class="stat-l">Sent</div>
       <div class="stat-n">{{ cardCount('sent') }}</div>
-      <div class="stat-s">handed to Brevo</div>
+      <div class="stat-s">accepted for delivery</div>
     </div>
     <div class="stat tap" [class.act]="isCardActive('delivered')" (click)="toggleCard('delivered')">
       <div class="stat-l">Delivered</div>
@@ -199,7 +199,7 @@
         </ul>
       </ng-container>
       <ng-template #noDelivery>
-        <div class="empty-note" *ngIf="active.status === 'sent'">No delivery report from Brevo yet.</div>
+        <div class="empty-note" *ngIf="active.status === 'sent'">No delivery report yet.</div>
         <div class="empty-note" *ngIf="active.status !== 'sent'">Not delivered: the email wasn't sent.</div>
       </ng-template>
 

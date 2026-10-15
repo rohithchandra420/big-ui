@@ -1,0 +1,17 @@
+
+/* Gate sound/vibration on-off toggle in the page header. */
+.sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  color: var(--text-secondary);
+}
+.sound-toggle .mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+.sound-toggle[aria-pressed="false"] {
+  color: var(--text-muted);
+}
