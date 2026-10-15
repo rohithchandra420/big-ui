@@ -5,8 +5,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { Ticket } from '../../models/ticket.model';
 import { BoxOfficeService } from '../box-office.service';
 import { BoxOfficeQrscannerPopupComponent } from './qrscanner-popup/qrscanner-popup.component';
-import { isSpotRegistration, passChipsTyped as buildPassChips, PassChip } from '../box-office.utils';
+import { isSpotRegistration, lookupErrorMessage, passChipsTyped as buildPassChips, PassChip } from '../box-office.utils';
 import { EventService } from '../../core/event.service';
+import { GateFeedbackService } from '../../core/gate-feedback.service';
 
 @Component({
   selector: 'app-registration',
@@ -21,6 +22,8 @@ export class RegistrationComponent implements OnInit {
   searching = false;
   searched = false;
   searchResults: Ticket[] = [];
+  /** Why the last Look Up failed (network/server/access) — distinct from "no booking found". */
+  searchError = '';
 
   showSpotRegistration = false;
 
@@ -36,7 +39,8 @@ export class RegistrationComponent implements OnInit {
     private boxOfficeService: BoxOfficeService,
     private router: Router,
     private dialog: MatDialog,
-    private eventService: EventService
+    private eventService: EventService,
+    public gateFeedback: GateFeedbackService
   ) { }
 
   ngOnInit() {
@@ -57,16 +61,20 @@ export class RegistrationComponent implements OnInit {
       return;
     }
 
+    this.gateFeedback.unlock();
     this.searching = true;
     this.searched = false;
     this.searchResults = [];
+    this.searchError = '';
 
     this.boxOfficeService.searchTickets(term, activeEvent._id).subscribe({
       next: (res) => {
         this.searching = false;
         this.searched = true;
 
+        // Sound/vibration only for a clear result — several matches isn't one yet.
         if (res.length === 1) {
+          this.gateFeedback.found();
           this.goToBooking(res[0]._id!);
         } else {
           res.forEach(b => {
@@ -75,12 +83,17 @@ export class RegistrationComponent implements OnInit {
             }
           });
           this.searchResults = res;
+          if (res.length === 0) {
+            this.gateFeedback.notFound();
+          }
         }
       },
-      error: () => {
+      error: (err) => {
         this.searching = false;
         this.searched = true;
         this.searchResults = [];
+        this.searchError = lookupErrorMessage(err, 'The search could not be completed. Please try again.');
+        this.gateFeedback.error();
       }
     });
   }
@@ -108,6 +121,7 @@ export class RegistrationComponent implements OnInit {
   }
 
   openScanner() {
+    this.gateFeedback.unlock();
     const dialogRef = this.dialog.open(BoxOfficeQrscannerPopupComponent, {
       width: '90%',
       maxWidth: '480px'
@@ -118,6 +132,13 @@ export class RegistrationComponent implements OnInit {
         this.goToBooking(ticketId);
       }
     });
+  }
+
+  toggleSound() {
+    this.gateFeedback.setMuted(!this.gateFeedback.muted);
+    if (!this.gateFeedback.muted) {
+      this.gateFeedback.unlock();
+    }
   }
 
   get totalAttendees(): number {

@@ -110,3 +110,21 @@ export function ticketEmailLabel(status: TicketEmailStatus): string {
 export function ticketEmailBadge(status: TicketEmailStatus): string {
     return TICKET_EMAIL_BADGES[status] || 'bx';
 }
+
+/**
+ * Gate lookups (Look Up, QR scan): turns a failed request into a message that
+ * says what actually went wrong, so staff can tell "no such booking" apart
+ * from "no internet" or "server problem". A specific reason from big-api
+ * (e.g. "This QR code is not valid") wins for 4xx responses.
+ */
+export function lookupErrorMessage(err: any, fallback: string): string {
+  const status = err?.status;
+  if (status === 0) return 'Could not reach the server. Check the internet connection and try again.';
+  if (status === 401) return 'Your session has expired. Please sign in again.';
+  if (status === 403) return 'You do not have access to look up bookings.';
+  if (status >= 500) return 'The server ran into a problem. Please try again in a moment.';
+  const body = err?.error;
+  if (typeof body?.message === 'string' && body.message) return body.message;
+  if (Array.isArray(body?.errors) && body.errors[0]?.msg) return body.errors[0].msg;
+  return fallback;
+}

@@ -1,4 +1,4 @@
-import { isFestivalPass, isSpotRegistration, passChips, passChipsTyped, passSummary, ticketEmailStatus, ticketEmailLabel, ticketEmailBadge } from './box-office.utils';
+import { isFestivalPass, isSpotRegistration, passChips, passChipsTyped, passSummary, ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, lookupErrorMessage } from './box-office.utils';
 import { Shopcart, Ticket } from '../models/ticket.model';
 
 describe('box-office.utils', () => {
@@ -104,5 +104,32 @@ describe('Ticket Email status helpers (Email epic)', () => {
     expect(ticketEmailBadge('sent')).toBe('bg');
     expect(ticketEmailBadge('failed')).toBe('br');
     expect(ticketEmailBadge('no_email')).toBe('ba');
+  });
+
+  describe('lookupErrorMessage()', () => {
+    const fallback = 'fallback';
+    it('names a network failure', () => {
+      expect(lookupErrorMessage({ status: 0 }, fallback)).toContain('Could not reach the server');
+    });
+    it('names an expired session', () => {
+      expect(lookupErrorMessage({ status: 401 }, fallback)).toContain('session has expired');
+    });
+    it('names missing access', () => {
+      expect(lookupErrorMessage({ status: 403 }, fallback)).toContain('do not have access');
+    });
+    it('names a server problem instead of showing its raw text', () => {
+      expect(lookupErrorMessage({ status: 500, error: 'Search failed' }, fallback)).toContain('server ran into a problem');
+    });
+    it('keeps a specific reason from big-api for 4xx', () => {
+      expect(lookupErrorMessage({ status: 404, error: { message: 'No booking matches this QR code' } }, fallback))
+        .toBe('No booking matches this QR code');
+    });
+    it('reads validation errors', () => {
+      expect(lookupErrorMessage({ status: 400, error: { errors: [{ msg: 'eventId is required' }] } }, fallback))
+        .toBe('eventId is required');
+    });
+    it('falls back when there is nothing specific', () => {
+      expect(lookupErrorMessage({ status: 418 }, fallback)).toBe(fallback);
+    });
   });
 });

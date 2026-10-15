@@ -7,6 +7,7 @@ import { BehaviorSubject, of, throwError } from 'rxjs';
 import { RegistrationComponent } from './registration.component';
 import { BoxOfficeService } from '../box-office.service';
 import { EventService } from '../../core/event.service';
+import { GateFeedbackService } from '../../core/gate-feedback.service';
 import { Ticket } from '../../models/ticket.model';
 import { EventItem } from '../../models/event.model';
 
@@ -28,6 +29,7 @@ describe('RegistrationComponent', () => {
   let boxOfficeServiceSpy: jasmine.SpyObj<BoxOfficeService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let dialogSpy: jasmine.SpyObj<MatDialog>;
+  let feedbackSpy: jasmine.SpyObj<GateFeedbackService>;
   let activeEventSubject: BehaviorSubject<EventItem | null>;
   let eventServiceStub: { activeEvent: BehaviorSubject<EventItem | null>, currentActiveEvent: EventItem | null };
 
@@ -36,6 +38,7 @@ describe('RegistrationComponent', () => {
     boxOfficeServiceSpy.getAllTickets.and.returnValue(of(mockBookings as any));
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+    feedbackSpy = jasmine.createSpyObj('GateFeedbackService', ['found', 'notFound', 'error', 'unlock', 'setMuted'], { muted: false });
     activeEventSubject = new BehaviorSubject<EventItem | null>(mockActiveEvent);
     eventServiceStub = {
       activeEvent: activeEventSubject,
@@ -49,6 +52,7 @@ describe('RegistrationComponent', () => {
         { provide: Router, useValue: routerSpy },
         { provide: MatDialog, useValue: dialogSpy },
         { provide: EventService, useValue: eventServiceStub },
+        { provide: GateFeedbackService, useValue: feedbackSpy },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -124,6 +128,88 @@ describe('RegistrationComponent', () => {
       expect(component.searchResults).toEqual(mockBookings);
     });
 
+    describe('gate sound/vibration', () => {
+      it('unlocks audio from the Look Up tap', () => {
+        boxOfficeServiceSpy.searchTickets.and.returnValue(of([]));
+        component.searchTerm = 'x';
+        component.lookUp();
+        expect(feedbackSpy.unlock).toHaveBeenCalled();
+      });
+
+      it('plays Found for exactly one match', () => {
+        boxOfficeServiceSpy.searchTickets.and.returnValue(of([mockBookings[0]] as any));
+        component.searchTerm = 'Arjun';
+        component.lookUp();
+        expect(feedbackSpy.found).toHaveBeenCalledTimes(1);
+        expect(feedbackSpy.notFound).not.toHaveBeenCalled();
+      });
+
+      it('plays nothing for several matches (not a result yet)', () => {
+        boxOfficeServiceSpy.searchTickets.and.returnValue(of(mockBookings as any));
+        component.searchTerm = 'a';
+        component.lookUp();
+        expect(feedbackSpy.found).not.toHaveBeenCalled();
+        expect(feedbackSpy.notFound).not.toHaveBeenCalled();
+      });
+
+      it('plays Not Found when nothing matches', () => {
+        boxOfficeServiceSpy.searchTickets.and.returnValue(of([]));
+        component.searchTerm = 'nobody';
+        component.lookUp();
+        expect(feedbackSpy.notFound).toHaveBeenCalledTimes(1);
+        expect(feedbackSpy.found).not.toHaveBeenCalled();
+      });
+
+      it('plays the Error sound (not Not Found) when the lookup fails', () => {
+        boxOfficeServiceSpy.searchTickets.and.returnValue(throwError(() => new Error('fail')));
+        component.searchTerm = 'anything';
+        component.lookUp();
+        expect(feedbackSpy.error).toHaveBeenCalledTimes(1);
+        expect(feedbackSpy.notFound).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('failure message', () => {
+      const render = () => { fixture.detectChanges(); return fixture.nativeElement.textContent as string; };
+
+      it('says the server could not be reached on a network failure, not "no booking found"', () => {
+        boxOfficeServiceSpy.searchTickets.and.returnValue(throwError(() => ({ status: 0 })));
+        component.searchTerm = 'Arjun';
+        component.lookUp();
+        const text = render();
+        expect(component.searchError).toContain('Could not reach the server');
+        expect(text).toContain('Look Up failed: Could not reach the server');
+        expect(text).not.toContain('No booking found');
+      });
+
+      it('says the server had a problem on a 5xx', () => {
+        boxOfficeServiceSpy.searchTickets.and.returnValue(throwError(() => ({ status: 500, error: 'Search failed' })));
+        component.searchTerm = 'Arjun';
+        component.lookUp();
+        expect(render()).toContain('server ran into a problem');
+      });
+
+      it('still says "No booking found" for a successful search with no matches, and clears an old error', () => {
+        boxOfficeServiceSpy.searchTickets.and.returnValue(throwError(() => ({ status: 0 })));
+        component.searchTerm = 'Arjun';
+        component.lookUp();
+        boxOfficeServiceSpy.searchTickets.and.returnValue(of([]));
+        component.searchTerm = 'nobody';
+        component.lookUp();
+        const text = render();
+        expect(component.searchError).toBe('');
+        expect(text).toContain('No booking found for "nobody"');
+        expect(text).not.toContain('Look Up failed');
+      });
+
+      it('plays nothing for an empty search term', () => {
+        component.searchTerm = '  ';
+        component.lookUp();
+        expect(feedbackSpy.found).not.toHaveBeenCalled();
+        expect(feedbackSpy.notFound).not.toHaveBeenCalled();
+      });
+    });
+
     it('leaves searchResults empty and marks searched when nothing matches', () => {
       boxOfficeServiceSpy.searchTickets.and.returnValue(of([]));
       component.searchTerm = 'nobody';
@@ -144,6 +230,11 @@ describe('RegistrationComponent', () => {
       expect(component.searched).toBeTrue();
       expect(component.searchResults).toEqual([]);
     });
+  });
+
+  it('toggleSound() flips the device mute setting', () => {
+    component.toggleSound();
+    expect(feedbackSpy.setMuted).toHaveBeenCalledWith(true);
   });
 
   it('goToBooking navigates to /box-office/registration/:id', () => {
@@ -181,6 +272,13 @@ describe('RegistrationComponent', () => {
 
       expect(dialogSpy.open).toHaveBeenCalled();
       expect(routerSpy.navigate).toHaveBeenCalledWith(['/box-office/registration', 't1']);
+    });
+
+    it('unlocks audio from the Scan QR tap, so the scan result can be heard', () => {
+      const afterClosedSpy = jasmine.createSpyObj({ afterClosed: of(null) }) as MatDialogRef<any>;
+      dialogSpy.open.and.returnValue(afterClosedSpy);
+      component.openScanner();
+      expect(feedbackSpy.unlock).toHaveBeenCalled();
     });
 
     it('does not navigate when the dialog closes without a scan result', () => {
