@@ -49,16 +49,16 @@ describe('GateFeedbackService', () => {
     localStorage.removeItem('big.gateFeedback.muted');
   });
 
-  it('found() plays a rising two-note chime and one short pulse', () => {
+  it('found() plays a bright "ding-DING" and one short pulse', () => {
     service.found();
-    expect(ctx().tones.map(t => t.freq)).toEqual([880, 1320]);
-    expect(vibrateSpy).toHaveBeenCalledWith([120]);
+    expect(ctx().tones).toEqual([{ type: 'sine', freq: 1047 }, { type: 'sine', freq: 1568 }]);
+    expect(vibrateSpy).toHaveBeenCalledWith([150]);
   });
 
-  it('notFound() plays a low buzz and three quick pulses', () => {
+  it('notFound() plays two harsh buzzes and two pulses', () => {
     service.notFound();
-    expect(ctx().tones).toEqual([{ type: 'square', freq: 180 }]);
-    expect(vibrateSpy).toHaveBeenCalledWith([100, 60, 100, 60, 100]);
+    expect(ctx().tones).toEqual([{ type: 'sawtooth', freq: 140 }, { type: 'sawtooth', freq: 140 }]);
+    expect(vibrateSpy).toHaveBeenCalledWith([200, 100, 200]);
   });
 
   it('error() plays three falling notes and one long pulse', () => {
@@ -94,7 +94,7 @@ describe('GateFeedbackService', () => {
     (window as any).webkitAudioContext = undefined;
     const noAudio = new GateFeedbackService();
     expect(() => noAudio.found()).not.toThrow();
-    expect(vibrateSpy).toHaveBeenCalledWith([120]);
+    expect(vibrateSpy).toHaveBeenCalledWith([150]);
     (window as any).webkitAudioContext = originalWebkit;
   });
 });
