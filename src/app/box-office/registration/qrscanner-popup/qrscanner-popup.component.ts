@@ -19,6 +19,11 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
 
   // https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#front_and_back_camera
   config: ScannerQRCodeConfig = {
+    // The library beeps and vibrates on EVERY camera frame that contains a
+    // QR (up to 30 a second) — off, so only GateFeedbackService's one
+    // Found / Not Found / Error sound plays per scan.
+    isBeep: false,
+    vibrate: 0,
     constraints: {
       video: {
         width: window.innerWidth

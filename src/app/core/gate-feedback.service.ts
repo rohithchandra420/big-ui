@@ -4,8 +4,8 @@ const MUTE_KEY = 'big.gateFeedback.muted';
 
 /**
  * Sound + vibration at the gate, so staff know the result of a scan or a
- * Look Up without reading the screen. Found = bright rising chime + one
- * short pulse; Not Found = low buzz + three quick pulses; Error (lookup
+ * Look Up without reading the screen. Found = bright "ding-DING" + one
+ * short pulse; Not Found = two harsh buzzes + two pulses; Error (lookup
  * failed) = three falling notes + one long pulse.
  *
  * Tones are generated with the Web Audio API (no audio files). Browsers keep
@@ -41,15 +41,16 @@ export class GateFeedbackService {
 
   found(): void {
     if (this._muted) return;
-    this.tone(880, 0, 0.12, 'sine');
-    this.tone(1320, 0.12, 0.18, 'sine');
-    this.vibrate([120]);
+    this.tone(1047, 0, 0.14, 'sine', 0.35);
+    this.tone(1568, 0.15, 0.35, 'sine', 0.35);
+    this.vibrate([150]);
   }
 
   notFound(): void {
     if (this._muted) return;
-    this.tone(180, 0, 0.35, 'square');
-    this.vibrate([100, 60, 100, 60, 100]);
+    this.tone(140, 0, 0.22, 'sawtooth', 0.22);
+    this.tone(140, 0.32, 0.22, 'sawtooth', 0.22);
+    this.vibrate([200, 100, 200]);
   }
 
   /** The lookup itself failed (no connection, server problem) — not an answer about the booking. */
@@ -73,7 +74,7 @@ export class GateFeedbackService {
     return this.ctx;
   }
 
-  private tone(freq: number, startAfter: number, duration: number, type: OscillatorType): void {
+  private tone(freq: number, startAfter: number, duration: number, type: OscillatorType, volume = 0.25): void {
     const ctx = this.audio();
     if (!ctx) return;
     try {
@@ -84,7 +85,7 @@ export class GateFeedbackService {
       osc.frequency.value = freq;
       // Short fade in/out so the tone doesn't click.
       gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.25, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(volume, start + 0.01);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
       osc.connect(gain);
       gain.connect(ctx.destination);
