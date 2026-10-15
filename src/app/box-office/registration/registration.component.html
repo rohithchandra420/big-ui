@@ -9,6 +9,12 @@
       <span style="font-size: 14px; font-weight: 600; margin: 0 4px; color: var(--text-primary);">{{ admittedCount }}</span>
       <span style="font-size: 11px; color: var(--text-muted);">/ {{ totalAttendees }} attendees</span>
     </div>
+    <button class="btn-ghost sound-toggle" type="button" (click)="toggleSound()"
+            [attr.aria-pressed]="!gateFeedback.muted"
+            [title]="gateFeedback.muted ? 'Gate sound and vibration are off — tap to turn on' : 'Gate sound and vibration are on — tap to mute'"
+            [attr.aria-label]="gateFeedback.muted ? 'Turn gate sound on' : 'Mute gate sound'">
+      <mat-icon>{{ gateFeedback.muted ? 'volume_off' : 'volume_up' }}</mat-icon>
+    </button>
     <button class="btn-cta" *ngIf="!showSpotRegistration" (click)="openSpotRegistration()">+ Spot Registration</button>
   </div>
 </div>
@@ -45,8 +51,11 @@
     </div>
   </div>
 
-  <div class="alert ad" *ngIf="searched && searchResults.length === 0">
+  <div class="alert ad" *ngIf="searched && !searchError && searchResults.length === 0">
     No booking found for "{{ searchTerm }}".
+  </div>
+  <div class="alert aw" *ngIf="searched && searchError" role="alert">
+    Look Up failed: {{ searchError }}
   </div>
 
   <div *ngIf="searchResults.length > 1">

@@ -86,7 +86,7 @@ const appRoutes: Routes = [
         { path: 'departments/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentDetailComponent },
         { path: 'events', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventsComponent },
         { path: 'events/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventDetailComponent },
-        // Same rule as sending email: DEV/DIR/ADMIN or a Box Office TL (decided by the backend)
+        // DEV/DIR/ADMIN only (decided by the backend via /emails/config)
         { path: 'email-report', canActivate: [EmailAccessGuard], component: EmailReportComponent }
     ]},
     { path: 'error', component: ErrorPageComponent, data: {message: 'Page Under Construction'}},

@@ -9,6 +9,28 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.16.0] - 2026-10-15
+
+### Added
+- **Gate sound and vibration** on Registration, so staff know the result without reading the screen:
+  - **Found** (Look Up finds exactly one booking, or a scanned QR is accepted) — a bright rising chime and one short vibration.
+  - **Not Found** (no booking matches, or the QR is invalid) — a low buzz and three quick vibrations.
+  - **Error** (the lookup itself failed — no connection or a server problem) — three falling notes and one long vibration.
+  - Several Look Up matches play nothing, since that isn't a result yet.
+  - Sounds are generated in the browser (no audio files). iPhones get the sound only; iOS does not support web vibration.
+- **Sound on/off toggle** in the Registration page header, remembered on each device.
+- **QR scanner retries** — when a scan can't be checked because of the connection or a server problem, it retries up to 3 times with a short pause each time, showing the progress. If it still fails, it plays the Error sound once and offers **Scan again**. Invalid codes are not retried.
+
+### Changed
+- Look Up and the QR scanner now say what went wrong when a check fails — no connection, server problem, expired session or no access — in an amber message, instead of "No booking found".
+- Admin › Email Report no longer names the mail provider: the Sent card now reads "accepted for delivery".
+
+### Notes
+- 31 new tests; 614/614 passing.
+- Pairs with big-api 1.11.1 (searching with "+" and other special characters).
+
+---
+
 ## [1.15.0] - 2026-10-14
 
 ### Added

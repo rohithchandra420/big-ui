@@ -4,9 +4,10 @@
   <ngx-scanner-qrcode #action="scanner" [config]="config" (event)="onEvent($event, action)"></ngx-scanner-qrcode>
 
   <p *ngIf="action.isLoading" style="font-size: 12px; color: var(--text-muted);">Loading camera…</p>
-  <div class="alert ad scan-msg" *ngIf="message" role="alert">{{ message }}</div>
+  <div class="alert scan-msg" [class.ad]="!isError" [class.aw]="isError" *ngIf="message" role="alert">{{ message }}</div>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
+  <button class="btn-secondary" *ngIf="canScanAgain" (click)="scanAgain()">Scan again</button>
   <button class="btn-ghost" (click)="close()">Cancel</button>
 </mat-dialog-actions>
