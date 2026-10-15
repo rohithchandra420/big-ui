@@ -138,6 +138,11 @@ describe('BoxOfficeQrscannerPopupComponent', () => {
     expect(feedbackSpy.notFound).toHaveBeenCalledTimes(1);
   });
 
+  it("turns off the scanner library's own per-frame beep and vibration", () => {
+    expect(component.config.isBeep).toBeFalse();
+    expect(component.config.vibrate).toBe(0);
+  });
+
   it('ignores empty scans', () => {
     component.onEvent([], undefined);
     expect(boxOfficeSpy.verifyQr).not.toHaveBeenCalled();

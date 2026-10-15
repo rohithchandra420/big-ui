@@ -9,6 +9,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.16.1] - 2026-10-16
+
+### Fixed
+- **QR scanner beeped non-stop.** The scanner's built-in beep (and, on phones, vibration) went off on every camera frame showing a QR code, up to 30 times a second, until the booking opened. It drowned out the gate sounds, so Found, Not Found and Error were hard to tell apart. The built-in beep and vibration are now off; each scan plays exactly one gate sound.
+
+### Changed
+- Clearer gate sounds:
+  - **Found** — a bright "ding-DING", with one short vibration.
+  - **Not Found** — two harsh buzzes, with two vibrations.
+  - **Error** — unchanged (three falling notes, one long vibration).
+
+### Notes
+- 1 new test; 615/615 passing. No big-api change (stays 1.11.1).
+
+---
+
 ## [1.16.0] - 2026-10-15
 
 ### Added
