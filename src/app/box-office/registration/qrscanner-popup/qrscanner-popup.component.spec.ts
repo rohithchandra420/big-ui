@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { of, throwError } from 'rxjs';
 
 import { BoxOfficeQrscannerPopupComponent, SCAN_MAX_RETRIES, SCAN_RETRY_DELAY_MS } from './qrscanner-popup.component';
@@ -146,5 +146,72 @@ describe('BoxOfficeQrscannerPopupComponent', () => {
   it('ignores empty scans', () => {
     component.onEvent([], undefined);
     expect(boxOfficeSpy.verifyQr).not.toHaveBeenCalled();
+  });
+
+  it('defaults to booking mode when opened without data', () => {
+    expect(component.mode).toBe('booking');
+  });
+});
+
+describe('BoxOfficeQrscannerPopupComponent — Link Band mode', () => {
+  let component: BoxOfficeQrscannerPopupComponent;
+  let boxOfficeSpy: jasmine.SpyObj<BoxOfficeService>;
+  let dialogRefSpy: jasmine.SpyObj<MatDialogRef<BoxOfficeQrscannerPopupComponent>>;
+  let feedbackSpy: jasmine.SpyObj<GateFeedbackService>;
+  let stopSpy: jasmine.Spy;
+  const scan = (value: string) => component.onEvent([{ value } as any], { stop: stopSpy });
+
+  beforeEach(async () => {
+    boxOfficeSpy = jasmine.createSpyObj('BoxOfficeService', ['verifyQr']);
+    dialogRefSpy = jasmine.createSpyObj('MatDialogRef', ['close']);
+    feedbackSpy = jasmine.createSpyObj('GateFeedbackService', ['found', 'notFound', 'error', 'unlock']);
+    stopSpy = jasmine.createSpy('stop');
+    await TestBed.configureTestingModule({
+      declarations: [BoxOfficeQrscannerPopupComponent],
+      providers: [
+        { provide: BoxOfficeService, useValue: boxOfficeSpy },
+        { provide: MatDialogRef, useValue: dialogRefSpy },
+        { provide: GateFeedbackService, useValue: feedbackSpy },
+        { provide: MAT_DIALOG_DATA, useValue: { mode: 'band', attendeeName: 'Arjun Mehta' } }
+      ],
+      schemas: [NO_ERRORS_SCHEMA]
+    }).overrideTemplate(BoxOfficeQrscannerPopupComponent, '<div>{{ bandValue }}</div>').compileComponents();
+    component = TestBed.createComponent(BoxOfficeQrscannerPopupComponent).componentInstance;
+  });
+
+  it('reads the dialog data', () => {
+    expect(component.mode).toBe('band');
+    expect(component.attendeeName).toBe('Arjun Mehta');
+  });
+
+  it('shows the scanned value with one Found sound, stops the camera, and never calls the server', () => {
+    scan('BAND-000123');
+    expect(component.bandValue).toBe('BAND-000123');
+    expect(feedbackSpy.found).toHaveBeenCalledTimes(1);
+    expect(stopSpy).toHaveBeenCalled();
+    expect(boxOfficeSpy.verifyQr).not.toHaveBeenCalled();
+    expect(dialogRefSpy.close).not.toHaveBeenCalled();
+  });
+
+  it('keeps the first read when more camera frames arrive', () => {
+    scan('BAND-000123');
+    scan('BAND-000123');
+    scan('SOMETHING-ELSE');
+    expect(component.bandValue).toBe('BAND-000123');
+    expect(feedbackSpy.found).toHaveBeenCalledTimes(1);
+  });
+
+  it('Scan again clears the value and restarts the camera', () => {
+    const startSpy = jasmine.createSpy('start').and.returnValue(of(null));
+    component.action = { start: startSpy } as any;
+    scan('BAND-000123');
+    component.scanBandAgain();
+    expect(component.bandValue).toBe('');
+    expect(startSpy).toHaveBeenCalled();
+    expect(feedbackSpy.unlock).toHaveBeenCalled();
+
+    scan('BAND-000456');
+    expect(component.bandValue).toBe('BAND-000456');
+    expect(feedbackSpy.found).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,4 +1,5 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 
 import { Shopcart, Ticket } from '../../models/ticket.model';
 import { Tent } from '../../models/tent.model';
@@ -6,9 +7,11 @@ import { BoxOfficeService } from '../box-office.service';
 import { AccomodationService, TentAllocationResult } from '../../accomodation/accomodation.service';
 import { NotificationService } from '../../core/notification.service';
 import { isFestivalPass } from '../box-office.utils';
+import { GateFeedbackService } from '../../core/gate-feedback.service';
+import { BoxOfficeQrscannerPopupComponent, QrScannerData } from '../registration/qrscanner-popup/qrscanner-popup.component';
 
 /**
- * Shared attendee-row list with Check In / Allocate Tent / Vacate / Fill at
+ * Shared attendee-row list with Admit / Link Band / Allocate Tent / Vacate / Fill at
  * Counter actions — used by both the Booking Found page and the Bookings
  * detail panel, so this logic lives in exactly one place rather than being
  * duplicated (and risking drift) across the two.
@@ -39,7 +42,9 @@ export class AttendeeListComponent implements OnChanges {
   constructor(
     private boxOfficeService: BoxOfficeService,
     private accomodationService: AccomodationService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private dialog: MatDialog,
+    private gateFeedback: GateFeedbackService
   ) { }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -113,15 +118,30 @@ export class AttendeeListComponent implements OnChanges {
     this.activeCounterItem = null;
   }
 
-  checkInAttendee(item: Shopcart) {
+  admitAttendee(item: Shopcart) {
     this.boxOfficeService.checkIn(item._id!).subscribe({
       next: (updated) => {
         this.replaceShopcartItem(updated);
-        this.notificationService.openSucessSnackBar('Checked in');
+        this.notificationService.openSucessSnackBar('Admitted');
       },
       error: (err) => {
-        this.notificationService.openErrorSnackBar(err?.error?.message || 'Check-in failed');
+        this.notificationService.openErrorSnackBar(err?.error?.message || 'Admission failed');
       }
+    });
+  }
+
+  /**
+   * Link Band (demo): opens the gate scanner in band mode to read the
+   * wrist band QR handed out at admission. For now it only shows what was
+   * read — saving it against the Festival Pass waits on the band id format.
+   */
+  openLinkBand(item: Shopcart) {
+    this.gateFeedback.unlock();
+    const data: QrScannerData = { mode: 'band', attendeeName: item.name || 'Attendee' };
+    this.dialog.open(BoxOfficeQrscannerPopupComponent, {
+      width: '90%',
+      maxWidth: '480px',
+      data
     });
   }
 

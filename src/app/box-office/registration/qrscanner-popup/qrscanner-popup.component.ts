@@ -1,5 +1,5 @@
-import { AfterViewInit, Component, OnDestroy, ViewChild } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
+import { AfterViewInit, Component, Inject, OnDestroy, Optional, ViewChild } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { NgxScannerQrcodeComponent, ScannerQRCodeConfig, ScannerQRCodeResult } from 'ngx-scanner-qrcode';
 
 import { BoxOfficeService } from '../../box-office.service';
@@ -9,6 +9,18 @@ import { GateFeedbackService } from '../../../core/gate-feedback.service';
 /** Connection/server failures are retried this many times before giving up. */
 export const SCAN_MAX_RETRIES = 3;
 export const SCAN_RETRY_DELAY_MS = 1500;
+
+/**
+ * 'booking' (default) checks a ticket QR with big-api and closes with the
+ * booking id. 'band' (Link Band) reads a wrist band QR and just shows what
+ * was read — demo only for now, nothing is saved until the band id format
+ * is decided.
+ */
+export interface QrScannerData {
+  mode?: 'booking' | 'band';
+  /** Band mode: whose band is being linked, shown under the title. */
+  attendeeName?: string;
+}
 
 @Component({
   selector: 'app-box-office-qrscanner-popup',
@@ -44,20 +56,31 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
   private lastRejected = '';
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
+  readonly mode: 'booking' | 'band';
+  readonly attendeeName: string;
+  /** Band mode: the value read from the wrist band, once scanned. */
+  bandValue = '';
+
   constructor(
     public dialogRef: MatDialogRef<BoxOfficeQrscannerPopupComponent>,
     private boxOfficeService: BoxOfficeService,
-    private gateFeedback: GateFeedbackService
-  ) { }
+    private gateFeedback: GateFeedbackService,
+    @Optional() @Inject(MAT_DIALOG_DATA) data: QrScannerData | null
+  ) {
+    this.mode = data?.mode ?? 'booking';
+    this.attendeeName = data?.attendeeName ?? '';
+  }
 
   ngAfterViewInit(): void {
-    this.action.isReady.subscribe(() => {
-      const playDeviceFacingBack = (devices: any[]) => {
-        const device = devices.find((d: any) => /back|rear|environment/gi.test(d.label));
-        this.action.playDevice(device ? device.deviceId : devices[0]?.deviceId);
-      };
-      this.action.start(playDeviceFacingBack).subscribe();
-    });
+    this.action.isReady.subscribe(() => this.startCamera());
+  }
+
+  private startCamera(): void {
+    const playDeviceFacingBack = (devices: any[]) => {
+      const device = devices.find((d: any) => /back|rear|environment/gi.test(d.label));
+      this.action.playDevice(device ? device.deviceId : devices[0]?.deviceId);
+    };
+    this.action.start(playDeviceFacingBack).subscribe();
   }
 
   ngOnDestroy(): void {
@@ -70,8 +93,24 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
   // reason and keeps the camera running for the next attempt.
   onEvent(results: ScannerQRCodeResult[], action?: any): void {
     const text = results?.[0]?.value;
-    if (!text || this.checking || text === this.lastRejected) return;
+    if (!text) return;
+    if (this.mode === 'band') {
+      // Camera frames keep arriving until stop() takes effect — keep the first read.
+      if (this.bandValue) return;
+      this.bandValue = text;
+      this.gateFeedback.found();
+      action?.stop();
+      return;
+    }
+    if (this.checking || text === this.lastRejected) return;
     this.verify(text, action, 0);
+  }
+
+  /** Band mode: discard the read value and turn the camera back on. */
+  scanBandAgain(): void {
+    this.gateFeedback.unlock();
+    this.bandValue = '';
+    this.startCamera();
   }
 
   // A connection/server failure says nothing about the QR itself, so it is
