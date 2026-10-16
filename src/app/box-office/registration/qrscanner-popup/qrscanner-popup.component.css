@@ -3,3 +3,36 @@
   margin-top: 8px;
   font-size: 13px;
 }
+
+.scan-for {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.camera-hidden {
+  display: none;
+}
+
+.band-result {
+  margin-top: 8px;
+}
+
+.band-result-lbl {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Raw scanned text — could be a long URL or JSON, so let it wrap anywhere. */
+.band-result-val {
+  margin: 6px 0;
+  font-family: monospace;
+  font-size: 14px;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.band-result-note {
+  font-size: 11px;
+  color: var(--text-muted);
+}

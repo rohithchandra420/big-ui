@@ -1,13 +1,30 @@
-<h2 mat-dialog-title>Scan Booking QR</h2>
+<h2 mat-dialog-title>{{ mode === 'band' ? 'Link Wrist Band' : 'Scan Booking QR' }}</h2>
 
 <mat-dialog-content>
-  <ngx-scanner-qrcode #action="scanner" [config]="config" (event)="onEvent($event, action)"></ngx-scanner-qrcode>
+  <p class="scan-for" *ngIf="mode === 'band' && attendeeName">Scan the wrist band for <strong>{{ attendeeName }}</strong></p>
+
+  <!-- Hidden, not removed, once a band is read — Scan again restarts the same camera. -->
+  <div [class.camera-hidden]="!!bandValue">
+    <ngx-scanner-qrcode #action="scanner" [config]="config" (event)="onEvent($event, action)"></ngx-scanner-qrcode>
+  </div>
 
   <p *ngIf="action.isLoading" style="font-size: 12px; color: var(--text-muted);">Loading camera…</p>
   <div class="alert scan-msg" [class.ad]="!isError" [class.aw]="isError" *ngIf="message" role="alert">{{ message }}</div>
+
+  <div class="alert as band-result" *ngIf="bandValue" role="status">
+    <div class="band-result-lbl">Wrist band scanned</div>
+    <div class="band-result-val">{{ bandValue }}</div>
+    <div class="band-result-note">Demo only — the band is not saved yet.</div>
+  </div>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
   <button class="btn-secondary" *ngIf="canScanAgain" (click)="scanAgain()">Scan again</button>
-  <button class="btn-ghost" (click)="close()">Cancel</button>
+  <ng-container *ngIf="bandValue; else cancelBtn">
+    <button class="btn-secondary" (click)="scanBandAgain()">Scan again</button>
+    <button class="btn-cta" (click)="close()">Done</button>
+  </ng-container>
+  <ng-template #cancelBtn>
+    <button class="btn-ghost" (click)="close()">Cancel</button>
+  </ng-template>
 </mat-dialog-actions>

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { of, throwError } from 'rxjs';
 
 import { AttendeeListComponent } from './attendee-list.component';
@@ -8,6 +9,8 @@ import { AccomodationService } from '../../accomodation/accomodation.service';
 import { NotificationService } from '../../core/notification.service';
 import { Ticket } from '../../models/ticket.model';
 import { Tent } from '../../models/tent.model';
+import { GateFeedbackService } from '../../core/gate-feedback.service';
+import { BoxOfficeQrscannerPopupComponent } from '../registration/qrscanner-popup/qrscanner-popup.component';
 
 const mockTicket: Ticket = new Ticket(1, 'Arjun', 'Mehta', 'arjun@example.com', '9000000001', 'TXN1', 'sent', 100, [
   { _id: 's1', item_name: 'Festival Ticket', item_quantity: 1, order_id: 1, admissionId: null as any, isAdmitted: true, isActive: true, name: 'Arjun Mehta', phone_no: '9000000001', email: 'arjun@example.com' } as any,
@@ -20,6 +23,12 @@ describe('AttendeeListComponent', () => {
   let boxOfficeServiceSpy: jasmine.SpyObj<BoxOfficeService>;
   let accomodationServiceSpy: jasmine.SpyObj<AccomodationService>;
   let notificationSpy: jasmine.SpyObj<NotificationService>;
+  let dialogSpy: jasmine.SpyObj<MatDialog>;
+  let feedbackSpy: jasmine.SpyObj<GateFeedbackService>;
+
+  const buttonClick = (label: string) =>
+    (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
+      .find(b => b.textContent?.trim() === label)!.click();
 
   const configureWith = (ticket: Ticket) => {
     TestBed.resetTestingModule();
@@ -27,6 +36,8 @@ describe('AttendeeListComponent', () => {
     accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', ['getTentById', 'vacateTentSlot']);
     accomodationServiceSpy.getTentById.and.returnValue(of({} as Tent));
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
+    dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+    feedbackSpy = jasmine.createSpyObj('GateFeedbackService', ['unlock']);
 
     TestBed.configureTestingModule({
       declarations: [AttendeeListComponent],
@@ -34,6 +45,8 @@ describe('AttendeeListComponent', () => {
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },
         { provide: AccomodationService, useValue: accomodationServiceSpy },
         { provide: NotificationService, useValue: notificationSpy },
+        { provide: MatDialog, useValue: dialogSpy },
+        { provide: GateFeedbackService, useValue: feedbackSpy },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     });
@@ -165,27 +178,98 @@ describe('AttendeeListComponent', () => {
     });
   });
 
-  describe('checkInAttendee()', () => {
-    it('replaces the item with the checked-in version on success', () => {
+  describe('admitAttendee()', () => {
+    it('replaces the item with the admitted version on success', () => {
       const localTicket = { ...mockTicket, shopcart: mockTicket.shopcart!.map(i => ({ ...i })) } as Ticket;
       component.ticket = localTicket;
 
       const updated = { ...localTicket.shopcart![0], isAdmitted: true };
       boxOfficeServiceSpy.checkIn.and.returnValue(of(updated));
 
-      component.checkInAttendee(localTicket.shopcart![0]);
+      component.admitAttendee(localTicket.shopcart![0]);
 
       expect(boxOfficeServiceSpy.checkIn).toHaveBeenCalledWith('s1');
       expect(component.ticket.shopcart![0].isAdmitted).toBeTrue();
-      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalled();
+      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Admitted');
     });
 
     it('shows an error notification on failure', () => {
       boxOfficeServiceSpy.checkIn.and.returnValue(throwError(() => ({ error: { message: 'Attendee details are incomplete' } })));
 
-      component.checkInAttendee(mockTicket.shopcart![0]);
+      component.admitAttendee(mockTicket.shopcart![0]);
 
       expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('Attendee details are incomplete');
+    });
+
+    it('falls back to "Admission failed" when the server gives no message', () => {
+      boxOfficeServiceSpy.checkIn.and.returnValue(throwError(() => ({})));
+
+      component.admitAttendee(mockTicket.shopcart![0]);
+
+      expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('Admission failed');
+    });
+  });
+
+  describe('Admit / Link Band buttons', () => {
+    const buttonsNamed = (label: string): HTMLButtonElement[] =>
+      (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
+        .filter(b => b.textContent?.trim() === label);
+
+    const notAdmittedTicket = (): Ticket => ({
+      ...mockTicket,
+      shopcart: [{ ...mockTicket.shopcart![0], isAdmitted: false } as any, { ...mockTicket.shopcart![1] } as any]
+    } as Ticket);
+
+    it('labels the admission button "Admit", with no "Check In" left', () => {
+      configureWith(notAdmittedTicket());
+      expect(buttonsNamed('Admit').length).toBe(1);
+      expect(buttonsNamed('Check In').length).toBe(0);
+    });
+
+    it('shows Link Band on a complete Festival Pass, before admission', () => {
+      configureWith(notAdmittedTicket());
+      expect(buttonsNamed('Link Band').length).toBe(1);
+    });
+
+    it('still shows Link Band after admission (no Admit button then)', () => {
+      // mockTicket's Festival Pass is already admitted.
+      expect(buttonsNamed('Admit').length).toBe(0);
+      expect(buttonsNamed('Link Band').length).toBe(1);
+    });
+
+    it('does not show Link Band on a Festival Pass with incomplete details', () => {
+      configureWith({
+        ...mockTicket,
+        shopcart: [{ ...mockTicket.shopcart![0], email: '' } as any]
+      } as Ticket);
+      expect(buttonsNamed('Link Band').length).toBe(0);
+    });
+
+    it('does not show Link Band on Tent Pass rows', () => {
+      configureWith({ ...mockTicket, shopcart: [{ ...mockTicket.shopcart![1], name: 'A', phone_no: '1', email: 'a@b.c' } as any] } as Ticket);
+      expect(buttonsNamed('Link Band').length).toBe(0);
+    });
+
+    it('shows "Admitted" on the status badge of an admitted pass', () => {
+      expect(fixture.nativeElement.textContent).toContain('Admitted');
+      expect(fixture.nativeElement.textContent).not.toContain('Checked in');
+    });
+  });
+
+  describe('openLinkBand()', () => {
+    it('opens the gate scanner in band mode for that attendee and unlocks sound', () => {
+      buttonClick('Link Band');
+      expect(feedbackSpy.unlock).toHaveBeenCalled();
+      expect(dialogSpy.open).toHaveBeenCalledWith(BoxOfficeQrscannerPopupComponent, jasmine.objectContaining({
+        data: { mode: 'band', attendeeName: 'Arjun Mehta' }
+      }));
+    });
+
+    it('falls back to "Attendee" when the pass has no name', () => {
+      component.openLinkBand({ ...mockTicket.shopcart![0], name: '' } as any);
+      expect(dialogSpy.open).toHaveBeenCalledWith(BoxOfficeQrscannerPopupComponent, jasmine.objectContaining({
+        data: { mode: 'band', attendeeName: 'Attendee' }
+      }));
     });
   });
 

@@ -29,7 +29,7 @@
             {{ isDetailsComplete(item) ? 'Details Complete' : 'Details Pending' }}
           </span>
           <span class="badge bx">
-            {{ item.isAdmitted ? 'Checked in' : 'Not arrived' }}
+            {{ item.isAdmitted ? 'Admitted' : 'Not arrived' }}
           </span>
           <!-- Enhancement (2026-08-20): allocatedTentId was already set on the
                Festival Pass and kept in sync by onTentAllocated/vacateAttendee
@@ -52,8 +52,14 @@
     <div class="att-actions">
       <ng-container *ngIf="isFestivalPass(item); else tentActions">
         <ng-container *ngIf="isDetailsComplete(item); else incompleteActions">
-          <button class="btn-secondary att-action" *ngIf="!item.isAdmitted" (click)="checkInAttendee(item)">
-            Check In
+          <!-- "Admit", not "Check In": Check In is reserved for the planned
+               online pre-arrival form (one-time link per participant). -->
+          <button class="btn-secondary att-action" *ngIf="!item.isAdmitted" (click)="admitAttendee(item)">
+            Admit
+          </button>
+          <!-- Shown before and after admission — a band may be handed out after. -->
+          <button class="btn-secondary att-action" (click)="openLinkBand(item)">
+            Link Band
           </button>
         </ng-container>
         <ng-template #incompleteActions>
