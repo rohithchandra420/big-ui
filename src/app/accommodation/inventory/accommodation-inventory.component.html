@@ -81,7 +81,7 @@
                   <div class="occupant-card-row"><mat-icon>receipt_long</mat-icon>Order #{{ o.order_id }}</div>
                   <div class="occupant-card-row">
                     <span class="badge-admit" [class.in]="o.isAdmitted" [class.out]="!o.isAdmitted">
-                      {{ o.isAdmitted ? 'Checked in' : 'Not checked in' }}
+                      {{ o.isAdmitted ? 'Admitted' : 'Not admitted' }}
                     </span>
                   </div>
                   <!-- Enhancement (2026-08-20 follow-up #3) — vacate-only;

@@ -9,6 +9,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.17.0] - 2026-10-16
+
+### Added
+- **Link Band** (demo) — a new button on each Festival Pass row (Booking Found and the Bookings panel), next to Admit. It opens the gate QR scanner to read the wrist band handed out at admission and shows what was scanned. Shown once the attendee's details are complete, before and after admission. Same scanner as Scan QR: back camera, one Found sound per read, mute toggle respected. Nothing is saved yet — linking the band to the pass comes once the band ID format is decided.
+
+### Changed
+- **"Check In" is now "Admit".** Box Office's admission button, the attendee status badge ("Admitted"), the success/error messages, the Registration header stat and Accommodation Inventory's occupant detail now all say Admit/Admitted. "Check In" is reserved for the planned online pre-arrival form.
+
+### Notes
+- 14 new tests; 629/629 passing. No big-api change (stays 1.11.1).
+
+---
+
 ## [1.16.1] - 2026-10-16
 
 ### Fixed
