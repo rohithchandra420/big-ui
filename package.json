@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "e2e": "playwright test --project=desktop --project=phone",
-    "e2e:screens": "playwright test --project=screens"
+    "e2e:screens": "playwright test --project=screens",
+    "e2e:pwa": "playwright test -c playwright.pwa.config.ts"
   },
   "private": true,
   "dependencies": {
@@ -22,6 +23,7 @@
     "@angular/platform-browser": "^16.2.0",
     "@angular/platform-browser-dynamic": "^16.2.0",
     "@angular/router": "^16.2.0",
+    "@angular/service-worker": "16.2.12",
     "angular-calendar": "^0.31.1",
     "angular-calendar-scheduler": "^16.0.0",
     "angular-draggable-droppable": "^7.0.0",

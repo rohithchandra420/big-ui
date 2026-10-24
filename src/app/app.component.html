@@ -31,3 +31,6 @@
 
 <!-- Email epic — background send progress, visible on every page -->
 <app-email-progress *ngIf="isAuthenticated"></app-email-progress>
+
+<!-- PWA — offline, new version, install prompts (signed in or not) -->
+<app-pwa-status [belowTopbar]="isAuthenticated && isMobile"></app-pwa-status>

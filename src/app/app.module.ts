@@ -1,4 +1,5 @@
-import { LOCALE_ID, NgModule } from '@angular/core';
+import { LOCALE_ID, NgModule, isDevMode } from '@angular/core';
+import { ServiceWorkerModule } from '@angular/service-worker';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -75,6 +76,7 @@ import { RichTextEditorComponent } from './shared/rich-text-editor/rich-text-edi
 import { TicketEmailDialogComponent } from './box-office/email/ticket-email-dialog/ticket-email-dialog.component';
 import { CustomEmailDialogComponent } from './box-office/email/custom-email-dialog/custom-email-dialog.component';
 import { EmailProgressComponent } from './box-office/email/email-progress/email-progress.component';
+import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
 // ImageCropperComponent / PhotoPickerDialogComponent are standalone — no
@@ -130,7 +132,8 @@ LOAD_WASM().subscribe()
     CustomEmailDialogComponent,
     EmailProgressComponent,
     EmailActionsComponent,
-    EmailHistoryComponent
+    EmailHistoryComponent,
+    PwaStatusComponent
   ],
   imports: [
     BrowserModule,
@@ -149,6 +152,12 @@ LOAD_WASM().subscribe()
     MatDialogModule,
     MatMenuModule,
     MatIconModule,
+    // PWA: the service worker only runs in production builds (not ng serve),
+    // registered once the app has settled so it never slows the first load.
+    ServiceWorkerModule.register('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000'
+    }),
 
     CalendarModule.forRoot({
       provide: DateAdapter,
