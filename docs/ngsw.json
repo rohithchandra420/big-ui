@@ -1,0 +1,88 @@
+{
+  "configVersion": 1,
+  "timestamp": 1792860439849,
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/288.527c7abf53b9e9ae.js",
+        "/favicon.ico",
+        "/index.html",
+        "/main.e9960d5856d1b37f.js",
+        "/manifest.webmanifest",
+        "/polyfills.fea760806f7c4441.js",
+        "/runtime.aa3f56cb86a4be86.js",
+        "/styles.53b9c38764bce08b.css"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/assets/default-user.png",
+        "/assets/icons/apple-touch-icon.png",
+        "/assets/icons/icon-192.png",
+        "/assets/icons/icon-512.png",
+        "/assets/icons/icon-maskable-512.png",
+        "/assets/wasm/index.d.ts",
+        "/assets/wasm/index.js",
+        "/assets/wasm/index.js.map",
+        "/assets/wasm/ngx-scanner-qrcode.wasm"
+      ],
+      "patterns": [
+        "https:\\/\\/fonts\\.googleapis\\.com\\/.*",
+        "https:\\/\\/fonts\\.gstatic\\.com\\/.*"
+      ]
+    }
+  ],
+  "dataGroups": [],
+  "hashTable": {
+    "/288.527c7abf53b9e9ae.js": "7f190b3d3c2e0d17150be4e7400e616b15d949a8",
+    "/assets/default-user.png": "74809877ee59c5a63b2a0867fabcc40841be220d",
+    "/assets/icons/apple-touch-icon.png": "ca17598f1cee1852e424374b121dbae924d17082",
+    "/assets/icons/icon-192.png": "806646aa2fb31f12864b8268e117b18da2022cd4",
+    "/assets/icons/icon-512.png": "018d97ceab68925d95555b0e2386f55fcf89a389",
+    "/assets/icons/icon-maskable-512.png": "03b5172e80a2931e593ccbe6cfdb05d10bc41267",
+    "/assets/wasm/index.d.ts": "279baa3b674699b486cc8dda6c413537ad97daba",
+    "/assets/wasm/index.js": "8950b77fa9ec39dba59616dd9ec34881f5c6c369",
+    "/assets/wasm/index.js.map": "dc1f813581bdf15b4fecdf47c2c15c1c3d7c256f",
+    "/assets/wasm/ngx-scanner-qrcode.wasm": "978853ce6d81d4f1ab477f29598260ff7065d1fc",
+    "/favicon.ico": "22f6a4a3bcaafafb0254e0f2fa4ceb89e505e8b2",
+    "/index.html": "bcc79a7e64663930a9c2968bc841980641c0e15b",
+    "/main.e9960d5856d1b37f.js": "5bf27dcfa3827f1048e30d7d497c9bb8b6844431",
+    "/manifest.webmanifest": "5f67576a4de7f9580ae035f731379deaf71ac0eb",
+    "/polyfills.fea760806f7c4441.js": "a0c36f8a5e66bfd24551325c4dd91dc5c7dd51c3",
+    "/runtime.aa3f56cb86a4be86.js": "aa5848429b537e9457af870cbf7cf28c8601211a",
+    "/styles.53b9c38764bce08b.css": "f794e878f1d8b0d87345c64e7a8b0a0d79e1bc89"
+  },
+  "navigationUrls": [
+    {
+      "positive": true,
+      "regex": "^\\/.*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*\\.[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
+    }
+  ],
+  "navigationRequestStrategy": "performance"
+}
