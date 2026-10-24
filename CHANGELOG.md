@@ -9,6 +9,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.17.2] - 2026-10-24
+
+### Changed
+- The app now reaches the server through its own address on the BiG domain, instead of the hosting provider's address. This keeps sign-in working reliably as browsers tighten their cookie rules, and prepares for the installable app (PWA). **Everyone needs to sign in once more after this update.**
+
+### Fixed
+- **Signed-in users could open the login page** by typing its address. They are now taken to the home page instead.
+
+---
+
 ## [1.17.1] - 2026-10-24
 
 ### Changed

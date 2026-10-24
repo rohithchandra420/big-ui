@@ -7,6 +7,7 @@ import { LoginComponent } from "../login/login.component";
 import { Observable } from "rxjs";
 import { AuthService } from "./auth.service";
 import { AuthGuard } from "./auth-guard.service";
+import { GuestGuard } from "./guest-guard.service";
 import { ErrorPageComponent } from "../error-page/error-page.component";
 import { AuthResolver } from "./auth-resolver.service";
 import { AdminComponent } from "../admin/admin.component";
@@ -60,7 +61,7 @@ import { AccommodationInventoryComponent } from "../accommodation/inventory/acco
 
 const appRoutes: Routes = [
     { path: '', component: DashboardComponent },
-    { path: 'login', component: LoginComponent },
+    { path: 'login', canActivate: [GuestGuard], component: LoginComponent },
     // {
     //     path: 'admin', canActivate:[authGuard], resolve: {userDetails: AuthResolver} , component: AdminComponent, children: [
     //         // { path: 'dashboard', component: DashboardComponent },
