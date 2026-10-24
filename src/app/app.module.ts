@@ -27,6 +27,7 @@ import { LoginComponent } from './login/login.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { AuthService } from './core/auth.service';
 import { AuthGuard } from './core/auth-guard.service';
+import { GuestGuard } from './core/guest-guard.service';
 import { ErrorPageComponent } from './error-page/error-page.component';
 import { AdminComponent } from './admin/admin.component';
 import { AuthInterceptorService } from './core/auth-interceptor.service';
@@ -162,6 +163,7 @@ LOAD_WASM().subscribe()
   providers: [
     AuthService,
     AuthGuard,
+    GuestGuard,
     NotificationService,
     DashboardService,
     AccomodationService,
