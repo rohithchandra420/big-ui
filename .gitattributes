@@ -1,0 +1,4 @@
+# The GitHub Pages build in docs/ must be stored exactly as built: the PWA
+# service worker checks every cached file against the hash in ngsw.json, and
+# line-ending conversion (core.autocrlf) would make them mismatch.
+/docs/** -text
