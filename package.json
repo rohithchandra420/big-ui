@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "e2e": "playwright test --project=desktop --project=phone",
+    "e2e:screens": "playwright test --project=screens"
   },
   "private": true,
   "dependencies": {
@@ -42,6 +44,7 @@
     "@angular-devkit/build-angular": "^16.2.6",
     "@angular/cli": "^16.2.6",
     "@angular/compiler-cli": "^16.2.0",
+    "@playwright/test": "1.63.0",
     "@types/jasmine": "~4.3.0",
     "jasmine-core": "~4.6.0",
     "karma": "~6.4.0",

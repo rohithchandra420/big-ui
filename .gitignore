@@ -37,6 +37,12 @@ yarn-error.log
 testem.log
 /typings
 
+# Playwright (e2e) — throwaway database, reports and screenshot output
+/e2e/.data
+/e2e/report
+/e2e/test-results
+/e2e/screenshots-out
+
 # System files
 .DS_Store
 Thumbs.db

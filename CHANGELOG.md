@@ -7,6 +7,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Development
+- **End-to-end tests and guide screenshots with Playwright** (development tooling only — not part of the app users download). `npm run e2e` starts a fully separate copy of the app with its own throwaway database of invented sample data, signs in and clicks through real screens on desktop and phone sizes; `npm run e2e:screens` captures the Product Guide screenshots the same way. First tests: sign-in, the signed-in redirect away from the login page, and the Bookings panel showing the right booking after Allocate Tent.
+
 ---
 
 ## [1.17.2] - 2026-10-24
