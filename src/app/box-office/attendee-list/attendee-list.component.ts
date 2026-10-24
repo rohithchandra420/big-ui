@@ -49,8 +49,21 @@ export class AttendeeListComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['ticket']) {
+      // A different booking must open on its attendee list, not on the
+      // previous booking's Allocate Tent / Counter Form. Same _id = just a
+      // refreshed copy of the open booking, so an open form is left alone.
+      const previous = changes['ticket'].previousValue as Ticket | undefined;
+      if (previous?._id !== this.ticket?._id) {
+        this.resetView();
+      }
       this.loadTentDetails();
     }
+  }
+
+  /** Back to the attendee rows — closes any open Counter Form / Allocate Tent. */
+  resetView() {
+    this.activeCounterItem = null;
+    this.activeAllocateItem = null;
   }
 
   private loadTentDetails() {

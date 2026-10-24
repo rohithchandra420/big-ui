@@ -1,4 +1,4 @@
-import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
@@ -16,6 +16,7 @@ import { EventService } from '../../core/event.service';
 import { EmailService } from '../../core/email.service';
 import { EmailBatchTrackerService } from '../../core/email-batch-tracker.service';
 import { EmailDialogsService } from '../email/email-dialogs.service';
+import { AttendeeListComponent } from '../attendee-list/attendee-list.component';
 
 type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | null;
 
@@ -44,6 +45,9 @@ export class BookingsComponent implements OnInit, OnDestroy {
   activeBooking: Ticket | null = null;
   panelOpen = false;
   refreshing = false;
+
+  /** Closing the panel only hides it, so the attendee list (and any open Allocate Tent / Counter Form) survives — reset it on every open. */
+  @ViewChild(AttendeeListComponent) attendeeList?: AttendeeListComponent;
   editingTicket = false;
 
   /** Email epic — DEV/DIR/ADMIN or a Box Office TL (decided server-side). */
@@ -258,6 +262,7 @@ export class BookingsComponent implements OnInit, OnDestroy {
     this.activeBooking = booking;
     this.panelOpen = true;
     this.editingTicket = false;
+    this.attendeeList?.resetView();
   }
 
   onTicketSaved(updated: Ticket) {

@@ -258,6 +258,14 @@ describe('BookingsComponent', () => {
       expect(component.editingTicket).toBeFalse();
     });
 
+    it('openPanel resets the attendee list, so a previous Allocate Tent / Counter Form is not shown', () => {
+      // The panel is hidden, not destroyed, on close — the attendee list survives between opens.
+      const attendeeList = jasmine.createSpyObj('AttendeeListComponent', ['resetView']);
+      component.attendeeList = attendeeList;
+      component.openPanel(mockBookings[1]);
+      expect(attendeeList.resetView).toHaveBeenCalled();
+    });
+
     it('onTicketSaved updates the active booking\'s fields in place and exits edit mode', () => {
       // Clone so this test's mutation never touches the shared mockBookings fixture.
       const localBooking = { ...mockBookings[0] } as Ticket;

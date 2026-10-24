@@ -23,6 +23,7 @@
             "assets": [
               "src/favicon.ico",
               "src/assets",
+              "src/manifest.webmanifest",
               {
                 "glob": "**/*",
                 "input": "node_modules/ngx-scanner-qrcode/wasm/", 
@@ -56,7 +57,9 @@
                   "with": "src/environments/environment.ts"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "serviceWorker": true,
+              "ngswConfigPath": "ngsw-config.json"
             },
             "development": {
               "buildOptimizer": false,

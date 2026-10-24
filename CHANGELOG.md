@@ -9,6 +9,48 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.18.0] - 2026-10-24
+
+### Added
+- **BiG is now an installable app (PWA, part 1).**
+  - **Install it:** on Android (and desktop Chrome) an **Install** prompt appears; on iPhone/iPad a hint explains **Share → Add to Home Screen**. Both can be dismissed for good. Installed, BiG opens full-screen from its own home-screen icon (the "BiG" icon in the brand green).
+  - **Opens without signal:** the app itself is kept on the device, so it starts quickly and still opens when the connection drops. An **Offline** notice shows while there's no connection; anything that needs the server still says so. Booking and other data are not stored on the device in this release.
+  - **New version available:** when a new release goes out, open apps show a **Reload** banner instead of silently running the old version.
+  - Notices sit bottom-left on desktop and at the top (under the menu bar) on phones.
+- App name in the browser tab is now "BiG · Bloom in Green".
+
+### Development
+- **End-to-end tests and guide screenshots with Playwright** (development tooling only — not part of the app users download). `npm run e2e` starts a fully separate copy of the app with its own throwaway database of invented sample data, signs in and clicks through real screens on desktop and phone sizes; `npm run e2e:screens` captures the Product Guide screenshots the same way. First tests: sign-in, the signed-in redirect away from the login page, and the Bookings panel showing the right booking after Allocate Tent.
+- `npm run e2e:pwa` builds the production app and checks the install files, the service worker and starting offline, on desktop and phone sizes — with the browser unable to reach anything but the test machine.
+
+### Notes
+- 18 new unit tests (656/656) and 10 PWA end-to-end tests; the main end-to-end suite still passes (10/10).
+
+---
+
+## [1.17.2] - 2026-10-24
+
+### Changed
+- The app now reaches the server through its own address on the BiG domain, instead of the hosting provider's address. This keeps sign-in working reliably as browsers tighten their cookie rules, and prepares for the installable app (PWA). **Everyone needs to sign in once more after this update.**
+
+### Fixed
+- **Signed-in users could open the login page** by typing its address. They are now taken to the home page instead.
+
+---
+
+## [1.17.1] - 2026-10-24
+
+### Changed
+- Remaining "checked in" wording replaced with "admitted": the Booking Found subtitle ("3 of 4 admitted") and the Dashboard's accommodation card. A festival pass not yet admitted now shows **Not admitted** instead of "Not arrived".
+
+### Fixed
+- **Booking panel showed the previous booking's tent allocation.** After opening Allocate Tent (or Fill at the Counter) in a booking's side panel, closing the panel and opening another booking still showed that screen from the earlier booking. Opening a booking now always starts on its own attendee list. Moving between bookings on Booking Found behaves the same way.
+
+### Notes
+- 7 new tests; 636/636 passing. Pairs with big-api 1.11.2 (matching admission messages).
+
+---
+
 ## [1.17.0] - 2026-10-16
 
 ### Added
