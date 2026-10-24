@@ -9,6 +9,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.17.1] - 2026-10-24
+
+### Changed
+- Remaining "checked in" wording replaced with "admitted": the Booking Found subtitle ("3 of 4 admitted") and the Dashboard's accommodation card. A festival pass not yet admitted now shows **Not admitted** instead of "Not arrived".
+
+### Fixed
+- **Booking panel showed the previous booking's tent allocation.** After opening Allocate Tent (or Fill at the Counter) in a booking's side panel, closing the panel and opening another booking still showed that screen from the earlier booking. Opening a booking now always starts on its own attendee list. Moving between bookings on Booking Found behaves the same way.
+
+### Notes
+- 7 new tests; 636/636 passing. Pairs with big-api 1.11.2 (matching admission messages).
+
+---
+
 ## [1.17.0] - 2026-10-16
 
 ### Added

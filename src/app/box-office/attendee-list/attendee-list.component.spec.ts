@@ -250,6 +250,12 @@ describe('AttendeeListComponent', () => {
       expect(buttonsNamed('Link Band').length).toBe(0);
     });
 
+    it('shows "Not admitted" (not "Not arrived") on a pass not yet admitted', () => {
+      configureWith(notAdmittedTicket());
+      expect(fixture.nativeElement.textContent).toContain('Not admitted');
+      expect(fixture.nativeElement.textContent).not.toContain('Not arrived');
+    });
+
     it('shows "Admitted" on the status badge of an admitted pass', () => {
       expect(fixture.nativeElement.textContent).toContain('Admitted');
       expect(fixture.nativeElement.textContent).not.toContain('Checked in');
@@ -301,6 +307,40 @@ describe('AttendeeListComponent', () => {
       component.openAllocateTent(mockTicket.shopcart![1]);
       component.onAllocateCancelled();
       expect(component.activeAllocateItem).toBeNull();
+    });
+  });
+
+  describe('switching bookings (stale Allocate Tent / Counter Form bug)', () => {
+    const otherTicket = { ...mockTicket, _id: 't2' } as Ticket;
+
+    it('closes an open Allocate Tent when a different booking is passed in', () => {
+      component.openAllocateTent(mockTicket.shopcart![1]);
+      component.ticket = otherTicket;
+      component.ngOnChanges({ ticket: { previousValue: mockTicket, currentValue: otherTicket } as any });
+      expect(component.activeAllocateItem).toBeNull();
+    });
+
+    it('closes an open Counter Form when a different booking is passed in', () => {
+      component.openCounterForm(mockTicket.shopcart![1]);
+      component.ticket = otherTicket;
+      component.ngOnChanges({ ticket: { previousValue: mockTicket, currentValue: otherTicket } as any });
+      expect(component.activeCounterItem).toBeNull();
+    });
+
+    it('keeps an open form when only a refreshed copy of the same booking arrives', () => {
+      component.openAllocateTent(mockTicket.shopcart![1]);
+      const refreshed = { ...mockTicket } as Ticket;
+      component.ticket = refreshed;
+      component.ngOnChanges({ ticket: { previousValue: mockTicket, currentValue: refreshed } as any });
+      expect(component.activeAllocateItem).toBe(mockTicket.shopcart![1]);
+    });
+
+    it('resetView() closes both', () => {
+      component.openAllocateTent(mockTicket.shopcart![1]);
+      component.openCounterForm(mockTicket.shopcart![0]);
+      component.resetView();
+      expect(component.activeAllocateItem).toBeNull();
+      expect(component.activeCounterItem).toBeNull();
     });
   });
 
