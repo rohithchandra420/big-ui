@@ -1,0 +1,26 @@
+<div class="pwa-stack" [class.below-topbar]="belowTopbar" aria-live="polite">
+
+  <div class="pwa-note pwa-offline" *ngIf="!(pwa.online$ | async)" role="status">
+    <span class="pwa-dot"></span>
+    <span class="pwa-text"><b>Offline.</b> Showing what's already loaded — changes need a connection.</span>
+  </div>
+
+  <div class="pwa-note" *ngIf="pwa.updateReady$ | async" role="status">
+    <span class="pwa-text"><b>New version available.</b> Reload to get the latest BiG.</span>
+    <button type="button" class="btn-cta pwa-btn" (click)="pwa.reload()">Reload</button>
+  </div>
+
+  <div class="pwa-note" *ngIf="pwa.canInstall$ | async">
+    <img class="pwa-icon" src="assets/icons/icon-192.png" alt="">
+    <span class="pwa-text"><b>Install BiG</b> on this device for a home-screen icon and quicker start.</span>
+    <button type="button" class="btn-cta pwa-btn" (click)="pwa.install()">Install</button>
+    <button type="button" class="pwa-close" (click)="pwa.dismissInstall()" aria-label="Don't show again" title="Don't show again">✕</button>
+  </div>
+
+  <div class="pwa-note" *ngIf="pwa.showIosHint$ | async">
+    <img class="pwa-icon" src="assets/icons/icon-192.png" alt="">
+    <span class="pwa-text"><b>Install BiG:</b> tap <b>Share</b> <span class="pwa-share" aria-hidden="true">⬆︎</span> then <b>Add to Home Screen</b>.</span>
+    <button type="button" class="pwa-close" (click)="pwa.dismissIosHint()" aria-label="Don't show again" title="Don't show again">✕</button>
+  </div>
+
+</div>

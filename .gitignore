@@ -41,6 +41,8 @@ testem.log
 /e2e/.data
 /e2e/report
 /e2e/test-results
+/e2e/report-pwa
+/e2e/test-results-pwa
 /e2e/screenshots-out
 
 # System files

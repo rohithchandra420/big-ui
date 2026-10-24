@@ -24,6 +24,7 @@ mkdirSync(DB_DIR, { recursive: true });
 
 export default defineConfig({
   testDir: './e2e',
+  // e2e/pwa runs separately against the production build (npm run e2e:pwa).
   globalSetup: './e2e/global-setup.ts',
   // One shared database and dev server — run tests one at a time.
   fullyParallel: false,
@@ -39,8 +40,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'desktop', testIgnore: /screens\.spec\.ts/, use: { viewport: { width: 1440, height: 900 } } },
-    { name: 'phone', testIgnore: /screens\.spec\.ts/, use: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true } },
+    { name: 'desktop', testIgnore: [/screens\.spec\.ts/, /[\\/]pwa[\\/]/], use: { viewport: { width: 1440, height: 900 } } },
+    { name: 'phone', testIgnore: [/screens\.spec\.ts/, /[\\/]pwa[\\/]/], use: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true } },
     { name: 'screens', testMatch: /screens\.spec\.ts/, timeout: 10 * 60_000 },
   ],
   webServer: [
