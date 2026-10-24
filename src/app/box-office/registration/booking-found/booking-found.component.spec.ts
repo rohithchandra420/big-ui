@@ -66,6 +66,14 @@ describe('BookingFoundComponent', () => {
     expect(component.totalCount).toBe(2);
   });
 
+  it('subtitle says "admitted", not "checked in"', async () => {
+    await configureWith('t1');
+    fixture.detectChanges();
+    const sub = fixture.nativeElement.querySelector('.page-ph-sub')?.textContent ?? '';
+    expect(sub).toContain('1 of 2 admitted');
+    expect(sub).not.toContain('checked in');
+  });
+
   it('passSummary reflects the ticket shopcart', async () => {
     await configureWith('t1');
     expect(component.passSummary).toBe('Festival Ticket, Camping');
