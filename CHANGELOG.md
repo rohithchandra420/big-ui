@@ -9,6 +9,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.19.1] - 2026-11-01
+
+### Fixed
+- **My Profile → Notifications** had no section heading and ran straight into "My Attendance" — it now has its heading and spacing like the other sections.
+
+### Development
+- Guide screenshots: sample announcements in the test data, the Announcements page added to the screenshot run, and the My Profile shot stops above the Notifications card (the screenshot server can't show its real state).
+
+---
+
 ## [1.19.0] - 2026-11-01
 
 ### Added

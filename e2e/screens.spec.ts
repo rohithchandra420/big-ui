@@ -17,9 +17,19 @@ const SIZES = {
   phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
 };
 
-async function shot(page: Page, name: string) {
+/**
+ * clipAbove: crop the shot just above this element. Used for My Profile: the
+ * dev server runs no service worker, so the Notifications card would wrongly
+ * say "This browser can't show BiG notifications" — leave it out of the image.
+ */
+async function shot(page: Page, name: string, clipAbove?: string) {
   const cdp = await page.context().newCDPSession(page);
-  const r = await cdp.send('Page.captureScreenshot', { format: 'webp', quality: 82 });
+  let clip;
+  if (clipAbove) {
+    const top = await page.locator(clipAbove).first().evaluate(e => e.getBoundingClientRect().top);
+    clip = { x: 0, y: 0, width: page.viewportSize()!.width, height: Math.max(200, Math.floor(top) - 4), scale: 1 };
+  }
+  const r = await cdp.send('Page.captureScreenshot', { format: 'webp', quality: 82, ...(clip ? { clip } : {}) });
   writeFileSync(path.join(OUT, `${name}.webp`), Buffer.from(r.data, 'base64'));
   await cdp.detach();
   console.log('saved', name);
@@ -45,15 +55,25 @@ async function emailDialog(page: Page, item: string) {
   }
 }
 
+// A Weather announcement to Volunteers in Operations, filled in but NOT sent.
+async function announcementForm(page: Page) {
+  await page.locator('.ann-type', { hasText: 'Weather' }).click();
+  await page.locator('#ann-title').fill('Heavy rain expected at 4 pm');
+  await page.locator('#ann-message').fill('Cover the sound desks and move equipment off the lawn before 4.');
+  await page.locator('.ann-chips .ann-chip', { hasText: 'Volunteers' }).click();
+  await page.locator('.ann-chips .ann-chip', { hasText: 'Operations' }).click();
+  await page.waitForTimeout(600);
+}
+
 test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
   mkdirSync(OUT, { recursive: true });
   const { eventId, tickets } = seedIds();
   const ticketId = tickets['Vikram'];   // complete, not yet admitted: shows Admit + Link Band
 
-  type Screen = [string, string, ((p: Page) => Promise<void>)?];
+  type Screen = [string, string, ((p: Page) => Promise<void>)?, string?];   // name, route, prepare, clipAbove
   const SCREENS: Screen[] = [
     ['dashboard', '/'],
-    ['profile', '/profile'],
+    ['profile', '/profile', undefined, 'app-notification-settings'],
     ['my-department', '/my-department'],
     ['bookings', '/box-office/bookings'],
     ['booking-panel', '/box-office/bookings', clickFirstRow],
@@ -73,6 +93,13 @@ test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
     }],
     ['email-report', '/admin/email-report'],
     ['email-report-panel', '/admin/email-report', async p => { await p.locator('table tbody tr').first().click(); await settle(p, 1200); }],
+    // Form filled in (never sent); the sample history from seed.js sits beside it on desktop.
+    ['announcements', '/admin/announcements', p => announcementForm(p)],
+    // Phone: the Sent announcements list (below the form there).
+    ['announcements-history', '/admin/announcements', async p => {
+      await p.locator('.ann-side').scrollIntoViewIfNeeded();
+      await p.waitForTimeout(600);
+    }],
     ['ticket-email-dialog', '/box-office/bookings', p => emailDialog(p, 'Send Ticket Email')],
     ['custom-email-dialog', '/box-office/bookings', p => emailDialog(p, 'Send Custom Email')],
   ];
@@ -86,11 +113,11 @@ test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
     }
     await login(page);
 
-    for (const [name, route, after] of SCREENS) {
+    for (const [name, route, after, clipAbove] of SCREENS) {
       if (ONLY && !ONLY.includes(name)) continue;
       await page.goto(route); await settle(page, 1200);
       if (after) await after(page);
-      await shot(page, `${name}-${size}`);
+      await shot(page, `${name}-${size}`, clipAbove);
     }
     await context.close();
   }
