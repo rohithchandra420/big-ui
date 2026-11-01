@@ -9,6 +9,25 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.20.0] - 2026-11-01
+
+### Added
+- **Billboard** (under Main, for everyone): every announcement sent to you, as post-it notes on a board — newest first.
+  - Each note is in its type's colour (General, Urgent, Schedule, Weather, Reminder, Task), with a push-pin, a slight tilt, a handwritten title and a **NEW** sticker until you open it.
+  - Tap a note to open it as a large post-it with the full message, who sent it, who it went to and when.
+  - **All / Unread** tabs, **Mark all read**, and **Show older** after the newest 100.
+  - A red **unread count** on the sidebar link, refreshed after sign-in, when a notification arrives and when you come back to the app.
+  - Tapping a notification now opens that note on the Billboard.
+  - Shows announcements even if you never turned notifications on or muted them. When an email batch you started finishes, a private "Emails sent" note appears there too.
+  - Announcements sent before this release are not on the Billboard.
+- Full width, like Bookings; two notes per row on phones.
+- Requires big-api 1.13.0.
+
+### Development
+- 17 new tests (713/713).
+
+---
+
 ## [1.19.1] - 2026-11-01
 
 ### Fixed

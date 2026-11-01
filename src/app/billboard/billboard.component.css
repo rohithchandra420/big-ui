@@ -1,0 +1,104 @@
+/* Billboard: a light sage dot-grid board of post-it notes (design approved 2026-11-01, style "B"). */
+/* Full width like Bookings (user decision 2026-11-01): no max-width, inside the app's standard page inset. */
+.bb-page { padding-bottom: 2rem; }
+
+.bb-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 4px 0 14px; }
+.bb-tabs { display: inline-flex; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: 999px; padding: 3px; }
+.bb-tabs button { border: 0; background: none; padding: 6px 16px; border-radius: 999px; cursor: pointer; font-size: 13px; color: var(--text-secondary); }
+.bb-tabs button.on { background: var(--color-primary); color: #fff; font-weight: 600; }
+.bb-count { background: var(--color-danger); color: #fff; border-radius: 9px; font-size: 11px; font-weight: 700; padding: 1px 6px; margin-left: 6px; }
+
+.bb-board {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 34px 26px;
+  padding: 34px 28px 30px; border-radius: 16px; border: 1px solid #cfe0d6;
+  background: radial-gradient(#b9cfc3 1.1px, transparent 1.5px) 0 0 / 22px 22px, #e9f1ec;
+  box-shadow: inset 0 1px 0 #fff, var(--shadow-sm);
+}
+.bb-empty { grid-column: 1 / -1; text-align: center; padding: 30px 0; font-family: Caveat, cursive; font-size: 26px; color: #7fa392; }
+.bb-more { display: flex; margin: 20px auto 0; }
+
+/* ── Post-it ── colours per type: paper, ink, accent (pin + label), fold, pin shade */
+.t-general  { --bg: #dff0e5; --ink: #173a2e; --accent: #1E4638; --fold: #bcd0c3; --pin-d: #0f2a20; }
+.t-urgent   { --bg: #ffd9d6; --ink: #6b1414; --accent: #dc2626; --fold: #dbb6b3; --pin-d: #8a1717; }
+.t-schedule { --bg: #dbe7ff; --ink: #1c3a7a; --accent: #2563eb; --fold: #b8c4dc; --pin-d: #173f99; }
+.t-weather  { --bg: #d6effc; --ink: #0b4a6b; --accent: #0284c7; --fold: #b3ccd9; --pin-d: #025680; }
+.t-reminder { --bg: #fff1b8; --ink: #5c4a00; --accent: #d97706; --fold: #dccd96; --pin-d: #8c4d04; }
+.t-task     { --bg: #e9e0ff; --ink: #3f1f86; --accent: #7c3aed; --fold: #c6bddc; --pin-d: #4f249a; }
+.t-email    { --bg: #eceff1; --ink: #2f3a40; --accent: #546e7a; --fold: #c9cccf; --pin-d: #36474f; }
+
+.bb-note {
+  --corner: 22px;
+  position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 180px; padding: 24px 16px 16px;
+  border: 0; text-align: left; font: inherit; color: var(--ink); cursor: pointer;
+  /* Paper with the bottom-right corner cut away; drop-shadow follows that shape, so nothing is clipped (the pin stays whole). */
+  background: linear-gradient(315deg, transparent calc(var(--corner) * .707), var(--bg) calc(var(--corner) * .707 + .5px));
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .10)) drop-shadow(0 7px 7px rgba(0, 0, 0, .20));
+  transform: rotate(var(--tilt, -1.5deg)); transition: transform .18s ease, filter .18s ease;
+}
+.bb-note::after {   /* the folded-up corner */
+  content: ''; position: absolute; right: 0; bottom: 0; width: var(--corner); height: var(--corner); border-radius: 0 0 0 4px;
+  background: linear-gradient(135deg, var(--fold) 0%, #fff 50%, transparent 50.5%);
+  opacity: .9;
+}
+.bb-board .bb-note:nth-child(3n)   { --tilt: 1.8deg; }
+.bb-board .bb-note:nth-child(4n+1) { --tilt: -2.2deg; }
+.bb-board .bb-note:nth-child(5n+2) { --tilt: .8deg; }
+.bb-board .bb-note:hover, .bb-board .bb-note:focus-visible {
+  transform: rotate(0deg) translateY(-4px) scale(1.03); z-index: 2; outline: none;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .10)) drop-shadow(0 14px 12px rgba(0, 0, 0, .24));
+}
+.bb-board .bb-note:focus-visible { box-shadow: 0 0 0 3px rgba(30, 70, 56, .35); }
+
+/* Push-pin: domed head with a highlight, a short needle, a small shadow on the paper. */
+.bb-pin { position: absolute; top: -10px; left: 50%; width: 20px; height: 26px; transform: translateX(-50%); pointer-events: none; }
+.bb-pin::before {
+  content: ''; position: absolute; left: 2px; top: 0; width: 16px; height: 16px; border-radius: 50%; z-index: 1;
+  background: radial-gradient(circle at 34% 30%, #fff 0 10%, var(--accent) 50%, var(--pin-d) 100%);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, .35);
+}
+.bb-pin::after {
+  content: ''; position: absolute; left: 8px; top: 13px; width: 4px; height: 9px; border-radius: 0 0 2px 2px;
+  background: linear-gradient(90deg, var(--pin-d), var(--accent)); box-shadow: 3px 2px 3px rgba(0, 0, 0, .25);
+}
+
+.bb-new {
+  position: absolute; top: 10px; right: -8px; padding: 3px 8px; border-radius: 3px; transform: rotate(8deg);
+  background: var(--color-danger); color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .08em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .25);
+}
+.bb-type { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.bb-type mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.bb-title { font-family: Caveat, cursive; font-weight: 700; font-size: 26px; line-height: 1.05; margin: 8px 0 6px; color: var(--ink); overflow-wrap: anywhere; }
+.bb-msg {
+  font-size: 13.5px; line-height: 1.4; color: var(--ink); overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.bb-when { margin-top: auto; padding-top: 10px; font-size: 12px; color: var(--ink); opacity: .75; }
+
+/* ── Opened note (no pin) ── */
+.bb-scrim { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; background: rgba(15, 30, 24, .55); animation: bb-fade .15s ease; }
+.bb-big {
+  --corner: 34px; width: min(460px, 100%); min-height: 300px; max-height: calc(100vh - 32px); overflow-y: auto;
+  padding: 30px 26px 34px; cursor: default; transform: rotate(-1deg);
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .18)) drop-shadow(0 22px 26px rgba(0, 0, 0, .30));
+  animation: bb-pop .2s ease;
+}
+.bb-big .bb-title { font-size: 36px; }
+.bb-big .bb-msg { display: block; font-size: 15px; white-space: pre-line; overflow: visible; }
+.bb-meta { display: grid; gap: 4px; margin-top: 18px; padding-top: 12px; border-top: 1px dashed rgba(0, 0, 0, .2); font-size: 12.5px; color: var(--ink); overflow-wrap: anywhere; }
+.bb-close {
+  position: absolute; top: 10px; right: 12px; width: 32px; height: 32px; border: 0; border-radius: 50%;
+  display: grid; place-items: center; background: rgba(255, 255, 255, .6); color: var(--ink); cursor: pointer;
+}
+.bb-close:hover { background: #fff; }
+@keyframes bb-fade { from { opacity: 0; } }
+@keyframes bb-pop { from { transform: rotate(-4deg) scale(.9); opacity: 0; } }
+
+@media (max-width: 768px) {
+  .bb-page { padding-bottom: 1.5rem; }
+  .bb-board { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; padding: 26px 14px 22px; }
+  .bb-note { min-height: 150px; padding: 20px 12px 12px; }
+  .bb-title { font-size: 22px; }
+  .bb-msg { font-size: 12.5px; }
+}
+@media (max-width: 380px) { .bb-board { grid-template-columns: 1fr; } }
