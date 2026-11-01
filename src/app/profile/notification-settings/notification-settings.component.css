@@ -1,0 +1,59 @@
+.ns-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.ns-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex: 0 0 auto;
+}
+.ns-dot.on { background: var(--color-primary); }
+
+.ns-text {
+  flex: 1 1 140px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.ns-btn { flex: 0 0 auto; }
+
+.ns-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.ns-prefs {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ns-pref {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+.ns-pref input {
+  margin-top: 3px;
+  accent-color: var(--color-primary);
+  flex: 0 0 auto;
+}
+
+.ns-pref-text { display: flex; flex-direction: column; min-width: 0; }
+.ns-pref-label { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.ns-pref-hint { font-size: 12px; color: var(--text-muted); }
+
+.ns-foot {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}

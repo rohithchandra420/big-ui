@@ -23,6 +23,7 @@ import { MyDepartmentComponent } from "../my-department/my-department.component"
 import { EventsComponent } from "../admin/events/events.component";
 import { EventDetailComponent } from "../admin/events/event-detail/event-detail.component";
 import { EmailReportComponent } from "../admin/email-report/email-report.component";
+import { AnnouncementsComponent } from "../admin/announcements/announcements.component";
 import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
@@ -88,7 +89,8 @@ const appRoutes: Routes = [
         { path: 'events', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventsComponent },
         { path: 'events/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventDetailComponent },
         // DEV/DIR/ADMIN only (decided by the backend via /emails/config)
-        { path: 'email-report', canActivate: [EmailAccessGuard], component: EmailReportComponent }
+        { path: 'email-report', canActivate: [EmailAccessGuard], component: EmailReportComponent },
+        { path: 'announcements', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: AnnouncementsComponent }
     ]},
     { path: 'error', component: ErrorPageComponent, data: {message: 'Page Under Construction'}},
     //{ path: '**', redirectTo: 'error' },

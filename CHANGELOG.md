@@ -9,6 +9,32 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.19.0] - 2026-11-01
+
+### Added
+- **Push notifications (installable app, part 2).**
+  - **My Profile → Notifications:** shows whether notifications are on for this device (with clear guidance when the browser blocks them, or on iPhone where BiG must be installed first), a **Turn on / Turn off** button, **Send test**, and switches for "Email batch finished" and "Announcements".
+  - **One-time prompt** after signing in: "Get BiG notifications on this device · Turn on" — dismissible, never shown again on that device.
+  - **Admin → Announcements** (DEV, DIR, ADMIN): pick a **type** from colour-coded icon tiles (General, Urgent / Safety, Schedule change, Weather, Reminder, Task), write a title and message, choose **roles and/or departments** with toggle chips (with Select all / Clear) — a "Goes to:" line spells out the audience (e.g. "Volunteers in Box Office") — see a lock-screen preview, confirm and send. Urgent sends are shown in red and confirmed as such.
+  - On the phone, each type has its own coloured icon (Android and desktop) and its name at the start of the title (e.g. "Weather: Heat advisory"), so it's clear on iPhone too.
+  - **Layout:** full width on desktop — the form on the left, **Sent announcements** on the right in its own scrolling column (stacked on tablets and phones).
+  - **Sent announcements** show their type, audience, sender and device count, each with **Send again** (a new copy, marked "Resent") and **Copy to form** (to change it before sending). A **search box** (title and message) and **Type / Department / Role** filters narrow the list, with "Showing x of y" and Clear filters.
+  - "Developers" is only offered as an audience to Developers.
+  - Tapping a notification opens the right page. Signing out turns notifications off for that device first.
+- Requires big-api 1.12.0.
+
+### Changed
+- **New icon set across the whole app:** Material Symbols Rounded (Google's successor to the previous Material Icons) — a softer, more modern look, outlined by default. Same icons in the same places.
+- New reusable styles: choice tiles (coloured single-select tiles), toggle chips (multi-select pills), pill buttons, a search field, and a screen-reader-only helper.
+
+### Development
+- End-to-end tests reuse one sign-in per account (the server allows only a few sign-ins per 15 minutes); new tests for Announcements and the Profile settings.
+
+### Notes
+- 40 new unit tests (696/696); end-to-end 16/16; installable-app checks 10/10.
+
+---
+
 ## [1.18.0] - 2026-10-24
 
 ### Added

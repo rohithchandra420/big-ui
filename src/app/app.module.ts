@@ -41,7 +41,7 @@ import { AdminMenuComponent } from './admin/admin-menu/admin-menu.component';
 import { UserRegisteryComponent } from './admin/user-registery/user-registery.component';
 import { UserFormComponent } from './admin/user-registery/user-form/user-form.component';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatIconModule } from '@angular/material/icon';
+import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 
 import * as moment from 'moment';
 import { HasPermissionDirective } from './directives/has-permission.directive';
@@ -77,6 +77,8 @@ import { TicketEmailDialogComponent } from './box-office/email/ticket-email-dial
 import { CustomEmailDialogComponent } from './box-office/email/custom-email-dialog/custom-email-dialog.component';
 import { EmailProgressComponent } from './box-office/email/email-progress/email-progress.component';
 import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
+import { NotificationSettingsComponent } from './profile/notification-settings/notification-settings.component';
+import { AnnouncementsComponent } from './admin/announcements/announcements.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
 // ImageCropperComponent / PhotoPickerDialogComponent are standalone — no
@@ -133,7 +135,9 @@ LOAD_WASM().subscribe()
     EmailProgressComponent,
     EmailActionsComponent,
     EmailHistoryComponent,
-    PwaStatusComponent
+    PwaStatusComponent,
+    NotificationSettingsComponent,
+    AnnouncementsComponent
   ],
   imports: [
     BrowserModule,
@@ -182,4 +186,10 @@ LOAD_WASM().subscribe()
   ],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {
+  // App-wide icon set: every <mat-icon> uses Material Symbols Rounded (loaded in
+  // index.html) instead of the older Material Icons. Same icon names.
+  constructor(iconRegistry: MatIconRegistry) {
+    iconRegistry.setDefaultFontSetClass('material-symbols-rounded');
+  }
+}
