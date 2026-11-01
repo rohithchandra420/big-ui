@@ -1,0 +1,45 @@
+<div class="profile-section">
+  <div class="section-label">Notifications</div>
+
+  <ng-container [ngSwitch]="push.state$ | async">
+    <div class="ns-status" *ngSwitchCase="'on'">
+      <span class="ns-dot on"></span>
+      <span class="ns-text"><b>On</b> for this device.</span>
+      <button type="button" class="btn-ghost ns-btn" (click)="sendTest()" [disabled]="busy">Send test</button>
+      <button type="button" class="btn-ghost ns-btn" (click)="turnOff()" [disabled]="busy">Turn off</button>
+    </div>
+
+    <div class="ns-status" *ngSwitchCase="'off'">
+      <span class="ns-dot"></span>
+      <span class="ns-text"><b>Off</b> for this device.</span>
+      <button type="button" class="btn-cta ns-btn" (click)="turnOn()" [disabled]="busy">Turn on</button>
+    </div>
+
+    <p class="ns-note" *ngSwitchCase="'blocked'">
+      Notifications are <b>blocked</b> for BiG in this browser. Allow them in the browser's site settings, then come back here.
+    </p>
+    <p class="ns-note" *ngSwitchCase="'ios-needs-install'">
+      On iPhone and iPad, notifications work in the <b>installed app</b>: tap <b>Share</b> → <b>Add to Home Screen</b>, open BiG from its icon, then turn them on here.
+    </p>
+    <p class="ns-note" *ngSwitchCase="'server-off'">
+      Notifications aren't available yet.
+    </p>
+    <p class="ns-note" *ngSwitchDefault>
+      This browser can't show BiG notifications.
+    </p>
+  </ng-container>
+
+  <div class="ns-prefs" *ngIf="(push.config$ | async)?.preferences as prefs">
+    <label class="ns-pref" *ngFor="let c of categories">
+      <input type="checkbox"
+             [checked]="prefs[c.key]"
+             [disabled]="savingPref === c.key"
+             (change)="toggle(c.key, $any($event.target).checked)">
+      <span class="ns-pref-text">
+        <span class="ns-pref-label">{{ c.label }}</span>
+        <span class="ns-pref-hint">{{ c.hint }}</span>
+      </span>
+    </label>
+    <p class="ns-foot">These apply to every device you've turned notifications on.</p>
+  </div>
+</div>

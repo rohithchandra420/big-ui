@@ -7,6 +7,7 @@ import { BehaviorSubject, Subject, catchError, pipe, tap, throwError } from "rxj
 import { Router } from "@angular/router";
 import { environment } from "src/environments/environment.development";
 import { NotificationService } from "./notification.service";
+import { PushService } from "./push.service";
 
 @Injectable()
 export class AuthService {
@@ -19,7 +20,8 @@ export class AuthService {
     userLoggedInEmitter = new Subject<string>();
     loginErrorMessageEmitter = new Subject<string>();
 
-    constructor(private router: Router, private http: HttpClient, private notificationService: NotificationService) {//private user1: User) {
+    constructor(private router: Router, private http: HttpClient, private notificationService: NotificationService,
+                private pushService: PushService) {//private user1: User) {
     }
 
     private readonly permTiers = ['read', 'write', 'manage'];
@@ -155,7 +157,14 @@ export class AuthService {
     }
 
     logOut() {
-        this.http.post(this.url + '/user/logout', {}).subscribe();
+        // PWA Phase 2: if this device gets notifications, switch them off first
+        // (needs the still-valid session), then end the session on the server.
+        const endSession = () => this.http.post(this.url + '/user/logout', {}).subscribe();
+        if (this.pushService.hasDeviceSubscription) {
+            this.pushService.cleanupOnLogout().finally(endSession);
+        } else {
+            endSession();
+        }
         this.loggedIn = false;
         localStorage.removeItem('IsLoggedIn');
         localStorage.removeItem('userData');

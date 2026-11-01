@@ -1,0 +1,234 @@
+/* Full width (like Bookings / Users). Desktop: form left ~62%, history right
+   in its own scrolling column, sticky under the page header. */
+.ann-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(320px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.ann-form { margin: 0; }
+
+.ann-side {
+  position: sticky;
+  top: 96px;                         /* below the sticky page header */
+  height: calc(100vh - 116px);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ── Per-type accent colours (tiles, preview, history) ─────────────── */
+.t-general  { --t-c: var(--color-primary); --t-soft: #e6efe9; --t-tint: #f2f7f4; --t-ring: rgba(30, 70, 56, 0.14); }
+.t-urgent   { --t-c: #dc2626; --t-soft: #fee2e2; --t-tint: #fef4f4; --t-ring: rgba(220, 38, 38, 0.16); }
+.t-schedule { --t-c: #2563eb; --t-soft: #dbeafe; --t-tint: #f2f7ff; --t-ring: rgba(37, 99, 235, 0.14); }
+.t-weather  { --t-c: #0284c7; --t-soft: #e0f2fe; --t-tint: #f1f9fe; --t-ring: rgba(2, 132, 199, 0.14); }
+.t-reminder { --t-c: #d97706; --t-soft: #fef3c7; --t-tint: #fffbef; --t-ring: rgba(217, 119, 6, 0.15); }
+.t-task     { --t-c: #7c3aed; --t-soft: #ede9fe; --t-tint: #f7f4ff; --t-ring: rgba(124, 58, 237, 0.14); }
+
+.ann-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ann-group { display: flex; flex-direction: column; gap: 8px; }
+.ann-group-hd { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.ann-group-lbl { font-size: 11px; font-weight: 600; color: #666; letter-spacing: 0.02em; text-transform: uppercase; }
+.ann-label-note { font-weight: 400; text-transform: none; color: var(--text-muted); }
+.ann-link {
+  border: 0;
+  background: none;
+  padding: 2px 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+.ann-link:hover { text-decoration: underline; }
+
+.ann-count { align-self: flex-end; font-size: 11px; color: var(--text-muted); }
+
+/* ── Type tiles ────────────────────────────────────────────────────── */
+.ann-types {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));   /* 3 × 2 in the form column; 6 across on very wide screens */
+  gap: 10px;
+}
+
+/* Tile styles: global .choice-tile (colours from the .t-* accents above). */
+
+.ann-hint { font-size: 12px; color: var(--text-muted); }
+.ann-hint-urgent { color: #b91c1c; }
+
+/* ── Toggle chips (styles: global .toggle-chip) ────────────────────── */
+.ann-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ── Audience, warning, preview ────────────────────────────────────── */
+.ann-audience {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(30, 70, 56, 0.06);
+}
+.ann-audience mat-icon { font-size: 20px; width: 20px; height: 20px; color: var(--color-primary); }
+.ann-audience.empty { color: var(--text-muted); background: #f5f5f4; }
+.ann-audience.empty mat-icon { color: var(--text-muted); }
+.ann-audience-lbl { font-weight: 600; }
+
+.ann-warn { margin: 0; }
+
+.ann-preview-lbl { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-bottom: 6px; }
+
+/* A lock-screen notification look-alike, with the type's icon. */
+.ann-phone-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  max-width: 380px;
+  padding: 10px 12px;
+  background: #f1f1ef;
+  border-radius: 16px;
+}
+.ann-phone-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--t-c);
+  color: #fff;
+}
+.ann-phone-icon mat-icon { font-size: 20px; width: 20px; height: 20px; }
+.ann-phone-text { min-width: 0; }
+.ann-phone-app { font-size: 11px; color: var(--text-muted); }
+.ann-phone-title { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+.ann-phone-body { font-size: 13px; color: var(--text-primary); overflow-wrap: anywhere; }
+
+.ann-actions { display: flex; justify-content: flex-end; }
+.ann-send { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; font-size: 13px; }
+.ann-send mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.ann-send.urgent { background: #dc2626; }
+
+/* ── History ───────────────────────────────────────────────────────── */
+.ann-history-lbl { margin: 0 0 10px; display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.ann-history-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(30, 70, 56, 0.1);
+  color: var(--color-primary);
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ann-empty { font-size: 13px; color: var(--text-muted); }
+.ann-filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; flex: 0 0 auto; }
+.ann-filter-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ann-filter-row app-select { width: 100%; min-width: 0; }
+.ann-filter-foot { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); }
+.ann-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;                  /* its own scrollbar */
+  padding: 2px 6px 12px 2px;
+  scrollbar-width: thin;
+}
+.ann-list .ann-item { margin: 0; flex: 0 0 auto; }
+
+.ann-item {
+  display: flex;
+  flex-direction: row;   /* Bootstrap's .card is a column — icon goes beside the text */
+  gap: 12px;
+  align-items: flex-start;
+  border-left: 3px solid var(--t-c);
+}
+/* Left column of a card: icon, then its badges stacked underneath. */
+.ann-item-side {
+  flex: 0 0 72px;
+  width: 72px;                       /* same in every card, so the text lines up */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.ann-item-ic {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--t-soft);
+  color: var(--t-c);
+}
+.ann-item-ic mat-icon { font-size: 20px; width: 20px; height: 20px; }
+.ann-item-body { flex: 1 1 auto; min-width: 0; }
+
+.ann-item-hd { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ann-item-title {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.ann-item-when { font-size: 12px; color: var(--text-muted); }
+.ann-item-msg { margin-top: 4px; font-size: 13px; color: var(--text-primary); overflow-wrap: anywhere; }
+.ann-item-meta { margin-top: 6px; font-size: 12px; color: var(--text-muted); }
+
+.ann-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  flex: 0 0 auto;
+  background: var(--t-soft);
+  color: var(--t-c);
+}
+.ann-badge mat-icon { font-size: 13px; width: 13px; height: 13px; }
+.ann-badge.resent { background: rgba(30, 70, 56, 0.1); color: var(--color-primary); }
+
+.ann-item-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ── Phone ─────────────────────────────────────────────────────────── */
+@media (min-width: 1700px) {
+  .ann-types { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+/* Below this the two columns stack; the history scrolls with the page. */
+@media (max-width: 1024px) {
+  .ann-page { grid-template-columns: minmax(0, 1fr); }
+  .ann-side { position: static; height: auto; }
+  .ann-list { overflow: visible; padding: 0; }
+}
+@media (max-width: 700px) {
+  .ann-types { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .choice-tile-short { display: none; }
+}
+@media (max-width: 600px) {
+  .ann-actions .ann-send { width: 100%; justify-content: center; }
+  .ann-item { gap: 10px; }
+  .ann-item-actions { justify-content: stretch; }
+  .ann-action { flex: 1 1 auto; justify-content: center; }
+}
