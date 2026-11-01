@@ -1281,3 +1281,9 @@ select:focus {
 .vm-pin.sel { outline: 3px solid var(--color-info); outline-offset: 2px; }
 .vm-pin.draft { animation: vm-bob 1s ease-in-out infinite alternate; }
 @keyframes vm-bob { to { margin-top: -6px; } }
+.vm-area-ic {
+  width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, .3); opacity: .92;
+}
+.vm-area-ic .material-symbols-rounded { color: #fff; font-size: 16px; font-variation-settings: 'FILL' 1; }
+.vm-area-ic.sel { outline: 3px solid var(--color-info); outline-offset: 2px; opacity: 1; }

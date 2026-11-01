@@ -9,6 +9,35 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.22.0] - 2026-11-02
+
+### Added
+- **Venue Map — areas and lines:** draw the festival boundary, zones and lines on the map, each with a name, kind, responsible department and notes.
+  - **Draw boundary / Draw area / Draw line**, with corner handles to adjust the shape afterwards, and **Undo point** (or Ctrl+Z) while drawing.
+  - Each kind has its own colour and icon: the boundary is a dashed light-green outline; roads are thick dark grey and walkable paths thin beige; Medical camp has a red cross.
+  - Each area shows its kind's icon in the middle on the map (tap it to select the area).
+  - **Directions** and **Street View** for areas and lines too (to the middle of an area, or halfway along a line).
+  - Areas show their size. The **Areas & lines** list sits beside the map, with a Shown/Hidden switch (the boundary always stays visible).
+  - Locations show which zone they're in, and a warning when they're outside the festival boundary.
+  - **Import KML** now also reads areas and lines, with the kind guessed from the name and a review list before importing.
+  - Team Leads draw only for their own department and only inside the festival boundary; the boundary itself is for Directors, Admins and Developers.
+  - **Admin › Events:** each event shows whether its venue boundary is drawn, with a button to draw or view it on the Venue Map.
+- New location type **Entry point**.
+
+### Removed
+- Location types **Workshop venue** and **First aid**: draw a Workshop area or Medical camp instead.
+
+### Changed
+- Venue Map on desktop: the page fits the screen — the map stays in place and only the side panel scrolls.
+- Venue Map on phones: picking a location, area or line from a list scrolls back up to the map.
+- The **Go to** coordinates box shows only for people who can add or draw.
+
+### Notes
+- New dependency: Leaflet-Geoman (free edition, exact version) for drawing; it loads only when the Venue Map is opened, like the map itself.
+- Requires big-api 1.15.0.
+
+---
+
 ## [1.21.0] - 2026-11-01
 
 ### Added
