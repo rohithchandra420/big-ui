@@ -79,6 +79,7 @@ import { EmailProgressComponent } from './box-office/email/email-progress/email-
 import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
 import { NotificationSettingsComponent } from './profile/notification-settings/notification-settings.component';
 import { AnnouncementsComponent } from './admin/announcements/announcements.component';
+import { BillboardComponent } from './billboard/billboard.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
 // ImageCropperComponent / PhotoPickerDialogComponent are standalone — no
@@ -137,7 +138,8 @@ LOAD_WASM().subscribe()
     EmailHistoryComponent,
     PwaStatusComponent,
     NotificationSettingsComponent,
-    AnnouncementsComponent
+    AnnouncementsComponent,
+    BillboardComponent
   ],
   imports: [
     BrowserModule,

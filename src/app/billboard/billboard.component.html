@@ -1,0 +1,56 @@
+<div class="page-ph">
+  <div class="page-ph-title">Billboard</div>
+  <div class="page-ph-sub">Every announcement sent to you, newest first.</div>
+</div>
+
+<div class="bb-page">
+  <div class="bb-bar">
+    <div class="bb-tabs" role="tablist">
+      <button type="button" role="tab" [class.on]="tab === 'all'" [attr.aria-selected]="tab === 'all'" (click)="tab = 'all'">All</button>
+      <button type="button" role="tab" [class.on]="tab === 'unread'" [attr.aria-selected]="tab === 'unread'" (click)="tab = 'unread'">
+        Unread<span class="bb-count" *ngIf="unread">{{ unread }}</span>
+      </button>
+    </div>
+    <button type="button" class="pill-btn primary" *ngIf="unread" (click)="markAllRead()">
+      <mat-icon>done_all</mat-icon>Mark all read
+    </button>
+  </div>
+
+  <div class="alert alert-danger" *ngIf="loadError">Could not load the Billboard. Check your connection and try again.</div>
+
+  <div class="bb-board">
+    <div class="bb-empty" *ngIf="loading">Loading…</div>
+    <div class="bb-empty" *ngIf="!loading && !loadError && !shown.length">
+      {{ tab === 'unread' && notes.length ? 'All caught up, nothing new on the board.' : 'Nothing on the board yet.' }}
+    </div>
+
+    <button type="button" *ngFor="let n of shown; trackBy: trackById"
+            class="bb-note t-{{ n.type }}" [class.read]="n.read" (click)="openNote(n)"
+            [attr.aria-label]="TYPES[n.type].label + ': ' + n.title + (n.read ? '' : ', new')">
+      <span class="bb-pin" aria-hidden="true"></span>
+      <span class="bb-new" *ngIf="!n.read" aria-hidden="true">NEW</span>
+      <span class="bb-type"><mat-icon class="ms-fill">{{ TYPES[n.type].icon }}</mat-icon>{{ TYPES[n.type].label }}</span>
+      <span class="bb-title">{{ n.title }}</span>
+      <span class="bb-msg">{{ n.message }}</span>
+      <span class="bb-when">{{ n.createdAt | date:'d MMM, h:mm a' }}</span>
+    </button>
+  </div>
+
+  <button type="button" class="pill-btn bb-more" *ngIf="hasMore && tab === 'all'" [disabled]="loadingMore" (click)="showOlder()">
+    <mat-icon>expand_more</mat-icon>{{ loadingMore ? 'Loading…' : 'Show older' }}
+  </button>
+</div>
+
+<div class="bb-scrim" *ngIf="open" (click)="closeNote()">
+  <div class="bb-note bb-big t-{{ open.type }}" role="dialog" aria-modal="true" [attr.aria-label]="open.title" (click)="$event.stopPropagation()">
+    <button #closeBtn type="button" class="bb-close" aria-label="Close" (click)="closeNote()"><mat-icon>close</mat-icon></button>
+    <span class="bb-type"><mat-icon class="ms-fill">{{ TYPES[open.type].icon }}</mat-icon>{{ TYPES[open.type].label }}</span>
+    <span class="bb-title">{{ open.title }}</span>
+    <span class="bb-msg">{{ open.message }}</span>
+    <span class="bb-meta">
+      <span><b>From:</b> {{ open.from || 'BiG' }}</span>
+      <span><b>To:</b> {{ audience(open) }}</span>
+      <span><b>Sent:</b> {{ open.createdAt | date:'d MMM y, h:mm a' }}</span>
+    </span>
+  </div>
+</div>

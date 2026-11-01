@@ -1,3 +1,15 @@
+/* Same section look as the rest of My Profile — the page's own .profile-section /
+   .section-label styles don't reach into this child component (Angular style scoping). */
+.profile-section { margin-bottom: 20px; }
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
 .ns-status {
   display: flex;
   align-items: center;
