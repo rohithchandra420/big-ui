@@ -32,6 +32,15 @@
     </a>
 
     <a class="nav-item"
+       routerLink="/venue-map"
+       routerLinkActive="active"
+       (click)="onNavClick()"
+       *ngIf="isAuthenticated">
+      <span class="nav-dot"></span>
+      Venue Map
+    </a>
+
+    <a class="nav-item"
        routerLink="/my-department"
        routerLinkActive="active"
        (click)="onNavClick()"

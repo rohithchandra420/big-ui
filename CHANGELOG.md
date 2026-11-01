@@ -7,10 +7,25 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [1.21.0] - 2026-11-01
+
+### Added
+- **Venue Map** (new, under Main for everyone signed in): places on the festival ground for the active event, on a street map or satellite view.
+  - Coloured pins by type (Workshop venue, Water station, First aid, Toilets, Stage, Gate / Box Office, Tent field, Other) with a name tooltip, type filters with counts, and a list beside the map (below it on phones).
+  - **Add a location** by tapping the map or with **Use my location** (shows how accurate the phone's position is); drag a pin to fine-tune it; edit name, type, responsible department and notes; delete with a confirmation.
+  - **Directions** and **Street View** open Google Maps at that spot. **Go to** jumps to pasted coordinates.
+  - **Import KML** (DEV, DIR, ADMIN): pins exported from Google My Maps or Google Earth, shown as a review list first so each type can be checked or a place left out. Clear messages for KMZ files, online-only (network link) exports and files with shapes but no pins.
+  - Directors, Admins and Developers can change any location; Team Leads add and change locations of their own department; Volunteers view.
+  - The map library loads only when the Venue Map is opened, so the rest of the app stays as light as before.
+- Requires big-api 1.14.0.
+
 ### Development
 - Guide screenshots: the sample announcements now record who they went to and who opened them, plus a sample "Emails sent" note, so the Billboard shows notes; new Billboard shots (board, opened note, phone menu with the unread count) taken as a sample volunteer.
 - Optional sharper `.png` screenshots (`SHOT_FORMAT=png`, `SHOT_SCALE=2`) for team updates; the guide keeps `.webp`.
 - The sample volunteer account was renamed to a new invented name.
+- Bundle size warning raised from 2.2 MB to 2.3 MB (user decision); the map library is a separate on-demand file.
 
 ---
 

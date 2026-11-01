@@ -1,0 +1,56 @@
+/* Venue Map — full width like Bookings: map card + side panel (stacked on phones). */
+.vm { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 16px; align-items: start; }
+.vm-card { background: var(--surface-card); border: 1px solid var(--border-default); border-radius: 12px; overflow: hidden; }
+.vm-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border-default); }
+.vm-seg { display: inline-flex; border: 1px solid var(--border-default); border-radius: 999px; padding: 3px; background: var(--surface-card); }
+.vm-seg button { border: 0; background: none; border-radius: 999px; padding: 5px 12px; font-size: 13px; color: var(--text-secondary); cursor: pointer; }
+.vm-seg button.on { background: var(--color-primary); color: #fff; font-weight: 600; }
+.vm-goto { flex: 1; min-width: 200px; }
+.vm-hint { background: #fffbe6; color: #5c4a00; font-size: 12.5px; padding: 6px 12px; }
+.vm-hint a { color: #5c4a00; font-weight: 600; }
+.vm-maperr { background: #fef2f2; color: #991b1b; font-size: 13px; padding: 8px 12px; }
+.vm-map { height: calc(100vh - 230px); min-height: 380px; background: #e8efe9; }
+.vm-map.adding { cursor: crosshair; }
+
+.vm-side { display: grid; gap: 12px; }
+.vm-panel { background: var(--surface-card); border: 1px solid var(--border-default); border-radius: 12px; padding: 14px; }
+.vm-panel .field { margin-bottom: 10px; }
+.vm-panel textarea { resize: vertical; }
+.vm-muted { font-size: 12px; color: var(--text-muted); line-height: 1.45; }
+.vm-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.vm-actions a.pill-btn { text-decoration: none; }
+.vm-danger { color: var(--color-danger); }
+.vm-danger:hover { border-color: var(--color-danger); }
+
+.vm-head { display: flex; gap: 10px; align-items: center; }
+.vm-grow { flex: 1; min-width: 0; color: var(--text-primary); overflow-wrap: anywhere; }
+.vm-grow small { display: block; font-size: 11.5px; color: var(--text-muted); }
+.vm-name { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.vm-row { font-size: 13px; color: var(--text-primary); margin-top: 8px; }
+.vm-notes { white-space: pre-line; color: var(--text-secondary); }
+.vm-x { border: 0; background: #f3f3f3; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: var(--text-primary); }
+.vm-x mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.vm-dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex-shrink: 0; }
+.vm-dot mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+.vm-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.vm-chip { --c: var(--color-primary); display: inline-flex; align-items: center; gap: 4px; border: 1.5px solid var(--border-default);
+  background: var(--surface-card); border-radius: 999px; padding: 3px 9px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
+.vm-chip mat-icon { font-size: 15px; width: 15px; height: 15px; }
+.vm-chip.on { border-color: var(--c); color: var(--c); font-weight: 600; }
+.vm-n { font-size: 11px; opacity: .7; }
+.vm-list { display: grid; gap: 2px; max-height: 340px; overflow-y: auto; }
+.vm-item { display: flex; gap: 10px; align-items: center; width: 100%; padding: 8px; border: 0; border-radius: 8px; background: none;
+  text-align: left; cursor: pointer; font-size: 13.5px; }
+.vm-item:hover, .vm-item.sel { background: #f2f6f3; }
+
+.vm-imports { display: grid; gap: 6px; max-height: 320px; overflow-y: auto; margin-top: 6px; }
+.vm-imp { display: grid; grid-template-columns: auto minmax(0, 1fr) 150px; gap: 8px; align-items: center; font-size: 13px; color: var(--text-primary); }
+.vm-imp-name { overflow-wrap: anywhere; }
+
+@media (max-width: 900px) {
+  .vm { grid-template-columns: 1fr; }
+  .vm-map { height: 55vh; min-height: 300px; }
+  .vm-imp { grid-template-columns: auto minmax(0, 1fr); }
+  .vm-imp app-select { grid-column: 2; }
+}
