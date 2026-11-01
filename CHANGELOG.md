@@ -7,6 +7,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Development
+- Guide screenshots: the sample announcements now record who they went to and who opened them, plus a sample "Emails sent" note, so the Billboard shows notes; new Billboard shots (board, opened note, phone menu with the unread count) taken as a sample volunteer.
+- Optional sharper `.png` screenshots (`SHOT_FORMAT=png`, `SHOT_SCALE=2`) for team updates; the guide keeps `.webp`.
+- The sample volunteer account was renamed to a new invented name.
+
 ---
 
 ## [1.20.0] - 2026-11-01

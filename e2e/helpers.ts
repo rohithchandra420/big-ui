@@ -6,6 +6,7 @@ import * as path from 'path';
 export const USERS = {
   director: 'maya.director@example.com',
   boxOfficeTL: 'nina.boxoffice@example.com',
+  volunteer: 'sana@example.com',   // VOL in Operations — the Billboard screenshots
 };
 export const PASSWORD = 'Demo@12345';
 

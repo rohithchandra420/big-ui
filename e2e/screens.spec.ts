@@ -1,17 +1,21 @@
 import { test, Browser, Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'fs';
 import * as path from 'path';
-import { login, seedIds } from './helpers';
+import { login, seedIds, USERS } from './helpers';
 
 /**
  * Product Guide screenshots (npm run e2e:screens). Captures each screen at
  * desktop and phone size as .webp into SCREENS_OUT (default
  * e2e/screenshots-out); Alfredoc copies them into the guide's img/ folder.
  * ONLY="bookings,booking-found" limits the run to some screens.
+ * SHOT_FORMAT=png and SHOT_SCALE=2 give sharper .png images (e.g. for a team
+ * WhatsApp update); the guide uses the defaults (.webp at 1×).
  * Dialogs are opened, never sent — and the isolated API can't send mail anyway.
  */
 const OUT = process.env.SCREENS_OUT || path.join(__dirname, 'screenshots-out');
 const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null;
+const FORMAT = process.env.SHOT_FORMAT === 'png' ? 'png' : 'webp';
+const SCALE = Number(process.env.SHOT_SCALE) || 1;
 const SIZES = {
   desktop: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, isMobile: false },
   phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
@@ -25,12 +29,15 @@ const SIZES = {
 async function shot(page: Page, name: string, clipAbove?: string) {
   const cdp = await page.context().newCDPSession(page);
   let clip;
+  const { width, height } = page.viewportSize()!;
   if (clipAbove) {
     const top = await page.locator(clipAbove).first().evaluate(e => e.getBoundingClientRect().top);
-    clip = { x: 0, y: 0, width: page.viewportSize()!.width, height: Math.max(200, Math.floor(top) - 4), scale: 1 };
+    clip = { x: 0, y: 0, width, height: Math.max(200, Math.floor(top) - 4), scale: SCALE };
+  } else if (SCALE !== 1) {
+    clip = { x: 0, y: 0, width, height, scale: SCALE };
   }
-  const r = await cdp.send('Page.captureScreenshot', { format: 'webp', quality: 82, ...(clip ? { clip } : {}) });
-  writeFileSync(path.join(OUT, `${name}.webp`), Buffer.from(r.data, 'base64'));
+  const r = await cdp.send('Page.captureScreenshot', { format: FORMAT, ...(FORMAT === 'webp' ? { quality: 82 } : {}), ...(clip ? { clip } : {}) });
+  writeFileSync(path.join(OUT, `${name}.${FORMAT}`), Buffer.from(r.data, 'base64'));
   await cdp.detach();
   console.log('saved', name);
 }
@@ -120,5 +127,26 @@ test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
       await shot(page, `${name}-${size}`, clipAbove);
     }
     await context.close();
+
+    // Billboard, as the sample volunteer (USERS.volunteer), who received most of the sample announcements.
+    const BILLBOARD: [string, (p: Page) => Promise<void>][] = [
+      ['billboard', async () => { }],
+      // The Task note opened as a large post-it. The volunteer has already read it (seed.js),
+      // so opening it changes nothing — the other shots keep the same unread notes.
+      ['billboard-note', async p => { await p.locator('.bb-board .bb-note.t-task').first().click(); await p.waitForTimeout(700); }],
+    ];
+    // Phone: the menu with the red unread count on the Billboard link.
+    if (size === 'phone') BILLBOARD.push(['billboard-menu', async p => { await p.locator('.hamburger-btn').click(); await p.waitForTimeout(700); }]);
+    if (ONLY && !BILLBOARD.some(([n]) => ONLY.includes(n))) continue;
+    const vctx = await browser.newContext({ ...opts, baseURL: 'http://localhost:4300', colorScheme: 'light' });
+    const vpage = await vctx.newPage();
+    await login(vpage, USERS.volunteer);
+    for (const [name, prepare] of BILLBOARD) {
+      if (ONLY && !ONLY.includes(name)) continue;
+      await vpage.goto('/billboard'); await settle(vpage, 1200);
+      await prepare(vpage);
+      await shot(vpage, `${name}-${size}`);
+    }
+    await vctx.close();
   }
 });

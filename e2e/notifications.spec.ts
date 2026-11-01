@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { login } from './helpers';
+import { login, USERS } from './helpers';
 
 // PWA Phase 2 — the parts testable in a browser without a real push service:
 // the Announcements page and the My Profile settings. (`ng serve` runs no
@@ -66,7 +66,7 @@ test.describe('Announcements (DEV/DIR/ADMIN)', () => {
   });
 
   test('a volunteer has no Announcements link and is turned away from the page', async ({ page }) => {
-    await login(page, 'anjali@example.com');
+    await login(page, USERS.volunteer);
     await page.goto('/');
     await expect(page.locator('.nav-item', { hasText: 'Announcements' })).toHaveCount(0);
     await page.goto('/admin/announcements');
