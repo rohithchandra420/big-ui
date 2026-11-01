@@ -5,6 +5,7 @@ import { EventService } from '../../../core/event.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventDetail, EventStatus, PassType, PassTypeCategory } from '../../../models/event.model';
 import { ConfirmationService } from '../../../shared/confirm-dialog/confirmation.service';
+import { LocationService } from '../../../venue-map/location.service';
 
 @Component({
   selector: 'app-event-detail',
@@ -54,7 +55,8 @@ export class EventDetailComponent implements OnInit {
     private router: Router,
     private eventService: EventService,
     private notificationService: NotificationService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private locationService: LocationService
   ) {}
 
   ngOnInit() {
@@ -65,9 +67,29 @@ export class EventDetailComponent implements OnInit {
   loadDetail(id: string) {
     this.loading = true;
     this.eventService.getEventDetail(id).subscribe({
-      next: (d) => { this.detail = d; this.loading = false; },
+      next: (d) => { this.detail = d; this.loading = false; this.loadBoundaryStatus(d._id); },
       error: () => { this.notificationService.openErrorSnackBar('Error loading event'); this.loading = false; }
     });
+  }
+
+  // ── Venue boundary (Venue Map, story A2): drawn on the Venue Map, linked from here ──
+  /** null = not known yet (or couldn't load). */
+  hasBoundary: boolean | null = null;
+
+  private async loadBoundaryStatus(eventId: string) {
+    try {
+      const res = await this.locationService.listAreas(eventId);
+      this.hasBoundary = res.areas.some(a => a.kind === 'boundary');
+    } catch {
+      this.hasBoundary = null;
+    }
+  }
+
+  /** Opens the Venue Map on this event, ready to draw (or show) the festival boundary. */
+  openVenueMap() {
+    if (!this.detail) return;
+    this.eventService.setActiveEvent(this.detail);
+    this.router.navigate(['/venue-map'], { queryParams: { draw: 'boundary' } });
   }
 
   enterEditMode() {

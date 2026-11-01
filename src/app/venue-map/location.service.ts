@@ -2,7 +2,33 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { LocationType } from './venue-map.utils';
+import { AreaKind, AreaShape, LatLng, LocationType } from './venue-map.utils';
+
+export interface VenueArea {
+  _id: string;
+  event: string;
+  name: string;
+  kind: AreaKind;
+  shape: AreaShape;
+  points: LatLng[];
+  department: { _id: string; name: string } | null;
+  notes: string;
+  canEdit: boolean;
+}
+
+export interface AreaList {
+  areas: VenueArea[];
+  canDraw: boolean;          // DEV/DIR/ADMIN, or a Team Lead (own department, inside the boundary)
+  canDrawBoundary: boolean;  // DEV/DIR/ADMIN only
+}
+
+export interface AreaInput {
+  name: string;
+  kind: AreaKind;
+  points: LatLng[];
+  department?: string | null;
+  notes?: string;
+}
 
 export interface VenueLocation {
   _id: string;
@@ -56,6 +82,28 @@ export class LocationService {
 
   importMany(eventId: string, locations: LocationInput[]): Promise<{ created: number }> {
     return firstValueFrom(this.http.post<{ created: number }>(`${this.url}/locations/import`, { event: eventId, locations }));
+  }
+
+  // ── Areas and lines (story A2) ──
+
+  listAreas(eventId: string): Promise<AreaList> {
+    return firstValueFrom(this.http.get<AreaList>(`${this.url}/areas?event=${encodeURIComponent(eventId)}`));
+  }
+
+  createArea(eventId: string, input: AreaInput): Promise<VenueArea> {
+    return firstValueFrom(this.http.post<VenueArea>(`${this.url}/areas`, { event: eventId, ...input }));
+  }
+
+  updateArea(id: string, changes: Partial<AreaInput>): Promise<VenueArea> {
+    return firstValueFrom(this.http.patch<VenueArea>(`${this.url}/areas/${id}`, changes));
+  }
+
+  removeArea(id: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`${this.url}/areas/${id}`));
+  }
+
+  importAreas(eventId: string, areas: AreaInput[]): Promise<{ created: number }> {
+    return firstValueFrom(this.http.post<{ created: number }>(`${this.url}/areas/import`, { event: eventId, areas }));
   }
 
   /** Departments this user may pick: everyone for DEV/DIR/ADMIN, own ones for a Team Lead. */

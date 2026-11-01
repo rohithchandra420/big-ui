@@ -1,4 +1,7 @@
-import { guessType, kmlProblem, parseKml, parseLatLng, streetViewUrl, typeInfo } from './venue-map.utils';
+import {
+  allInside, areaInfo, areaWeight, shapeCenter, formatArea, guessAreaKind, guessType, kmlProblem, parseKml, parseKmlShapes, parseLatLng,
+  pointInPolygon, polygonAreaM2, streetViewUrl, typeInfo
+} from './venue-map.utils';
 
 describe('venue-map utils', () => {
   it('parses coordinates pasted from Google Maps, and rejects nonsense', () => {
@@ -12,8 +15,8 @@ describe('venue-map utils', () => {
 
   it('guesses a type from a place name', () => {
     expect(guessType('Water Station 4')).toBe('water');
-    expect(guessType('Workshop Hall C')).toBe('workshop');
-    expect(guessType('First Aid Point 2')).toBe('medical');
+    expect(guessType('Workshop Hall C')).toBe('other');     // workshops / medical are areas now
+    expect(guessType('First Aid Point 2')).toBe('other');
     expect(guessType('Toilet Block East')).toBe('toilets');
     expect(guessType('Main Stage')).toBe('stage');
     expect(guessType('Side Gate')).toBe('gate');
@@ -50,11 +53,72 @@ describe('venue-map utils', () => {
     expect(kmlProblem('<kml><Document></Document></kml>')).toBe('No places found in that file.');
     expect(kmlProblem('<kml><Document><NetworkLink><Link><href>https://example.com/kml</href></Link></NetworkLink></Document></kml>'))
       .toContain('only links to a map online');
-    expect(kmlProblem('<kml><Placemark><name>Wall</name><Polygon/></Placemark></kml>')).toContain('1 shape or line but no pins');
+    expect(kmlProblem('<kml><Placemark><name>Wall</name><Polygon/></Placemark></kml>')).toContain('no pins, areas or lines');
   });
 
   it('falls back to Other for an unknown type, and builds a Street View link', () => {
     expect(typeInfo('castle').value).toBe('other');
     expect(streetViewUrl(12.5, 77.5)).toBe('https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=12.5,77.5');
+  });
+});
+
+describe('venue-map area helpers', () => {
+  const square: [number, number][] = [[12.97, 77.59], [12.97, 77.60], [12.98, 77.60], [12.98, 77.59]];
+
+  it('knows inside from outside', () => {
+    expect(pointInPolygon([12.975, 77.595], square)).toBeTrue();
+    expect(pointInPolygon([12.985, 77.595], square)).toBeFalse();
+    expect(allInside([[12.971, 77.591], [12.979, 77.599]], square)).toBeTrue();
+    expect(allInside([[12.971, 77.591], [12.99, 77.599]], square)).toBeFalse();
+  });
+
+  it('measures a polygon (a 0.01° square near Bengaluru is about 120 ha)', () => {
+    const m2 = polygonAreaM2(square);
+    expect(m2).toBeGreaterThan(1.15e6);
+    expect(m2).toBeLessThan(1.25e6);
+    expect(formatArea(m2)).toMatch(/^12\d\.\d ha$/);
+    expect(formatArea(850.4)).toBe('850 m²');
+  });
+
+  it('guesses area kinds from names', () => {
+    expect(guessAreaKind('Festival boundary', 'polygon')).toBe('boundary');
+    expect(guessAreaKind('Washroom block', 'polygon')).toBe('washroom');
+    expect(guessAreaKind('North camping', 'polygon')).toBe('camping');
+    expect(guessAreaKind('Main entry', 'line')).toBe('entry');
+    expect(guessAreaKind('Emergency exit route', 'line')).toBe('emergency');
+    expect(guessAreaKind('Back road', 'line')).toBe('road');
+    expect(guessAreaKind('Lakeside walking path', 'line')).toBe('path');
+    expect(guessAreaKind('Crew area', 'polygon')).toBe('crew_area');
+    expect(guessAreaKind('Medical camp', 'polygon')).toBe('medical_camp');
+    expect(guessAreaKind('Something', 'polygon')).toBe('other_area');
+    expect(areaInfo('castle').value).toBe('other_area');
+  });
+
+  it('draws everything 2 thick except roads; Medical camp has the red cross', () => {
+    expect(areaWeight('path')).toBe(2);
+    expect(areaWeight('camping')).toBe(2);
+    expect(areaWeight('road')).toBeGreaterThan(2);
+    expect(areaInfo('medical_camp').icon).toBe('local_hospital');
+    expect(typeInfo('medical').value).toBe('other');   // no medical pin type any more
+  });
+
+  it('finds the middle of an area and the halfway point of a line', () => {
+    const [lat, lng] = shapeCenter(square, 'polygon');
+    expect(lat).toBeCloseTo(12.975, 6);
+    expect(lng).toBeCloseTo(77.595, 6);
+    expect(shapeCenter([[0, 0], [0, 2], [0, 10]], 'line')).toEqual([0, 5]);
+    expect(shapeCenter([[1, 1], [1, 1], [1, 1]], 'polygon')).toEqual([1, 1]);
+  });
+
+  it('reads polygons (dropping the repeated first point) and lines from KML', () => {
+    const shapes = parseKmlShapes('<kml>' +
+      '<Placemark><name>Camping zone</name><Polygon><outerBoundaryIs><LinearRing>' +
+      '<coordinates>77.59,12.97,0 77.60,12.97,0 77.60,12.98,0 77.59,12.97,0</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>' +
+      '<Placemark><name>Fence</name><LineString><coordinates>77.59,12.97 77.60,12.97</coordinates></LineString></Placemark>' +
+      '<Placemark><name>Pin</name><Point><coordinates>77.59,12.97</coordinates></Point></Placemark></kml>');
+    expect(shapes).toEqual([
+      { name: 'Camping zone', shape: 'polygon', kind: 'camping', points: [[12.97, 77.59], [12.97, 77.6], [12.98, 77.6]] },
+      { name: 'Fence', shape: 'line', kind: 'fence', points: [[12.97, 77.59], [12.97, 77.6]] }
+    ]);
   });
 });

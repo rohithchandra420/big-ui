@@ -33,6 +33,11 @@
                 "glob": "leaflet.css",
                 "input": "node_modules/leaflet/dist/",
                 "output": "./assets/leaflet/"
+              },
+              {
+                "glob": "leaflet-geoman.css",
+                "input": "node_modules/@geoman-io/leaflet-geoman-free/dist/",
+                "output": "./assets/leaflet/"
               }
             ],
             "styles": [

@@ -54,3 +54,26 @@
   .vm-imp { grid-template-columns: auto minmax(0, 1fr); }
   .vm-imp app-select { grid-column: 2; }
 }
+
+/* Areas (A2) */
+.vm-warn { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 10px; border-radius: 8px;
+  background: #fffbeb; color: #92400e; font-size: 12.5px; }
+.vm-warn mat-icon, .vm-out { font-size: 17px; width: 17px; height: 17px; color: #d97706; }
+.vm-imp-ic { font-size: 15px; width: 15px; height: 15px; vertical-align: -3px; margin-right: 4px; color: var(--text-muted); }
+.vm-imp-fixed { font-size: 12px; color: var(--text-secondary); }
+
+/* Desktop: the page fits the screen — the map stays put and only the side panel scrolls. */
+@media (min-width: 901px) {
+  .vm { height: calc(100vh - 125px); min-height: 460px; align-items: stretch; }
+  .vm-card { display: flex; flex-direction: column; min-height: 0; }
+  .vm-map { flex: 1; height: auto; min-height: 0; }
+  .vm-side { overflow-y: auto; min-height: 0; align-content: start; padding-right: 4px; }
+}
+/* Phones: scrolling up to the map stops below the sticky top bar + page header. */
+@media (max-width: 900px) { .vm-map { scroll-margin-top: 140px; } }
+
+.vm-hint-acts { display: inline-flex; gap: 10px; align-items: center; margin-left: 6px; }
+.vm-undo { display: inline-flex; align-items: center; gap: 3px; border: 1px solid #e6d58a; background: #fff; color: #5c4a00;
+  border-radius: 999px; padding: 2px 9px 2px 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.vm-undo mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.vm-undo:disabled { opacity: .45; cursor: default; }
