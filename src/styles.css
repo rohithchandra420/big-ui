@@ -1270,3 +1270,14 @@ select:focus {
   border-left: 1px solid var(--color-secondary);
   border-top: 1px solid var(--color-secondary);
 }
+
+/* ── Venue Map pins (Leaflet draws them outside Angular's view encapsulation) ── */
+.vm-pin-wrap { background: none; border: 0; }
+.vm-pin {
+  width: 34px; height: 34px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  display: grid; place-items: center; border: 2px solid #fff; box-shadow: 0 3px 6px rgba(0, 0, 0, .35);
+}
+.vm-pin .material-symbols-rounded { transform: rotate(45deg); color: #fff; font-size: 18px; font-variation-settings: 'FILL' 1; }
+.vm-pin.sel { outline: 3px solid var(--color-info); outline-offset: 2px; }
+.vm-pin.draft { animation: vm-bob 1s ease-in-out infinite alternate; }
+@keyframes vm-bob { to { margin-top: -6px; } }

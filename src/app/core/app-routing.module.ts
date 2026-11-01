@@ -25,6 +25,7 @@ import { EventDetailComponent } from "../admin/events/event-detail/event-detail.
 import { EmailReportComponent } from "../admin/email-report/email-report.component";
 import { AnnouncementsComponent } from "../admin/announcements/announcements.component";
 import { BillboardComponent } from "../billboard/billboard.component";
+import { VenueMapComponent } from "../venue-map/venue-map.component";
 import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
@@ -74,6 +75,7 @@ const appRoutes: Routes = [
     { path: 'dashboard', redirectTo: '',  pathMatch: 'full'},
     { path: 'profile', canActivate:[AuthGuard] ,component: ProfileComponent },
     { path: 'billboard', canActivate: [AuthGuard], component: BillboardComponent },
+    { path: 'venue-map', canActivate: [AuthGuard], component: VenueMapComponent },
     { path: 'my-department', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL', 'VOL'] }, component: MyDepartmentComponent },
     { path: 'box-office/bookings', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BookingsComponent },
     { path: 'box-office/registration', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: RegistrationComponent },

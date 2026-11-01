@@ -1,0 +1,132 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Venue Map</div>
+    <div class="page-ph-sub">Places on the festival ground{{ event ? ' · ' + event.name : '' }}</div>
+  </div>
+</div>
+
+<div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar to see its venue.</div>
+<div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+<div class="vm">
+  <div class="vm-card">
+    <div class="vm-bar">
+      <div class="vm-seg" role="group" aria-label="Map style">
+        <button type="button" [class.on]="layerName === 'street'" (click)="setLayer('street')">Street</button>
+        <button type="button" [class.on]="layerName === 'sat'" (click)="setLayer('sat')">Satellite</button>
+      </div>
+      <ng-container *ngIf="canAdd && event">
+        <button type="button" class="pill-btn" [class.primary]="adding" (click)="toggleAdding()">
+          <mat-icon class="ms-fill">add_location_alt</mat-icon>{{ adding ? 'Tap the map…' : 'Add location' }}
+        </button>
+        <button type="button" class="pill-btn" (click)="useMyLocation()"><mat-icon>my_location</mat-icon>Use my location</button>
+      </ng-container>
+      <label class="pill-btn" *ngIf="canImport && event">
+        <mat-icon>upload_file</mat-icon>Import KML
+        <input #kml type="file" accept=".kml,application/vnd.google-earth.kml+xml" class="sr-only" (change)="onKmlFile(kml)">
+      </label>
+      <form class="search-field vm-goto" (ngSubmit)="goTo()">
+        <mat-icon>travel_explore</mat-icon>
+        <input name="goto" [(ngModel)]="gotoText" placeholder="Go to: 12.9763, 77.5929" aria-label="Go to coordinates">
+      </form>
+    </div>
+    <div class="vm-hint" *ngIf="adding">Tap the map where the new location is. <a href="#" (click)="$event.preventDefault(); toggleAdding()">Cancel</a></div>
+    <div class="vm-maperr" *ngIf="mapError">{{ mapError }}</div>
+    <div #mapEl class="vm-map" [class.adding]="adding"></div>
+  </div>
+
+  <div class="vm-side">
+    <!-- Add / edit -->
+    <div class="vm-panel" *ngIf="form">
+      <div class="section-lbl">{{ form._id ? 'Edit location' : 'New location' }}</div>
+      <div class="field">
+        <label for="vm-name">Name</label>
+        <input id="vm-name" [(ngModel)]="form.name" maxlength="60" placeholder="e.g. Water Station 4">
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <app-select [(ngModel)]="form.type" (ngModelChange)="onFormTypeChange()">
+          <app-option *ngFor="let t of TYPES; trackBy: trackByValue" [value]="t.value">{{ t.label }}</app-option>
+        </app-select>
+      </div>
+      <div class="field">
+        <label>Department responsible</label>
+        <app-select [(ngModel)]="form.department" placeholder="Pick a department">
+          <app-option *ngIf="!isTL" [value]="null">No department</app-option>
+          <app-option *ngFor="let d of departments; trackBy: trackById" [value]="d._id">{{ d.name }}</app-option>
+        </app-select>
+      </div>
+      <div class="field">
+        <label for="vm-notes">Notes</label>
+        <textarea id="vm-notes" rows="2" [(ngModel)]="form.notes" maxlength="300" placeholder="Optional"></textarea>
+      </div>
+      <div class="vm-muted">{{ form.lat | number:'1.5-5' }}, {{ form.lng | number:'1.5-5' }}
+        <span *ngIf="accuracy !== null"> · accurate to about {{ accuracy }} m</span><br>Drag the pin to fine-tune.</div>
+      <div class="field-error" *ngIf="formError">{{ formError }}</div>
+      <div class="vm-actions">
+        <button type="button" class="btn-cta" [disabled]="saving" (click)="save()">{{ saving ? 'Saving…' : 'Save' }}</button>
+        <button type="button" class="btn-ghost" (click)="closePanels()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- KML import review -->
+    <div class="vm-panel" *ngIf="imports">
+      <div class="section-lbl">Import {{ imports.length }} place{{ imports.length === 1 ? '' : 's' }}</div>
+      <p class="vm-muted">Check each type before importing (guessed from the name). Untick any you don't want.</p>
+      <div class="vm-imports">
+        <div class="vm-imp" *ngFor="let p of imports; trackBy: trackByIndex">
+          <input type="checkbox" [(ngModel)]="p.include" [attr.aria-label]="'Include ' + p.name">
+          <span class="vm-imp-name">{{ p.name }}</span>
+          <app-select [(ngModel)]="p.type">
+            <app-option *ngFor="let t of TYPES; trackBy: trackByValue" [value]="t.value">{{ t.label }}</app-option>
+          </app-select>
+        </div>
+      </div>
+      <div class="vm-actions">
+        <button type="button" class="btn-cta" [disabled]="saving || !includedImports" (click)="importSelected()">
+          {{ saving ? 'Importing…' : 'Import ' + includedImports }}</button>
+        <button type="button" class="btn-ghost" (click)="closePanels()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Selected location -->
+    <div class="vm-panel" *ngIf="selected && !form && !imports">
+      <div class="vm-head">
+        <span class="vm-dot" [style.background]="typeInfo(selected.type).color"><mat-icon class="ms-fill">{{ typeInfo(selected.type).icon }}</mat-icon></span>
+        <div class="vm-grow"><div class="vm-name">{{ selected.name }}</div><div class="vm-muted">{{ typeInfo(selected.type).label }}</div></div>
+        <button type="button" class="vm-x" aria-label="Close" (click)="closePanels()"><mat-icon>close</mat-icon></button>
+      </div>
+      <div class="vm-row" *ngIf="selected.department"><b>Department:</b> {{ selected.department.name }}</div>
+      <div class="vm-row vm-notes" *ngIf="selected.notes">{{ selected.notes }}</div>
+      <div class="vm-row vm-muted">{{ selected.lat | number:'1.5-5' }}, {{ selected.lng | number:'1.5-5' }}</div>
+      <div class="vm-actions">
+        <a class="pill-btn" target="_blank" rel="noopener" [href]="directionsUrl(selected.lat, selected.lng)"><mat-icon>directions</mat-icon>Directions</a>
+        <a class="pill-btn" target="_blank" rel="noopener" [href]="streetViewUrl(selected.lat, selected.lng)"><mat-icon>streetview</mat-icon>Street View</a>
+      </div>
+      <div class="vm-actions" *ngIf="selected.canEdit">
+        <button type="button" class="pill-btn primary" (click)="startEdit(selected)"><mat-icon>edit</mat-icon>Edit</button>
+        <button type="button" class="pill-btn vm-danger" (click)="remove(selected)"><mat-icon>delete</mat-icon>Delete</button>
+      </div>
+    </div>
+
+    <!-- List + type filters -->
+    <div class="vm-panel">
+      <div class="section-lbl">Locations ({{ locations.length }})</div>
+      <div class="vm-chips">
+        <button type="button" *ngFor="let t of TYPES; trackBy: trackByValue" class="vm-chip" [class.on]="typeFilter.has(t.value)"
+                [style.--c]="t.color" [attr.aria-pressed]="typeFilter.has(t.value)" (click)="toggleType(t.value)">
+          <mat-icon class="ms-fill">{{ t.icon }}</mat-icon>{{ t.label }}<span class="vm-n">{{ countOf(t.value) }}</span>
+        </button>
+      </div>
+      <div class="vm-muted" *ngIf="!loading && !locations.length && event">
+        No locations yet.{{ canAdd ? ' Use "Add location" or "Use my location" to add the first one.' : '' }}</div>
+      <div class="vm-list">
+        <button type="button" class="vm-item" *ngFor="let l of visible; trackBy: trackById"
+                [class.sel]="selected?._id === l._id" (click)="select(l, true)">
+          <span class="vm-dot" [style.background]="typeInfo(l.type).color"><mat-icon class="ms-fill">{{ typeInfo(l.type).icon }}</mat-icon></span>
+          <span class="vm-grow">{{ l.name }}<small>{{ typeInfo(l.type).label }}{{ l.department ? ' · ' + l.department.name : '' }}</small></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

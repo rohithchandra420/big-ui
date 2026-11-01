@@ -28,7 +28,12 @@
                 "glob": "**/*",
                 "input": "node_modules/ngx-scanner-qrcode/wasm/", 
                 "output": "./assets/wasm/"
-              } 
+              },
+              {
+                "glob": "leaflet.css",
+                "input": "node_modules/leaflet/dist/",
+                "output": "./assets/leaflet/"
+              }
             ],
             "styles": [
               "@angular/material/prebuilt-themes/purple-green.css",
@@ -42,7 +47,7 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "2.2mb",
+                  "maximumWarning": "2.3mb",
                   "maximumError": "5mb"
                 },
                 {
