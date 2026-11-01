@@ -17,6 +17,13 @@
     <button type="button" class="pwa-close" (click)="pwa.dismissInstall()" aria-label="Don't show again" title="Don't show again">✕</button>
   </div>
 
+  <div class="pwa-note" *ngIf="showPushPrompt$ | async">
+    <img class="pwa-icon" src="assets/icons/icon-192.png" alt="">
+    <span class="pwa-text"><b>Get BiG notifications</b> on this device — announcements and email updates. Change them any time in My Profile.</span>
+    <button type="button" class="btn-cta pwa-btn" (click)="turnOnPush()" [disabled]="pushBusy">Turn on</button>
+    <button type="button" class="pwa-close" (click)="dismissPushPrompt()" aria-label="Don't show again" title="Don't show again">✕</button>
+  </div>
+
   <div class="pwa-note" *ngIf="pwa.showIosHint$ | async">
     <img class="pwa-icon" src="assets/icons/icon-192.png" alt="">
     <span class="pwa-text"><b>Install BiG:</b> tap <b>Share</b> <span class="pwa-share" aria-hidden="true">⬆︎</span> then <b>Add to Home Screen</b>.</span>

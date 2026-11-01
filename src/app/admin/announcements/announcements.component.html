@@ -1,0 +1,163 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Announcements</div>
+    <div class="page-ph-sub">Push notifications to staff phones</div>
+  </div>
+</div>
+
+<!-- Desktop: form on the left (larger share), history on the right with its
+     own scroll. Phone: stacked. Full width, like Bookings / Users. -->
+<div class="ann-page">
+
+  <div class="card ann-form">
+    <div class="card-title">New announcement</div>
+
+    <!-- Type: colour-coded icon tiles (the radio input stays for keyboard / screen readers) -->
+    <div class="ann-group">
+      <div class="ann-group-hd"><span class="ann-group-lbl">Type</span></div>
+      <div class="ann-types" role="radiogroup" aria-label="Type">
+        <label class="ann-type choice-tile" *ngFor="let t of typeOptions" [ngClass]="'t-' + t.value" [class.selected]="type === t.value">
+          <input class="sr-only" type="radio" name="ann-type" [value]="t.value" [checked]="type === t.value" (change)="type = t.value">
+          <mat-icon class="choice-tile-check ms-fill" aria-hidden="true">check_circle</mat-icon>
+          <span class="choice-tile-ic"><mat-icon class="ms-fill">{{ t.icon }}</mat-icon></span>
+          <span class="choice-tile-name">{{ t.label }}</span>
+          <span class="choice-tile-short">{{ t.short }}</span>
+        </label>
+      </div>
+      <span class="ann-hint" [class.ann-hint-urgent]="type === 'urgent'">{{ typeOption.hint }}</span>
+    </div>
+
+    <div class="field">
+      <label for="ann-title">Title</label>
+      <input id="ann-title" type="text" [(ngModel)]="title" [maxlength]="titleMax" placeholder="e.g. Gates open at 2 pm">
+      <span class="ann-count">{{ title.length }} / {{ titleMax }}</span>
+    </div>
+
+    <div class="field">
+      <label for="ann-message">Message</label>
+      <textarea id="ann-message" rows="3" [(ngModel)]="message" [maxlength]="messageMax" placeholder="What staff need to know"></textarea>
+      <span class="ann-count">{{ message.length }} / {{ messageMax }}</span>
+    </div>
+
+    <!-- Roles: toggle chips -->
+    <div class="ann-group">
+      <div class="ann-group-hd">
+        <span class="ann-group-lbl">Roles</span>
+        <button type="button" class="ann-link" (click)="toggleAllRoles()">{{ allRolesSelected ? 'Clear' : 'Select all' }}</button>
+      </div>
+      <div class="ann-chips">
+        <label class="ann-chip toggle-chip" *ngFor="let r of roleOptions" [class.on]="roles.has(r.value)">
+          <input class="sr-only" type="checkbox" [checked]="roles.has(r.value)" (change)="toggleRole(r.value, $any($event.target).checked)">
+          <mat-icon aria-hidden="true">{{ roles.has(r.value) ? 'check' : 'add' }}</mat-icon>{{ r.label }}
+        </label>
+      </div>
+    </div>
+
+    <!-- Departments: toggle chips -->
+    <div class="ann-group">
+      <div class="ann-group-hd">
+        <span class="ann-group-lbl">Departments <span class="ann-label-note">(home department)</span></span>
+        <button type="button" class="ann-link" *ngIf="departmentOptions.length" (click)="toggleAllDepartments()">{{ allDepartmentsSelected ? 'Clear' : 'Select all' }}</button>
+      </div>
+      <div class="ann-chips" *ngIf="departmentOptions.length; else noDepts">
+        <label class="ann-chip toggle-chip" *ngFor="let d of departmentOptions; trackBy: trackById" [class.on]="departments.has(d._id)">
+          <input class="sr-only" type="checkbox" [checked]="departments.has(d._id)" (change)="toggleDepartment(d._id, $any($event.target).checked)">
+          <mat-icon aria-hidden="true">{{ departments.has(d._id) ? 'check' : 'add' }}</mat-icon>{{ d.name }}
+        </label>
+      </div>
+      <ng-template #noDepts><span class="ann-hint">No departments yet.</span></ng-template>
+    </div>
+
+    <div class="ann-audience" [class.empty]="!hasAudience">
+      <mat-icon aria-hidden="true">group</mat-icon>
+      <span><span class="ann-audience-lbl">Goes to:</span> {{ audiencePreview }}</span>
+    </div>
+
+    <div class="warn-banner ann-warn">
+      Shows on locked phones — don't include personal or sensitive details.
+    </div>
+
+    <div class="ann-preview" aria-label="Preview">
+      <div class="ann-preview-lbl">Preview</div>
+      <div class="ann-phone-note" [ngClass]="'t-' + type">
+        <span class="ann-phone-icon"><mat-icon class="ms-fill">{{ typeOption.icon }}</mat-icon></span>
+        <div class="ann-phone-text">
+          <div class="ann-phone-app">BiG · now</div>
+          <div class="ann-phone-title">{{ typeOption.prefix }}{{ title.trim() || 'Title' }}</div>
+          <div class="ann-phone-body">{{ message.trim() || 'Message' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ann-actions">
+      <button type="button" class="btn-cta ann-send" [class.urgent]="type === 'urgent'" (click)="send()" [disabled]="!canSend">
+        <mat-icon aria-hidden="true">send</mat-icon>
+        {{ sending ? 'Sending…' : (type === 'urgent' ? 'Send urgent announcement' : 'Send announcement') }}
+      </button>
+    </div>
+  </div>
+
+  <aside class="ann-side" aria-label="Sent announcements">
+  <div class="section-lbl ann-history-lbl">
+    Sent announcements <span class="ann-history-count" *ngIf="history.length">{{ history.length }}</span>
+  </div>
+  <!-- Search + filters (on the loaded history) -->
+  <div class="ann-filters" *ngIf="history.length > 0">
+    <label class="search-field">
+      <mat-icon aria-hidden="true">search</mat-icon>
+      <input type="search" [(ngModel)]="search" (ngModelChange)="applyFilters()" placeholder="Search title or message" aria-label="Search title or message">
+    </label>
+    <div class="ann-filter-row">
+      <app-select class="filter-select" [(ngModel)]="filterType" (ngModelChange)="applyFilters()">
+        <app-option value="">All types</app-option>
+        <app-option *ngFor="let t of typeOptions; trackBy: trackByValue" [value]="t.value">{{ t.label }}</app-option>
+      </app-select>
+      <app-select class="filter-select" [(ngModel)]="filterDept" (ngModelChange)="applyFilters()">
+        <app-option value="">All departments</app-option>
+        <app-option *ngFor="let d of departmentOptions; trackBy: trackById" [value]="d._id">{{ d.name }}</app-option>
+      </app-select>
+      <app-select class="filter-select" [(ngModel)]="filterRole" (ngModelChange)="applyFilters()">
+        <app-option value="">All roles</app-option>
+        <app-option *ngFor="let r of roleOptions; trackBy: trackByValue" [value]="r.value">{{ r.label }}</app-option>
+      </app-select>
+    </div>
+    <div class="ann-filter-foot" *ngIf="hasFilters">
+      <span>Showing {{ visibleHistory.length }} of {{ history.length }}</span>
+      <button type="button" class="ann-link" (click)="clearFilters()">Clear filters</button>
+    </div>
+  </div>
+
+  <p class="ann-empty" *ngIf="!loadingHistory && history.length === 0">Nothing sent yet.</p>
+  <p class="ann-empty" *ngIf="history.length > 0 && visibleHistory.length === 0">No announcements match these filters.</p>
+  <div class="ann-list" *ngIf="visibleHistory.length > 0">
+    <div class="card ann-item" *ngFor="let a of visibleHistory; trackBy: trackById" [ngClass]="'t-' + (a.type || 'general')">
+      <!-- Left column: type icon with the badges under it, so the title gets the full width -->
+      <div class="ann-item-side">
+        <span class="ann-item-ic"><mat-icon class="ms-fill">{{ typeIcon(a.type) }}</mat-icon></span>
+        <span class="ann-badge" [title]="typeLabel(a.type)">{{ typeBadge(a.type) }}</span>
+        <span class="ann-badge resent" *ngIf="a.resentFrom"><mat-icon aria-hidden="true">replay</mat-icon>Resent</span>
+      </div>
+      <div class="ann-item-body">
+        <div class="ann-item-hd">
+          <span class="ann-item-title">{{ a.title }}</span>
+          <span class="ann-item-when">{{ a.createdAt | date:'d MMM, h:mm a' }}</span>
+        </div>
+        <div class="ann-item-msg">{{ a.message }}</div>
+        <div class="ann-item-meta">
+          To {{ historyAudience(a) }} · by {{ a.sentBy?.name || 'someone' }} ·
+          {{ a.delivered }} device{{ a.delivered === 1 ? '' : 's' }}
+        </div>
+        <div class="ann-item-actions">
+          <button type="button" class="ann-action pill-btn" (click)="copyToForm(a)">
+            <mat-icon aria-hidden="true">content_copy</mat-icon>Copy to form
+          </button>
+          <button type="button" class="ann-action pill-btn primary" (click)="sendAgain(a)" *ngIf="canResend(a)" [disabled]="resendingId === a._id">
+            <mat-icon aria-hidden="true">replay</mat-icon>{{ resendingId === a._id ? 'Sending…' : 'Send again' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </aside>
+
+</div>

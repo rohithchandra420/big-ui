@@ -113,6 +113,15 @@
         <span class="nav-dot"></span>
         Email Report
       </a>
+
+      <a class="nav-item"
+         routerLink="/admin/announcements"
+         routerLinkActive="active"
+         (click)="onNavClick()"
+         *ngIf="canSeeManageEvents">
+        <span class="nav-dot"></span>
+        Announcements
+      </a>
     </ng-container>
 
   </nav>

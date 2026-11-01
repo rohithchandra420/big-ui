@@ -3,7 +3,7 @@ import { login } from './helpers';
 
 test.describe('Sign in', () => {
   test('a staff member can sign in and lands on the home page', async ({ page }) => {
-    await login(page);
+    await login(page, undefined, { fresh: true });
     await expect(page).toHaveURL(/\/$/);
   });
 
@@ -16,7 +16,8 @@ test.describe('Sign in', () => {
   });
 
   test('signing out goes to the login page', async ({ page }) => {
-    await login(page);
+    // Its own session: signing out ends it on the server.
+    await login(page, undefined, { fresh: true });
     await page.goto('/profile');
     const logout = page.locator('.logout-btn');
     if (!(await logout.isVisible())) {

@@ -21,6 +21,10 @@ const MONGOD = process.env.MONGOD_PATH || 'G:/RC/mongodb/bin/mongod.exe';
 const DB_DIR = path.join(__dirname, 'e2e', '.data', 'db');
 const API_DIR = path.resolve(__dirname, '../big-api');
 mkdirSync(DB_DIR, { recursive: true });
+// Throwaway push-notification keys for this run (PWA Phase 2). No phone ever
+// subscribes under `ng serve` (no service worker), so nothing is ever sent.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const VAPID = require(path.join(API_DIR, 'node_modules', 'web-push')).generateVAPIDKeys();
 
 export default defineConfig({
   testDir: './e2e',
@@ -69,6 +73,8 @@ export default defineConfig({
         EMAIL_SMTP_HOST: '127.0.0.1',
         EMAIL_SMTP_PORT: '1',
         BREVO_PASS: '',
+        VAPID_PUBLIC_KEY: VAPID.publicKey,
+        VAPID_PRIVATE_KEY: VAPID.privateKey,
       },
     },
     {
