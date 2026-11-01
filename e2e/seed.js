@@ -164,6 +164,30 @@ async function seed() {
     }
   }
 
+  // Sample announcements (Admin › Announcements history), newest last here —
+  // the page lists newest first. Invented; nothing is ever sent from the test run.
+  const at2 = (d, h, m) => new Date(Date.UTC(2026, 9, d, h, m));
+  const A = [
+    { type: "schedule", title: "Gates open at 3 pm today", message: "Opening moved by one hour. Box Office: please update the queue boards.", roles: ["TL", "VOL"], departments: [], when: at2(14, 8, 30), recipients: 9, devices: 7, delivered: 7 },
+    { type: "task", title: "Restock water at Gate 2", message: "Two crates from the store room before 3 pm.", roles: ["VOL"], departments: [D["Operations"]], when: at2(14, 9, 45), recipients: 4, devices: 3, delivered: 3 },
+    { type: "weather", title: "Heat advisory this afternoon", message: "Drink water every hour and take breaks in the shade at the main tent.", roles: [], departments: [], all: true, when: at2(14, 11, 10), recipients: 12, devices: 9, delivered: 9 },
+    { type: "reminder", title: "Attendance closes at 9 pm", message: "Team Leads: mark tonight's attendance before 9.", roles: ["TL"], departments: [], when: at2(14, 18, 0), recipients: 3, devices: 3, delivered: 3 },
+    { type: "urgent", title: "Storm warning", message: "Leave the main stage area and go to the dining hall now.", roles: ["ADMIN", "TL", "VOL"], departments: [], when: at2(15, 16, 5), recipients: 11, devices: 8, delivered: 8 }
+  ];
+  const Announcement = require(API + "/src/models/announcement");
+  let lastUrgent = null;
+  for (const a of A) {
+    const roles = a.all ? ["DIR", "ADMIN", "TL", "VOL"] : a.roles;
+    const doc = await Announcement.create({ type: a.type, title: a.title, message: a.message, roles, departments: a.departments,
+      sentBy: dir._id, recipients: a.recipients, devices: a.devices, delivered: a.delivered });
+    await Announcement.collection.updateOne({ _id: doc._id }, { $set: { createdAt: a.when, updatedAt: a.when } });
+    if (a.type === "urgent") lastUrgent = doc;
+  }
+  // …and the storm warning sent again a few minutes later
+  const resent = await Announcement.create({ type: "urgent", title: lastUrgent.title, message: lastUrgent.message, roles: lastUrgent.roles,
+    departments: [], sentBy: dir._id, resentFrom: lastUrgent._id, recipients: 11, devices: 9, delivered: 9 });
+  await Announcement.collection.updateOne({ _id: resent._id }, { $set: { createdAt: at2(15, 16, 20), updatedAt: at2(15, 16, 20) } });
+
   const summary = `${await User.countDocuments()} users, ${await Ticket.countDocuments()} bookings, ${await ShopCart.countDocuments()} passes, ${await Tent.countDocuments()} tents`;
   await mongoose.disconnect();
   // Ids the tests and screenshots need (e.g. to pick the active event, open a booking).

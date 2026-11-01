@@ -22,6 +22,16 @@
     </a>
 
     <a class="nav-item"
+       routerLink="/billboard"
+       routerLinkActive="active"
+       (click)="onNavClick()"
+       *ngIf="isAuthenticated">
+      <span class="nav-dot"></span>
+      Billboard
+      <span class="nav-count" *ngIf="unreadNotes" [attr.aria-label]="unreadNotes + ' unread'">{{ unreadNotes > 99 ? '99+' : unreadNotes }}</span>
+    </a>
+
+    <a class="nav-item"
        routerLink="/my-department"
        routerLinkActive="active"
        (click)="onNavClick()"
