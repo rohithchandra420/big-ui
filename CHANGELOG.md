@@ -21,6 +21,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Notes
 - No new dependencies. 12 new unit tests (862/862).
+- Build size warning raised to 2.4 MB (the app is 2.37 MB with the Workshops pages; the calendar and map libraries load separately).
 
 ---
 
