@@ -32,6 +32,17 @@
       </div>
     </div>
 
+    <!-- Lists (release 3) -->
+    <div class="counts" *ngIf="session.counts as c">
+      <div><b>{{ c.pre }}<small>/{{ session.preRegLimit || session.venue?.capacity }}</small></b><span>On list</span></div>
+      <div><b>{{ c.wait }}</b><span>Waitlist</span></div>
+      <div><b>{{ c.walkin }}</b><span>Walk-ins</span></div>
+      <div><b>{{ c.attended }}<small>/{{ session.venue?.capacity }}</small></b><span>Attended</span></div>
+    </div>
+    <a class="btn-cta lists-btn" *ngIf="canRun" [routerLink]="['/workshops/sessions', session._id]">
+      <mat-icon>format_list_numbered</mat-icon>Open lists &amp; door
+    </a>
+
     <dl class="kv">
       <dt>Venue</dt><dd>{{ session.venue?.name }} <span class="muted">(capacity {{ session.venue?.capacity }})</span></dd>
       <dt>Facilitators</dt>

@@ -135,7 +135,8 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
     data.html =
       `<div class="wp-ev"><div class="wp-t">${esc(s.workshop?.title || '')}</div>` +
       `<div class="wp-m">${localTime(new Date(s.start))}–${localTime(new Date(s.end))}${who ? ' · ' + esc(who) : ''}</div>` +
-      `<div class="wp-chips"><span class="wp-chip ${st}">${st === 'open' ? 'Reg open' : st === 'soon' ? 'Opens ' + localTime(new Date(s.regOpensAt!)) : 'Reg closed'}</span>` +
+      `<div class="wp-chips">` + (s.counts ? `<span class="wp-chip">${s.counts.pre}/${s.preRegLimit || s.venue?.capacity}${s.counts.wait ? ' +' + s.counts.wait : ''}</span>` : '') +
+      `<span class="wp-chip ${st}">${st === 'open' ? 'Reg open' : st === 'soon' ? 'Opens ' + localTime(new Date(s.regOpensAt!)) : 'Reg closed'}</span>` +
       (clash ? '<span class="wp-chip warn">Overlap</span>' : '') + '</div></div>';
   }
 

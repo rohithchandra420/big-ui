@@ -84,6 +84,7 @@ import { WorkshopSetupComponent } from './workshops/setup/workshop-setup.compone
 import { WorkshopSetupPanelComponent } from './workshops/setup/setup-panel/setup-panel.component';
 import { WorkshopPlannerComponent } from './workshops/planner/workshop-planner.component';
 import { SessionPanelComponent } from './workshops/planner/session-panel/session-panel.component';
+import { SessionListsComponent } from './workshops/session/session-lists.component';
 import { BillboardComponent } from './billboard/billboard.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
@@ -149,7 +150,8 @@ LOAD_WASM().subscribe()
     WorkshopSetupComponent,
     WorkshopSetupPanelComponent,
     WorkshopPlannerComponent,
-    SessionPanelComponent
+    SessionPanelComponent,
+    SessionListsComponent
   ],
   imports: [
     BrowserModule,

@@ -335,3 +335,38 @@ describe('BoxOfficeQrscannerPopupComponent — band mode', () => {
     });
   });
 });
+
+describe('BoxOfficeQrscannerPopupComponent — raw mode (Workshops lists and door)', () => {
+  let component: BoxOfficeQrscannerPopupComponent;
+  let boxOfficeSpy: jasmine.SpyObj<BoxOfficeService>;
+  let dialogRefSpy: jasmine.SpyObj<MatDialogRef<BoxOfficeQrscannerPopupComponent>>;
+  let feedbackSpy: jasmine.SpyObj<GateFeedbackService>;
+
+  beforeEach(async () => {
+    boxOfficeSpy = jasmine.createSpyObj('BoxOfficeService', ['verifyQr', 'lookupBand']);
+    dialogRefSpy = jasmine.createSpyObj('MatDialogRef', ['close']);
+    feedbackSpy = jasmine.createSpyObj('GateFeedbackService', ['found', 'notFound', 'error', 'unlock']);
+    await TestBed.configureTestingModule({
+      declarations: [BoxOfficeQrscannerPopupComponent],
+      providers: [
+        { provide: BoxOfficeService, useValue: boxOfficeSpy },
+        { provide: MatDialogRef, useValue: dialogRefSpy },
+        { provide: GateFeedbackService, useValue: feedbackSpy },
+        { provide: MAT_DIALOG_DATA, useValue: { mode: 'raw', title: 'Door: Scan Wrist Band' } }
+      ],
+      schemas: [NO_ERRORS_SCHEMA]
+    }).overrideTemplate(BoxOfficeQrscannerPopupComponent, '<div>{{ title }}</div>').compileComponents();
+    component = TestBed.createComponent(BoxOfficeQrscannerPopupComponent).componentInstance;
+  });
+
+  it('closes with the scanned text on the first read: no Box Office lookup, no sound, camera stopped', () => {
+    const stop = jasmine.createSpy('stop');
+    expect(component.title).toBe('Door: Scan Wrist Band');
+    component.onEvent([{ value: 'https://wallet.example/p?eventid=E&tagid=T9' } as any], { stop });
+    component.onEvent([{ value: 'again' } as any], { stop });
+    expect(dialogRefSpy.close).toHaveBeenCalledOnceWith('https://wallet.example/p?eventid=E&tagid=T9');
+    expect(stop).toHaveBeenCalled();
+    expect(boxOfficeSpy.lookupBand).not.toHaveBeenCalled();
+    expect(feedbackSpy.found).not.toHaveBeenCalled();
+  });
+});

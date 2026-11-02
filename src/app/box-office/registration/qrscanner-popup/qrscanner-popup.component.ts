@@ -17,11 +17,15 @@ export type BandPurpose = 'admit' | 'link' | 'replace';
  * 'booking' (default, Registration's Scan QR) reads a ticket QR or a wrist
  * band and closes with the booking id. 'band' reads the wrist band for one
  * Festival Pass (Admit / Link band / Replace band) and closes with a
- * BandScanResult — the caller saves it.
+ * BandScanResult — the caller saves it. 'raw' (Workshops lists and door)
+ * closes with the scanned text straight away: the caller's server call checks
+ * it and plays the sound for what it finds.
  */
 export interface QrScannerData {
-  mode?: 'booking' | 'band';
+  mode?: 'booking' | 'band' | 'raw';
   purpose?: BandPurpose;
+  /** Raw mode: the dialog title. */
+  title?: string;
   /** Band mode: whose band is being scanned, shown under the title. */
   attendeeName?: string;
   /** Band mode: the Festival Pass, so its own band is recognised. */
@@ -85,7 +89,8 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
   private lastRejected = '';
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-  readonly mode: 'booking' | 'band';
+  readonly mode: 'booking' | 'band' | 'raw';
+  private readonly rawTitle: string;
   readonly purpose: BandPurpose;
   readonly attendeeName: string;
   private readonly passId: string;
@@ -111,9 +116,11 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
     this.purpose = data?.purpose ?? 'admit';
     this.attendeeName = data?.attendeeName ?? '';
     this.passId = data?.passId ?? '';
+    this.rawTitle = data?.title ?? 'Scan Wrist Band';
   }
 
   get title(): string {
+    if (this.mode === 'raw') return this.rawTitle;
     return this.mode === 'band' ? TITLES[this.purpose] : 'Scan Ticket QR or Band';
   }
 
@@ -148,6 +155,13 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
   onEvent(results: ScannerQRCodeResult[], action?: any): void {
     const text = results?.[0]?.value;
     if (!text || this.checking || this.paused) return;
+    if (this.mode === 'raw') {
+      // One read is enough: hand it back; the caller checks it and plays the sound.
+      this.checking = true;
+      action?.stop();
+      this.dialogRef.close(text);
+      return;
+    }
     if (this.mode === 'booking' && text === this.lastRejected) return;
     if (this.mode === 'band') {
       // One band per scan: stop the camera and wait for staff.

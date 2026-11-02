@@ -1,0 +1,114 @@
+<div class="page-ph">
+  <div class="ph-left">
+    <div class="ph-text">
+      <a class="ph-back" routerLink="/workshops"><mat-icon>arrow_back</mat-icon>Planner</a>
+      <div class="page-ph-title">{{ s?.workshop?.title || 'Session' }}</div>
+      <div class="page-ph-sub">{{ when }}</div>
+    </div>
+  </div>
+  <span class="reg-chip" *ngIf="data" [class.on]="data.registrationOpen">
+    <span class="dot"></span>Pre-registration {{ data.registrationOpen ? 'open' : 'closed' }}
+  </span>
+</div>
+
+<div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+<ng-container *ngIf="data as d">
+  <div class="stat-row">
+    <div class="stat"><div class="stat-l">On the list</div><div class="stat-n">{{ d.counts.pre }} <small>/ {{ d.counts.limit }}</small></div><div class="stat-s">soft limit</div></div>
+    <div class="stat"><div class="stat-l">Waitlist</div><div class="stat-n">{{ d.counts.wait }}</div><div class="stat-s">moves up automatically</div></div>
+    <div class="stat"><div class="stat-l">Walk-ins</div><div class="stat-n">{{ d.counts.walkin }}</div><div class="stat-s">came to the door</div></div>
+    <div class="stat" [class.alert-stat]="d.counts.attended > d.counts.capacity">
+      <div class="stat-l">Attended</div><div class="stat-n">{{ d.counts.attended }} <small>/ {{ d.counts.capacity }}</small></div><div class="stat-s">venue capacity</div>
+    </div>
+  </div>
+
+  <!-- List / Door -->
+  <div class="sl-tabs" role="tablist" aria-label="Mode">
+    <button type="button" role="tab" [class.on]="tab === 'list'" [attr.aria-selected]="tab === 'list'" (click)="setTab('list')">
+      <mat-icon>format_list_numbered</mat-icon><span><b>List</b>Pre-registration</span>
+    </button>
+    <button type="button" role="tab" [class.on]="tab === 'door'" [attr.aria-selected]="tab === 'door'" (click)="setTab('door')">
+      <mat-icon>door_open</mat-icon><span><b>Door</b>Let people in</span>
+    </button>
+  </div>
+
+  <div class="warn-banner" *ngIf="tab === 'list' && !d.registrationOpen">
+    Pre-registration is closed for this session, so nobody can be added to the list. Open it from the session in the Planner.
+  </div>
+  <div class="sl-note" *ngIf="tab === 'door' && s?.cutoffAt">
+    <mat-icon>schedule</mat-icon>
+    Cut-off {{ time(s!.cutoffAt) }}{{ cutoffPassed ? ' has passed: the waitlist and walk-ins can go in.' : ': until then, only the list goes in.' }}
+  </div>
+
+  <!-- Find a person: scan or search -->
+  <div class="sl-find">
+    <button type="button" class="btn-cta sl-scan" (click)="scan()" [disabled]="busy || (tab === 'list' && !d.registrationOpen)">
+      <mat-icon>qr_code_scanner</mat-icon>Scan wrist band
+    </button>
+    <div class="sl-search">
+      <label class="search-field">
+        <mat-icon>search</mat-icon>
+        <input type="text" [ngModel]="search" (ngModelChange)="onSearch($event)" placeholder="Or search name, email, phone or order number"
+               aria-label="Search people" [disabled]="tab === 'list' && !d.registrationOpen">
+      </label>
+      <div class="sl-results" *ngIf="results.length || (searched && !searching)">
+        <button type="button" class="sl-result" *ngFor="let p of results; trackBy: trackId" (click)="pick(p)" [disabled]="busy || !p.isAdmitted">
+          <span class="sl-r-name">{{ p.name }}</span>
+          <span class="sl-r-meta">Order {{ p.order_id }}{{ p.band ? ' · band ' + p.band.code : '' }}</span>
+          <span class="badge bx" *ngIf="!p.isAdmitted">Not admitted</span>
+        </button>
+        <div class="sl-r-none" *ngIf="searched && !searching && !results.length">Nobody found</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What the last scan / pick turned into -->
+  <div class="sl-out" *ngIf="outcome as o" [ngClass]="o.tone" role="status" aria-live="polite">
+    <mat-icon class="sl-out-ic ms-fill">{{ o.icon }}</mat-icon>
+    <div class="sl-out-body">
+      <div class="sl-out-name" *ngIf="o.name">{{ o.name }}</div>
+      <div class="sl-out-title">{{ o.title }}</div>
+      <div class="sl-out-detail">{{ o.detail }}</div>
+      <ul class="sl-out-warn" *ngIf="o.warnings?.length"><li *ngFor="let w of o.warnings">{{ w }}</li></ul>
+      <app-band-alert *ngIf="o.flag" [band]="o.flag.band"></app-band-alert>
+      <div class="sl-out-acts">
+        <button type="button" class="btn-ghost" (click)="dismiss()">{{ o.letIn ? 'Keep waiting' : o.flag ? 'Cancel' : 'Done' }}</button>
+        <button type="button" class="btn-danger" *ngIf="o.flag" (click)="continueFlagged()" [disabled]="busy">
+          Checked: continue with {{ o.flag.band.owner?.name || 'the owner' }}
+        </button>
+        <button type="button" class="btn-cta" *ngIf="o.letIn" (click)="letIn(o.letIn!)" [disabled]="busy">{{ o.letInLabel }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- The lists -->
+  <ng-container *ngFor="let grp of groups; trackBy: trackKey">
+    <div class="sl-group" *ngIf="grp.key === 'pre' || grp.rows.length">
+      <div class="section-lbl">{{ grp.title }} ({{ grp.rows.length }})</div>
+      <div class="tbl-container">
+        <div class="tbl-scroll">
+          <table class="tbl" *ngIf="grp.rows.length; else none">
+            <thead><tr><th>#</th><th>Name</th><th class="hide-sm">Order · band</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <tr *ngFor="let e of grp.rows; let i = index; trackBy: trackId">
+                <td>{{ i + 1 }}</td>
+                <td class="strong">{{ e.pass?.name || '(deleted pass)' }}<span class="badge ba late" *ngIf="e.late">Late</span></td>
+                <td class="hide-sm">{{ e.pass?.order_id }}{{ e.pass?.band ? ' · ' + e.pass?.band?.code : '' }}</td>
+                <td>
+                  <span class="badge bg" *ngIf="e.attendedAt; else waiting">In {{ time(e.attendedAt) }}</span>
+                  <ng-template #waiting><span class="muted">{{ grp.key === 'pre' ? 'Not here yet' : 'Waiting' }}</span></ng-template>
+                </td>
+                <td class="acts">
+                  <button type="button" class="pill-btn primary" *ngIf="!e.attendedAt && grp.key !== 'pre'" (click)="letIn(e)" [disabled]="busy">Let in</button>
+                  <button type="button" class="pill-btn" *ngIf="!e.attendedAt" (click)="remove(e)" [disabled]="busy">Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <ng-template #none><div class="sl-empty">{{ grp.empty }}</div></ng-template>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</ng-container>
