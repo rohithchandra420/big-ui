@@ -66,13 +66,11 @@
   transform: rotate(180deg);
 }
 
-/* The whole reason this component exists: locked to the trigger's own
-   width via 100% + box-sizing, instead of a native <select> popup which
-   auto-sizes to the widest option and ignores the box underneath it. */
+/* Locked to the trigger's width (the overlay pane is sized to the trigger),
+   instead of a native <select> popup which auto-sizes to the widest option.
+   Placed by the CDK overlay (below the trigger, or above when there's no
+   room), so it's never clipped by a container. */
 .app-select-panel {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
   width: 100%;
   max-height: 240px;
   overflow-y: auto;
@@ -83,7 +81,6 @@
   border: 1px solid #ddd;
   border-radius: 8px;
   box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04));
-  z-index: 50;
   box-sizing: border-box;
 }
 

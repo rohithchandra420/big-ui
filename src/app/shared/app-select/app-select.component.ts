@@ -1,8 +1,10 @@
 import {
   AfterContentInit, Component, ContentChildren, ElementRef, EventEmitter, forwardRef,
-  HostListener, Input, OnDestroy, Output, QueryList
+  HostListener, Input, OnDestroy, Output, QueryList, TemplateRef, ViewChild, ViewContainerRef
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { TemplatePortal } from '@angular/cdk/portal';
 import { Subscription } from 'rxjs';
 
 import { AppOptionComponent } from './app-option.component';
@@ -21,6 +23,11 @@ import { AppOptionComponent } from './app-option.component';
  * written as child <app-option> tags (see that component) rather than a
  * data-array @Input, specifically so migrating an existing template is a
  * near-mechanical <select>/<option> → <app-select>/<app-option> tag rename.
+ *
+ * Bug fix (2026-11-03, v1.26.1): the panel opens on the CDK overlay layer
+ * (attached to <body>, anchored to the trigger, same width, below — or above
+ * when there's no room — and following scroll), so no container with
+ * overflow hidden/auto (table boxes, side panels, dialogs) can clip it.
  */
 @Component({
   selector: 'app-select',
@@ -46,14 +53,30 @@ export class AppSelectComponent implements ControlValueAccessor, AfterContentIni
    *  for a side effect can switch to (valueChange) here. */
   @Output() valueChange = new EventEmitter<any>();
 
-  open = false;
+  @ViewChild('trigger', { static: true }) triggerRef!: ElementRef<HTMLElement>;
+  @ViewChild('panelTpl', { static: true }) panelTpl!: TemplateRef<unknown>;
+
+  /** The panel is open — attaching / detaching it on the overlay layer. */
+  get open(): boolean { return this._open; }
+  set open(value: boolean) {
+    if (value === this._open) return;
+    this._open = value;
+    value ? this.attachPanel() : this.detachPanel();
+  }
+  private _open = false;
+  private overlayRef?: OverlayRef;
+
   value: any = null;
 
   private optionsSub?: Subscription;
   private onChange: (value: any) => void = () => { };
   private onTouched: () => void = () => { };
 
-  constructor(private hostRef: ElementRef<HTMLElement>) { }
+  constructor(
+    private hostRef: ElementRef<HTMLElement>,
+    private overlay: Overlay,
+    private viewContainerRef: ViewContainerRef
+  ) { }
 
   ngAfterContentInit(): void {
     // *ngFor-driven option lists (the common case — every real usage in this
@@ -65,6 +88,40 @@ export class AppSelectComponent implements ControlValueAccessor, AfterContentIni
 
   ngOnDestroy(): void {
     this.optionsSub?.unsubscribe();
+    this.overlayRef?.dispose();
+  }
+
+  // ── the panel on the overlay layer ────────────────────────────
+
+  private attachPanel(): void {
+    if (!this.panelTpl || !this.triggerRef) return;
+    if (!this.overlayRef) {
+      this.overlayRef = this.overlay.create({
+        positionStrategy: this.overlay.position()
+          .flexibleConnectedTo(this.triggerRef)
+          .withPositions([
+            { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 4 },
+            { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -4 }
+          ])
+          .withFlexibleDimensions(false)
+          .withPush(false),
+        scrollStrategy: this.overlay.scrollStrategies.reposition(),
+        panelClass: 'app-select-overlay'
+      });
+    }
+    this.overlayRef.updateSize({ width: this.triggerRef.nativeElement.getBoundingClientRect().width });
+    if (!this.overlayRef.hasAttached()) {
+      this.overlayRef.attach(new TemplatePortal(this.panelTpl, this.viewContainerRef));
+    }
+  }
+
+  private detachPanel(): void {
+    if (this.overlayRef?.hasAttached()) this.overlayRef.detach();
+  }
+
+  /** The open panel's element (on the overlay layer, outside this component's host). */
+  get panelElement(): HTMLElement | null {
+    return this.overlayRef?.hasAttached() ? this.overlayRef.overlayElement : null;
   }
 
   get options(): AppOptionComponent[] {
@@ -106,11 +163,12 @@ export class AppSelectComponent implements ControlValueAccessor, AfterContentIni
     this.close();
   }
 
-  // Closes on any click outside the component — trigger + panel are both
-  // inside hostRef, so a click on either doesn't reach here as "outside".
+  // Closes on any click outside the component. The panel lives on the
+  // overlay layer, not inside hostRef, so a click on it counts as inside too.
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
-    if (this.open && !this.hostRef.nativeElement.contains(event.target as Node)) {
+    const target = event.target as Node;
+    if (this.open && !this.hostRef.nativeElement.contains(target) && !this.panelElement?.contains(target)) {
       this.open = false;
     }
   }
