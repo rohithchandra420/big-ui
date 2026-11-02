@@ -1,0 +1,115 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Workshop Setup</div>
+    <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · venues, workshops and categories</div>
+  </div>
+  <button class="btn-cta" *ngIf="canAdd" (click)="openAdd()">+ {{ addLabel }}</button>
+</div>
+
+<div class="empty-state" *ngIf="!event">
+  <mat-icon>event</mat-icon>
+  <p>Pick an event in the sidebar to set up its workshops.</p>
+</div>
+
+<ng-container *ngIf="event">
+  <div class="stat-row">
+    <div class="stat tap" [class.act]="tab === 'venue'" (click)="setTab('venue')" role="tab" [attr.aria-selected]="tab === 'venue'">
+      <div class="stat-l">Venues</div>
+      <div class="stat-n">{{ setup?.venues?.length ?? '—' }}</div>
+      <div class="stat-s">{{ tab === 'venue' ? 'showing' : 'tap to view →' }}</div>
+    </div>
+    <div class="stat tap" [class.act]="tab === 'workshop'" (click)="setTab('workshop')" role="tab" [attr.aria-selected]="tab === 'workshop'">
+      <div class="stat-l">Workshops</div>
+      <div class="stat-n">{{ setup?.workshops?.length ?? '—' }}</div>
+      <div class="stat-s">{{ tab === 'workshop' ? 'showing' : 'tap to view →' }}</div>
+    </div>
+    <div class="stat tap" [class.act]="tab === 'category'" (click)="setTab('category')" role="tab" [attr.aria-selected]="tab === 'category'">
+      <div class="stat-l">Categories</div>
+      <div class="stat-n">{{ setup?.categories?.length ?? '—' }}</div>
+      <div class="stat-s">{{ tab === 'category' ? 'showing' : 'tap to view →' }}</div>
+    </div>
+  </div>
+
+  <div class="warn-banner" *ngIf="loadError">{{ loadError }}</div>
+
+  <div class="tbl-container">
+    <div class="tbl-filters">
+      <div class="filter-bar">
+        <input type="text" [placeholder]="searchPlaceholder" [(ngModel)]="search" (ngModelChange)="applySearch()"
+               aria-label="Search" />
+      </div>
+    </div>
+
+    <div class="tbl-scroll setup-tbl-scroll">
+      <!-- Venues -->
+      <table class="tbl" *ngIf="tab === 'venue'">
+        <thead>
+          <tr><th>Venue</th><th>Capacity</th><th>Workshop area</th><th class="hide-sm">Amenities</th><th>Sessions</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of venues; trackBy: trackId" [class.selected]="isOpen(v._id)" (click)="openItem('venue', v)">
+            <td class="strong">{{ v.name }}</td>
+            <td>{{ v.capacity }}</td>
+            <td><span *ngIf="v.area; else noArea"><mat-icon class="ic">place</mat-icon>{{ v.area.name }}</span>
+              <ng-template #noArea><span class="muted">—</span></ng-template></td>
+            <td class="hide-sm clip">{{ v.amenities || '—' }}</td>
+            <td>{{ v.sessionCount || 0 }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Workshops -->
+      <table class="tbl" *ngIf="tab === 'workshop'">
+        <thead>
+          <tr><th>Workshop</th><th>Category</th><th class="hide-sm">Facilitators</th><th class="hide-sm">Language</th><th>Sessions</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let w of workshops; trackBy: trackId" [class.selected]="isOpen(w._id)" (click)="openItem('workshop', w)">
+            <td class="strong">{{ w.title }}</td>
+            <td><span class="cat-dot" *ngIf="w.category" [style.--c]="w.category.colour"></span>{{ w.category?.name || '—' }}</td>
+            <td class="hide-sm clip">{{ w.facilitators.join(', ') || '—' }}</td>
+            <td class="hide-sm">{{ w.language || '—' }}</td>
+            <td>{{ w.sessionCount || 0 }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Categories -->
+      <table class="tbl" *ngIf="tab === 'category'">
+        <thead>
+          <tr><th>Category</th><th>Workshops</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of categories; trackBy: trackId" [class.selected]="isOpen(c._id)" (click)="openItem('category', c)">
+            <td class="strong">
+              <span class="cat-ic" [style.--c]="c.colour"><mat-icon class="ms-fill">{{ c.icon }}</mat-icon></span>{{ c.name }}
+            </td>
+            <td>{{ c.workshopCount || 0 }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="tbl-empty" *ngIf="!loading && setup && !shownCount">
+        <ng-container *ngIf="totalCount; else nothingYet">Nothing matches "{{ search }}".</ng-container>
+        <ng-template #nothingYet>
+          No {{ tab === 'venue' ? 'venues' : tab === 'workshop' ? 'workshops' : 'categories' }} yet.
+          <button class="link-btn" *ngIf="canAdd" (click)="openAdd()">{{ addLabel }}</button>
+        </ng-template>
+      </div>
+      <div class="tbl-empty" *ngIf="loading && !setup">Loading…</div>
+    </div>
+
+    <div class="tbl-foot">
+      <span>{{ shownCount }} of {{ totalCount }} shown</span>
+      <span *ngIf="tab === 'category'">Categories are shared by every event</span>
+    </div>
+  </div>
+</ng-container>
+
+<!-- ── Side panel: view / edit / add ─────────────────────────── -->
+<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
+
+<div class="panel" [class.open]="panelOpen" role="dialog" aria-label="Workshop setup" [attr.aria-hidden]="!panelOpen">
+  <app-workshop-setup-panel *ngIf="panelOpen && event" [kind]="panelKind" [item]="panelItem" [setup]="setup"
+    [eventId]="event._id" [draft]="panelDraft" (closed)="closePanel()" (changed)="onChanged($event)"></app-workshop-setup-panel>
+</div>

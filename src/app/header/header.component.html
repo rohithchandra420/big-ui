@@ -94,6 +94,29 @@
       </a>
     </ng-container>
 
+    <!-- Workshops group — Planner for everyone, Setup for the Plan group -->
+    <ng-container *ngIf="isAuthenticated">
+      <div class="nav-group-label">Workshops</div>
+
+      <a class="nav-item"
+         routerLink="/workshops"
+         routerLinkActive="active"
+         [routerLinkActiveOptions]="{ exact: true }"
+         (click)="onNavClick()">
+        <span class="nav-dot"></span>
+        Planner
+      </a>
+
+      <a class="nav-item"
+         routerLink="/workshops/setup"
+         routerLinkActive="active"
+         (click)="onNavClick()"
+         *ngIf="canSeeWorkshopSetup">
+        <span class="nav-dot"></span>
+        Setup
+      </a>
+    </ng-container>
+
     <!-- Admin group — visible to DEV / DIR / ADMIN / TL -->
     <ng-container *ngIf="isAuthenticated && canSeeAdminMenu">
       <div class="nav-group-label">Admin</div>

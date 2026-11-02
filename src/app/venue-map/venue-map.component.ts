@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, OnInit, Component, ElementRef, HostListener, NgZone, OnDestroy, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import type * as Leaflet from 'leaflet';
 import { Subscription } from 'rxjs';
@@ -44,6 +44,8 @@ const TILES = {
 // "Use my location" can take it from there.
 const START: [number, number] = [20.6, 78.9];
 const NO_BOUNDARY = 'Ask an admin to draw the festival boundary first';
+/** Responsible department for a Workshop area drawn from Workshops › Setup (user decision 2026-11-03). */
+const WORKSHOP_AREA_DEPTS = ['workshop', 'general'];
 
 /**
  * Venue Map (VENUE_MAP_AND_TENT_FIELDS_CONTEXT.md): places (A1), and areas and
@@ -59,7 +61,7 @@ const NO_BOUNDARY = 'Ask an admin to draw the festival boundary first';
   templateUrl: './venue-map.component.html',
   styleUrls: ['./venue-map.component.css']
 })
-export class VenueMapComponent implements AfterViewInit, OnDestroy {
+export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapEl') mapEl!: ElementRef<HTMLDivElement>;
   readonly TYPES = LOCATION_TYPES;
   readonly POLYGON_KINDS = AREA_KINDS.filter(k => k.shape === 'polygon' && k.value !== 'boundary');
@@ -77,7 +79,7 @@ export class VenueMapComponent implements AfterViewInit, OnDestroy {
   canImport = false;
   canDraw = false;
   canDrawBoundary = false;
-  departments: { _id: string; name: string }[] = [];
+  departments: { _id: string; name: string; key?: string }[] = [];
   loading = true;
   loadError = '';
   mapError = '';
@@ -120,6 +122,16 @@ export class VenueMapComponent implements AfterViewInit, OnDestroy {
   private shapeIsNew = false;
   private fittedFor = '';
   private wantBoundary = false;
+  /** ?area=<id> (Workshops › Setup "Show on map"): select that area once loaded. */
+  private wantArea: string | null = null;
+  /**
+   * ?focus=workshop (Workshops › Setup, from a venue form): Workshop areas only.
+   * Only they can be drawn, changed or removed; everything else is view-only.
+   * Saving one returns to Workshop Setup with it selected (user decision 2026-11-03).
+   */
+  workshopMode = false;
+  private wantDrawNew = false;
+  private wantEdit = false;
   private subs = new Subscription();
 
   constructor(
@@ -140,9 +152,18 @@ export class VenueMapComponent implements AfterViewInit, OnDestroy {
   get boundary(): VenueArea | undefined { return this.areas.find(a => a.kind === 'boundary'); }
   get busy(): boolean { return !!(this.form || this.areaForm || this.imports || this.drawing); }
 
+  /** Read before the first render, so the Workshop-mode banner and tools show straight away. */
+  ngOnInit(): void {
+    const qp = this.route.snapshot?.queryParamMap;
+    this.workshopMode = qp?.get('focus') === 'workshop';
+    this.wantDrawNew = this.workshopMode && qp?.get('draw') === 'new';
+    this.wantEdit = this.workshopMode && qp?.get('edit') === '1';
+  }
+
   async ngAfterViewInit(): Promise<void> {
     // From Admin › Events › "Draw / edit on Venue Map": open ready for the boundary.
     this.wantBoundary = this.route.snapshot?.queryParamMap?.get('draw') === 'boundary';
+    this.wantArea = this.route.snapshot?.queryParamMap?.get('area') || null;
     try {
       await this.initMap();
     } catch {
@@ -331,6 +352,8 @@ export class VenueMapComponent implements AfterViewInit, OnDestroy {
       this.refreshVisible();
       if (this.fittedFor !== eventId) { this.fittedFor = eventId; this.fitToContent(); }
       if (this.wantBoundary) this.openBoundary();
+      if (this.wantArea) this.openArea(this.wantArea);
+      if (this.wantDrawNew) this.openDrawNew();
     } catch {
       this.loadError = 'Could not load the venue map.';
     } finally {
@@ -376,6 +399,34 @@ export class VenueMapComponent implements AfterViewInit, OnDestroy {
     else if (this.canDrawBoundary) this.startDraw('boundary');
   }
 
+  /** ?area=<id>: show that area (if it is in this event), then drop the param. */
+  private openArea(id: string): void {
+    this.wantArea = null;
+    this.router.navigate([], { relativeTo: this.route, queryParams: { area: null, edit: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    const a = this.areas.find(x => x._id === id);
+    if (a) { this.selectArea(a); this.fitTo(a.points); }
+    // From a venue form's "Change this area on the map": go straight to editing it.
+    if (a && this.wantEdit && this.canChangeArea(a)) this.startEditArea(a);
+    this.wantEdit = false;
+  }
+
+  /** From a venue form's "Draw a new Workshop area": start drawing once the map is ready. */
+  private openDrawNew(): void {
+    this.wantDrawNew = false;
+    this.router.navigate([], { relativeTo: this.route, queryParams: { draw: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    if (this.canDraw) this.startDraw('area');
+  }
+
+  /** Edit / delete an area: the server's canEdit, and in Workshop mode only Workshop areas. */
+  canChangeArea(a: VenueArea): boolean {
+    return a.canEdit && (!this.workshopMode || a.kind === 'workshop_area');
+  }
+
+  /** Back to Workshop Setup (Workshop mode); the kept venue form reopens there. */
+  backToWorkshops(areaId?: string): void {
+    this.router.navigate(['/workshops/setup'], { queryParams: areaId ? { venueArea: areaId } : {} });
+  }
+
   // ── selecting / adding / editing locations ─────────────────────────
 
   select(loc: VenueLocation, fly = false): void {
@@ -419,7 +470,18 @@ export class VenueMapComponent implements AfterViewInit, OnDestroy {
     if (this.adding) this.startNew(lat, lng);
   }
 
+  /** Departments offered in the area form. Workshop mode: only Workshop and General (by fixed key). */
+  get areaDepartments(): { _id: string; name: string; key?: string }[] {
+    if (!this.workshopMode) return this.departments;
+    return this.departments.filter(d => WORKSHOP_AREA_DEPTS.includes(this.auth.deptKeyOf(d)));
+  }
+
   private defaultDepartment(): string | null {
+    // Workshop mode: the Workshop department first.
+    if (this.workshopMode) {
+      const list = this.areaDepartments;
+      return (list.find(d => this.auth.deptKeyOf(d) === 'workshop') ?? list[0])?._id ?? null;
+    }
     if (!this.isTL) return null;
     const home = this.auth.currentUser?.departments?.[0]?.department?._id;
     return this.departments.find(d => d._id === home)?._id ?? this.departments[0]?._id ?? null;
@@ -629,6 +691,10 @@ export class VenueMapComponent implements AfterViewInit, OnDestroy {
     const name = f.name.trim();
     if (!name) { this.formError = 'Give it a name'; return; }
     if (this.isTL && !f.department) { this.formError = 'Pick your department'; return; }
+    if (this.workshopMode && !this.areaDepartments.some(d => d._id === f.department)) {
+      this.formError = 'Pick the Workshop or General department';
+      return;
+    }
     const points = this.shapePoints();
     const b = this.boundary;
     if (this.isTL && f.kind !== 'boundary' && (!b || !allInside(points, b.points))) {
@@ -644,6 +710,7 @@ export class VenueMapComponent implements AfterViewInit, OnDestroy {
         : await this.locationService.createArea(this.event._id, input);
       this.snack.openSucessSnackBar(f._id ? 'Saved' : `${saved.name} added`);
       this.closePanels();
+      if (this.workshopMode) { this.backToWorkshops(saved._id); return; }
       await this.load();
       const fresh = this.areas.find(a => a._id === saved._id);
       if (fresh) this.selectArea(fresh);

@@ -1,5 +1,5 @@
 export interface DepartmentAccess {
-    department: { _id: string; name: string };
+    department: { _id: string; name: string; key?: string };
     access: ('read' | 'write')[];
 }
 

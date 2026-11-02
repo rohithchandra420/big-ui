@@ -30,7 +30,8 @@ describe('UserFormComponent', () => {
   let notificationSpy: jasmine.SpyObj<NotificationService>;
 
   const authStub = {
-    deptNameToKey: (name: string) => (name || '').toLowerCase().replace(/\s+/g, '-')
+    deptNameToKey: (name: string) => (name || '').toLowerCase().replace(/\s+/g, '-'),
+    deptKeyOf: (d: any) => d?.key || (d?.name || '').toLowerCase().replace(/\s+/g, '-')
   };
 
   const create = async (inputs: Partial<UserFormComponent>) => {

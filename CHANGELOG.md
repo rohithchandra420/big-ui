@@ -9,6 +9,31 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.24.0] - 2026-11-03
+
+### Added
+- **Workshops › Planner** (everyone signed in): the event's sessions on a calendar, one tab per event day, with the workshop venues as columns.
+  - The Workshop Team Lead, Directors, Admins and Developers drag a session to another venue or time, drag its edge to change its length, or select empty time to add one. Warnings (two sessions in one venue at once, the same workshop twice in a day, a limit above capacity, outside the event's dates) show but never block.
+  - A session opens a side panel: venue, facilitators (a substitute for this session shows as such), registration window, cut-off and list limit, with Edit and Delete for the Workshop Team Lead and above.
+  - **Pre-registration switch** for the Workshop team: Follow times / Open now / Close now.
+  - On phones the venue columns scroll sideways.
+- **Workshops › Setup** (the Workshop Team Lead, Directors, Admins, Developers and Workshop "manage" access): venues, workshops and categories, each a list with a side panel to view, edit or add.
+  - A venue can draw a new Workshop area, or change its own, straight from its form: the Venue Map opens for Workshop areas only, and the form comes back filled in with the area selected. The responsible department there is Workshop or General.
+  - Categories have a colour and an icon, picked from swatches and tiles.
+- **Venue Map:** a "Workshop areas only" mode (opened from Workshops › Setup), and links that open the map on a given area.
+- **Departments:** each department has a fixed key, set when it's created and shown on its panel, so a rename never changes anyone's access.
+
+### Changed
+- **Admin › Departments:** a card opens a side panel with the department's details and an Edit button; Create Department opens the same panel. The separate department page and the create dialog are gone.
+- **Buttons in panels and dialogs, app-wide:** Close / Cancel always on the left and the main action on the right, on phones too (buttons share the row, labels centred). Every side panel has a Close button at the bottom as well as the ✕ at the top.
+- The search boxes and suggestion lists for adding team leaders and volunteers to a department match the rest of the app, with photos in the suggestions.
+
+### Notes
+- New dependency: DayPilot Lite 6.1.0 (open source, Apache-2.0) for the Planner calendar. It loads only when the Planner opens.
+- 60 new unit tests (837/837).
+
+---
+
 ## [1.23.0] - 2026-11-03
 
 ### Added

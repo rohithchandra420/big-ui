@@ -175,6 +175,43 @@ describe('AuthService', () => {
                 undefined, [{ department: { _id: 'd1', name: 'Box Office' }, access: ['read'] }], []);
             expect(service.hasPermission(user, 'finance:read')).toBeFalse();
         });
+
+        it("uses the department's fixed key, so a renamed department keeps TL auto-manage", () => {
+            const user = new User('Test', 'a@b.com', '', 'TL', '', '', '123',
+                undefined, [{ department: { _id: 'd1', name: 'Classes', key: 'workshop' }, access: ['read'] }], []);
+            expect(service.hasPermission(user, 'workshop:manage')).toBeTrue();
+            expect(service.hasPermission(user, 'classes:read')).toBeFalse();
+        });
+    });
+
+    describe('workshops access (by department key)', () => {
+        const ws = { _id: 'd1', name: 'Classes', key: 'workshop' };
+        const mk = (role: string, depts: any[] = [], perms: string[] = []) =>
+            new User('Test', 'a@b.com', '', role, '', '', '123', undefined, depts.map(d => ({ department: d, access: ['read'] })), perms);
+
+        it('Plan: top roles, the Workshop TL and workshop:manage', () => {
+            expect(service.canPlanWorkshops(mk('ADMIN'))).toBeTrue();
+            expect(service.canPlanWorkshops(mk('TL', [ws]))).toBeTrue();
+            expect(service.canPlanWorkshops(mk('VOL', [], ['workshop:manage']))).toBeTrue();
+            expect(service.canPlanWorkshops(mk('VOL', [ws]))).toBeFalse();
+            expect(service.canPlanWorkshops(mk('TL', [{ _id: 'd2', name: 'Workshop', key: 'ops' }]))).toBeFalse();
+            expect(service.canPlanWorkshops(null)).toBeFalse();
+        });
+
+        it('Run: also Workshop members and workshop:write', () => {
+            expect(service.canRunWorkshops(mk('VOL', [ws]))).toBeTrue();
+            expect(service.canRunWorkshops(mk('VOL', [], ['workshop:write']))).toBeTrue();
+            expect(service.canRunWorkshops(mk('VOL', [], ['workshop:read']))).toBeFalse();
+            expect(service.canRunWorkshops(mk('TL', [{ _id: 'd3', name: 'Ops' }]))).toBeFalse();
+        });
+    });
+
+    describe('deptKeyOf', () => {
+        it('returns the stored key, or the name-based key until migrated', () => {
+            expect(service.deptKeyOf({ name: 'Front Gate', key: 'box-office' })).toBe('box-office');
+            expect(service.deptKeyOf({ name: 'Box Office' })).toBe('box-office');
+            expect(service.deptKeyOf(null)).toBe('');
+        });
     });
 
     describe('isAuthenticated', () => {

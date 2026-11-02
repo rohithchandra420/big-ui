@@ -1,0 +1,80 @@
+/* Full-width like Bookings / Users (stat row + table + side panel). */
+
+/* Approximate: 100vh minus the page header, stat row, filters and footer. */
+.setup-tbl-scroll {
+  max-height: calc(100vh - 330px);
+  min-height: 160px;
+}
+
+.tbl tbody tr { cursor: pointer; }
+.tbl td.strong { color: var(--text-primary); font-weight: 600; }
+.tbl td.clip { max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
+.muted { color: var(--text-muted); }
+
+.ic {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  margin-right: 3px;
+  color: var(--text-muted);
+}
+
+/* Category colour: --c */
+.cat-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--c);
+  margin-right: 6px;
+}
+.cat-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--c);
+  color: #fff;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.cat-ic mat-icon { font-size: 15px; width: 15px; height: 15px; }
+
+.tbl-empty {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.link-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  margin-left: 4px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+.link-btn:hover { text-decoration: underline; }
+
+.empty-state {
+  max-width: 420px;
+  margin: 48px auto;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.empty-state mat-icon { font-size: 40px; width: 40px; height: 40px; }
+
+.warn-banner { margin-bottom: 1rem; }
+
+@media (max-width: 600px) {
+  .hide-sm { display: none; }
+  .filter-bar input { width: 100%; }
+  .setup-tbl-scroll { max-height: none; }
+}

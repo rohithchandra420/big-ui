@@ -57,7 +57,7 @@ test.describe('Bookings side panel', () => {
     await page.locator('.panel.open').getByRole('button', { name: 'Allocate Tent', exact: true }).click();
     await expect(page.locator('.panel.open app-allocate-tent')).toBeVisible();
 
-    await page.locator('.panel.open .panel-close').click();
+    await page.locator('.panel.open .panel-actions').getByRole('button', { name: 'Close', exact: true }).click();
     await expect(page.locator('.panel.open')).toHaveCount(0);
 
     await openBooking(page, 'Karan Shah');

@@ -27,16 +27,14 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
+  <!-- App-wide rule: Cancel leftmost, main action rightmost -->
+  <button class="btn-ghost" (click)="close()">Cancel</button>
   <button class="btn-secondary" *ngIf="canScanAgain" (click)="scanAgain()">Scan again</button>
-  <ng-container *ngIf="paused; else cancelBtn">
-    <button class="btn-ghost" (click)="close()">Cancel</button>
+  <ng-container *ngIf="paused">
     <button class="btn-secondary" (click)="scanBandAgain()">Scan again</button>
-    <button class="btn-cta" *ngIf="mode === 'band' && bandOk"
-            [disabled]="purpose === 'replace' && !reason.trim()" (click)="confirmBand()">{{ confirmLabel }}</button>
     <button class="btn-danger" *ngIf="mode === 'booking' && band?.state === 'replaced' && band?.owner?.ticketId"
             (click)="openFlaggedBooking()">Checked: open {{ band?.owner?.name || 'their' }}'s booking</button>
+    <button class="btn-cta" *ngIf="mode === 'band' && bandOk"
+            [disabled]="purpose === 'replace' && !reason.trim()" (click)="confirmBand()">{{ confirmLabel }}</button>
   </ng-container>
-  <ng-template #cancelBtn>
-    <button class="btn-ghost" (click)="close()">Cancel</button>
-  </ng-template>
 </mat-dialog-actions>

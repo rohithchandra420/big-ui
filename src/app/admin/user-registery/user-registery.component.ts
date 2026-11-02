@@ -44,7 +44,7 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
 
   // Fed to the create/edit form — TL only gets their own department
   roles: { _id: string; name: string }[] = [];
-  departments: { _id: string; name: string }[] = [];
+  departments: { _id: string; name: string; key?: string }[] = [];
 
   activeFilter: UserStatFilter = null;
   /** DEV/DIR only (nobody else is sent deactivated users). Driven by both the
@@ -184,7 +184,7 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     const deptName = this.homeDeptName(u);
     if (!deptName) return '—';
 
-    const key = this.authService.deptNameToKey(deptName);
+    const key = this.authService.deptKeyOf(u?.departments?.[0]?.department);
     const map = this.authService.getEffectivePermissionMap({
       role: this.roleName(u),
       permissions: u.permissions,
@@ -200,8 +200,9 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
   permissionRows(u: any): { dept: string; level: string }[] {
     return (u?.permissions || []).map((perm: string) => {
       const [key, level] = perm.split(':');
-      const known = this.departments.find(d => this.authService.deptNameToKey(d.name) === key)
-        || (this.authService.deptNameToKey(this.homeDeptName(u)) === key ? { name: this.homeDeptName(u) } : null);
+      const home = u?.departments?.[0]?.department;
+      const known = this.departments.find(d => this.authService.deptKeyOf(d) === key)
+        || (home && typeof home !== 'string' && this.authService.deptKeyOf(home) === key ? home : null);
       const dept = known?.name || key.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       return { dept, level };
     });

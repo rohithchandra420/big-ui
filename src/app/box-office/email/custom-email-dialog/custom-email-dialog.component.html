@@ -67,12 +67,11 @@
 </mat-dialog-content>
 
 <mat-dialog-actions class="email-actions">
+  <button class="btn-ghost" (click)="cancel()">Cancel</button>
   <button class="btn-ghost" (click)="sendTest()" [disabled]="testing || !contentValid"
           title="Sends one copy to your own email address">
     {{ testing ? 'Sending test…' : 'Send test to me' }}
   </button>
-  <span class="spacer"></span>
-  <button class="btn-ghost" (click)="cancel()">Cancel</button>
   <button class="btn-cta" (click)="send()" [disabled]="!canSend">
     {{ sending ? 'Starting…' : 'Send to ' + recipients.length }}
   </button>

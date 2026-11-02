@@ -62,12 +62,8 @@
   gap: 8px;
   align-items: center;
 }
-.email-actions .spacer { flex: 1 1 auto; }
 
-/* Phone: actions stack full-width, primary action last (nearest the thumb). */
+/* Actions follow the app-wide row rule (styles.css): Cancel left, Send right. */
 @media (max-width: 600px) {
-  .email-actions { flex-direction: column; align-items: stretch; }
-  .email-actions .spacer { display: none; }
-  .email-actions button { width: 100%; }
   .count-grid { grid-template-columns: 1fr 1fr; }
 }

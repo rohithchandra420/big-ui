@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, flush } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BehaviorSubject, of } from 'rxjs';
 import { VenueMapComponent } from './venue-map.component';
@@ -36,7 +36,8 @@ describe('VenueMapComponent', () => {
   });
 
   function setup(opts: { role?: string; canAdd?: boolean; canImport?: boolean; locations?: VenueLocation[];
-                  areas?: VenueArea[]; canDraw?: boolean; canDrawBoundary?: boolean; draw?: string } = {}) {
+                  areas?: VenueArea[]; canDraw?: boolean; canDrawBoundary?: boolean; draw?: string;
+                  qp?: Record<string, string> } = {}) {
     svc = {
       list: jasmine.createSpy('list').and.resolveTo({
         locations: opts.locations ?? [loc('a', { name: 'Main Stage', type: 'stage' }), loc('b', { name: 'Water Station 1', canEdit: false })],
@@ -54,7 +55,10 @@ describe('VenueMapComponent', () => {
       importAreas: jasmine.createSpy('importAreas').and.resolveTo({ created: 1 })
     };
     event$ = new BehaviorSubject<any>({ _id: 'ev1', name: 'BiG 7.0', status: 'active' });
-    auth = { currentUser: { role: opts.role ?? 'ADMIN', departments: [{ department: { _id: 'd-food', name: 'Hospitality' } }] } };
+    auth = {
+      currentUser: { role: opts.role ?? 'ADMIN', departments: [{ department: { _id: 'd-food', name: 'Hospitality' } }] },
+      deptKeyOf: (d: any) => d?.key || (d?.name || '').toLowerCase().replace(/\s+/g, '-')
+    };
     snack = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
     confirm.confirm.and.returnValue(of(true));
@@ -67,9 +71,11 @@ describe('VenueMapComponent', () => {
         { provide: AuthService, useValue: auth },
         { provide: NotificationService, useValue: snack },
         { provide: ConfirmationService, useValue: confirm },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: (k: string) => k === 'draw' ? (opts.draw ?? null) : null } } } }
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: (k: string) => opts.qp?.[k] ?? (k === 'draw' ? (opts.draw ?? null) : null) } } } }
       ]
     });
+    // The test router has no app routes: stub navigation so nothing leaks into later tests.
+    spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
     fixture = TestBed.createComponent(VenueMapComponent);
     component = fixture.componentInstance;
     // No real map in unit tests: Leaflet and its tiles are skipped; drawing is a no-op without a map.
@@ -347,4 +353,91 @@ describe('VenueMapComponent', () => {
     ]);
     expect(svc.importMany).not.toHaveBeenCalled();
   }));
+
+  describe('Workshop areas only (?focus=workshop, from Workshops › Setup)', () => {
+    const WS_DEPTS = [
+      { _id: 'd-ops', name: 'Operations' },
+      { _id: 'd-ws', name: 'Classes', key: 'workshop' },
+      { _id: 'd-gen', name: 'General', key: 'general' }
+    ];
+
+    it('Responsible department offers only Workshop and General, Workshop first, no "No department"', fakeAsync(() => {
+      setup({ qp: { focus: 'workshop' } }); settle();
+      component.departments = WS_DEPTS;
+      expect(component.areaDepartments.map(d => d._id)).toEqual(['d-ws', 'd-gen']);
+      component.drawing = 'area';
+      component.onDrawn({ remove: () => {}, on: () => {}, pm: { enable: () => {} } } as any);
+      fixture.detectChanges();
+      expect(component.areaForm!.department).toBe('d-ws');
+      expect(el().textContent).not.toContain('No department');
+    }));
+
+    it('refuses to save without the Workshop or General department', fakeAsync(() => {
+      setup({ qp: { focus: 'workshop' } }); settle();
+      component.departments = WS_DEPTS;
+      component.areaForm = { name: 'Lawn', kind: 'workshop_area', shape: 'polygon', department: 'd-ops', notes: '' };
+      component.saveArea(); settle();
+      expect(svc.createArea).not.toHaveBeenCalled();
+      expect(component.formError).toContain('Workshop or General');
+    }));
+
+    it('outside Workshop mode every department is offered', fakeAsync(() => {
+      setup(); settle();
+      component.departments = WS_DEPTS;
+      expect(component.areaDepartments.length).toBe(3);
+    }));
+
+    it('shows the banner and only the Draw Workshop area tool', fakeAsync(() => {
+      setup({ qp: { focus: 'workshop' } }); settle();
+      expect(el().querySelector('.vm-focus')!.textContent).toContain('Workshop areas only');
+      expect(btn('Draw Workshop area')).toBeTruthy();
+      expect(btn('Add location')).toBeUndefined();
+      expect(btn('Draw line')).toBeUndefined();
+      expect(btn('Draw boundary')).toBeUndefined();
+      expect(btn('Import KML')).toBeUndefined();
+    }));
+
+    it('other areas and locations are view-only; Workshop areas keep Edit and Delete', fakeAsync(() => {
+      setup({ qp: { focus: 'workshop' }, areas: [area('w1'), area('c1', { kind: 'camping', name: 'Tents' })] }); settle();
+      component.selectArea(component.areas[1]); fixture.detectChanges();
+      expect(btn('Edit shape')).toBeUndefined();
+      component.selectArea(component.areas[0]); fixture.detectChanges();
+      expect(btn('Edit shape')).toBeTruthy();
+      component.select(component.locations[0]); fixture.detectChanges();
+      expect(btn('Edit')).toBeUndefined();
+    }));
+
+    it('saving an area goes back to Workshop Setup with it selected', fakeAsync(() => {
+      setup({ qp: { focus: 'workshop' } }); settle();
+      const nav = TestBed.inject(Router).navigate as jasmine.Spy;
+      component.departments = WS_DEPTS;
+      component.areaForm = { name: 'Craft Lawn', kind: 'workshop_area', shape: 'polygon', department: 'd-ws', notes: '' };
+      component.saveArea(); settle();
+      expect(svc.createArea).toHaveBeenCalled();
+      expect(nav).toHaveBeenCalledWith(['/workshops/setup'], { queryParams: { venueArea: 'new' } });
+    }));
+
+    it('Back returns without an area; outside this mode saving stays on the map', fakeAsync(() => {
+      setup(); settle();
+      const nav = TestBed.inject(Router).navigate as jasmine.Spy;
+      component.areaForm = { name: 'Lawn', kind: 'workshop_area', shape: 'polygon', department: null, notes: '' };
+      component.saveArea(); settle();
+      expect(nav).not.toHaveBeenCalledWith(['/workshops/setup'], jasmine.anything());
+      component.backToWorkshops();
+      expect(nav).toHaveBeenCalledWith(['/workshops/setup'], { queryParams: {} });
+    }));
+
+    it('"Change this area" opens that area ready to edit; "Draw new" starts drawing', fakeAsync(() => {
+      setup({ qp: { focus: 'workshop', area: 'w1', edit: '1' }, areas: [area('w1')] });
+      const edit = spyOn(component, 'startEditArea');
+      settle();
+      expect(edit).toHaveBeenCalledWith(component.areas[0]);
+
+      TestBed.resetTestingModule();
+      setup({ qp: { focus: 'workshop', draw: 'new' } });
+      const draw = spyOn(component, 'startDraw');
+      settle();
+      expect(draw).toHaveBeenCalledWith('area');
+    }));
+  });
 });
