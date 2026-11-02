@@ -92,7 +92,7 @@ export interface WorkshopSession {
 export interface WorkshopSchedule {
   event: { _id: string; name: string; startDate: string | null; endDate: string | null };
   sessions: WorkshopSession[];
-  venues: { _id: string; name: string; capacity: number }[];
+  venues: { _id: string; name: string; capacity: number; area?: string | null }[];
   workshops: { _id: string; title: string; category: WorkshopCategory | null; facilitators: string[] }[];
   /** Schedule: the Workshop TL or above. */
   canManage: boolean;
@@ -175,3 +175,58 @@ export interface EntryAdded { entry: WorkshopEntry; list: EntryList; warnings: s
 
 export type DoorResult = 'admitted' | 'already' | 'waitlisted' | 'walkin' | 'late';
 export interface DoorAnswer { result: DoorResult; entry: WorkshopEntry; warnings: string[]; afterCutoff?: boolean; counts: EntryCounts; }
+
+// ── Reports and live (release 4: W7 + W8) ────────────────────
+
+export interface ReportNumbers {
+  pre: number; wait: number; walkin: number; attended: number;
+  attendedFromList: number; attendedFromWait: number; walkinAttended: number;
+  late: number; noShows: number;
+}
+
+export interface SessionReport extends ReportNumbers {
+  _id: string;
+  start: string;
+  end: string;
+  status: 'scheduled' | 'cancelled';
+  workshop: { _id: string; title: string; category: WorkshopCategory | null } | null;
+  venue: { _id: string; name: string; capacity: number } | null;
+  limit: number;
+  /** The session has ended (no-shows are counted from then). */
+  over: boolean;
+}
+
+export interface WorkshopReport extends ReportNumbers {
+  _id: string;
+  title: string;
+  category: WorkshopCategory | null;
+  sessions: number;
+}
+
+export interface WorkshopReports {
+  event: { _id: string; name: string };
+  sessions: SessionReport[];
+  workshops: WorkshopReport[];
+  totals: ReportNumbers & { sessions: number };
+}
+
+export interface ReportPerson {
+  _id: string;
+  pass: { _id: string; name: string; email: string; phone_no: string; order_id: number } | null;
+  session: { _id: string; start: string; end: string; workshop: { _id: string; title: string } | null; venue: { _id: string; name: string } | null } | null;
+  list: EntryList;
+  late: boolean;
+  position: number;
+  attendedAt: string | null;
+  addedAt: string;
+}
+
+export interface LiveSession {
+  session: string;
+  start: string;
+  end: string;
+  workshop: { _id: string; title: string; category: WorkshopCategory | null };
+  venue: { _id: string; name: string; capacity: number; area: string | null };
+  attended: number;
+  placesLeft: number;
+}

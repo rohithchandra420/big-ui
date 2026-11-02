@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { DoorAnswer, EntryAdded, EntryCounts, EntryPass, PersonRef, SessionInput, SessionLists, SessionSaved, Workshop, WorkshopCategory, WorkshopSchedule, WorkshopSession, WorkshopSetup, WorkshopVenue } from './workshops.model';
+import { DoorAnswer, EntryAdded, LiveSession, ReportPerson, WorkshopReports, EntryCounts, EntryPass, PersonRef, SessionInput, SessionLists, SessionSaved, Workshop, WorkshopCategory, WorkshopSchedule, WorkshopSession, WorkshopSetup, WorkshopVenue } from './workshops.model';
 
 /** Workshops setup (release 2): venues, workshops and categories. */
 @Injectable({ providedIn: 'root' })
@@ -82,6 +82,22 @@ export class WorkshopService {
   door(sessionId: string, who: PersonRef): Promise<DoorAnswer> {
     return firstValueFrom(this.http.post<DoorAnswer>(`${this.url}/sessions/${sessionId}/door`, who));
   }
+  // ── Reports and live (release 4) ─────────────────────────
+
+  getReports(eventId: string): Promise<WorkshopReports> {
+    return firstValueFrom(this.http.get<WorkshopReports>(this.url + '/reports', { params: { event: eventId } }));
+  }
+  /** People on the lists: one session, or the whole event (for the export). */
+  getReportPeople(eventId: string, sessionId?: string): Promise<{ people: ReportPerson[] }> {
+    const params: Record<string, string> = { event: eventId };
+    if (sessionId) params['session'] = sessionId;
+    return firstValueFrom(this.http.get<{ people: ReportPerson[] }>(this.url + '/reports/people', { params }));
+  }
+  /** Sessions running now (numbers only — everyone signed in). */
+  getLive(eventId: string): Promise<{ now: string; live: LiveSession[] }> {
+    return firstValueFrom(this.http.get<{ now: string; live: LiveSession[] }>(this.url + '/live', { params: { event: eventId } }));
+  }
+
   /** Let in now (walk-in) / Let in anyway (waitlisted). */
   letIn(sessionId: string, entryId: string): Promise<DoorAnswer> {
     return firstValueFrom(this.http.post<DoorAnswer>(`${this.url}/sessions/${sessionId}/entries/${entryId}/admit`, {}));

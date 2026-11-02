@@ -23,6 +23,17 @@
     </div>
   </div>
 
+  <!-- Now: sessions running right now (numbers only) -->
+  <div class="wp-now" *ngIf="live.length">
+    <div class="wp-now-lbl"><span class="wp-live-dot"></span>Now</div>
+    <button type="button" class="wp-now-card" *ngFor="let l of live; trackBy: trackLive" (click)="openLive(l)">
+      <span class="wp-now-t"><i [style.background]="l.workshop.category?.colour || '#475569'"></i>{{ l.workshop.title }}</span>
+      <span class="wp-now-m">{{ l.venue.name }} · until {{ time(l.end) }}</span>
+      <span class="wp-meter" [class.full]="l.placesLeft === 0"><b [style.width.%]="fill(l)"></b></span>
+      <span class="wp-now-n"><b>{{ l.attended }}/{{ l.venue.capacity }}</b> · {{ l.placesLeft ? l.placesLeft + ' place' + (l.placesLeft === 1 ? '' : 's') + ' left' : 'Full' }}</span>
+    </button>
+  </div>
+
   <div class="wp-hint" *ngIf="schedule && hasVenues">
     <ng-container *ngIf="canManage; else readOnly">
       Drag a session to another venue or time, drag its bottom edge to change its length, or select empty time to add one.

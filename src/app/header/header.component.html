@@ -108,6 +108,15 @@
       </a>
 
       <a class="nav-item"
+         routerLink="/workshops/reports"
+         routerLinkActive="active"
+         (click)="onNavClick()"
+         *ngIf="canSeeWorkshopReports">
+        <span class="nav-dot"></span>
+        Reports
+      </a>
+
+      <a class="nav-item"
          routerLink="/workshops/setup"
          routerLinkActive="active"
          (click)="onNavClick()"

@@ -198,6 +198,13 @@ describe('AuthService', () => {
             expect(service.canPlanWorkshops(null)).toBeFalse();
         });
 
+        it('Read (reports): the Run group and any workshop grant', () => {
+            expect(service.canReadWorkshops(mk('VOL', [], ['workshop:read']))).toBeTrue();
+            expect(service.canReadWorkshops(mk('VOL', [ws]))).toBeTrue();
+            expect(service.canReadWorkshops(mk('VOL', [], ['box-office:read']))).toBeFalse();
+            expect(service.canReadWorkshops(null)).toBeFalse();
+        });
+
         it('Run: also Workshop members and workshop:write', () => {
             expect(service.canRunWorkshops(mk('VOL', [ws]))).toBeTrue();
             expect(service.canRunWorkshops(mk('VOL', [], ['workshop:write']))).toBeTrue();

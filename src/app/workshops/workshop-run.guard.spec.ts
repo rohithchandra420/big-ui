@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
-import { WorkshopRunGuard } from './workshop-run.guard';
+import { WorkshopReadGuard, WorkshopRunGuard } from './workshop-run.guard';
 import { AuthService } from '../core/auth.service';
 
 describe('WorkshopRunGuard', () => {
@@ -15,7 +15,7 @@ describe('WorkshopRunGuard', () => {
     canRun = true;
     TestBed.configureTestingModule({
       imports: [RouterTestingModule],
-      providers: [{ provide: AuthService, useValue: { user: user$, canRunWorkshops: () => canRun } }]
+      providers: [{ provide: AuthService, useValue: { user: user$, canRunWorkshops: () => canRun, canReadWorkshops: () => canRun } }]
     });
     guard = TestBed.inject(WorkshopRunGuard);
   });
@@ -34,5 +34,13 @@ describe('WorkshopRunGuard', () => {
     expect(await go()).toBe('/workshops');
     user$.next(null);
     expect(await go()).toBe('/login');
+  });
+
+  it('Reports: the read guard follows canReadWorkshops', async () => {
+    const read = TestBed.inject(WorkshopReadGuard);
+    expect(await firstValueFrom(read.canActivate())).toBeTrue();
+    canRun = false;
+    const r = await firstValueFrom(read.canActivate());
+    expect(TestBed.inject(Router).serializeUrl(r as UrlTree)).toBe('/workshops');
   });
 });

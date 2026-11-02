@@ -85,6 +85,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
         return this.authService.canPlanWorkshops(this.currentUser);
     }
 
+    /** Workshops › Reports: the Workshop team and workshop:read. */
+    get canSeeWorkshopReports(): boolean {
+        return this.authService.canReadWorkshops(this.currentUser);
+    }
+
     get canSeeAdminMenu(): boolean {
         return this.adminMenuRoles.includes(this.userRole);
     }

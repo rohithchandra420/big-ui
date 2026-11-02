@@ -28,7 +28,8 @@ import { VenueMapComponent } from "../venue-map/venue-map.component";
 import { WorkshopSetupComponent } from "../workshops/setup/workshop-setup.component";
 import { WorkshopPlannerComponent } from "../workshops/planner/workshop-planner.component";
 import { SessionListsComponent } from "../workshops/session/session-lists.component";
-import { WorkshopRunGuard } from "../workshops/workshop-run.guard";
+import { WorkshopReadGuard, WorkshopRunGuard } from "../workshops/workshop-run.guard";
+import { WorkshopReportsComponent } from "../workshops/reports/workshop-reports.component";
 import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
@@ -83,6 +84,8 @@ const appRoutes: Routes = [
     { path: 'workshops', canActivate: [AuthGuard], component: WorkshopPlannerComponent },
     // A session's lists and door — the Workshop team (members, workshop:write, the Plan group).
     { path: 'workshops/sessions/:id', canActivate: [AuthGuard, WorkshopRunGuard], component: SessionListsComponent },
+    // Reports (with names) — the Workshop team and workshop:read.
+    { path: 'workshops/reports', canActivate: [AuthGuard, WorkshopReadGuard], component: WorkshopReportsComponent },
     // Workshops setup — the Plan group: DEV/DIR/ADMIN, the Workshop TL (automatic
     // workshop:manage via the department key), anyone granted workshop:manage.
     { path: 'workshops/setup', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['workshop:manage'] }, component: WorkshopSetupComponent },

@@ -93,6 +93,12 @@ export class AuthService {
         return (user.permissions || []).includes('workshop:write');
     }
 
+    /** Reports (with names): the Run group and workshop:read (any tier). */
+    canReadWorkshops(user: User | null): boolean {
+        if (!user) return false;
+        return this.canRunWorkshops(user) || (user.permissions || []).some(p => p.startsWith('workshop:'));
+    }
+
     hasDepartmentAccess(user: User, deptName: string): boolean {
         return (user.departments || []).some(d =>
             d.department?.name?.toLowerCase() === deptName.toLowerCase()
