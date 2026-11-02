@@ -9,6 +9,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.25.0] - 2026-11-03
+
+### Added
+- **Workshops › session lists and door** (for the Workshop team), opened from a session in the Planner with **Open lists & door**:
+  - The session's numbers at the top: on the list (and its limit), waitlist, walk-ins, attended (and the venue's capacity), plus whether pre-registration is open.
+  - **List** and **Door** modes. In both, find a person by **scanning their wrist band** or **searching** by name, email, phone or order number.
+  - A large, colour-coded result card with the Found / Not found / Error sounds: added to the list or the waitlist; let in; already in; on the waitlist (Let in anyway); a walk-in or a late arrival after the cut-off (Let in now / Keep waiting); a replaced band (Checked: continue with its owner); not admitted at the gate; unknown band; connection trouble.
+  - The pre-registration list, waitlist and walk-ins in order, with who's in and when, Let in for those waiting, and Remove. Removing someone from the list says who moved up from the waitlist.
+- **Planner:** each session shows how many are on its list (and waiting) on the calendar, and its numbers in the side panel.
+
+### Notes
+- No new dependencies. 13 new unit tests (850/850).
+
+---
+
 ## [1.24.0] - 2026-11-03
 
 ### Added

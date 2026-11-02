@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { SessionInput, SessionSaved, Workshop, WorkshopCategory, WorkshopSchedule, WorkshopSession, WorkshopSetup, WorkshopVenue } from './workshops.model';
+import { DoorAnswer, EntryAdded, EntryCounts, EntryPass, PersonRef, SessionInput, SessionLists, SessionSaved, Workshop, WorkshopCategory, WorkshopSchedule, WorkshopSession, WorkshopSetup, WorkshopVenue } from './workshops.model';
 
 /** Workshops setup (release 2): venues, workshops and categories. */
 @Injectable({ providedIn: 'root' })
@@ -62,5 +62,28 @@ export class WorkshopService {
   /** open: true / false = by hand at the door; null = follow the times again. */
   setRegistration(id: string, open: boolean | null): Promise<{ session: WorkshopSession }> {
     return firstValueFrom(this.http.patch<{ session: WorkshopSession }>(`${this.url}/sessions/${id}/registration`, { open }));
+  }
+
+  // ── Lists and the door (release 3) ───────────────────────
+
+  getLists(sessionId: string): Promise<SessionLists> {
+    return firstValueFrom(this.http.get<SessionLists>(`${this.url}/sessions/${sessionId}/entries`));
+  }
+  /** Festival Pass holders by name, email, phone or order number (when scanning is down). */
+  searchPasses(eventId: string, q: string): Promise<{ passes: EntryPass[] }> {
+    return firstValueFrom(this.http.get<{ passes: EntryPass[] }>(this.url + '/passes', { params: { event: eventId, q } }));
+  }
+  addToList(sessionId: string, who: PersonRef): Promise<EntryAdded> {
+    return firstValueFrom(this.http.post<EntryAdded>(`${this.url}/sessions/${sessionId}/entries`, who));
+  }
+  removeFromList(sessionId: string, entryId: string): Promise<{ promoted: string[]; counts: EntryCounts }> {
+    return firstValueFrom(this.http.delete<{ promoted: string[]; counts: EntryCounts }>(`${this.url}/sessions/${sessionId}/entries/${entryId}`));
+  }
+  door(sessionId: string, who: PersonRef): Promise<DoorAnswer> {
+    return firstValueFrom(this.http.post<DoorAnswer>(`${this.url}/sessions/${sessionId}/door`, who));
+  }
+  /** Let in now (walk-in) / Let in anyway (waitlisted). */
+  letIn(sessionId: string, entryId: string): Promise<DoorAnswer> {
+    return firstValueFrom(this.http.post<DoorAnswer>(`${this.url}/sessions/${sessionId}/entries/${entryId}/admit`, {}));
   }
 }

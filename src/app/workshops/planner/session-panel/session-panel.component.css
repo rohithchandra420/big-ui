@@ -41,6 +41,15 @@
 .seg button.on { background: var(--color-primary); color: #fff; }
 .seg button:disabled { cursor: wait; }
 
+/* Counts + the way to the lists */
+.counts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+.counts div { display: flex; flex-direction: column; align-items: center; padding: 6px 4px; border-radius: 8px; background: var(--surface-input); }
+.counts b { font-size: 16px; color: var(--text-primary); }
+.counts small { font-size: 11px; font-weight: 500; color: var(--text-muted); }
+.counts span { font-size: 10px; color: var(--text-muted); }
+.lists-btn { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 14px; text-decoration: none; }
+.lists-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
 /* Label / value list */
 .kv { display: grid; grid-template-columns: 110px 1fr; gap: 10px 12px; margin: 0; font-size: 12px; }
 .kv dt { color: var(--text-muted); font-weight: 500; }
