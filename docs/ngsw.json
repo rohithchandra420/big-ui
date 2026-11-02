@@ -1,0 +1,110 @@
+{
+  "configVersion": 1,
+  "timestamp": 1793644075427,
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/244.f922ddcbbb5a1b18.js",
+        "/254.b8062cc2870509a8.js",
+        "/288.527c7abf53b9e9ae.js",
+        "/619.3ca2fd3f4ec4b8cd.js",
+        "/favicon.ico",
+        "/index.html",
+        "/main.16b259b5042fe1fa.js",
+        "/manifest.webmanifest",
+        "/polyfills.fea760806f7c4441.js",
+        "/runtime.d194a3fddbf9598a.js",
+        "/styles.e1ca7f262f3ab4a1.css"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/assets/default-user.png",
+        "/assets/icons/apple-touch-icon.png",
+        "/assets/icons/icon-192.png",
+        "/assets/icons/icon-512.png",
+        "/assets/icons/icon-maskable-512.png",
+        "/assets/icons/notify-general.png",
+        "/assets/icons/notify-reminder.png",
+        "/assets/icons/notify-schedule.png",
+        "/assets/icons/notify-task.png",
+        "/assets/icons/notify-urgent.png",
+        "/assets/icons/notify-weather.png",
+        "/assets/leaflet/leaflet-geoman.css",
+        "/assets/leaflet/leaflet.css",
+        "/assets/wasm/index.d.ts",
+        "/assets/wasm/index.js",
+        "/assets/wasm/index.js.map",
+        "/assets/wasm/ngx-scanner-qrcode.wasm"
+      ],
+      "patterns": [
+        "https:\\/\\/fonts\\.googleapis\\.com\\/.*",
+        "https:\\/\\/fonts\\.gstatic\\.com\\/.*"
+      ]
+    }
+  ],
+  "dataGroups": [],
+  "hashTable": {
+    "/244.f922ddcbbb5a1b18.js": "bcaf3a860362f5954202d14e95700715a31261c2",
+    "/254.b8062cc2870509a8.js": "a9035a6d94cd89b150d0633740bcd933aa6e7138",
+    "/288.527c7abf53b9e9ae.js": "7f190b3d3c2e0d17150be4e7400e616b15d949a8",
+    "/619.3ca2fd3f4ec4b8cd.js": "c8dcaad0f9d2b8cf2b89029145d193f26c580658",
+    "/assets/default-user.png": "74809877ee59c5a63b2a0867fabcc40841be220d",
+    "/assets/icons/apple-touch-icon.png": "ca17598f1cee1852e424374b121dbae924d17082",
+    "/assets/icons/icon-192.png": "806646aa2fb31f12864b8268e117b18da2022cd4",
+    "/assets/icons/icon-512.png": "018d97ceab68925d95555b0e2386f55fcf89a389",
+    "/assets/icons/icon-maskable-512.png": "03b5172e80a2931e593ccbe6cfdb05d10bc41267",
+    "/assets/icons/notify-general.png": "52e5b04f1ec1f8be8cdddf0224f4907000075b79",
+    "/assets/icons/notify-reminder.png": "bbc86400049eeda46136b40080febb1273cbcb78",
+    "/assets/icons/notify-schedule.png": "cd087b424ec2aeb9d6f7f90e090b99feb9e7893a",
+    "/assets/icons/notify-task.png": "484264b32a688108ac44299f270bce517d0b654e",
+    "/assets/icons/notify-urgent.png": "cbda0f66dab28fdeec500766bab4eb868958b1a5",
+    "/assets/icons/notify-weather.png": "789b8197a1e9cfea42fee30a84a1acdd00fc99eb",
+    "/assets/leaflet/leaflet-geoman.css": "f45d99751d8af4e8298da87876b614041d9458f9",
+    "/assets/leaflet/leaflet.css": "ec929f1100c6642ccc5c4272cf4cca12251a9a5d",
+    "/assets/wasm/index.d.ts": "279baa3b674699b486cc8dda6c413537ad97daba",
+    "/assets/wasm/index.js": "8950b77fa9ec39dba59616dd9ec34881f5c6c369",
+    "/assets/wasm/index.js.map": "dc1f813581bdf15b4fecdf47c2c15c1c3d7c256f",
+    "/assets/wasm/ngx-scanner-qrcode.wasm": "978853ce6d81d4f1ab477f29598260ff7065d1fc",
+    "/favicon.ico": "22f6a4a3bcaafafb0254e0f2fa4ceb89e505e8b2",
+    "/index.html": "e4ee6b7166c294f8e8f2c88490236240a7b7abaa",
+    "/main.16b259b5042fe1fa.js": "ed335c96e7aa5bc910de75a15125174b1135cf5f",
+    "/manifest.webmanifest": "5f67576a4de7f9580ae035f731379deaf71ac0eb",
+    "/polyfills.fea760806f7c4441.js": "a0c36f8a5e66bfd24551325c4dd91dc5c7dd51c3",
+    "/runtime.d194a3fddbf9598a.js": "1f1351e1cc9b280894d7750aa2191537754af4d2",
+    "/styles.e1ca7f262f3ab4a1.css": "f9f190ec05e67ad0cd305e1e0ec67f432d09038f"
+  },
+  "navigationUrls": [
+    {
+      "positive": true,
+      "regex": "^\\/.*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*\\.[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
+    }
+  ],
+  "navigationRequestStrategy": "performance"
+}
