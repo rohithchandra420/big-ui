@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, NgZone, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import type { DayPilot as DP } from '@daypilot/daypilot-lite-javascript';
 import { EventService } from '../../core/event.service';
@@ -6,7 +6,7 @@ import { AuthService } from '../../core/auth.service';
 import { NotificationService } from '../../core/notification.service';
 import { EventItem } from '../../models/event.model';
 import { WorkshopService } from '../workshop.service';
-import { WorkshopCategory, WorkshopSchedule, WorkshopSession } from '../workshops.model';
+import { LiveSession, WorkshopCategory, WorkshopSchedule, WorkshopSession } from '../workshops.model';
 import { PlannerDay, esc, eventDays, localDate, localIso, localTime, overlapsOf, regState, toInstant } from '../planner.utils';
 import { SessionPrefill } from './session-panel/session-panel.component';
 
@@ -44,6 +44,10 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
   panelSession: WorkshopSession | null = null;
   panelPrefill: SessionPrefill | null = null;
 
+  /** Sessions running now (W8): attended against capacity. Refreshed every 30 s and on returning to the tab. */
+  live: LiveSession[] = [];
+  private liveTimer?: ReturnType<typeof setInterval>;
+
   private dp?: DP.Calendar;
   private DayPilot?: typeof DP;
   private sub = new Subscription();
@@ -72,13 +76,17 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
       if (changed) {
         this.closePanel();
         this.day = '';
+        this.live = [];
         this.load();
+        this.loadLive();
       }
     }));
+    this.liveTimer = setInterval(() => this.loadLive(), 30000);
   }
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();
+    if (this.liveTimer) clearInterval(this.liveTimer);
     this.dp?.dispose();
   }
 
@@ -158,6 +166,34 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
       eventResizeHandling: sc.canManage ? 'Update' : 'Disabled',
       timeRangeSelectedHandling: sc.canManage ? 'Enabled' : 'Disabled'
     });
+  }
+
+  // ── live (W8) ──────────────────────────────────────────────
+
+  async loadLive(): Promise<void> {
+    if (!this.event || document.hidden) return;
+    try {
+      this.live = (await this.workshopService.getLive(this.event._id)).live;
+    } catch { /* keep the last figures; the next refresh tries again */ }
+  }
+
+  @HostListener('document:visibilitychange')
+  onVisible(): void {
+    if (!document.hidden) this.loadLive();
+  }
+
+  /** Share of the venue's capacity in use, for the meter (capped at 100). */
+  fill(l: LiveSession): number {
+    return l.venue.capacity ? Math.min(100, Math.round(l.attended / l.venue.capacity * 100)) : 0;
+  }
+
+  time(iso: string): string { return localTime(new Date(iso)); }
+
+  /** Tap a live session: show its day and open it. */
+  openLive(l: LiveSession): void {
+    const d = localDate(new Date(l.start));
+    if (d !== this.day && this.days.some(x => x.date === d)) { this.day = d; this.render(); }
+    this.openSession(l.session);
   }
 
   // ── data ───────────────────────────────────────────────────
@@ -264,5 +300,6 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
   }
 
   trackDay(_: number, d: PlannerDay) { return d.date; }
+  trackLive(_: number, l: LiveSession) { return l.session; }
   trackId(_: number, x: { _id: string }) { return x._id; }
 }

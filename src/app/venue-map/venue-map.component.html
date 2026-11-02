@@ -184,6 +184,28 @@
         <div class="vm-grow"><div class="vm-name">{{ selectedArea.name }}</div><div class="vm-muted">{{ areaInfo(selectedArea.kind).label }}</div></div>
         <button type="button" class="vm-x" aria-label="Close" (click)="closePanels()"><mat-icon>close</mat-icon></button>
       </div>
+      <!-- Workshops (W8): this area's sessions, on now → upcoming → past -->
+      <div class="vm-tl" *ngIf="selectedArea.kind === 'workshop_area'">
+        <div class="vm-tl-hd">
+          <b>Workshops here</b>
+          <a routerLink="/workshops">Open the Planner</a>
+        </div>
+        <div class="vm-muted" *ngIf="!areaHasVenue">No workshop venue is linked to this area yet.</div>
+        <div class="vm-muted" *ngIf="areaHasVenue && !timeline.length">No sessions scheduled here yet.</div>
+        <ol class="vm-tl-list" *ngIf="timeline.length">
+          <li *ngFor="let i of timeline; trackBy: trackTimeline" class="vm-tl-item" [ngClass]="i.when"
+              [class.cancelled]="i.session.status === 'cancelled'">
+            <span class="vm-tl-dot" [style.background]="i.colour"></span>
+            <div class="vm-grow">
+              <div class="vm-tl-when">
+                <span class="vm-tl-tag" *ngIf="i.when === 'now'">Now</span>{{ i.day }} · {{ i.time }}
+              </div>
+              <div class="vm-tl-title">{{ i.session.workshop?.title }}</div>
+              <div class="vm-tl-meta">{{ i.session.venue?.name }} · {{ i.numbers }}</div>
+            </div>
+          </li>
+        </ol>
+      </div>
       <div class="vm-row" *ngIf="areaSize.get(selectedArea._id)"><b>Size:</b> {{ areaSize.get(selectedArea._id) }}</div>
       <div class="vm-row" *ngIf="selectedArea.department"><b>Department:</b> {{ selectedArea.department.name }}</div>
       <div class="vm-row vm-notes" *ngIf="selectedArea.notes">{{ selectedArea.notes }}</div>
@@ -199,7 +221,14 @@
 
     <!-- Locations: type filters + list -->
     <div class="vm-panel">
-      <div class="section-lbl">Locations ({{ locations.length }})</div>
+      <div class="vm-head">
+        <div class="section-lbl vm-grow">Locations ({{ locations.length }})</div>
+        <button type="button" class="vm-fold" (click)="toggleFold('locations')" [attr.aria-expanded]="!folded.has('locations')"
+                [attr.aria-label]="folded.has('locations') ? 'Show locations' : 'Hide locations'">
+          <mat-icon>{{ folded.has('locations') ? 'keyboard_arrow_down' : 'keyboard_arrow_up' }}</mat-icon>
+        </button>
+      </div>
+      <ng-container *ngIf="!folded.has('locations')">
       <div class="vm-chips">
         <button type="button" *ngFor="let t of TYPES; trackBy: trackByValue" class="vm-chip" [class.on]="typeFilter.has(t.value)"
                 [style.--c]="t.color" [attr.aria-pressed]="typeFilter.has(t.value)" (click)="toggleType(t.value)">
@@ -216,6 +245,7 @@
           <mat-icon class="vm-out" *ngIf="locInfo.get(l._id)?.outside" title="Outside the festival boundary">warning</mat-icon>
         </button>
       </div>
+      </ng-container>
     </div>
 
     <!-- Areas and lines -->
@@ -224,7 +254,12 @@
         <div class="section-lbl vm-grow">Areas &amp; lines ({{ areas.length }})</div>
         <button type="button" class="vm-chip" [class.on]="showAreas" [attr.aria-pressed]="showAreas" (click)="toggleAreas()">
           <mat-icon>{{ showAreas ? 'visibility' : 'visibility_off' }}</mat-icon>{{ showAreas ? 'Shown' : 'Hidden' }}</button>
+        <button type="button" class="vm-fold" (click)="toggleFold('areas')" [attr.aria-expanded]="!folded.has('areas')"
+                [attr.aria-label]="folded.has('areas') ? 'Show areas and lines' : 'Hide areas and lines'">
+          <mat-icon>{{ folded.has('areas') ? 'keyboard_arrow_down' : 'keyboard_arrow_up' }}</mat-icon>
+        </button>
       </div>
+      <ng-container *ngIf="!folded.has('areas')">
       <div class="vm-muted" *ngIf="!loading && event && !boundary">
         No festival boundary yet.{{ canDrawBoundary ? ' Use "Draw boundary" to mark the festival ground.' : ' Team Leads can draw zones once an admin has drawn it.' }}</div>
       <div class="vm-list">
@@ -234,6 +269,7 @@
           <span class="vm-grow">{{ a.name }}<small>{{ areaInfo(a.kind).label }}{{ areaSize.get(a._id) ? ' · ' + areaSize.get(a._id) : '' }}{{ a.department ? ' · ' + a.department.name : '' }}</small></span>
         </button>
       </div>
+      </ng-container>
     </div>
   </div>
 </div>

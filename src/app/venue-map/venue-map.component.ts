@@ -6,6 +6,9 @@ import { EventService } from '../core/event.service';
 import { AuthService } from '../core/auth.service';
 import { NotificationService } from '../core/notification.service';
 import { ConfirmationService } from '../shared/confirm-dialog/confirmation.service';
+import { WorkshopService } from '../workshops/workshop.service';
+import { WorkshopSchedule, WorkshopSession } from '../workshops/workshops.model';
+import { localTime, regState } from '../workshops/planner.utils';
 import { EventItem } from '../models/event.model';
 import { LocationService, VenueArea, VenueLocation } from './location.service';
 import {
@@ -44,6 +47,19 @@ const TILES = {
 // "Use my location" can take it from there.
 const START: [number, number] = [20.6, 78.9];
 const NO_BOUNDARY = 'Ask an admin to draw the festival boundary first';
+/** Folded side panel sections (per viewer, this browser). */
+const FOLD_KEY = 'venueMapFolded';
+
+/** One session in a Workshop area's timeline. */
+interface TimelineItem {
+  session: WorkshopSession;
+  when: 'now' | 'next' | 'past';
+  day: string;
+  time: string;
+  numbers: string;
+  colour: string;
+}
+
 /** Responsible department for a Workshop area drawn from Workshops › Setup (user decision 2026-11-03). */
 const WORKSHOP_AREA_DEPTS = ['workshop', 'general'];
 
@@ -107,6 +123,21 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
   areaCenter = new Map<string, LatLng>();
   /** Kind icons drawn in the middle of each area (not the boundary). */
   private areaIcons: Leaflet.Marker[] = [];
+  /**
+   * Workshops (W8): the event's schedule (everyone signed in can see it), kept
+   * up to date every minute. It gives each Workshop area its live count and
+   * the timeline shown when the area is selected.
+   */
+  private workshopSchedule: WorkshopSchedule | null = null;
+  /** The session running now in each Workshop area (by area id). */
+  liveByArea = new Map<string, { attended: number; capacity: number; placesLeft: number }>();
+  /** Timeline of the selected Workshop area: on now, upcoming, then past. Stored for the *ngFor. */
+  timeline: TimelineItem[] = [];
+  /** The selected area is a Workshop area with at least one workshop venue on it. */
+  areaHasVenue = false;
+  /** Side panel sections the viewer folded away (kept in this browser). */
+  folded = new Set<string>(this.readFolded());
+  private liveTimer?: ReturnType<typeof setInterval>;
   /** Per area: its size, for polygons. */
   areaSize = new Map<string, string>();
 
@@ -142,7 +173,8 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     private snack: NotificationService,
     private zone: NgZone,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private workshops: WorkshopService
   ) {}
 
   get isTL(): boolean { return this.auth.currentUser?.role === 'TL'; }
@@ -172,13 +204,16 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subs.add(this.eventService.activeEvent.subscribe(ev => {
       const changed = ev?._id !== this.event?._id;
       this.event = ev;
-      if (changed) { this.closePanels(); this.fittedFor = ''; }
+      if (changed) { this.closePanels(); this.fittedFor = ''; this.workshopSchedule = null; this.liveByArea = new Map(); }
       this.load();
+      this.loadWorkshops();
     }));
+    this.liveTimer = setInterval(() => this.loadWorkshops(), 60000);
   }
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
+    if (this.liveTimer) clearInterval(this.liveTimer);
     this.resizeObs?.disconnect();
     this.map?.remove();
   }
@@ -295,7 +330,7 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
       icon: L.divIcon({
         className: 'vm-pin-wrap', iconSize: [28, 28], iconAnchor: [14, 14],
         html: `<div class="vm-area-ic${sel ? ' sel' : ''}" style="background:${info.color}">` +
-              `<span class="material-symbols-rounded">${info.icon}</span></div>`
+              `<span class="material-symbols-rounded">${info.icon}</span>` + this.liveBadge(a) + '</div>'
       }),
       title: a.name, keyboard: false, zIndexOffset: -500   // below location pins
     });
@@ -327,6 +362,110 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.map) { this.tiles[this.layerName]?.remove(); this.tiles[name]?.addTo(this.map); }
     this.layerName = name;
   }
+
+  // ── workshops on the map (W8) ──────────────────────────────────────
+
+  /** The schedule, for live counts and area timelines. Quietly skipped on failure (keeps the last one). */
+  async loadWorkshops(): Promise<void> {
+    if (!this.event || document.hidden) return;
+    try {
+      this.workshopSchedule = await this.workshops.getSchedule(this.event._id);
+      this.refreshWorkshops();
+    } catch { /* keep the last figures */ }
+  }
+
+  @HostListener('document:visibilitychange')
+  onVisible(): void {
+    if (!document.hidden) this.loadWorkshops();
+  }
+
+  /** Recompute the live counts and the selected area's timeline. */
+  private refreshWorkshops(): void {
+    const sc = this.workshopSchedule;
+    const now = Date.now();
+    const live = new Map<string, { attended: number; capacity: number; placesLeft: number }>();
+    if (sc) {
+      const areaOf = new Map(sc.venues.map(v => [v._id, v.area || null]));
+      for (const s of sc.sessions) {
+        const area = areaOf.get(s.venue?._id);
+        if (!area || s.status !== 'scheduled' || !this.isNow(s, now)) continue;
+        const capacity = s.venue?.capacity || 0, attended = s.counts?.attended || 0;
+        live.set(area, { attended, capacity, placesLeft: Math.max(0, capacity - attended) });
+      }
+    }
+    this.liveByArea = live;
+    this.buildTimeline();
+    if (this.map) this.drawAreas();
+  }
+
+  private isNow(s: WorkshopSession, now = Date.now()): boolean {
+    return new Date(s.start).getTime() <= now && now < new Date(s.end).getTime();
+  }
+
+  /** The selected Workshop area's sessions: on now, then upcoming (soonest first), then past (latest first). */
+  private buildTimeline(): void {
+    const a = this.selectedArea;
+    const sc = this.workshopSchedule;
+    this.areaHasVenue = false;
+    this.timeline = [];
+    if (!a || a.kind !== 'workshop_area' || !sc) return;
+    const venues = new Set(sc.venues.filter(v => v.area === a._id).map(v => v._id));
+    this.areaHasVenue = venues.size > 0;
+    const now = Date.now();
+    const items = sc.sessions.filter(s => venues.has(s.venue?._id)).map(s => this.timelineItem(s, now));
+    const t = (x: TimelineItem) => new Date(x.session.start).getTime();
+    this.timeline = [
+      ...items.filter(i => i.when === 'now').sort((x, y) => t(x) - t(y)),
+      ...items.filter(i => i.when === 'next').sort((x, y) => t(x) - t(y)),
+      ...items.filter(i => i.when === 'past').sort((x, y) => t(y) - t(x))
+    ];
+  }
+
+  private timelineItem(s: WorkshopSession, now: number): TimelineItem {
+    const start = new Date(s.start), end = new Date(s.end);
+    const when: TimelineItem['when'] = end.getTime() <= now ? 'past' : start.getTime() <= now ? 'now' : 'next';
+    const c = s.counts || { pre: 0, wait: 0, walkin: 0, attended: 0 };
+    const capacity = s.venue?.capacity || 0;
+    const left = Math.max(0, capacity - c.attended);
+    let numbers: string;
+    if (s.status === 'cancelled') {
+      numbers = 'Cancelled';
+    } else if (when === 'now') {
+      numbers = `${c.attended}/${capacity} in · ${left ? left + ' place' + (left === 1 ? '' : 's') + ' left' : 'full'}`;
+    } else if (when === 'next') {
+      const st = regState(s);
+      numbers = `${c.pre}/${s.preRegLimit || capacity} on the list${c.wait ? ' + ' + c.wait + ' waiting' : ''} · `
+        + (st === 'open' ? 'registration open' : st === 'soon' ? 'registration opens ' + localTime(new Date(s.regOpensAt!)) : 'registration closed');
+    } else {
+      numbers = `${c.attended} attended`;
+    }
+    return {
+      session: s, when, numbers,
+      day: start.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }),
+      time: `${localTime(start)}–${localTime(end)}`,
+      colour: s.workshop?.category?.colour || '#475569'
+    };
+  }
+
+  /** '28/40' on an area's badge while a session runs in its venue. */
+  private liveBadge(a: VenueArea): string {
+    const l = this.liveByArea.get(a._id);
+    if (!l) return '';
+    return `<span class="vm-live${l.placesLeft ? '' : ' full'}">${l.attended}/${l.capacity}</span>`;
+  }
+
+  // ── folding the side sections ──────────────────────────────────────
+
+  toggleFold(section: string): void {
+    this.folded.has(section) ? this.folded.delete(section) : this.folded.add(section);
+    try { localStorage.setItem(FOLD_KEY, JSON.stringify([...this.folded])); } catch { /* private mode */ }
+  }
+
+  private readFolded(): string[] {
+    try { return JSON.parse(localStorage.getItem(FOLD_KEY) || '[]'); } catch { return []; }
+  }
+
+  trackTimeline(_: number, i: TimelineItem) { return i.session._id; }
 
   // ── data ───────────────────────────────────────────────────────────
 
@@ -586,6 +725,7 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.busy) return;
     this.selectedArea = a;
     this.selected = null;
+    this.buildTimeline();
     this.drawAreas();
     this.drawMarkers();
   }

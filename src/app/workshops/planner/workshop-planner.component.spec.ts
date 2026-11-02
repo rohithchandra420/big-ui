@@ -29,7 +29,8 @@ describe('WorkshopPlannerComponent', () => {
   let dp: jasmine.SpyObj<any>;
 
   beforeEach(async () => {
-    service = jasmine.createSpyObj('WorkshopService', ['getSchedule', 'updateSession']);
+    service = jasmine.createSpyObj('WorkshopService', ['getSchedule', 'updateSession', 'getLive']);
+    service.getLive.and.callFake(() => Promise.resolve({ now: '', live: [] }));
     service.getSchedule.and.callFake(() => Promise.resolve(schedule()));
     await TestBed.configureTestingModule({
       declarations: [WorkshopPlannerComponent],
@@ -48,7 +49,11 @@ describe('WorkshopPlannerComponent', () => {
     spyOn(component as any, 'initCalendar').and.callFake(async () => { (component as any).dp = dp; });
   });
 
-  const start = () => { fixture.detectChanges(); flush(); fixture.detectChanges(); };
+  const start = () => {
+    // The live refresh timer would outlive each fake-time test: no real interval here.
+    spyOn(window, 'setInterval').and.returnValue(0 as any);
+    fixture.detectChanges(); flush(); fixture.detectChanges();
+  };
 
   it('shows one tab per event day, with session counts', fakeAsync(() => {
     start();
@@ -99,5 +104,21 @@ describe('WorkshopPlannerComponent', () => {
     start();
     expect(component.days.map(d => d.date)).toEqual(['2027-01-16']);
     expect(fixture.nativeElement.textContent).toContain('has no dates yet');
+  }));
+
+  it('shows what is running now, and opens it on tap', fakeAsync(() => {
+    service.getLive.and.callFake(() => Promise.resolve({ now: '', live: [{
+      session: 's1', start: at('2027-01-16', '10:00'), end: at('2027-01-16', '11:00'),
+      workshop: { _id: 'w1', title: 'Hand Drumming', category: null },
+      venue: { _id: 'v1', name: 'Bamboo Dome', capacity: 40, area: null }, attended: 40, placesLeft: 0
+    }] }));
+    start();
+    const card = fixture.nativeElement.querySelector('.wp-now-card') as HTMLElement;
+    expect(card.textContent).toContain('Hand Drumming');
+    expect(card.textContent).toContain('40/40');
+    expect(card.textContent).toContain('Full');
+    card.click();
+    expect(component.day).toBe('2027-01-16');
+    expect(component.panelSession!._id).toBe('s1');
   }));
 });

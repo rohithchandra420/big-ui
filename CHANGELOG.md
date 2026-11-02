@@ -9,6 +9,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.26.0] - 2026-11-03
+
+### Added
+- **Workshops › Reports** (the Workshop team and Workshop "read" access): totals (sessions, on the lists, attended, no-shows), one row per session or per workshop with a turnout bar, a side panel listing who came and who didn't, and **Export to Excel** (Sessions, Workshops and People sheets).
+- **Planner › Now:** sessions running right now, each with a capacity meter and places left; refreshes by itself. Tap one to open it.
+- **Venue Map:**
+  - A Workshop area with a session running shows its count ("28/40") on the map.
+  - Selecting a Workshop area shows a timeline of its workshop sessions: on now, then upcoming (list and registration status), then past (dimmed, how many attended). It keeps itself up to date.
+  - **Locations** and **Areas & lines** can be folded away with an arrow button (remembered in this browser).
+
+### Notes
+- No new dependencies. 12 new unit tests (862/862).
+
+---
+
 ## [1.25.0] - 2026-11-03
 
 ### Added

@@ -1,0 +1,107 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Workshop Reports</div>
+    <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · who came to which session</div>
+  </div>
+  <button class="btn-cta" (click)="exportExcel()" [disabled]="!data?.sessions?.length || exporting">
+    {{ exporting ? 'Exporting…' : 'Export to Excel' }}
+  </button>
+</div>
+
+<div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar to see its workshop reports.</div>
+<div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+<ng-container *ngIf="data as d">
+  <div class="stat-row">
+    <div class="stat"><div class="stat-l">Sessions</div><div class="stat-n">{{ d.totals.sessions }}</div><div class="stat-s">{{ d.workshops.length }} workshop{{ d.workshops.length === 1 ? '' : 's' }}</div></div>
+    <div class="stat"><div class="stat-l">On the lists</div><div class="stat-n">{{ d.totals.pre }}</div><div class="stat-s">+ {{ d.totals.wait }} waitlisted</div></div>
+    <div class="stat"><div class="stat-l">Attended</div><div class="stat-n">{{ d.totals.attended }}</div><div class="stat-s">{{ d.totals.walkinAttended }} as walk-ins</div></div>
+    <div class="stat" [class.alert-stat]="d.totals.noShows > 0"><div class="stat-l">No-shows</div><div class="stat-n">{{ d.totals.noShows }}</div><div class="stat-s">on a list, didn't come</div></div>
+  </div>
+
+  <div class="tbl-container">
+    <div class="tbl-filters">
+      <div class="filter-bar">
+        <div class="rp-seg" role="group" aria-label="Group by">
+          <button type="button" [class.on]="view === 'session'" (click)="setView('session')">By session</button>
+          <button type="button" [class.on]="view === 'workshop'" (click)="setView('workshop')">By workshop</button>
+        </div>
+        <input type="text" [(ngModel)]="search" (ngModelChange)="applySearch()" placeholder="Search workshop, venue or day…" aria-label="Search" />
+      </div>
+    </div>
+
+    <div class="tbl-scroll rp-scroll">
+      <table class="tbl" *ngIf="view === 'session'">
+        <thead><tr><th>Workshop</th><th>When</th><th class="hide-sm">Venue</th><th>List</th><th class="hide-sm">Waitlist</th><th class="hide-sm">Walk-ins</th><th>Attended</th><th>No-shows</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let s of sessions; trackBy: trackId" [class.selected]="isOpen(s._id)" [class.cancelled]="s.status === 'cancelled'" (click)="openSession(s)">
+            <td class="strong"><span class="cat-dot" *ngIf="s.workshop?.category" [style.background]="s.workshop!.category!.colour"></span>{{ s.workshop?.title }}</td>
+            <td>{{ day(s.start) }} · {{ time(s.start) }}<span class="badge bx" *ngIf="s.status === 'cancelled'">Cancelled</span></td>
+            <td class="hide-sm">{{ s.venue?.name }}</td>
+            <td>{{ s.pre }}<span class="muted">/{{ s.limit }}</span></td>
+            <td class="hide-sm">{{ s.wait }}</td>
+            <td class="hide-sm">{{ s.walkin }}</td>
+            <td>
+              {{ s.attended }}<span class="muted">/{{ s.venue?.capacity }}</span>
+              <span class="bar" *ngIf="s.pre" [title]="turnout(s) + '% of the list came'"><i [style.width.%]="turnout(s)"></i></span>
+            </td>
+            <td [class.warn]="s.noShows">{{ s.over ? s.noShows : '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="tbl" *ngIf="view === 'workshop'">
+        <thead><tr><th>Workshop</th><th>Sessions</th><th>List</th><th class="hide-sm">Waitlist</th><th class="hide-sm">Walk-ins</th><th>Attended</th><th>No-shows</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let w of workshops; trackBy: trackId" [class.selected]="isOpen(w._id)" (click)="openWorkshop(w)">
+            <td class="strong"><span class="cat-dot" *ngIf="w.category" [style.background]="w.category.colour"></span>{{ w.title }}</td>
+            <td>{{ w.sessions }}</td>
+            <td>{{ w.pre }}</td>
+            <td class="hide-sm">{{ w.wait }}</td>
+            <td class="hide-sm">{{ w.walkin }}</td>
+            <td>{{ w.attended }}<span class="bar" *ngIf="w.pre" [title]="turnout(w) + '% of the lists came'"><i [style.width.%]="turnout(w)"></i></span></td>
+            <td [class.warn]="w.noShows">{{ w.noShows }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="rp-empty" *ngIf="!loading && !(view === 'session' ? sessions.length : workshops.length)">
+        {{ search ? 'Nothing matches "' + search + '".' : 'No sessions for this event yet.' }}
+      </div>
+    </div>
+    <div class="tbl-foot">
+      <span>No-shows count once a session has ended.</span>
+      <span>Tap a row to see who came.</span>
+    </div>
+  </div>
+</ng-container>
+
+<!-- ── Side panel: the people ────────────────────────────────── -->
+<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
+
+<div class="panel" [class.open]="panelOpen" role="dialog" aria-label="People" [attr.aria-hidden]="!panelOpen">
+  <ng-container *ngIf="panelOpen">
+    <div class="panel-hd">
+      <div>
+        <div class="panel-title">{{ panelTitle }}</div>
+        <div class="panel-sub">{{ panelSub }}</div>
+      </div>
+      <button class="panel-close" (click)="closePanel()" aria-label="Close" title="Close">✕</button>
+    </div>
+    <div class="panel-body">
+      <div class="rp-empty" *ngIf="peopleLoading">Loading…</div>
+      <div class="rp-empty" *ngIf="!peopleLoading && !people.length">Nobody on its lists.</div>
+      <div class="rp-person" *ngFor="let p of people; trackBy: trackId">
+        <mat-icon class="ms-fill" [class.in]="p.attendedAt">{{ p.attendedAt ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+        <div class="rp-p-main">
+          <b>{{ p.pass?.name || '(deleted pass)' }}</b>
+          <span>{{ listLabel(p) }}{{ view === 'workshop' && p.session ? ' · ' + day(p.session.start) + ' ' + time(p.session.start) : '' }}</span>
+        </div>
+        <span class="rp-p-when">{{ p.attendedAt ? 'Came ' + time(p.attendedAt) : 'Didn\'t come' }}</span>
+      </div>
+    </div>
+    <div class="panel-actions">
+      <button class="btn-ghost" (click)="closePanel()">Close</button>
+    </div>
+  </ng-container>
+</div>

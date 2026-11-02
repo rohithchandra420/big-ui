@@ -1366,3 +1366,36 @@ select:focus {
 .wp-chip.soon { background: #e0f2fe; color: #075985; }
 .wp-chip.closed { background: #f1f5f9; color: #475569; }
 .wp-chip.warn { background: #fef3c7; color: #92400e; }
+
+/* Venue Map: a session running now in a Workshop area (Workshops W8) — the
+   count on the area's badge, and the "Now" block in its panel. */
+.vm-area-ic { position: relative; }
+.vm-live {
+  position: absolute; left: 50%; top: 100%; transform: translate(-50%, 3px);
+  padding: 0 6px; border-radius: 999px; background: #16a34a; color: #fff;
+  font: 700 10px/16px system-ui, sans-serif; white-space: nowrap; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.vm-live.full { background: #d97706; }
+/* A Workshop area's timeline (on now → upcoming → past, past dimmed) */
+.vm-tl { margin: 6px 0 8px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border-default); background: var(--surface-input); }
+.vm-tl-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.vm-tl-hd b { color: var(--text-primary); }
+.vm-tl-hd a { font-weight: 600; color: var(--color-primary); }
+.vm-tl-list { list-style: none; margin: 0; padding: 0; max-height: 280px; overflow-y: auto; }
+.vm-tl-item { position: relative; display: flex; gap: 8px; padding: 6px 0 6px 2px; font-size: 12px; color: var(--text-secondary); }
+.vm-tl-item + .vm-tl-item { border-top: 1px dashed var(--border-default); }
+.vm-tl-dot { width: 10px; height: 10px; margin-top: 3px; border-radius: 999px; flex: 0 0 auto; }
+.vm-tl-when { font-size: 11px; color: var(--text-muted); }
+.vm-tl-title { font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+.vm-tl-meta { font-size: 11px; }
+.vm-tl-tag { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 999px; background: #16a34a; color: #fff; font-size: 10px; font-weight: 700; }
+.vm-tl-item.now { background: #f0fdf4; border-radius: 8px; padding-left: 6px; }
+.vm-tl-item.now .vm-tl-dot { box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2); }
+.vm-tl-item.past, .vm-tl-item.cancelled { opacity: 0.45; }
+.vm-tl-item.cancelled .vm-tl-title { text-decoration: line-through; }
+.vm-fold {
+  display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-left: 4px;
+  border: 1px solid var(--border-default); border-radius: 8px; background: var(--surface-card); color: var(--text-secondary); cursor: pointer;
+}
+.vm-fold:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.vm-fold mat-icon { font-size: 20px; width: 20px; height: 20px; }

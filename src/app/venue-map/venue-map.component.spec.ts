@@ -12,6 +12,7 @@ import { NotificationService } from '../core/notification.service';
 import { ConfirmationService } from '../shared/confirm-dialog/confirmation.service';
 import { AppSelectComponent } from '../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../shared/app-select/app-option.component';
+import { WorkshopService } from '../workshops/workshop.service';
 
 describe('VenueMapComponent', () => {
   let fixture: ComponentFixture<VenueMapComponent>;
@@ -21,6 +22,7 @@ describe('VenueMapComponent', () => {
   let confirm: jasmine.SpyObj<ConfirmationService>;
   let event$: BehaviorSubject<any>;
   let auth: any;
+  let live: any[];
   const el = () => fixture.nativeElement as HTMLElement;
   const btn = (text: string) => Array.from(el().querySelectorAll('button, label, a')).find(b => b.textContent!.includes(text)) as HTMLElement | undefined;
 
@@ -37,7 +39,7 @@ describe('VenueMapComponent', () => {
 
   function setup(opts: { role?: string; canAdd?: boolean; canImport?: boolean; locations?: VenueLocation[];
                   areas?: VenueArea[]; canDraw?: boolean; canDrawBoundary?: boolean; draw?: string;
-                  qp?: Record<string, string> } = {}) {
+                  qp?: Record<string, string>; sessions?: any[]; venues?: any[] } = {}) {
     svc = {
       list: jasmine.createSpy('list').and.resolveTo({
         locations: opts.locations ?? [loc('a', { name: 'Main Stage', type: 'stage' }), loc('b', { name: 'Water Station 1', canEdit: false })],
@@ -54,6 +56,7 @@ describe('VenueMapComponent', () => {
       removeArea: jasmine.createSpy('removeArea').and.resolveTo(),
       importAreas: jasmine.createSpy('importAreas').and.resolveTo({ created: 1 })
     };
+    live = [(opts as any).sessions ?? [], (opts as any).venues ?? []];
     event$ = new BehaviorSubject<any>({ _id: 'ev1', name: 'BiG 7.0', status: 'active' });
     auth = {
       currentUser: { role: opts.role ?? 'ADMIN', departments: [{ department: { _id: 'd-food', name: 'Hospitality' } }] },
@@ -71,9 +74,14 @@ describe('VenueMapComponent', () => {
         { provide: AuthService, useValue: auth },
         { provide: NotificationService, useValue: snack },
         { provide: ConfirmationService, useValue: confirm },
+        { provide: WorkshopService, useValue: { getSchedule: jasmine.createSpy('getSchedule').and.callFake(() => Promise.resolve({
+          event: { _id: 'ev1', name: 'BiG 7.0', startDate: null, endDate: null }, sessions: live[0], venues: live[1], workshops: [], canManage: false, canRun: false
+        })) } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: (k: string) => opts.qp?.[k] ?? (k === 'draw' ? (opts.draw ?? null) : null) } } } }
       ]
     });
+    // The live refresh timer would outlive each fake-time test: no real interval here.
+    if (!jasmine.isSpy(window.setInterval)) spyOn(window, 'setInterval').and.returnValue(0 as any);
     // The test router has no app routes: stub navigation so nothing leaks into later tests.
     spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
     fixture = TestBed.createComponent(VenueMapComponent);
@@ -438,6 +446,71 @@ describe('VenueMapComponent', () => {
       const draw = spyOn(component, 'startDraw');
       settle();
       expect(draw).toHaveBeenCalledWith('area');
+    }));
+  });
+
+  describe('workshops on the map (W8)', () => {
+    const H = 3600000;
+    const iso = (ms: number) => new Date(Date.now() + ms).toISOString();
+    const venue = { _id: 'v1', name: 'Bamboo Dome', capacity: 40, area: 'w1' };
+    const s = (id: string, title: string, start: number, end: number, extra: any = {}) => ({
+      _id: id, event: 'ev1', workshop: { _id: 'w-' + id, title, category: null, facilitators: [] },
+      venue: { _id: 'v1', name: 'Bamboo Dome', capacity: 40 }, start: iso(start), end: iso(end),
+      regOpensAt: null, regClosesAt: null, regManual: null, cutoffAt: null, preRegLimit: null,
+      facilitatorsOverride: [], status: 'scheduled', counts: { pre: 5, wait: 0, walkin: 0, attended: 28 }, ...extra
+    });
+    const sessions = [
+      s('past1', 'Early Yoga', -5 * H, -4 * H),
+      s('next2', 'Clay', 4 * H, 5 * H),
+      s('now', 'Hand Drumming', -0.5 * H, 0.5 * H),
+      s('past2', 'Late Yoga', -3 * H, -2 * H),
+      s('next1', 'Songwriting', 2 * H, 3 * H, { counts: { pre: 12, wait: 3, walkin: 0, attended: 0 }, preRegLimit: 12 })
+    ];
+
+    it('a Workshop area shows its sessions as a timeline: now, upcoming, then past (dimmed)', fakeAsync(() => {
+      setup({ areas: [area('w1')], sessions, venues: [venue] }); settle();
+      component.selectArea(component.areas[0]); fixture.detectChanges();
+      expect(component.timeline.map(i => [i.session._id, i.when])).toEqual([
+        ['now', 'now'], ['next1', 'next'], ['next2', 'next'], ['past2', 'past'], ['past1', 'past']
+      ]);
+      const items = Array.from(el().querySelectorAll('.vm-tl-item')) as HTMLElement[];
+      expect(items[0].textContent).toContain('Now');
+      expect(items[0].textContent).toContain('28/40 in · 12 places left');
+      expect(items[1].textContent).toContain('12/12 on the list + 3 waiting');
+      expect(items[3].classList).toContain('past');
+      expect(items[3].textContent).toContain('28 attended');
+    }));
+
+    it('says so when no venue is linked to the area, and shows nothing for other kinds of area', fakeAsync(() => {
+      setup({ areas: [area('w1'), area('c1', { kind: 'camping' })], sessions: [], venues: [] }); settle();
+      component.selectArea(component.areas[0]); fixture.detectChanges();
+      expect(el().querySelector('.vm-tl')!.textContent).toContain('No workshop venue is linked');
+      component.selectArea(component.areas[1]); fixture.detectChanges();
+      expect(el().querySelector('.vm-tl')).toBeNull();
+    }));
+
+    it('the area badge carries the live count; nothing when nothing runs', fakeAsync(() => {
+      setup({ areas: [area('w1')], sessions, venues: [venue] }); settle();
+      expect(component.liveByArea.get('w1')).toEqual({ attended: 28, capacity: 40, placesLeft: 12 });
+      expect((component as any).liveBadge(component.areas[0])).toContain('28/40');
+      expect((component as any).liveBadge(area('x9'))).toBe('');
+    }));
+
+    it('Locations and Areas & lines fold away with their arrow buttons', fakeAsync(() => {
+      try { localStorage.removeItem('venueMapFolded'); } catch { /* */ }
+      setup(); settle();
+      component.folded.clear();
+      fixture.detectChanges();
+      expect(el().querySelectorAll('.vm-item').length).toBe(2);
+      const folds = Array.from(el().querySelectorAll('.vm-fold')) as HTMLElement[];
+      expect(folds.length).toBe(2);
+      expect(folds[0].textContent).toContain('keyboard_arrow_up');
+      folds[0].click(); fixture.detectChanges();
+      expect(el().querySelectorAll('.vm-chips').length).toBe(0);
+      expect(el().querySelectorAll('.vm-fold')[0].textContent).toContain('keyboard_arrow_down');
+      component.toggleFold('locations'); fixture.detectChanges();
+      expect(el().querySelectorAll('.vm-chips').length).toBe(1);
+      try { localStorage.removeItem('venueMapFolded'); } catch { /* */ }
     }));
   });
 });
