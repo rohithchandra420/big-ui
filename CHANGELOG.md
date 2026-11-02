@@ -9,6 +9,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.26.1] - 2026-11-03
+
+### Fixed
+- **Dropdowns no longer get cut off.** A dropdown inside a short table or panel (for example the Tent Pass Type filter on Accommodation › Inventory when only one unit is listed) had its list clipped by the box around it. Every dropdown in the app now opens its list above the page: as wide as its box, below it (or above it when there's no room below), and moving with the page when you scroll.
+
+### Notes
+- No new dependencies (uses Angular's built-in overlay, already part of Angular Material). 2 new unit tests (864/864), 22/22 end-to-end tests.
+
+---
+
 ## [1.26.0] - 2026-11-03
 
 ### Added

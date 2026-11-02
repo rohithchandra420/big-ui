@@ -1,17 +1,22 @@
 import { Component, NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
 import { AppSelectComponent } from './app-select.component';
 import { AppOptionComponent } from './app-option.component';
 
 @Component({
+  // The select sits in a short box that hides overflow, like a table box with
+  // one row (the Inventory bug, v1.26.1): its panel must not be clipped.
   template: `
+    <div class="clip-box" style="height: 40px; overflow: hidden;">
     <app-select [(ngModel)]="selected" [placeholder]="'Choose one…'" [disabled]="isDisabled">
       <app-option value="a">Alpha</app-option>
       <app-option value="b">Beta</app-option>
       <app-option value="c" [disabled]="true">Gamma (disabled)</app-option>
     </app-select>
+    </div>
   `
 })
 class HostComponent {
@@ -35,7 +40,7 @@ describe('AppSelectComponent', () => {
     host = hostFixture.componentInstance;
     hostFixture.detectChanges();
 
-    select = hostFixture.debugElement.children[0].componentInstance;
+    select = hostFixture.debugElement.query(By.directive(AppSelectComponent)).componentInstance;
   });
 
   it('shows the placeholder when nothing is selected', () => {
@@ -149,11 +154,43 @@ describe('AppSelectComponent', () => {
 
     it('leaves the panel open for a click inside the component', () => {
       select.open = true;
-      const insideEl = hostFixture.debugElement.children[0].nativeElement;
+      const insideEl = hostFixture.debugElement.query(By.directive(AppSelectComponent)).nativeElement;
 
       select.onDocumentClick({ target: insideEl } as any);
 
       expect(select.open).toBeTrue();
     });
+  });
+
+  describe('the panel on the overlay layer (never clipped)', () => {
+    afterEach(() => { select.open = false; });
+
+    it('opens outside the clipping box, as wide as the box it belongs to', () => {
+      select.toggle();
+      hostFixture.detectChanges();
+      const panel = document.querySelector('.cdk-overlay-container .app-select-panel') as HTMLElement;
+      expect(panel).toBeTruthy();
+      const box = hostFixture.nativeElement.querySelector('.clip-box') as HTMLElement;
+      expect(box.contains(panel)).toBeFalse();
+      expect(panel.textContent).toContain('Alpha');
+      const trigger = hostFixture.nativeElement.querySelector('.app-select-trigger') as HTMLElement;
+      expect(Math.round(select.panelElement!.getBoundingClientRect().width))
+        .toBe(Math.round(trigger.getBoundingClientRect().width));
+    });
+
+    it('a click on an option counts as inside: it selects, then closes', fakeAsync(() => {
+      select.toggle();
+      hostFixture.detectChanges();
+      const option = Array.from(document.querySelectorAll('.cdk-overlay-container .app-select-option'))
+        .find(li => li.textContent!.includes('Beta')) as HTMLElement;
+      select.onDocumentClick({ target: option } as any);
+      expect(select.open).toBeTrue();
+      option.click();
+      hostFixture.detectChanges();
+      tick();
+      expect(host.selected).toBe('b');
+      expect(select.open).toBeFalse();
+      expect(document.querySelector('.cdk-overlay-container .app-select-panel')).toBeNull();
+    }));
   });
 });
