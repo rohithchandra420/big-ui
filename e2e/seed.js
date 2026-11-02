@@ -18,6 +18,7 @@ const ShopCart = require(API + "/src/models/shopcart");
 const Tent = require(API + "/src/models/tent");
 const Attendance = require(API + "/src/models/attendance");
 const EmailLog = require(API + "/src/models/emailLog");
+const Band = require(API + "/src/models/band");
 const seedPermissions = require(API + "/src/seeds/permissions.seed");
 const seedRoles = require(API + "/src/seeds/roles.seed");
 const seedDepartments = require(API + "/src/seeds/departments.seed");
@@ -47,7 +48,7 @@ async function seed() {
   const dir = await mk("Maya Fernandes", "maya.director@example.com", "DIR", null, "2025-06-01");
   await mk("Sam Patel", "sam.admin@example.com", "ADMIN", "General", "2025-07-15");
   const tlOps = await mk("Ravi Kumar", "ravi.ops@example.com", "TL", "Operations", "2025-09-01");
-  await mk("Nina Das", "nina.boxoffice@example.com", "TL", "Box Office", "2025-09-01");
+  const tlBox = await mk("Nina Das", "nina.boxoffice@example.com", "TL", "Box Office", "2025-09-01");
   const vols = [];
   vols.push(await mk("Sana Qureshi", "sana@example.com", "VOL", "Operations", "2026-09-20"));
   vols.push(await mk("Tom Mathew", "tom@example.com", "VOL", "Operations", "2026-09-20"));
@@ -73,7 +74,7 @@ async function seed() {
   let order = 70001;
   // [first, last, email, phone, items:[ [passType, attendeeName|null, gender|null, admitted, tent|null] ], spot?, ticketEmailStatus]
   // Vikram Singh = a complete, NOT yet admitted Festival Pass with an unallocated Tent Pass,
-  // so Admit, Link Band and Allocate Tent all show (used by tests and the booking-found screenshot).
+  // so Admit and Allocate Tent show (used by tests and the booking-found screenshot).
   const B = [
     ["Asha", "Menon", "asha@example.com", "9800000101", [["Festival Pass", "Asha Menon", "Female", true, "TW1"], ["Festival Pass", "Priya Varma", "Female", true, "TW1"], ["Two-Person Tent"], ["Two-Person Tent"]], false, "sent"],
     ["Karan", "Shah", "karan@example.com", "9800000102", [["Festival Pass", "Karan Shah", "Male", true, null]], false, "sent"],
@@ -113,6 +114,24 @@ async function seed() {
     T[first] = await Ticket.create({ order_id: oid, transaction_id: spot ? "SPOT-" + (1767000000000 + oid) : "TXN" + oid, first_name: first, last_name: last,
       email, phone_no: phone, totalPrice: total, shopcart: ids, event: ev._id,
       ticketEmail: { status, sentAt: ["sent", "bounced"].includes(status) ? sentAt(oid % 60) : null, error: ERR[status] || null } });
+  }
+
+  // Wrist bands (W1): every admitted Festival Pass has one, except Karan Shah's —
+  // admitted "before bands existed", so Link Band shows. Asha Menon's first band
+  // was replaced, so her band details show a history.
+  let tag = 1000;
+  const bandAt = (h) => new Date(Date.UTC(2026, 10, 3, 4, h));
+  for (const sc of await ShopCart.find({ event: ev._id, category: "festival", isAdmitted: true }).sort({ order_id: 1, _id: 1 })) {
+    if (sc.name === "Karan Shah") continue;
+    const code = `BIG7:W${++tag}`;
+    const band = await Band.create({ event: ev._id, code, raw: `https://wallet.example/pay?eventid=BIG7&tagid=W${tag}`,
+      pass: sc._id, linkedBy: tlBox._id, linkedAt: bandAt(tag % 50) });
+    if (sc.name === "Asha Menon") {
+      await Band.create({ event: ev._id, code: "BIG7:W0999", raw: "https://wallet.example/pay?eventid=BIG7&tagid=W0999",
+        pass: sc._id, status: "replaced", replacedBy: band._id, reason: "Band strap broke",
+        linkedBy: tlBox._id, linkedAt: bandAt(0), retiredBy: tlBox._id, retiredAt: bandAt(30) });
+    }
+    await ShopCart.updateOne({ _id: sc._id }, { band: band._id });
   }
 
   // Ticket email wording for the active event
