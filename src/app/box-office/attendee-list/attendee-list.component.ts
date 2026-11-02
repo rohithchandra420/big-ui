@@ -1,17 +1,21 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { filter } from 'rxjs';
 
 import { Shopcart, Ticket } from '../../models/ticket.model';
 import { Tent } from '../../models/tent.model';
-import { BoxOfficeService } from '../box-office.service';
+import { BandHistoryEntry, BoxOfficeService } from '../box-office.service';
 import { AccomodationService, TentAllocationResult } from '../../accomodation/accomodation.service';
 import { NotificationService } from '../../core/notification.service';
+import { AuthService } from '../../core/auth.service';
 import { isFestivalPass } from '../box-office.utils';
 import { GateFeedbackService } from '../../core/gate-feedback.service';
-import { BoxOfficeQrscannerPopupComponent, QrScannerData } from '../registration/qrscanner-popup/qrscanner-popup.component';
+import {
+  BandPurpose, BandScanResult, BoxOfficeQrscannerPopupComponent, QrScannerData
+} from '../registration/qrscanner-popup/qrscanner-popup.component';
 
 /**
- * Shared attendee-row list with Admit / Link Band / Allocate Tent / Vacate / Fill at
+ * Shared attendee-row list with Admit / Band / Allocate Tent / Vacate / Fill at
  * Counter actions — used by both the Booking Found page and the Bookings
  * detail panel, so this logic lives in exactly one place rather than being
  * duplicated (and risking drift) across the two.
@@ -39,12 +43,17 @@ export class AttendeeListComponent implements OnChanges {
   /** allocatedTentId -> Tent, resolved lazily for the "Tent: SH13" readout. */
   tentLookup: Record<string, Tent> = {};
 
+  /** passId -> its bands, newest first; loaded when the band details open. */
+  bandHistory: Record<string, BandHistoryEntry[]> = {};
+  openHistoryFor: string | null = null;
+
   constructor(
     private boxOfficeService: BoxOfficeService,
     private accomodationService: AccomodationService,
     private notificationService: NotificationService,
     private dialog: MatDialog,
-    private gateFeedback: GateFeedbackService
+    private gateFeedback: GateFeedbackService,
+    private authService: AuthService
   ) { }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -64,6 +73,7 @@ export class AttendeeListComponent implements OnChanges {
   resetView() {
     this.activeCounterItem = null;
     this.activeAllocateItem = null;
+    this.openHistoryFor = null;
   }
 
   private loadTentDetails() {
@@ -131,30 +141,100 @@ export class AttendeeListComponent implements OnChanges {
     this.activeCounterItem = null;
   }
 
-  admitAttendee(item: Shopcart) {
-    this.boxOfficeService.checkIn(item._id!).subscribe({
-      next: (updated) => {
-        this.replaceShopcartItem(updated);
-        this.notificationService.openSucessSnackBar('Admitted');
-      },
-      error: (err) => {
-        this.notificationService.openErrorSnackBar(err?.error?.message || 'Admission failed');
-      }
-    });
-  }
-
   /**
-   * Link Band (demo): opens the gate scanner in band mode to read the
-   * wrist band QR handed out at admission. For now it only shows what was
-   * read — saving it against the Festival Pass waits on the band id format.
+   * Opens the scanner in band mode for one Festival Pass. Emits the band
+   * staff confirmed, or nothing when they cancel.
    */
-  openLinkBand(item: Shopcart) {
+  private scanBand(item: Shopcart, purpose: BandPurpose) {
     this.gateFeedback.unlock();
-    const data: QrScannerData = { mode: 'band', attendeeName: item.name || 'Attendee' };
-    this.dialog.open(BoxOfficeQrscannerPopupComponent, {
+    const data: QrScannerData = { mode: 'band', purpose, attendeeName: item.name || 'Attendee', passId: item._id };
+    return this.dialog.open(BoxOfficeQrscannerPopupComponent, {
       width: '90%',
       maxWidth: '480px',
       data
+    }).afterClosed().pipe(filter((res): res is BandScanResult => !!res?.raw));
+  }
+
+  /** Admit: no admitting without a band (W1) — the band is scanned first and linked in the same call. */
+  admitAttendee(item: Shopcart) {
+    this.scanBand(item, 'admit').subscribe(scan => {
+      this.boxOfficeService.checkIn(item._id!, scan.raw).subscribe({
+        next: (updated) => {
+          this.bandChanged(updated);
+          this.notificationService.openSucessSnackBar('Admitted, band linked');
+        },
+        error: (err) => {
+          this.notificationService.openErrorSnackBar(err?.error?.message || 'Admission failed');
+        }
+      });
+    });
+  }
+
+  /** For a pass admitted before bands existed. */
+  openLinkBand(item: Shopcart) {
+    this.scanBand(item, 'link').subscribe(scan => {
+      this.boxOfficeService.linkBand(item._id!, scan.raw).subscribe({
+        next: (res) => {
+          this.bandChanged(res.pass);
+          this.notificationService.openSucessSnackBar('Band linked');
+        },
+        error: (err) => {
+          this.notificationService.openErrorSnackBar(err?.error?.message || 'Could not link the band');
+        }
+      });
+    });
+  }
+
+  openReplaceBand(item: Shopcart) {
+    this.scanBand(item, 'replace').subscribe(scan => {
+      this.boxOfficeService.replaceBand(item._id!, scan.raw, scan.reason || '').subscribe({
+        next: (res) => {
+          this.bandChanged(res.pass);
+          this.notificationService.openSucessSnackBar('Band replaced');
+        },
+        error: (err) => {
+          this.notificationService.openErrorSnackBar(err?.error?.message || 'Could not replace the band');
+        }
+      });
+    });
+  }
+
+  /** Same rule as big-api's middleware/bandAuth.js — the server checks again. */
+  get canReplaceBand(): boolean {
+    const user = this.authService.currentUser;
+    if (!user) return false;
+    if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+    return this.authService.hasPermission(user, 'box-office:write')
+      || this.authService.hasDepartmentAccess(user, 'Box Office');
+  }
+
+  private bandChanged(updated: Shopcart) {
+    this.replaceShopcartItem(updated);
+    delete this.bandHistory[updated._id!];
+    if (this.openHistoryFor === updated._id) {
+      this.loadBandHistory(updated._id!);
+    }
+  }
+
+  /** The row's band details (code, who linked it, replaced bands) — loaded when opened. */
+  toggleBandHistory(item: Shopcart) {
+    if (this.openHistoryFor === item._id) {
+      this.openHistoryFor = null;
+      return;
+    }
+    this.openHistoryFor = item._id!;
+    if (!this.bandHistory[item._id!]) {
+      this.loadBandHistory(item._id!);
+    }
+  }
+
+  private loadBandHistory(passId: string) {
+    this.boxOfficeService.bandHistory(passId).subscribe({
+      next: (res) => this.bandHistory[passId] = res.bands,
+      error: () => {
+        this.openHistoryFor = null;
+        this.notificationService.openErrorSnackBar('Could not load the band details');
+      }
     });
   }
 

@@ -1,8 +1,9 @@
 import { AfterViewInit, Component, Inject, OnDestroy, Optional, ViewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Observable, map } from 'rxjs';
 import { NgxScannerQrcodeComponent, ScannerQRCodeConfig, ScannerQRCodeResult } from 'ngx-scanner-qrcode';
 
-import { BoxOfficeService } from '../../box-office.service';
+import { BandLookup, BoxOfficeService } from '../../box-office.service';
 import { lookupErrorMessage } from '../../box-office.utils';
 import { GateFeedbackService } from '../../../core/gate-feedback.service';
 
@@ -10,17 +11,45 @@ import { GateFeedbackService } from '../../../core/gate-feedback.service';
 export const SCAN_MAX_RETRIES = 3;
 export const SCAN_RETRY_DELAY_MS = 1500;
 
+export type BandPurpose = 'admit' | 'link' | 'replace';
+
 /**
- * 'booking' (default) checks a ticket QR with big-api and closes with the
- * booking id. 'band' (Link Band) reads a wrist band QR and just shows what
- * was read — demo only for now, nothing is saved until the band id format
- * is decided.
+ * 'booking' (default, Registration's Scan QR) reads a ticket QR or a wrist
+ * band and closes with the booking id. 'band' reads the wrist band for one
+ * Festival Pass (Admit / Link band / Replace band) and closes with a
+ * BandScanResult — the caller saves it.
  */
 export interface QrScannerData {
   mode?: 'booking' | 'band';
-  /** Band mode: whose band is being linked, shown under the title. */
+  purpose?: BandPurpose;
+  /** Band mode: whose band is being scanned, shown under the title. */
   attendeeName?: string;
+  /** Band mode: the Festival Pass, so its own band is recognised. */
+  passId?: string;
 }
+
+export interface BandScanResult {
+  raw: string;
+  code: string;
+  /** Replace only. */
+  reason?: string;
+}
+
+const TITLES: Record<BandPurpose, string> = {
+  admit: 'Admit: Scan Wrist Band',
+  link: 'Link Wrist Band',
+  replace: 'Replace Wrist Band'
+};
+const CONFIRM: Record<BandPurpose, string> = {
+  admit: 'Admit and link band',
+  link: 'Link band',
+  replace: 'Replace band'
+};
+
+/** Ticket email QRs are JSON; everything else is treated as a band. */
+const isTicketQr = (text: string) => text.trim().startsWith('{');
+
+type CheckResult = { kind: 'ticket'; ticketId: string } | { kind: 'band'; band: BandLookup };
 
 @Component({
   selector: 'app-box-office-qrscanner-popup',
@@ -57,9 +86,20 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly mode: 'booking' | 'band';
+  readonly purpose: BandPurpose;
   readonly attendeeName: string;
-  /** Band mode: the value read from the wrist band, once scanned. */
-  bandValue = '';
+  private readonly passId: string;
+
+  /** Camera stopped (and hidden) while a scanned band waits for staff. */
+  paused = false;
+  /** The scanned text while paused. */
+  private pausedRaw = '';
+  /** The last band looked up — shown while paused. */
+  band: BandLookup | null = null;
+  /** Band mode: the scanned band can be used for this pass. */
+  bandOk = false;
+  /** Replace only. */
+  reason = '';
 
   constructor(
     public dialogRef: MatDialogRef<BoxOfficeQrscannerPopupComponent>,
@@ -68,7 +108,22 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
     @Optional() @Inject(MAT_DIALOG_DATA) data: QrScannerData | null
   ) {
     this.mode = data?.mode ?? 'booking';
+    this.purpose = data?.purpose ?? 'admit';
     this.attendeeName = data?.attendeeName ?? '';
+    this.passId = data?.passId ?? '';
+  }
+
+  get title(): string {
+    return this.mode === 'band' ? TITLES[this.purpose] : 'Scan Ticket QR or Band';
+  }
+
+  get confirmLabel(): string {
+    return CONFIRM[this.purpose];
+  }
+
+  /** Band mode: whether the band is the pass's own (already linked). */
+  get isOwnBand(): boolean {
+    return this.band?.state === 'active' && this.band.owner?.passId === this.passId;
   }
 
   ngAfterViewInit(): void {
@@ -88,44 +143,46 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
   }
 
   // Email epic: ticket QRs are signed, and only big-api holds the key, so
-  // every scan is checked there. A valid code closes the dialog with the
-  // booking id (the caller opens Booking Found); a rejected one shows the
-  // reason and keeps the camera running for the next attempt.
+  // every scan is checked there. Bands are looked up there too. A rejected
+  // code shows the reason and keeps the camera running for the next attempt.
   onEvent(results: ScannerQRCodeResult[], action?: any): void {
     const text = results?.[0]?.value;
-    if (!text) return;
+    if (!text || this.checking || this.paused) return;
+    if (this.mode === 'booking' && text === this.lastRejected) return;
     if (this.mode === 'band') {
-      // Camera frames keep arriving until stop() takes effect — keep the first read.
-      if (this.bandValue) return;
-      this.bandValue = text;
-      this.gateFeedback.found();
-      action?.stop();
-      return;
+      // One band per scan: stop the camera and wait for staff.
+      this.pause(text, action);
     }
-    if (this.checking || text === this.lastRejected) return;
-    this.verify(text, action, 0);
+    this.check(text, action, 0);
   }
 
-  /** Band mode: discard the read value and turn the camera back on. */
-  scanBandAgain(): void {
-    this.gateFeedback.unlock();
-    this.bandValue = '';
-    this.startCamera();
+  private request(text: string): Observable<CheckResult> {
+    if (this.mode === 'booking' && isTicketQr(text)) {
+      return this.boxOfficeService.verifyQr(text).pipe(map(res => ({ kind: 'ticket' as const, ticketId: res.ticketId })));
+    }
+    return this.boxOfficeService.lookupBand(text).pipe(map(band => ({ kind: 'band' as const, band })));
   }
 
   // A connection/server failure says nothing about the QR itself, so it is
   // retried (up to SCAN_MAX_RETRIES, with a pause each time) before giving
   // up. `checking` stays true while waiting so camera frames don't start a
   // parallel check.
-  private verify(text: string, action: any, retry: number): void {
+  private check(text: string, action: any, retry: number): void {
     this.checking = true;
-    this.boxOfficeService.verifyQr(text).subscribe({
+    this.request(text).subscribe({
       next: res => {
         this.checking = false;
         this.message = '';
-        this.gateFeedback.found();
-        action?.stop();
-        this.dialogRef.close(res.ticketId);
+        this.isError = false;
+        if (res.kind === 'ticket') {
+          this.gateFeedback.found();
+          action?.stop();
+          this.dialogRef.close(res.ticketId);
+        } else if (this.mode === 'band') {
+          this.onBandForPass(res.band);
+        } else {
+          this.onBandAtGate(res.band, text, action);
+        }
       },
       error: err => {
         const transient = err?.status === 0 || err?.status >= 500;
@@ -135,14 +192,16 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
           this.message = `${reason} Retrying (${retry + 1} of ${SCAN_MAX_RETRIES})…`;
           this.retryTimer = setTimeout(() => {
             this.retryTimer = null;
-            this.verify(text, action, retry + 1);
+            this.check(text, action, retry + 1);
           }, SCAN_RETRY_DELAY_MS);
           return;
         }
         this.checking = false;
-        this.lastRejected = text;
         this.message = reason;
-        this.canScanAgain = transient;
+        if (this.mode === 'booking') {
+          this.lastRejected = text;
+          this.canScanAgain = transient;
+        }
         if (transient) {
           this.gateFeedback.error();
         } else {
@@ -150,6 +209,86 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
         }
       }
     });
+  }
+
+  /** Band mode: can this band go on (or already be on) this pass? */
+  private onBandForPass(band: BandLookup): void {
+    this.band = band;
+    this.bandOk = false;
+    if (band.state === 'replaced') {
+      this.gateFeedback.notFound();
+      return;
+    }
+    if (band.state === 'active' && !this.isOwnBand) {
+      const order = band.owner?.orderId != null ? ` (order ${band.owner.orderId})` : '';
+      this.message = `This band is already linked to ${band.owner?.name || 'someone else'}${order}.`;
+      this.gateFeedback.notFound();
+      return;
+    }
+    if (this.isOwnBand && this.purpose === 'replace') {
+      this.message = 'This is the band they already have. Scan the new band.';
+      this.gateFeedback.notFound();
+      return;
+    }
+    this.bandOk = true;
+    this.gateFeedback.found();
+  }
+
+  /** Booking mode: a band scanned at the gate opens its owner's booking. */
+  private onBandAtGate(band: BandLookup, text: string, action: any): void {
+    if (band.state === 'active' && band.owner?.ticketId) {
+      this.gateFeedback.found();
+      action?.stop();
+      this.dialogRef.close(band.owner.ticketId);
+      return;
+    }
+    if (band.state === 'replaced') {
+      // Flag and block: staff decide whether to open the old owner's booking.
+      this.pause(text, action);
+      this.band = band;
+      this.gateFeedback.notFound();
+      return;
+    }
+    this.lastRejected = text;
+    this.message = band.state === 'unknown'
+      ? 'This band isn\'t linked to anyone yet. Find the booking and Admit to link it.'
+      : 'No booking matches this band.';
+    this.gateFeedback.notFound();
+  }
+
+  private pause(text: string, action: any): void {
+    this.paused = true;
+    this.pausedRaw = text;
+    action?.stop();
+  }
+
+  /** Discard the scanned band and turn the camera back on. */
+  scanBandAgain(): void {
+    this.gateFeedback.unlock();
+    this.clearRetry();
+    this.checking = false;
+    this.paused = false;
+    this.pausedRaw = '';
+    this.band = null;
+    this.bandOk = false;
+    this.message = '';
+    this.isError = false;
+    this.startCamera();
+  }
+
+  /** Band mode: hand the band to the caller, who saves it. */
+  confirmBand(): void {
+    if (!this.bandOk || !this.band) return;
+    if (this.purpose === 'replace' && !this.reason.trim()) return;
+    const result: BandScanResult = { raw: this.pausedRaw, code: this.band.code };
+    if (this.purpose === 'replace') result.reason = this.reason.trim();
+    this.dialogRef.close(result);
+  }
+
+  /** Booking mode, replaced band: staff checked the person and open the booking anyway. */
+  openFlaggedBooking(): void {
+    const ticketId = this.band?.owner?.ticketId;
+    if (ticketId) this.dialogRef.close(ticketId);
   }
 
   /** After the retries ran out: allow the same code to be checked again. */

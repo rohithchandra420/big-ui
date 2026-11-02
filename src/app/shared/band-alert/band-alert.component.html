@@ -1,0 +1,28 @@
+<div class="band-alert" role="alert">
+  <div class="ba-head">
+    <mat-icon class="ba-icon ms-fill">gpp_bad</mat-icon>
+    <div>
+      <div class="ba-title">Replaced band</div>
+      <div class="ba-sub">This band is no longer valid. Check the person before you continue.</div>
+    </div>
+  </div>
+  <dl class="ba-rows">
+    <div class="ba-row">
+      <dt>Belonged to</dt>
+      <dd>{{ band.owner?.name || 'Unknown' }}</dd>
+    </div>
+    <div class="ba-row" *ngIf="band.owner?.passTypeName || band.owner?.orderId != null">
+      <dt>Pass</dt>
+      <dd>{{ band.owner?.passTypeName }}<ng-container *ngIf="band.owner?.orderId != null"> · Order {{ band.owner?.orderId }}</ng-container></dd>
+    </div>
+    <div class="ba-row" *ngIf="band.reason">
+      <dt>Reason</dt>
+      <dd>{{ band.reason }}</dd>
+    </div>
+    <div class="ba-row" *ngIf="band.currentCode">
+      <dt>Their band now</dt>
+      <dd class="ba-code">{{ band.currentCode }}</dd>
+    </div>
+  </dl>
+  <ng-content></ng-content>
+</div>

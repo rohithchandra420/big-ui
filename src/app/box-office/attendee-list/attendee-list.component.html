@@ -12,7 +12,8 @@
 </app-allocate-tent>
 
 <ng-container *ngIf="!activeCounterItem && !activeAllocateItem">
-  <div class="att-row" *ngFor="let item of sortedShopcart"
+  <ng-container *ngFor="let item of sortedShopcart">
+  <div class="att-row"
        [ngClass]="isFestivalPass(item) ? 'att-row-festival' : 'att-row-tent'">
     <div class="av" [ngClass]="isFestivalPass(item) ? (isDetailsComplete(item) ? 'av-g' : 'av-a') : 'av-b'">{{ attendeeInitials(item) }}</div>
     <div class="att-info">
@@ -31,6 +32,11 @@
           <span class="badge bx">
             {{ item.isAdmitted ? 'Admitted' : 'Not admitted' }}
           </span>
+          <button type="button" class="badge bg band-badge" *ngIf="item.band"
+                  [attr.aria-expanded]="openHistoryFor === item._id" (click)="toggleBandHistory(item)">
+            <mat-icon class="att-type-icon">watch</mat-icon>Band
+            <mat-icon class="att-type-icon band-caret">{{ openHistoryFor === item._id ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
           <!-- Enhancement (2026-08-20): allocatedTentId was already set on the
                Festival Pass and kept in sync by onTentAllocated/vacateAttendee
                below — it just wasn't rendered here. tentNoFor() is the same
@@ -54,12 +60,17 @@
         <ng-container *ngIf="isDetailsComplete(item); else incompleteActions">
           <!-- "Admit", not "Check In": Check In is reserved for the planned
                online pre-arrival form (one-time link per participant). -->
+          <!-- Admit scans the wrist band first: nobody is admitted without one. -->
           <button class="btn-secondary att-action" *ngIf="!item.isAdmitted" (click)="admitAttendee(item)">
             Admit
           </button>
-          <!-- Shown before and after admission — a band may be handed out after. -->
-          <button class="btn-secondary att-action" (click)="openLinkBand(item)">
+          <!-- Only for passes admitted before bands were linked at Admit. -->
+          <button class="btn-secondary att-action" *ngIf="item.isAdmitted && !item.band" (click)="openLinkBand(item)">
             Link Band
+          </button>
+          <button class="btn-secondary att-action" *ngIf="item.isAdmitted && item.band && canReplaceBand"
+                  (click)="openReplaceBand(item)">
+            Replace Band
           </button>
         </ng-container>
         <ng-template #incompleteActions>
@@ -82,4 +93,20 @@
       </button>
     </div>
   </div>
+
+  <!-- Band details: the current band first, then any replaced ones. -->
+  <div class="band-history" *ngIf="openHistoryFor === item._id">
+    <p class="bh-loading" *ngIf="!bandHistory[item._id!]">Loading…</p>
+    <div class="bh-entry" *ngFor="let b of bandHistory[item._id!]" [class.bh-old]="b.status === 'replaced'">
+      <div class="bh-top">
+        <span class="bh-code">{{ b.code }}</span>
+        <span class="badge" [ngClass]="b.status === 'active' ? 'bg' : 'bx'">{{ b.status === 'active' ? 'Current' : 'Replaced' }}</span>
+      </div>
+      <div class="bh-meta">Linked {{ b.linkedAt | date:'d MMM, h:mm a' }}<ng-container *ngIf="b.linkedBy?.name"> by {{ b.linkedBy?.name }}</ng-container></div>
+      <div class="bh-meta" *ngIf="b.status === 'replaced'">
+        Replaced {{ b.retiredAt | date:'d MMM, h:mm a' }}<ng-container *ngIf="b.retiredBy?.name"> by {{ b.retiredBy?.name }}</ng-container><ng-container *ngIf="b.reason">: {{ b.reason }}</ng-container>
+      </div>
+    </div>
+  </div>
+  </ng-container>
 </ng-container>

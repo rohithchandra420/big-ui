@@ -1,28 +1,40 @@
-<h2 mat-dialog-title>{{ mode === 'band' ? 'Link Wrist Band' : 'Scan Booking QR' }}</h2>
+<h2 mat-dialog-title>{{ title }}</h2>
 
 <mat-dialog-content>
   <p class="scan-for" *ngIf="mode === 'band' && attendeeName">Scan the wrist band for <strong>{{ attendeeName }}</strong></p>
 
-  <!-- Hidden, not removed, once a band is read — Scan again restarts the same camera. -->
-  <div [class.camera-hidden]="!!bandValue">
+  <!-- Hidden, not removed, while paused — Scan again restarts the same camera. -->
+  <div [class.camera-hidden]="paused">
     <ngx-scanner-qrcode #action="scanner" [config]="config" (event)="onEvent($event, action)"></ngx-scanner-qrcode>
   </div>
 
-  <p *ngIf="action.isLoading" style="font-size: 12px; color: var(--text-muted);">Loading camera…</p>
+  <p *ngIf="action.isLoading" class="scan-loading">Loading camera…</p>
+  <p *ngIf="paused && !band && !message" class="scan-loading">Checking the band…</p>
   <div class="alert scan-msg" [class.ad]="!isError" [class.aw]="isError" *ngIf="message" role="alert">{{ message }}</div>
 
-  <div class="alert as band-result" *ngIf="bandValue" role="status">
-    <div class="band-result-lbl">Wrist band scanned</div>
-    <div class="band-result-val">{{ bandValue }}</div>
-    <div class="band-result-note">Demo only — the band is not saved yet.</div>
+  <app-band-alert *ngIf="band?.state === 'replaced'" [band]="band!"></app-band-alert>
+
+  <div class="alert as band-result" *ngIf="bandOk && band" role="status">
+    <div class="band-result-lbl">{{ isOwnBand ? 'This band is already theirs' : 'New band' }}</div>
+    <div class="band-result-val">{{ band.code }}</div>
+  </div>
+
+  <div class="field band-reason" *ngIf="bandOk && purpose === 'replace'">
+    <label for="band-reason">Reason</label>
+    <input id="band-reason" type="text" maxlength="200" [(ngModel)]="reason"
+           placeholder="e.g. Band broke, lost at the stage">
   </div>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
   <button class="btn-secondary" *ngIf="canScanAgain" (click)="scanAgain()">Scan again</button>
-  <ng-container *ngIf="bandValue; else cancelBtn">
+  <ng-container *ngIf="paused; else cancelBtn">
+    <button class="btn-ghost" (click)="close()">Cancel</button>
     <button class="btn-secondary" (click)="scanBandAgain()">Scan again</button>
-    <button class="btn-cta" (click)="close()">Done</button>
+    <button class="btn-cta" *ngIf="mode === 'band' && bandOk"
+            [disabled]="purpose === 'replace' && !reason.trim()" (click)="confirmBand()">{{ confirmLabel }}</button>
+    <button class="btn-danger" *ngIf="mode === 'booking' && band?.state === 'replaced' && band?.owner?.ticketId"
+            (click)="openFlaggedBooking()">Checked: open {{ band?.owner?.name || 'their' }}'s booking</button>
   </ng-container>
   <ng-template #cancelBtn>
     <button class="btn-ghost" (click)="close()">Cancel</button>

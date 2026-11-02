@@ -9,6 +9,25 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.23.0] - 2026-11-03
+
+### Added
+- **Wrist bands** (Workshops epic, first part):
+  - **Admit** now opens the wrist band scanner: scan the person's band to admit them and link the band in one step.
+  - **Link Band** (now saved) for people admitted before bands existed.
+  - **Replace Band** with a reason, for a lost or broken band (Box Office staff, Directors, Admins, Developers).
+  - A band badge on each admitted Festival Pass opens its band history: current and replaced bands, who linked or replaced them and when.
+  - A band already linked to someone else is refused, naming who has it. A replaced band shows a red "Replaced band" card: whose it was, why, and their band now.
+- **Scan Ticket QR or Band** on Registration: the scanner now also reads wrist bands and opens that person's booking.
+
+### Changed
+- Link Band is no longer a demo: it saves the band to the Festival Pass.
+
+### Notes
+- No new dependencies. 777/777 unit tests, 22/22 end-to-end tests.
+
+---
+
 ## [1.22.0] - 2026-11-02
 
 ### Added
