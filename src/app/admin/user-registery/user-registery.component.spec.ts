@@ -59,6 +59,7 @@ describe('UserRegisteryComponent', () => {
   const authStub = {
     get user() { return userSubject; },
     deptNameToKey: (name: string) => (name || '').toLowerCase().replace(/\s+/g, '-'),
+    deptKeyOf: (d: any) => d?.key || (d?.name || '').toLowerCase().replace(/\s+/g, '-'),
     getEffectivePermissionMap: (u: any) => {
       const map: any = {};
       (u.permissions || []).forEach((p: string) => { const [k, l] = p.split(':'); map[k] = l; });

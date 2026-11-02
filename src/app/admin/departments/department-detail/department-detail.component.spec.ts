@@ -1,16 +1,17 @@
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
-import { RouterTestingModule } from '@angular/router/testing';
-import { ActivatedRoute, Router } from '@angular/router';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { DepartmentDetailComponent } from './department-detail.component';
 import { AdminService, DeptDetail } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
+import { AuthService } from '../../../core/auth.service';
 
 const mockDetail: DeptDetail = {
   _id: 'd1',
   name: 'Box Office',
+  key: 'box-office',
   description: 'Handles ticket sales',
   tls: [{ _id: 'tl1', name: 'Alice TL' }],
   volunteers: [{ _id: 'v1', name: 'Bob VOL', departments: [{ department: { _id: 'd1', name: 'Box Office' }, access: ['read'] }] }]
@@ -29,11 +30,10 @@ describe('DepartmentDetailComponent', () => {
   let fixture: ComponentFixture<DepartmentDetailComponent>;
   let adminServiceSpy: jasmine.SpyObj<AdminService>;
   let notificationSpy: jasmine.SpyObj<NotificationService>;
-  let router: Router;
 
   beforeEach(async () => {
     adminServiceSpy = jasmine.createSpyObj('AdminService', [
-      'getDepartmentDetail', 'getAllUsers', 'updateDepartment'
+      'getDepartmentDetail', 'getAllUsers', 'updateDepartment', 'createDepartment'
     ]);
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
 
@@ -43,27 +43,25 @@ describe('DepartmentDetailComponent', () => {
     await TestBed.configureTestingModule({
       declarations: [DepartmentDetailComponent],
       imports: [
-        ReactiveFormsModule,
-        RouterTestingModule
+        MatAutocompleteModule, ReactiveFormsModule
       ],
       providers: [
         { provide: AdminService, useValue: adminServiceSpy },
         { provide: NotificationService, useValue: notificationSpy },
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: { get: () => 'd1' } } }
-        }
+        { provide: AuthService, useValue: { deptNameToKey: (n: string) => (n || '').toLowerCase().replace(/\s+/g, '-') } }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
 
-    router = TestBed.inject(Router);
     fixture = TestBed.createComponent(DepartmentDetailComponent);
     component = fixture.componentInstance;
+    component.deptId = 'd1';
+    component.reset();
     fixture.detectChanges();
   });
 
-  it('loads department detail on init using route param', () => {
+  it('loads the department and shows its details first (view mode)', () => {
+    expect(component.mode).toBe('view');
     expect(adminServiceSpy.getDepartmentDetail).toHaveBeenCalledWith('d1');
     expect(component.detail).toEqual(mockDetail);
   });
@@ -72,6 +70,80 @@ describe('DepartmentDetailComponent', () => {
     adminServiceSpy.getDepartmentDetail.and.returnValue(throwError(() => new Error('fail')));
     component.loadDetail('d1');
     expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('Error loading department');
+  });
+
+  it('view shows the name and key in the panel header, and an Edit button', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.panel-title')!.textContent!.trim()).toBe('Box Office');
+    expect(el.querySelector('.panel-sub')!.textContent).toContain('box-office');
+    expect(el.querySelector('.panel-actions .btn-cta')!.textContent).toContain('Edit');
+  });
+
+  it('Edit switches the panel to the form; Esc goes back to the details, then closes', () => {
+    const closed = spyOn(component.closed, 'emit');
+    const el = fixture.nativeElement as HTMLElement;
+    (el.querySelector('.panel-actions .btn-cta') as HTMLElement).click();
+    fixture.detectChanges();
+    expect(component.mode).toBe('edit');
+    expect(el.querySelector('.panel-title')!.textContent).toContain('Edit department');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(component.mode).toBe('view');
+    expect(closed).not.toHaveBeenCalled();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(closed).toHaveBeenCalled();
+  });
+
+  describe('create mode', () => {
+    beforeEach(() => {
+      component.deptId = null;
+      component.reset();
+      fixture.detectChanges();
+    });
+
+    it('starts blank, with a Key field that follows the name until edited', () => {
+      expect(component.mode).toBe('create');
+      component.editForm.get('name')!.setValue('Box Office');
+      expect(component.editForm.get('key')!.value).toBe('box-office');
+      component.editForm.get('key')!.setValue('gate');
+      component.onKeyInput();
+      component.editForm.get('name')!.setValue('Front Gate');
+      expect(component.editForm.get('key')!.value).toBe('gate');
+    });
+
+    it('refuses a bad key', () => {
+      component.editForm.get('name')!.setValue('Ops');
+      component.editForm.get('key')!.setValue('Ops Team');
+      expect(component.formInvalid).toBeTrue();
+    });
+
+    it('creates the department, then adds the chosen members', () => {
+      const changed = spyOn(component.changed, 'emit');
+      adminServiceSpy.createDepartment.and.returnValue(of({ _id: 'd5', name: 'Finance' }));
+      adminServiceSpy.updateDepartment.and.returnValue(of({}));
+      component.editForm.get('name')!.setValue('Finance');
+      component.editedTls = [{ _id: 'tl2', name: 'Carol DIR' }];
+      component.editedVolunteers = [{ _id: 'v3', name: 'Eve VOL' }];
+      component.save();
+      expect(adminServiceSpy.createDepartment).toHaveBeenCalledWith({ name: 'Finance', key: 'finance', description: '' });
+      expect(adminServiceSpy.updateDepartment).toHaveBeenCalledWith('d5', { addUserIds: ['tl2', 'v3'] });
+      expect(changed).toHaveBeenCalledWith('d5');
+      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Department created');
+    });
+
+    it('creates without a second request when no members were added', () => {
+      adminServiceSpy.createDepartment.and.returnValue(of({ _id: 'd5', name: 'Finance' }));
+      component.editForm.get('name')!.setValue('Finance');
+      component.save();
+      expect(adminServiceSpy.updateDepartment).not.toHaveBeenCalled();
+    });
+
+    it('Cancel closes the panel', () => {
+      const closed = spyOn(component.closed, 'emit');
+      component.cancel();
+      expect(closed).toHaveBeenCalled();
+    });
   });
 
   describe('enterEditMode()', () => {
@@ -88,9 +160,9 @@ describe('DepartmentDetailComponent', () => {
       expect(component.editForm.get('description')!.value).toBe('Handles ticket sales');
     });
 
-    it('sets editMode to true', () => {
+    it('switches to edit mode', () => {
       component.enterEditMode();
-      expect(component.editMode).toBeTrue();
+      expect(component.mode).toBe('edit');
     });
 
     it('triggers getAllUsers when users have not been loaded yet', () => {
@@ -106,12 +178,12 @@ describe('DepartmentDetailComponent', () => {
     });
   });
 
-  describe('cancelEdit()', () => {
-    it('sets editMode to false and clears warnings', () => {
+  describe('cancel()', () => {
+    it('leaves edit for the details and clears warnings', () => {
       component.enterEditMode();
       component.volWarnings = { v2: 'Finance' };
-      component.cancelEdit();
-      expect(component.editMode).toBeFalse();
+      component.cancel();
+      expect(component.mode).toBe('view');
       expect(component.volWarnings).toEqual({});
     });
   });
@@ -225,7 +297,7 @@ describe('DepartmentDetailComponent', () => {
 
     it('exits edit mode and reloads detail on success', () => {
       component.save();
-      expect(component.editMode).toBeFalse();
+      expect(component.mode).toBe('view');
       expect(adminServiceSpy.getDepartmentDetail).toHaveBeenCalledTimes(2);
       expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Department updated');
     });
@@ -235,7 +307,7 @@ describe('DepartmentDetailComponent', () => {
         throwError(() => ({ error: { message: 'Server error' } }))
       );
       component.save();
-      expect(component.editMode).toBeTrue();
+      expect(component.mode).toBe('edit');
       expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('Server error');
     });
 
@@ -246,9 +318,4 @@ describe('DepartmentDetailComponent', () => {
     });
   });
 
-  it('goBack() navigates to /admin/departments', () => {
-    const navSpy = spyOn(router, 'navigate');
-    component.goBack();
-    expect(navSpy).toHaveBeenCalledWith(['/admin/departments']);
-  });
 });

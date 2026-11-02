@@ -1,0 +1,157 @@
+<!-- Content of the Planner's slide-in panel (the .panel shell is in
+     workshop-planner.component.html): view · edit · new. -->
+
+<div class="panel-hd">
+  <div class="hd-text">
+    <div class="panel-title">{{ title }}</div>
+    <div class="panel-sub" *ngIf="mode === 'view' && session">
+      <span class="cat-pill" *ngIf="session.workshop?.category as c" [style.--c]="c.colour"><mat-icon>{{ c.icon }}</mat-icon>{{ c.name }}</span>
+      {{ dayLabel }} · {{ time(session.start) }}–{{ time(session.end) }}
+    </div>
+    <div class="panel-sub" *ngIf="mode === 'edit' && session">{{ session.workshop?.title }}</div>
+  </div>
+  <button class="panel-close" (click)="close()" aria-label="Close" title="Close">✕</button>
+</div>
+
+<!-- ── View ───────────────────────────────────────────────── -->
+<ng-container *ngIf="mode === 'view' && session">
+  <div class="panel-body">
+    <!-- Registration: state + the switch for the Workshop team -->
+    <div class="reg" [class.open]="state === 'open'">
+      <div class="reg-head">
+        <span class="reg-dot"></span>
+        <div class="reg-text">
+          <b>Pre-registration {{ state === 'open' ? 'open' : state === 'soon' ? 'opens at ' + time(session.regOpensAt) : 'closed' }}</b>
+          <span>{{ session.regManual === null ? 'Following the times' : 'Set by hand at the door' }}</span>
+        </div>
+      </div>
+      <div class="seg" role="group" aria-label="Pre-registration" *ngIf="canRun">
+        <button type="button" [class.on]="session.regManual === null" [disabled]="saving" (click)="setRegistration(null)">Follow times</button>
+        <button type="button" [class.on]="session.regManual === true" [disabled]="saving" (click)="setRegistration(true)">Open now</button>
+        <button type="button" [class.on]="session.regManual === false" [disabled]="saving" (click)="setRegistration(false)">Close now</button>
+      </div>
+    </div>
+
+    <!-- Lists (release 3) -->
+    <div class="counts" *ngIf="session.counts as c">
+      <div><b>{{ c.pre }}<small>/{{ session.preRegLimit || session.venue?.capacity }}</small></b><span>On list</span></div>
+      <div><b>{{ c.wait }}</b><span>Waitlist</span></div>
+      <div><b>{{ c.walkin }}</b><span>Walk-ins</span></div>
+      <div><b>{{ c.attended }}<small>/{{ session.venue?.capacity }}</small></b><span>Attended</span></div>
+    </div>
+    <a class="btn-cta lists-btn" *ngIf="canRun" [routerLink]="['/workshops/sessions', session._id]">
+      <mat-icon>format_list_numbered</mat-icon>Open lists &amp; door
+    </a>
+
+    <dl class="kv">
+      <dt>Venue</dt><dd>{{ session.venue?.name }} <span class="muted">(capacity {{ session.venue?.capacity }})</span></dd>
+      <dt>Facilitators</dt>
+      <dd>
+        {{ facilitators.join(', ') || '—' }}
+        <div class="muted" *ngIf="session.facilitatorsOverride?.length">Substitute for this session; usually {{ session.workshop?.facilitators?.join(', ') || 'none set' }}</div>
+      </dd>
+      <dt>Registration</dt>
+      <dd>{{ session.regOpensAt ? time(session.regOpensAt) : 'Open from now' }} → {{ time(session.regClosesAt || session.start) }}</dd>
+      <dt>Cut-off</dt>
+      <dd>
+        <ng-container *ngIf="session.cutoffAt; else noCut">{{ time(session.cutoffAt) }} <span class="muted">— then the waitlist and walk-ins go in</span></ng-container>
+        <ng-template #noCut><span class="muted">None</span></ng-template>
+      </dd>
+      <dt>List limit</dt><dd>{{ session.preRegLimit || session.venue?.capacity }} <span class="muted">(soft{{ session.preRegLimit ? '' : ', the venue capacity' }})</span></dd>
+    </dl>
+
+    <div class="warns" *ngIf="overlaps.length || warnings.length">
+      <mat-icon>warning</mat-icon>
+      <div>
+        <div *ngFor="let o of overlaps; trackBy: trackId">Overlaps "{{ o.workshop?.title }}" in the same venue ({{ time(o.start) }}–{{ time(o.end) }}).</div>
+        <ng-container *ngFor="let w of warnings">
+          <div *ngIf="!w.startsWith('Overlaps')">{{ w }}.</div>
+        </ng-container>
+        <div class="muted">Allowed: the Workshop Team Lead decides.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-actions">
+    <button class="btn-ghost" (click)="close()">Close</button>
+    <button class="btn-danger" *ngIf="canManage" (click)="remove()" [disabled]="saving">Delete</button>
+    <button class="btn-cta" *ngIf="canManage" (click)="edit()"><mat-icon>edit</mat-icon> Edit</button>
+  </div>
+</ng-container>
+
+<!-- ── Edit / New ─────────────────────────────────────────── -->
+<ng-container *ngIf="mode !== 'view'">
+  <div class="panel-body">
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="field">
+        <label>Workshop *</label>
+        <app-select formControlName="workshop">
+          <app-option value="" [disabled]="true">Pick a workshop</app-option>
+          <app-option *ngFor="let w of schedule?.workshops; trackBy: trackId" [value]="w._id">{{ w.title }}</app-option>
+        </app-select>
+      </div>
+      <div class="field">
+        <label>Venue *</label>
+        <app-select formControlName="venue">
+          <app-option value="" [disabled]="true">Pick a venue</app-option>
+          <app-option *ngFor="let v of schedule?.venues; trackBy: trackId" [value]="v._id">{{ v.name }} · capacity {{ v.capacity }}</app-option>
+        </app-select>
+      </div>
+      <div class="field" *ngIf="days.length">
+        <label>Day *</label>
+        <app-select formControlName="day">
+          <app-option *ngFor="let d of days; trackBy: trackDay" [value]="d.date">{{ d.label }} ({{ d.sub }})</app-option>
+        </app-select>
+      </div>
+      <div class="field" *ngIf="!days.length">
+        <label>Day *</label>
+        <input type="date" formControlName="day">
+      </div>
+      <div class="form-two-col">
+        <div class="field"><label>Start *</label><input type="time" step="300" formControlName="start"></div>
+        <div class="field"><label>End *</label><input type="time" step="300" formControlName="end"></div>
+      </div>
+      <div class="form-two-col">
+        <div class="field">
+          <label>Registration opens</label><input type="time" step="300" formControlName="regOpens">
+          <span class="field-hint">Empty: open straight away</span>
+        </div>
+        <div class="field">
+          <label>Registration closes</label><input type="time" step="300" formControlName="regCloses">
+          <span class="field-hint">Empty: at the start</span>
+        </div>
+      </div>
+      <div class="form-two-col">
+        <div class="field">
+          <label>Cut-off</label><input type="time" step="300" formControlName="cutoff">
+          <span class="field-hint">After it, people on the list who haven't come lose their place</span>
+        </div>
+        <div class="field">
+          <label>List limit</label><input type="number" min="1" max="10000" formControlName="limit" placeholder="Venue capacity">
+          <span class="field-hint">Soft: past it, people go on the waitlist</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Substitute facilitators (this session only)</label>
+        <input type="text" formControlName="substitutes" maxlength="400" placeholder="Names, separated by commas">
+        <span class="field-hint">Leave empty to use the workshop's facilitators</span>
+      </div>
+
+      <div class="warns" *ngIf="draftWarnings.length">
+        <mat-icon>warning</mat-icon>
+        <div>
+          <div *ngFor="let w of draftWarnings">{{ w }}.</div>
+          <div class="muted">You can still save it.</div>
+        </div>
+      </div>
+      <button type="submit" hidden></button>
+    </form>
+  </div>
+
+  <div class="panel-actions">
+    <button class="btn-ghost" (click)="cancel()" [disabled]="saving">Cancel</button>
+    <button class="btn-cta" (click)="save()" [disabled]="saving">
+      {{ saving ? 'Saving…' : (mode === 'create' ? 'Add session' : 'Save Changes') }}
+    </button>
+  </div>
+</ng-container>

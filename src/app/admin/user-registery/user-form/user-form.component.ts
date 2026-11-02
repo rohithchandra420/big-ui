@@ -35,7 +35,7 @@ export class UserFormComponent implements OnInit {
   @Input() user: any = null;
   @Input() roles: { _id: string; name: string }[] = [];
   /** DEV/DIR/ADMIN: every department. TL: only their own. */
-  @Input() departments: { _id: string; name: string }[] = [];
+  @Input() departments: { _id: string; name: string; key?: string }[] = [];
   @Input() isTopLevel = false;
 
   /** Emits the created/updated user as returned by the backend. */
@@ -121,7 +121,7 @@ export class UserFormComponent implements OnInit {
 
     (u.permissions || []).forEach((perm: string) => {
       const [module, action] = perm.split(':');
-      const dept = this.departments.find(d => this.authService.deptNameToKey(d.name) === module);
+      const dept = this.departments.find(d => this.authService.deptKeyOf(d) === module);
       if (dept && this.permLevels.includes(action as PermLevel)) {
         this.deptSelections[dept._id] = action as PermLevel;
       }
@@ -138,7 +138,7 @@ export class UserFormComponent implements OnInit {
     Object.entries(this.deptSelections).forEach(([deptId, level]) => {
       if (level !== 'none') {
         const dept = this.departments.find(d => d._id === deptId);
-        if (dept) permissions.push(`${this.authService.deptNameToKey(dept.name)}:${level}`);
+        if (dept) permissions.push(`${this.authService.deptKeyOf(dept)}:${level}`);
       }
     });
     return permissions;

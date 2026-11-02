@@ -35,6 +35,13 @@ export class AuthService {
         return (name || '').toLowerCase().replace(/\s+/g, '-');
     }
 
+    /** A department's permission key: its fixed `key`, or the name-based key
+     *  for departments not migrated yet (same fallback as big-api's deptKeyOf). */
+    deptKeyOf(dept: { name?: string; key?: string } | null | undefined): string {
+        if (!dept) return '';
+        return dept.key || this.deptNameToKey(dept.name || '');
+    }
+
     // Effective module -> best tier, including a TL's automatic 'manage' over their own department(s)
     getEffectivePermissionMap(user: User): { [module: string]: 'read' | 'write' | 'manage' } {
         const map: { [module: string]: 'read' | 'write' | 'manage' } = {};
@@ -50,7 +57,7 @@ export class AuthService {
         }
         if (user.role === 'TL') {
             (user.departments || []).forEach(d => {
-                const key = this.deptNameToKey(d.department?.name);
+                const key = this.deptKeyOf(d.department);
                 if (key) map[key] = 'manage';
             });
         }
@@ -63,6 +70,33 @@ export class AuthService {
         const reqLevel = this.permTiers.indexOf(reqAction);
         const level = this.getEffectivePermissionMap(user)[reqModule];
         return level !== undefined && this.permTiers.indexOf(level) >= reqLevel;
+    }
+
+    /** Member of the department with this fixed key (never matched by name). */
+    inDepartmentKey(user: User, key: string): boolean {
+        return (user.departments || []).some(d => this.deptKeyOf(d.department) === key);
+    }
+
+    /** Workshops (release 2), same rule as big-api utils/workshopAccess.js —
+     *  Plan: DEV/DIR/ADMIN, the Workshop department's TL, workshop:manage. */
+    canPlanWorkshops(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        if (user.role === 'TL' && this.inDepartmentKey(user, 'workshop')) return true;
+        return (user.permissions || []).includes('workshop:manage');
+    }
+
+    /** Run: the Plan group, every Workshop department member, workshop:write. */
+    canRunWorkshops(user: User | null): boolean {
+        if (!user) return false;
+        if (this.canPlanWorkshops(user) || this.inDepartmentKey(user, 'workshop')) return true;
+        return (user.permissions || []).includes('workshop:write');
+    }
+
+    /** Reports (with names): the Run group and workshop:read (any tier). */
+    canReadWorkshops(user: User | null): boolean {
+        if (!user) return false;
+        return this.canRunWorkshops(user) || (user.permissions || []).some(p => p.startsWith('workshop:'));
     }
 
     hasDepartmentAccess(user: User, deptName: string): boolean {

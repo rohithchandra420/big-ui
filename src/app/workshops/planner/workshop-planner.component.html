@@ -1,0 +1,68 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Workshop Planner</div>
+    <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · sessions by venue</div>
+  </div>
+  <button class="btn-cta" *ngIf="canManage && hasVenues" (click)="openNew()">+ New session</button>
+</div>
+
+<div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar to see its workshops.</div>
+<div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+<div class="alert alert-danger" *ngIf="calendarError">{{ calendarError }}</div>
+
+<div class="wp" [hidden]="!event">
+  <div class="wp-bar">
+    <div class="wp-days" role="tablist" aria-label="Day">
+      <button type="button" class="wp-day" role="tab" *ngFor="let d of days; trackBy: trackDay"
+              [class.on]="d.date === day" [attr.aria-selected]="d.date === day" (click)="setDay(d.date)">
+        <b>{{ d.label }}</b><span>{{ d.sub }} · {{ dayCounts.get(d.date) || 0 }} session{{ dayCounts.get(d.date) === 1 ? '' : 's' }}</span>
+      </button>
+    </div>
+    <div class="wp-legend" *ngIf="categories.length">
+      <span *ngFor="let c of categories; trackBy: trackId"><i [style.background]="c.colour"></i>{{ c.name }}</span>
+    </div>
+  </div>
+
+  <!-- Now: sessions running right now (numbers only) -->
+  <div class="wp-now" *ngIf="live.length">
+    <div class="wp-now-lbl"><span class="wp-live-dot"></span>Now</div>
+    <button type="button" class="wp-now-card" *ngFor="let l of live; trackBy: trackLive" (click)="openLive(l)">
+      <span class="wp-now-t"><i [style.background]="l.workshop.category?.colour || '#475569'"></i>{{ l.workshop.title }}</span>
+      <span class="wp-now-m">{{ l.venue.name }} · until {{ time(l.end) }}</span>
+      <span class="wp-meter" [class.full]="l.placesLeft === 0"><b [style.width.%]="fill(l)"></b></span>
+      <span class="wp-now-n"><b>{{ l.attended }}/{{ l.venue.capacity }}</b> · {{ l.placesLeft ? l.placesLeft + ' place' + (l.placesLeft === 1 ? '' : 's') + ' left' : 'Full' }}</span>
+    </button>
+  </div>
+
+  <div class="wp-hint" *ngIf="schedule && hasVenues">
+    <ng-container *ngIf="canManage; else readOnly">
+      Drag a session to another venue or time, drag its bottom edge to change its length, or select empty time to add one.
+      Two sessions in one venue at once show a warning, but are allowed.
+    </ng-container>
+    <ng-template #readOnly>Tap a session for its details{{ schedule.canRun ? ' and to open or close its pre-registration' : '' }}.</ng-template>
+  </div>
+  <div class="wp-hint warn" *ngIf="schedule && noEventDates">
+    This event has no dates yet, so only days with sessions are shown. Set the dates in Admin › Events.
+  </div>
+
+  <div class="wp-empty" *ngIf="schedule && !hasVenues">
+    <mat-icon>holiday_village</mat-icon>
+    <p>No workshop venues for this event yet.</p>
+    <a class="btn-cta" *ngIf="canPlan" routerLink="/workshops/setup">Set up venues and workshops</a>
+  </div>
+
+  <div class="wp-scroller" [hidden]="!hasVenues">
+    <div class="wp-cal" [style.min-width.px]="(schedule?.venues?.length || 1) * 150 + 60">
+      <div #dpEl></div>
+    </div>
+  </div>
+  <div class="wp-credit">Calendar: DayPilot Lite (open source, Apache-2.0)</div>
+</div>
+
+<!-- ── Side panel: a session (view / edit / new) ─────────────── -->
+<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
+
+<div class="panel" [class.open]="panelOpen" role="dialog" aria-label="Session" [attr.aria-hidden]="!panelOpen">
+  <app-session-panel *ngIf="panelOpen && schedule" [session]="panelSession" [prefill]="panelPrefill"
+    [schedule]="schedule" [days]="days" (closed)="closePanel()" (changed)="onChanged($event)"></app-session-panel>
+</div>

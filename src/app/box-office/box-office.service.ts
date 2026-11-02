@@ -9,6 +9,41 @@ export interface BulkUploadResult {
     ticketCount?: number;
 }
 
+/** Who a band (or a band conflict) belongs to. */
+export interface BandOwner {
+    passId: string;
+    ticketId: string | null;
+    orderId: number | null;
+    name: string;
+    passTypeName: string;
+    isAdmitted: boolean;
+}
+
+/** GET /bands/lookup — what a scanned band is. 'replaced' must be flagged and block. */
+export interface BandLookup {
+    state: 'active' | 'replaced' | 'unknown';
+    code: string;
+    owner?: BandOwner;
+    currentCode?: string | null;
+    reason?: string;
+}
+
+export interface BandChange {
+    pass: Shopcart;
+    band: { _id: string; code: string };
+}
+
+export interface BandHistoryEntry {
+    _id: string;
+    code: string;
+    status: 'active' | 'replaced';
+    reason?: string;
+    linkedAt: string;
+    retiredAt?: string | null;
+    linkedBy?: { name: string } | null;
+    retiredBy?: { name: string } | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class BoxOfficeService {
     url = environment.URL;
@@ -77,7 +112,27 @@ export class BoxOfficeService {
             this.url + "/box-office/verifyQr", { payload });
     }
 
-    checkIn(shopItemId: string) {
-        return this.http.post<Shopcart>(this.url + "/box-office/checkIn", { _id: shopItemId });
+    /** Admit — the wrist band (raw scanned text) is linked in the same call. */
+    checkIn(shopItemId: string, band: string) {
+        return this.http.post<Shopcart>(this.url + "/box-office/checkIn", { _id: shopItemId, band });
+    }
+
+    // ── Wrist bands (Workshops epic, W1) ──
+    lookupBand(raw: string) {
+        return this.http.get<BandLookup>(this.url + "/bands/lookup", { params: new HttpParams().set('raw', raw) });
+    }
+
+    /** For a pass admitted before bands existed. */
+    linkBand(passId: string, raw: string) {
+        return this.http.post<BandChange>(this.url + "/bands/link", { passId, raw });
+    }
+
+    replaceBand(passId: string, raw: string, reason: string) {
+        return this.http.post<BandChange>(this.url + "/bands/replace", { passId, raw, reason });
+    }
+
+    bandHistory(passId: string) {
+        return this.http.get<{ bands: BandHistoryEntry[]; canReplace: boolean }>(
+            this.url + "/bands/history", { params: new HttpParams().set('pass', passId) });
     }
 }

@@ -1,0 +1,275 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Venue Map</div>
+    <div class="page-ph-sub">Places on the festival ground{{ event ? ' · ' + event.name : '' }}</div>
+  </div>
+</div>
+
+<div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar to see its venue.</div>
+<div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+<!-- Opened from Workshops › Setup (a venue form): Workshop areas only -->
+<div class="vm-focus" *ngIf="workshopMode">
+  <mat-icon class="ms-fill">pentagon</mat-icon>
+  <div class="vm-grow">
+    <b>Workshop areas only</b>
+    <span>Draw, change or remove Workshop areas. Everything else is view-only here. Saving an area takes you back to your venue.</span>
+  </div>
+  <button type="button" class="btn-ghost" (click)="backToWorkshops()"><mat-icon>arrow_back</mat-icon>Back to Workshop Setup</button>
+</div>
+
+<div class="vm">
+  <div class="vm-card">
+    <div class="vm-bar">
+      <div class="vm-seg" role="group" aria-label="Map style">
+        <button type="button" [class.on]="layerName === 'street'" (click)="setLayer('street')">Street</button>
+        <button type="button" [class.on]="layerName === 'sat'" (click)="setLayer('sat')">Satellite</button>
+      </div>
+      <ng-container *ngIf="canAdd && event && !workshopMode">
+        <button type="button" class="pill-btn" [class.primary]="adding" (click)="toggleAdding()">
+          <mat-icon class="ms-fill">add_location_alt</mat-icon>{{ adding ? 'Tap the map…' : 'Add location' }}
+        </button>
+        <button type="button" class="pill-btn" (click)="useMyLocation()"><mat-icon>my_location</mat-icon>Use my location</button>
+      </ng-container>
+      <ng-container *ngIf="canDraw && event">
+        <button type="button" class="pill-btn" *ngIf="canDrawBoundary && !boundary && !workshopMode" (click)="startDraw('boundary')">
+          <mat-icon>fence</mat-icon>Draw boundary</button>
+        <button type="button" class="pill-btn" [class.primary]="workshopMode" (click)="startDraw('area')"><mat-icon>pentagon</mat-icon>{{ workshopMode ? 'Draw Workshop area' : 'Draw area' }}</button>
+        <button type="button" class="pill-btn" *ngIf="!workshopMode" (click)="startDraw('line')"><mat-icon>polyline</mat-icon>Draw line</button>
+      </ng-container>
+      <label class="pill-btn" *ngIf="canImport && event && !workshopMode">
+        <mat-icon>upload_file</mat-icon>Import KML
+        <input #kml type="file" accept=".kml,application/vnd.google-earth.kml+xml" class="sr-only" (change)="onKmlFile(kml)">
+      </label>
+      <form class="search-field vm-goto" *ngIf="canAdd || canDraw" (ngSubmit)="goTo()">
+        <mat-icon>travel_explore</mat-icon>
+        <input name="goto" [(ngModel)]="gotoText" placeholder="Go to: 12.9763, 77.5929" aria-label="Go to coordinates">
+      </form>
+    </div>
+    <div class="vm-hint" *ngIf="adding">Tap the map where the new location is. <a href="#" (click)="$event.preventDefault(); toggleAdding()">Cancel</a></div>
+    <div class="vm-hint" *ngIf="drawing">
+      {{ drawing === 'line' ? 'Tap to add points; tap the last point again to finish.' : 'Tap each corner; tap the first corner to close the shape.' }}
+      <span *ngIf="isTL && drawing !== 'boundary'"> Keep it inside the festival boundary.</span>
+      <span class="vm-hint-acts">
+        <button type="button" class="vm-undo" [disabled]="drawPoints < 2" (click)="undoPoint()" title="Undo last point (Ctrl+Z)">
+          <mat-icon>undo</mat-icon>Undo point</button>
+        <a href="#" (click)="$event.preventDefault(); cancelDraw()">Cancel</a>
+      </span>
+    </div>
+    <div class="vm-maperr" *ngIf="mapError">{{ mapError }}</div>
+    <div #mapEl class="vm-map" [class.adding]="adding"></div>
+  </div>
+
+  <div class="vm-side">
+    <!-- Add / edit a location -->
+    <div class="vm-panel" *ngIf="form">
+      <div class="section-lbl">{{ form._id ? 'Edit location' : 'New location' }}</div>
+      <div class="field">
+        <label for="vm-name">Name</label>
+        <input id="vm-name" [(ngModel)]="form.name" maxlength="60" placeholder="e.g. Water Station 4">
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <app-select [(ngModel)]="form.type" (ngModelChange)="onFormTypeChange()">
+          <app-option *ngFor="let t of TYPES; trackBy: trackByValue" [value]="t.value">{{ t.label }}</app-option>
+        </app-select>
+      </div>
+      <div class="field">
+        <label>Department responsible</label>
+        <app-select [(ngModel)]="form.department" placeholder="Pick a department">
+          <app-option *ngIf="!isTL" [value]="null">No department</app-option>
+          <app-option *ngFor="let d of departments; trackBy: trackById" [value]="d._id">{{ d.name }}</app-option>
+        </app-select>
+      </div>
+      <div class="field">
+        <label for="vm-notes">Notes</label>
+        <textarea id="vm-notes" rows="2" [(ngModel)]="form.notes" maxlength="300" placeholder="Optional"></textarea>
+      </div>
+      <div class="vm-muted">{{ form.lat | number:'1.5-5' }}, {{ form.lng | number:'1.5-5' }}
+        <span *ngIf="accuracy !== null"> · accurate to about {{ accuracy }} m</span><br>Drag the pin to fine-tune.</div>
+      <div class="field-error" *ngIf="formError">{{ formError }}</div>
+      <div class="vm-actions">
+        <button type="button" class="btn-cta" [disabled]="saving" (click)="save()">{{ saving ? 'Saving…' : 'Save' }}</button>
+        <button type="button" class="btn-ghost" (click)="closePanels()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Add / edit an area or line -->
+    <div class="vm-panel" *ngIf="areaForm">
+      <div class="section-lbl">{{ areaForm._id ? 'Edit' : 'New' }} {{ areaForm.kind === 'boundary' ? 'festival boundary' : areaForm.shape === 'line' ? 'line' : 'area' }}</div>
+      <div class="field">
+        <label for="vm-aname">Name</label>
+        <input id="vm-aname" [(ngModel)]="areaForm.name" maxlength="60" placeholder="e.g. Workshop area A">
+      </div>
+      <div class="field" *ngIf="areaForm.kind !== 'boundary' && !workshopMode">
+        <label>Kind</label>
+        <app-select [(ngModel)]="areaForm.kind">
+          <app-option *ngFor="let k of kindOptions(areaForm.shape); trackBy: trackByValue" [value]="k.value">{{ k.label }}</app-option>
+        </app-select>
+      </div>
+      <div class="field" *ngIf="areaForm.kind !== 'boundary'">
+        <label>Department responsible</label>
+        <app-select [(ngModel)]="areaForm.department" placeholder="Pick a department">
+          <app-option *ngIf="!isTL && !workshopMode" [value]="null">No department</app-option>
+          <app-option *ngFor="let d of areaDepartments; trackBy: trackById" [value]="d._id">{{ d.name }}</app-option>
+        </app-select>
+      </div>
+      <div class="field">
+        <label for="vm-anotes">Notes</label>
+        <textarea id="vm-anotes" rows="2" [(ngModel)]="areaForm.notes" maxlength="300" placeholder="Optional"></textarea>
+      </div>
+      <div class="vm-muted">Drag the corner handles on the map to adjust the shape.</div>
+      <div class="vm-warn" *ngIf="areaOutsideWarning && !isTL"><mat-icon>warning</mat-icon>Part of it is outside the festival boundary.</div>
+      <div class="field-error" *ngIf="formError">{{ formError }}</div>
+      <div class="vm-actions">
+        <button type="button" class="btn-cta" [disabled]="saving" (click)="saveArea()">{{ saving ? 'Saving…' : 'Save' }}</button>
+        <button type="button" class="btn-ghost" (click)="closePanels()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- KML import review -->
+    <div class="vm-panel" *ngIf="imports">
+      <div class="section-lbl">Import from KML</div>
+      <p class="vm-muted">Check each type before importing (guessed from the name). Untick anything you don't want.</p>
+      <div class="vm-imports">
+        <div class="vm-imp" *ngFor="let s of importShapes; trackBy: trackByIndex">
+          <input type="checkbox" [(ngModel)]="s.include" [attr.aria-label]="'Include ' + s.name">
+          <span class="vm-imp-name"><mat-icon class="vm-imp-ic">{{ s.shape === 'line' ? 'polyline' : 'pentagon' }}</mat-icon>{{ s.name }}</span>
+          <span *ngIf="s.kind === 'boundary'" class="vm-imp-fixed">Festival boundary</span>
+          <app-select *ngIf="s.kind !== 'boundary'" [(ngModel)]="s.kind">
+            <app-option *ngFor="let k of kindOptions(s.shape); trackBy: trackByValue" [value]="k.value">{{ k.label }}</app-option>
+          </app-select>
+        </div>
+        <div class="vm-imp" *ngFor="let p of imports; trackBy: trackByIndex">
+          <input type="checkbox" [(ngModel)]="p.include" [attr.aria-label]="'Include ' + p.name">
+          <span class="vm-imp-name"><mat-icon class="vm-imp-ic">location_on</mat-icon>{{ p.name }}</span>
+          <app-select [(ngModel)]="p.type">
+            <app-option *ngFor="let t of TYPES; trackBy: trackByValue" [value]="t.value">{{ t.label }}</app-option>
+          </app-select>
+        </div>
+      </div>
+      <div class="vm-actions">
+        <button type="button" class="btn-cta" [disabled]="saving || !includedImports" (click)="importSelected()">
+          {{ saving ? 'Importing…' : 'Import ' + includedImports }}</button>
+        <button type="button" class="btn-ghost" (click)="closePanels()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Selected location -->
+    <div class="vm-panel" *ngIf="selected && !busy">
+      <div class="vm-head">
+        <span class="vm-dot" [style.background]="typeInfo(selected.type).color"><mat-icon class="ms-fill">{{ typeInfo(selected.type).icon }}</mat-icon></span>
+        <div class="vm-grow"><div class="vm-name">{{ selected.name }}</div><div class="vm-muted">{{ typeInfo(selected.type).label }}</div></div>
+        <button type="button" class="vm-x" aria-label="Close" (click)="closePanels()"><mat-icon>close</mat-icon></button>
+      </div>
+      <div class="vm-warn" *ngIf="locInfo.get(selected._id)?.outside"><mat-icon>warning</mat-icon>Outside the festival boundary</div>
+      <div class="vm-row" *ngIf="locInfo.get(selected._id)?.zones?.length"><b>In:</b> {{ locInfo.get(selected._id)!.zones.join(', ') }}</div>
+      <div class="vm-row" *ngIf="selected.department"><b>Department:</b> {{ selected.department.name }}</div>
+      <div class="vm-row vm-notes" *ngIf="selected.notes">{{ selected.notes }}</div>
+      <div class="vm-row vm-muted">{{ selected.lat | number:'1.5-5' }}, {{ selected.lng | number:'1.5-5' }}</div>
+      <div class="vm-actions">
+        <a class="pill-btn" target="_blank" rel="noopener" [href]="directionsUrl(selected.lat, selected.lng)"><mat-icon>directions</mat-icon>Directions</a>
+        <a class="pill-btn" target="_blank" rel="noopener" [href]="streetViewUrl(selected.lat, selected.lng)"><mat-icon>streetview</mat-icon>Street View</a>
+      </div>
+      <div class="vm-actions" *ngIf="selected.canEdit && !workshopMode">
+        <button type="button" class="pill-btn primary" (click)="startEdit(selected)"><mat-icon>edit</mat-icon>Edit</button>
+        <button type="button" class="pill-btn vm-danger" (click)="remove(selected)"><mat-icon>delete</mat-icon>Delete</button>
+      </div>
+    </div>
+
+    <!-- Selected area / line -->
+    <div class="vm-panel" *ngIf="selectedArea && !busy">
+      <div class="vm-head">
+        <span class="vm-dot" [style.background]="areaInfo(selectedArea.kind).color"><mat-icon>{{ areaInfo(selectedArea.kind).icon }}</mat-icon></span>
+        <div class="vm-grow"><div class="vm-name">{{ selectedArea.name }}</div><div class="vm-muted">{{ areaInfo(selectedArea.kind).label }}</div></div>
+        <button type="button" class="vm-x" aria-label="Close" (click)="closePanels()"><mat-icon>close</mat-icon></button>
+      </div>
+      <!-- Workshops (W8): this area's sessions, on now → upcoming → past -->
+      <div class="vm-tl" *ngIf="selectedArea.kind === 'workshop_area'">
+        <div class="vm-tl-hd">
+          <b>Workshops here</b>
+          <a routerLink="/workshops">Open the Planner</a>
+        </div>
+        <div class="vm-muted" *ngIf="!areaHasVenue">No workshop venue is linked to this area yet.</div>
+        <div class="vm-muted" *ngIf="areaHasVenue && !timeline.length">No sessions scheduled here yet.</div>
+        <ol class="vm-tl-list" *ngIf="timeline.length">
+          <li *ngFor="let i of timeline; trackBy: trackTimeline" class="vm-tl-item" [ngClass]="i.when"
+              [class.cancelled]="i.session.status === 'cancelled'">
+            <span class="vm-tl-dot" [style.background]="i.colour"></span>
+            <div class="vm-grow">
+              <div class="vm-tl-when">
+                <span class="vm-tl-tag" *ngIf="i.when === 'now'">Now</span>{{ i.day }} · {{ i.time }}
+              </div>
+              <div class="vm-tl-title">{{ i.session.workshop?.title }}</div>
+              <div class="vm-tl-meta">{{ i.session.venue?.name }} · {{ i.numbers }}</div>
+            </div>
+          </li>
+        </ol>
+      </div>
+      <div class="vm-row" *ngIf="areaSize.get(selectedArea._id)"><b>Size:</b> {{ areaSize.get(selectedArea._id) }}</div>
+      <div class="vm-row" *ngIf="selectedArea.department"><b>Department:</b> {{ selectedArea.department.name }}</div>
+      <div class="vm-row vm-notes" *ngIf="selectedArea.notes">{{ selectedArea.notes }}</div>
+      <div class="vm-actions" *ngIf="areaCenter.get(selectedArea._id) as c">
+        <a class="pill-btn" target="_blank" rel="noopener" [href]="directionsUrl(c[0], c[1])"><mat-icon>directions</mat-icon>Directions</a>
+        <a class="pill-btn" target="_blank" rel="noopener" [href]="streetViewUrl(c[0], c[1])"><mat-icon>streetview</mat-icon>Street View</a>
+      </div>
+      <div class="vm-actions" *ngIf="canChangeArea(selectedArea)">
+        <button type="button" class="pill-btn primary" (click)="startEditArea(selectedArea)"><mat-icon>edit</mat-icon>Edit shape & details</button>
+        <button type="button" class="pill-btn vm-danger" (click)="removeArea(selectedArea)"><mat-icon>delete</mat-icon>Delete</button>
+      </div>
+    </div>
+
+    <!-- Locations: type filters + list -->
+    <div class="vm-panel">
+      <div class="vm-head">
+        <div class="section-lbl vm-grow">Locations ({{ locations.length }})</div>
+        <button type="button" class="vm-fold" (click)="toggleFold('locations')" [attr.aria-expanded]="!folded.has('locations')"
+                [attr.aria-label]="folded.has('locations') ? 'Show locations' : 'Hide locations'">
+          <mat-icon>{{ folded.has('locations') ? 'keyboard_arrow_down' : 'keyboard_arrow_up' }}</mat-icon>
+        </button>
+      </div>
+      <ng-container *ngIf="!folded.has('locations')">
+      <div class="vm-chips">
+        <button type="button" *ngFor="let t of TYPES; trackBy: trackByValue" class="vm-chip" [class.on]="typeFilter.has(t.value)"
+                [style.--c]="t.color" [attr.aria-pressed]="typeFilter.has(t.value)" (click)="toggleType(t.value)">
+          <mat-icon class="ms-fill">{{ t.icon }}</mat-icon>{{ t.label }}<span class="vm-n">{{ countOf(t.value) }}</span>
+        </button>
+      </div>
+      <div class="vm-muted" *ngIf="!loading && !locations.length && event">
+        No locations yet.{{ canAdd ? ' Use "Add location" or "Use my location" to add the first one.' : '' }}</div>
+      <div class="vm-list">
+        <button type="button" class="vm-item" *ngFor="let l of visible; trackBy: trackById"
+                [class.sel]="selected?._id === l._id" (click)="select(l, true)">
+          <span class="vm-dot" [style.background]="typeInfo(l.type).color"><mat-icon class="ms-fill">{{ typeInfo(l.type).icon }}</mat-icon></span>
+          <span class="vm-grow">{{ l.name }}<small>{{ typeInfo(l.type).label }}{{ l.department ? ' · ' + l.department.name : '' }}</small></span>
+          <mat-icon class="vm-out" *ngIf="locInfo.get(l._id)?.outside" title="Outside the festival boundary">warning</mat-icon>
+        </button>
+      </div>
+      </ng-container>
+    </div>
+
+    <!-- Areas and lines -->
+    <div class="vm-panel">
+      <div class="vm-head">
+        <div class="section-lbl vm-grow">Areas &amp; lines ({{ areas.length }})</div>
+        <button type="button" class="vm-chip" [class.on]="showAreas" [attr.aria-pressed]="showAreas" (click)="toggleAreas()">
+          <mat-icon>{{ showAreas ? 'visibility' : 'visibility_off' }}</mat-icon>{{ showAreas ? 'Shown' : 'Hidden' }}</button>
+        <button type="button" class="vm-fold" (click)="toggleFold('areas')" [attr.aria-expanded]="!folded.has('areas')"
+                [attr.aria-label]="folded.has('areas') ? 'Show areas and lines' : 'Hide areas and lines'">
+          <mat-icon>{{ folded.has('areas') ? 'keyboard_arrow_down' : 'keyboard_arrow_up' }}</mat-icon>
+        </button>
+      </div>
+      <ng-container *ngIf="!folded.has('areas')">
+      <div class="vm-muted" *ngIf="!loading && event && !boundary">
+        No festival boundary yet.{{ canDrawBoundary ? ' Use "Draw boundary" to mark the festival ground.' : ' Team Leads can draw zones once an admin has drawn it.' }}</div>
+      <div class="vm-list">
+        <button type="button" class="vm-item" *ngFor="let a of areas; trackBy: trackById"
+                [class.sel]="selectedArea?._id === a._id" (click)="showArea(a)">
+          <span class="vm-dot" [style.background]="areaInfo(a.kind).color"><mat-icon>{{ areaInfo(a.kind).icon }}</mat-icon></span>
+          <span class="vm-grow">{{ a.name }}<small>{{ areaInfo(a.kind).label }}{{ areaSize.get(a._id) ? ' · ' + areaSize.get(a._id) : '' }}{{ a.department ? ' · ' + a.department.name : '' }}</small></span>
+        </button>
+      </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

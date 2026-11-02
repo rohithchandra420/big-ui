@@ -18,6 +18,7 @@ const ShopCart = require(API + "/src/models/shopcart");
 const Tent = require(API + "/src/models/tent");
 const Attendance = require(API + "/src/models/attendance");
 const EmailLog = require(API + "/src/models/emailLog");
+const Band = require(API + "/src/models/band");
 const seedPermissions = require(API + "/src/seeds/permissions.seed");
 const seedRoles = require(API + "/src/seeds/roles.seed");
 const seedDepartments = require(API + "/src/seeds/departments.seed");
@@ -47,9 +48,9 @@ async function seed() {
   const dir = await mk("Maya Fernandes", "maya.director@example.com", "DIR", null, "2025-06-01");
   await mk("Sam Patel", "sam.admin@example.com", "ADMIN", "General", "2025-07-15");
   const tlOps = await mk("Ravi Kumar", "ravi.ops@example.com", "TL", "Operations", "2025-09-01");
-  await mk("Nina Das", "nina.boxoffice@example.com", "TL", "Box Office", "2025-09-01");
+  const tlBox = await mk("Nina Das", "nina.boxoffice@example.com", "TL", "Box Office", "2025-09-01");
   const vols = [];
-  vols.push(await mk("Anjali Rao", "anjali@example.com", "VOL", "Operations", "2026-09-20"));
+  vols.push(await mk("Sana Qureshi", "sana@example.com", "VOL", "Operations", "2026-09-20"));
   vols.push(await mk("Tom Mathew", "tom@example.com", "VOL", "Operations", "2026-09-20"));
   vols.push(await mk("Arjun Nair", "arjun@example.com", "VOL", "Operations", "2026-09-25", { permissions: ["box-office:read"] }));
   vols.push(await mk("Lina Joseph", "lina@example.com", "VOL", "Operations", "2026-10-01"));
@@ -73,7 +74,7 @@ async function seed() {
   let order = 70001;
   // [first, last, email, phone, items:[ [passType, attendeeName|null, gender|null, admitted, tent|null] ], spot?, ticketEmailStatus]
   // Vikram Singh = a complete, NOT yet admitted Festival Pass with an unallocated Tent Pass,
-  // so Admit, Link Band and Allocate Tent all show (used by tests and the booking-found screenshot).
+  // so Admit and Allocate Tent show (used by tests and the booking-found screenshot).
   const B = [
     ["Asha", "Menon", "asha@example.com", "9800000101", [["Festival Pass", "Asha Menon", "Female", true, "TW1"], ["Festival Pass", "Priya Varma", "Female", true, "TW1"], ["Two-Person Tent"], ["Two-Person Tent"]], false, "sent"],
     ["Karan", "Shah", "karan@example.com", "9800000102", [["Festival Pass", "Karan Shah", "Male", true, null]], false, "sent"],
@@ -113,6 +114,24 @@ async function seed() {
     T[first] = await Ticket.create({ order_id: oid, transaction_id: spot ? "SPOT-" + (1767000000000 + oid) : "TXN" + oid, first_name: first, last_name: last,
       email, phone_no: phone, totalPrice: total, shopcart: ids, event: ev._id,
       ticketEmail: { status, sentAt: ["sent", "bounced"].includes(status) ? sentAt(oid % 60) : null, error: ERR[status] || null } });
+  }
+
+  // Wrist bands (W1): every admitted Festival Pass has one, except Karan Shah's —
+  // admitted "before bands existed", so Link Band shows. Asha Menon's first band
+  // was replaced, so her band details show a history.
+  let tag = 1000;
+  const bandAt = (h) => new Date(Date.UTC(2026, 10, 3, 4, h));
+  for (const sc of await ShopCart.find({ event: ev._id, category: "festival", isAdmitted: true }).sort({ order_id: 1, _id: 1 })) {
+    if (sc.name === "Karan Shah") continue;
+    const code = `BIG7:W${++tag}`;
+    const band = await Band.create({ event: ev._id, code, raw: `https://wallet.example/pay?eventid=BIG7&tagid=W${tag}`,
+      pass: sc._id, linkedBy: tlBox._id, linkedAt: bandAt(tag % 50) });
+    if (sc.name === "Asha Menon") {
+      await Band.create({ event: ev._id, code: "BIG7:W0999", raw: "https://wallet.example/pay?eventid=BIG7&tagid=W0999",
+        pass: sc._id, status: "replaced", replacedBy: band._id, reason: "Band strap broke",
+        linkedBy: tlBox._id, linkedAt: bandAt(0), retiredBy: tlBox._id, retiredAt: bandAt(30) });
+    }
+    await ShopCart.updateOne({ _id: sc._id }, { band: band._id });
   }
 
   // Ticket email wording for the active event
@@ -175,18 +194,35 @@ async function seed() {
     { type: "urgent", title: "Storm warning", message: "Leave the main stage area and go to the dining hall now.", roles: ["ADMIN", "TL", "VOL"], departments: [], when: at2(15, 16, 5), recipients: 11, devices: 8, delivered: 8 }
   ];
   const Announcement = require(API + "/src/models/announcement");
+  // Billboard: who each one went to, worked out like the server does (active users
+  // in the roles and/or home departments). The Billboard screenshot volunteer (VOL, Operations)
+  // has already opened the first two, so the rest show NEW.
+  const boardVol = vols[0];   // = USERS.volunteer in helpers.ts
+  const audienceOf = async (roles, departments) => {
+    const f = { isActive: { $ne: false } };
+    if (roles.length) f.role = { $in: roles.map(r => R[r]) };
+    if (departments.length) f["departments.department"] = { $in: departments };
+    return (await User.find(f).select("_id")).map(u => u._id);
+  };
+  const READ_BY_BOARD_VOL = ["schedule", "task"];
   let lastUrgent = null;
   for (const a of A) {
     const roles = a.all ? ["DIR", "ADMIN", "TL", "VOL"] : a.roles;
+    const recipientIds = await audienceOf(roles, a.departments);
     const doc = await Announcement.create({ type: a.type, title: a.title, message: a.message, roles, departments: a.departments,
-      sentBy: dir._id, recipients: a.recipients, devices: a.devices, delivered: a.delivered });
+      sentBy: dir._id, recipients: a.recipients, devices: a.devices, delivered: a.delivered,
+      recipientIds, readBy: READ_BY_BOARD_VOL.includes(a.type) ? [boardVol._id] : [] });
     await Announcement.collection.updateOne({ _id: doc._id }, { $set: { createdAt: a.when, updatedAt: a.when } });
     if (a.type === "urgent") lastUrgent = doc;
   }
   // …and the storm warning sent again a few minutes later
   const resent = await Announcement.create({ type: "urgent", title: lastUrgent.title, message: lastUrgent.message, roles: lastUrgent.roles,
-    departments: [], sentBy: dir._id, resentFrom: lastUrgent._id, recipients: 11, devices: 9, delivered: 9 });
+    departments: [], sentBy: dir._id, resentFrom: lastUrgent._id, recipients: 11, devices: 9, delivered: 9,
+    recipientIds: await audienceOf(lastUrgent.roles, []) });
   await Announcement.collection.updateOne({ _id: resent._id }, { $set: { createdAt: at2(15, 16, 20), updatedAt: at2(15, 16, 20) } });
+  // BiG's own private note to Maya after a ticket email batch.
+  const emailNote = await Announcement.create({ type: "email", title: "Emails sent", message: "Ticket emails: 48 sent, 2 failed.", recipientIds: [dir._id] });
+  await Announcement.collection.updateOne({ _id: emailNote._id }, { $set: { createdAt: at2(14, 12, 40), updatedAt: at2(14, 12, 40) } });
 
   const summary = `${await User.countDocuments()} users, ${await Ticket.countDocuments()} bookings, ${await ShopCart.countDocuments()} passes, ${await Tent.countDocuments()} tents`;
   await mongoose.disconnect();

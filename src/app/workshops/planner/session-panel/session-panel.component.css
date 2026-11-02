@@ -1,0 +1,70 @@
+/* Rendered inside the global .panel (styles.css) on the Planner. */
+:host { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+
+.hd-text { min-width: 0; }
+.panel-title { font-size: 15px; font-weight: 600; color: var(--text-primary); word-break: break-word; }
+.panel-sub {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  margin-top: 4px; font-size: 12px; color: var(--text-secondary);
+}
+.muted { color: var(--text-muted); }
+
+/* Category pill: --c = the category colour */
+.cat-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px 2px 6px; border-radius: 999px; border: 1px solid var(--c);
+  color: var(--c); font-size: 11px; font-weight: 600;
+}
+.cat-pill mat-icon { font-size: 14px; width: 14px; height: 14px; }
+
+/* Registration card + switch */
+.reg {
+  border: 1px solid var(--border-default); border-radius: 12px; padding: 10px 12px; margin-bottom: 14px;
+  background: var(--surface-input);
+}
+.reg.open { border-color: var(--color-primary); background: #f0f7f2; }
+.reg-head { display: flex; align-items: center; gap: 10px; }
+.reg-dot { width: 10px; height: 10px; border-radius: 999px; background: var(--text-muted); flex: 0 0 auto; }
+.reg.open .reg-dot { background: var(--color-primary); box-shadow: 0 0 0 4px rgba(30, 70, 56, 0.15); }
+.reg-text { display: flex; flex-direction: column; font-size: 12px; color: var(--text-muted); }
+.reg-text b { font-size: 13px; color: var(--text-primary); }
+
+.seg {
+  display: flex; margin-top: 10px; border: 1.5px solid var(--border-default); border-radius: 999px;
+  overflow: hidden; background: var(--surface-card);
+}
+.seg button {
+  flex: 1 1 0; min-width: 0; border: 0; background: none; padding: 6px 8px;
+  font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--border-default); }
+.seg button.on { background: var(--color-primary); color: #fff; }
+.seg button:disabled { cursor: wait; }
+
+/* Counts + the way to the lists */
+.counts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+.counts div { display: flex; flex-direction: column; align-items: center; padding: 6px 4px; border-radius: 8px; background: var(--surface-input); }
+.counts b { font-size: 16px; color: var(--text-primary); }
+.counts small { font-size: 11px; font-weight: 500; color: var(--text-muted); }
+.counts span { font-size: 10px; color: var(--text-muted); }
+.lists-btn { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 14px; text-decoration: none; }
+.lists-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+/* Label / value list */
+.kv { display: grid; grid-template-columns: 110px 1fr; gap: 10px 12px; margin: 0; font-size: 12px; }
+.kv dt { color: var(--text-muted); font-weight: 500; }
+.kv dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
+
+.warns {
+  display: flex; align-items: flex-start; gap: 8px; margin-top: 14px; padding: 10px 12px;
+  border-radius: 10px; background: #fffbeb; border: 1px solid #fde68a; font-size: 12px; color: #92400e;
+}
+.warns mat-icon { font-size: 18px; width: 18px; height: 18px; color: #d97706; flex: 0 0 auto; }
+
+.panel-actions .btn-cta { display: inline-flex; align-items: center; gap: 4px; }
+.panel-actions .btn-cta mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+@media (max-width: 480px) {
+  .kv { grid-template-columns: 1fr; gap: 2px 0; }
+  .kv dd { margin-bottom: 8px; }
+}

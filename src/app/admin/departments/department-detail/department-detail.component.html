@@ -1,32 +1,42 @@
-<div class="detail-page">
+<!-- Content of the Departments page's slide-in panel (the .panel shell is in
+     departments.component.html): view · edit · create. -->
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="loading-wrap">
-    <mat-spinner diameter="40"></mat-spinner>
+<!-- ── Header ─────────────────────────────────────────────── -->
+<div class="panel-hd">
+  <div class="hd-text">
+    <ng-container [ngSwitch]="mode">
+      <ng-container *ngSwitchCase="'create'">
+        <div class="panel-title">Create department</div>
+        <div class="panel-sub">Name it, then add its team leaders and volunteers</div>
+      </ng-container>
+      <ng-container *ngSwitchCase="'edit'">
+        <div class="panel-title">Edit department</div>
+        <div class="panel-sub">{{ detail?.name }}</div>
+      </ng-container>
+      <ng-container *ngSwitchDefault>
+        <div class="panel-title">{{ detail?.name || 'Department' }}</div>
+        <div class="panel-sub" *ngIf="detail?.key">Key <code class="key">{{ detail?.key }}</code></div>
+      </ng-container>
+    </ng-container>
   </div>
+  <button class="panel-close" (click)="close()" aria-label="Close" title="Close">✕</button>
+</div>
 
-  <ng-container *ngIf="!loading && detail">
-
-    <!-- Back + Edit toolbar -->
-    <div class="top-bar">
-      <button class="btn-back" (click)="goBack()">
-        <mat-icon>arrow_back</mat-icon> Departments
-      </button>
-      <button class="btn-edit" *ngIf="!editMode" (click)="enterEditMode()">
-        <mat-icon>edit</mat-icon> Edit
-      </button>
+<!-- ── View ───────────────────────────────────────────────── -->
+<ng-container *ngIf="mode === 'view'">
+  <div class="panel-body">
+    <div *ngIf="loading && !detail" class="loading-wrap">
+      <mat-spinner diameter="32"></mat-spinner>
     </div>
 
-    <!-- ── VIEW MODE ─────────────────────────────────────── -->
-    <ng-container *ngIf="!editMode">
-      <h2 class="dept-title">{{ detail.name }}</h2>
+    <ng-container *ngIf="detail">
       <p class="dept-desc" *ngIf="detail.description">{{ detail.description }}</p>
       <p class="dept-desc muted" *ngIf="!detail.description">No description</p>
 
       <section class="section">
         <h3 class="section-title">
           <mat-icon class="section-icon teal">supervisor_account</mat-icon>
-          Team Leaders
+          Team Leaders <span class="count">{{ detail.tls.length }}</span>
         </h3>
         <div class="chip-row" *ngIf="detail.tls.length > 0; else noTls">
           <span class="chip chip-tl" *ngFor="let t of detail.tls">
@@ -40,7 +50,7 @@
       <section class="section">
         <h3 class="section-title">
           <mat-icon class="section-icon pink">group</mat-icon>
-          Volunteers ({{ detail.volunteers.length }})
+          Volunteers <span class="count">{{ detail.volunteers.length }}</span>
         </h3>
         <div class="chip-row" *ngIf="detail.volunteers.length > 0; else noVols">
           <span class="chip chip-vol" *ngFor="let v of detail.volunteers">
@@ -51,97 +61,118 @@
         <ng-template #noVols><p class="empty-text">No volunteers assigned</p></ng-template>
       </section>
     </ng-container>
+  </div>
 
-    <!-- ── EDIT MODE ──────────────────────────────────────── -->
-    <ng-container *ngIf="editMode">
-      <form [formGroup]="editForm" class="edit-form card">
-        <div class="field">
-          <label>Name *</label>
-          <input type="text" formControlName="name" placeholder="Department name">
-          <span class="field-error" *ngIf="editForm.get('name')?.touched && editForm.get('name')?.hasError('required')">Name is required</span>
-        </div>
+  <div class="panel-actions">
+    <button class="btn-ghost" (click)="close()">Close</button>
+    <button class="btn-cta" (click)="enterEditMode()" [disabled]="!detail">
+      <mat-icon>edit</mat-icon> Edit
+    </button>
+  </div>
+</ng-container>
 
-        <div class="field">
-          <label>Description</label>
-          <textarea formControlName="description" rows="3" placeholder="Optional description"></textarea>
-        </div>
-      </form>
+<!-- ── Edit / Create ──────────────────────────────────────── -->
+<ng-container *ngIf="mode !== 'view'">
+  <div class="panel-body">
+    <form [formGroup]="editForm" class="edit-form">
+      <div class="field">
+        <label>Name *</label>
+        <input type="text" formControlName="name" placeholder="e.g. Finance">
+        <span class="field-error" *ngIf="editForm.get('name')?.touched && editForm.get('name')?.hasError('required')">Name is required</span>
+      </div>
 
-      <!-- TL Section -->
-      <section class="section">
-        <h3 class="section-title">
-          <mat-icon class="section-icon teal">supervisor_account</mat-icon>
-          Team Leaders
-        </h3>
-        <div class="chip-row">
-          <span class="chip chip-tl removable" *ngFor="let t of editedTls">
-            <app-user-avatar [userId]="t._id" [name]="t.name" [version]="t.avatarVersion" [size]="18"></app-user-avatar>
-            {{ t.name }}
-            <button class="chip-remove" (click)="removeTl(t._id)" title="Remove">×</button>
-          </span>
-        </div>
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Add Team Leader</mat-label>
-          <input matInput [formControl]="tlSearchCtrl" [matAutocomplete]="tlAuto"
-            placeholder="Search by name…" />
-          <mat-autocomplete #tlAuto="matAutocomplete" (optionSelected)="onTlSelected($event.option.value)">
-            <mat-option *ngFor="let u of filteredTlOptions" [value]="u">
-              {{ u.name }}
-            </mat-option>
-            <mat-option *ngIf="filteredTlOptions.length === 0 && tlSearchCtrl.value" disabled>
-              No matching users
-            </mat-option>
-          </mat-autocomplete>
-        </mat-form-field>
-      </section>
+      <div class="field" *ngIf="mode === 'create'">
+        <label>Key *</label>
+        <input type="text" formControlName="key" placeholder="e.g. finance" (input)="onKeyInput()">
+        <span class="field-hint">Used for access. It can't be changed later; the name can.</span>
+        <span class="field-error" *ngIf="editForm.get('key')?.touched && editForm.get('key')?.invalid">
+          Lowercase letters, numbers and dashes only
+        </span>
+      </div>
 
-      <!-- VOL Section -->
-      <section class="section">
-        <h3 class="section-title">
-          <mat-icon class="section-icon pink">group</mat-icon>
-          Volunteers
-        </h3>
-        <div class="chip-row">
-          <span class="chip chip-vol removable" *ngFor="let v of editedVolunteers">
-            <app-user-avatar [userId]="v._id" [name]="v.name" [version]="v.avatarVersion" [size]="18"></app-user-avatar>
-            {{ v.name }}
-            <button class="chip-remove" (click)="removeVol(v._id)" title="Remove">×</button>
-          </span>
-        </div>
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Add Volunteer</mat-label>
-          <input matInput [formControl]="volSearchCtrl" [matAutocomplete]="volAuto"
-            placeholder="Search by name…" />
-          <mat-autocomplete #volAuto="matAutocomplete" (optionSelected)="onVolSelected($event.option.value)">
-            <mat-option *ngFor="let u of filteredVolOptions" [value]="u">
-              {{ u.name }}
-            </mat-option>
-            <mat-option *ngIf="filteredVolOptions.length === 0 && volSearchCtrl.value" disabled>
-              No matching volunteers
-            </mat-option>
-          </mat-autocomplete>
-        </mat-form-field>
+      <div class="field">
+        <label>Description</label>
+        <textarea formControlName="description" rows="3" placeholder="What does this department handle?"></textarea>
+      </div>
+    </form>
 
-        <!-- Reassignment warning banner -->
-        <div class="warning-banner" *ngIf="warningList.length > 0">
-          <mat-icon class="warn-icon">info</mat-icon>
-          <div>
-            <div *ngFor="let w of warningList" class="warning-line">
-              <strong>{{ w.name }}</strong> is currently in <em>{{ w.fromDept }}</em>.
-              Saving will move them to this department.
-            </div>
+    <!-- TL Section -->
+    <section class="section">
+      <h3 class="section-title">
+        <mat-icon class="section-icon teal">supervisor_account</mat-icon>
+        Team Leaders <span class="count">{{ editedTls.length }}</span>
+      </h3>
+      <p class="empty-text" *ngIf="editedTls.length === 0">No team leaders yet</p>
+      <div class="chip-row" *ngIf="editedTls.length > 0">
+        <span class="chip chip-tl removable" *ngFor="let t of editedTls">
+          <app-user-avatar [userId]="t._id" [name]="t.name" [version]="t.avatarVersion" [size]="18"></app-user-avatar>
+          {{ t.name }}
+          <button class="chip-remove" (click)="removeTl(t._id)" title="Remove">×</button>
+        </span>
+      </div>
+      <label class="search-field add-member" matAutocompleteOrigin #tlOrigin="matAutocompleteOrigin">
+        <mat-icon>person_add</mat-icon>
+        <input type="text" [formControl]="tlSearchCtrl" [matAutocomplete]="tlAuto"
+          [matAutocompleteConnectedTo]="tlOrigin" placeholder="Add a team leader — search by name" aria-label="Add a team leader — search by name" />
+      </label>
+      <mat-autocomplete #tlAuto="matAutocomplete" class="app-ac-panel" (optionSelected)="onTlSelected($event.option.value)">
+        <mat-option *ngFor="let u of filteredTlOptions" [value]="u">
+          <app-user-avatar [userId]="u._id" [name]="u.name" [version]="u.avatarVersion" [size]="20"></app-user-avatar>
+          <span>{{ u.name }}</span>
+        </mat-option>
+        <mat-option *ngIf="filteredTlOptions.length === 0 && tlSearchCtrl.value" disabled>
+          No matching users
+        </mat-option>
+      </mat-autocomplete>
+    </section>
+
+    <!-- VOL Section -->
+    <section class="section">
+      <h3 class="section-title">
+        <mat-icon class="section-icon pink">group</mat-icon>
+        Volunteers <span class="count">{{ editedVolunteers.length }}</span>
+      </h3>
+      <p class="empty-text" *ngIf="editedVolunteers.length === 0">No volunteers yet</p>
+      <div class="chip-row" *ngIf="editedVolunteers.length > 0">
+        <span class="chip chip-vol removable" *ngFor="let v of editedVolunteers">
+          <app-user-avatar [userId]="v._id" [name]="v.name" [version]="v.avatarVersion" [size]="18"></app-user-avatar>
+          {{ v.name }}
+          <button class="chip-remove" (click)="removeVol(v._id)" title="Remove">×</button>
+        </span>
+      </div>
+      <label class="search-field add-member" matAutocompleteOrigin #volOrigin="matAutocompleteOrigin">
+        <mat-icon>person_add</mat-icon>
+        <input type="text" [formControl]="volSearchCtrl" [matAutocomplete]="volAuto"
+          [matAutocompleteConnectedTo]="volOrigin" placeholder="Add a volunteer — search by name" aria-label="Add a volunteer — search by name" />
+      </label>
+      <mat-autocomplete #volAuto="matAutocomplete" class="app-ac-panel" (optionSelected)="onVolSelected($event.option.value)">
+        <mat-option *ngFor="let u of filteredVolOptions" [value]="u">
+          <app-user-avatar [userId]="u._id" [name]="u.name" [version]="u.avatarVersion" [size]="20"></app-user-avatar>
+          <span>{{ u.name }}</span>
+        </mat-option>
+        <mat-option *ngIf="filteredVolOptions.length === 0 && volSearchCtrl.value" disabled>
+          No matching volunteers
+        </mat-option>
+      </mat-autocomplete>
+
+      <!-- Reassignment warning banner -->
+      <div class="warning-banner" *ngIf="warningList.length > 0">
+        <mat-icon class="warn-icon">info</mat-icon>
+        <div>
+          <div *ngFor="let w of warningList" class="warning-line">
+            <strong>{{ w.name }}</strong> is currently in <em>{{ w.fromDept }}</em>.
+            Saving will move them to this department.
           </div>
         </div>
-      </section>
-
-      <!-- Save / Cancel -->
-      <div class="edit-actions">
-        <button class="btn-cancel" (click)="cancelEdit()" [disabled]="saving">Cancel</button>
-        <button class="btn-save" (click)="save()" [disabled]="editForm.invalid || saving">
-          {{ saving ? 'Saving…' : 'Save Changes' }}
-        </button>
       </div>
-    </ng-container>
+    </section>
+  </div>
 
-  </ng-container>
-</div>
+  <div class="panel-actions">
+    <button class="btn-ghost" (click)="cancel()" [disabled]="saving">Cancel</button>
+    <button class="btn-cta" (click)="save()" [disabled]="formInvalid || saving">
+      <ng-container *ngIf="mode === 'create'">{{ saving ? 'Creating…' : 'Create' }}</ng-container>
+      <ng-container *ngIf="mode === 'edit'">{{ saving ? 'Saving…' : 'Save Changes' }}</ng-container>
+    </button>
+  </div>
+</ng-container>

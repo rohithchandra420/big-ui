@@ -5,6 +5,7 @@ import { environment } from "src/environments/environment.development";
 export interface DeptSummary {
   _id: string;
   name: string;
+  key?: string;
   description: string;
   tls: { _id: string; name: string; avatarVersion?: number }[];
   volunteerCount: number;
@@ -13,6 +14,7 @@ export interface DeptSummary {
 export interface DeptDetail {
   _id: string;
   name: string;
+  key?: string;
   description: string;
   tls: { _id: string; name: string; avatarVersion?: number }[];
   volunteers: { _id: string; name: string; avatarVersion?: number; departments: any[] }[];
@@ -48,7 +50,7 @@ export class AdminService {
         return this.http.get<DeptDetail>(this.url + '/admin/departments/' + id);
     }
 
-    createDepartment(data: { name: string; description: string }) {
+    createDepartment(data: { name: string; key?: string; description: string }) {
         return this.http.post<any>(this.url + '/admin/departments', data);
     }
 

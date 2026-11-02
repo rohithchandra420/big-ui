@@ -23,6 +23,8 @@ export class Shopcart {
     public passType?: string;
     public category?: PassCategory;
     public passTypeName?: string;
+    /** The linked wrist band's id (Workshops epic, W1) — null until admitted. */
+    public band?: string | null;
 
     constructor(item_name: string, item_quantity: number, order_id: number, admissionId: string,
          isAdmitted: boolean, isActive:boolean, name?: string, phone_no?: string, email?: string,  _id?: string,

@@ -10,6 +10,7 @@ import { NotificationService } from '../../core/notification.service';
 import { Ticket } from '../../models/ticket.model';
 import { Tent } from '../../models/tent.model';
 import { GateFeedbackService } from '../../core/gate-feedback.service';
+import { AuthService } from '../../core/auth.service';
 import { BoxOfficeQrscannerPopupComponent } from '../registration/qrscanner-popup/qrscanner-popup.component';
 
 const mockTicket: Ticket = new Ticket(1, 'Arjun', 'Mehta', 'arjun@example.com', '9000000001', 'TXN1', 'sent', 100, [
@@ -25,6 +26,13 @@ describe('AttendeeListComponent', () => {
   let notificationSpy: jasmine.SpyObj<NotificationService>;
   let dialogSpy: jasmine.SpyObj<MatDialog>;
   let feedbackSpy: jasmine.SpyObj<GateFeedbackService>;
+  let authSpy: jasmine.SpyObj<AuthService>;
+  /** Whether the signed-in test user counts as Box Office staff (may replace bands). */
+  let canReplace = true;
+
+  /** The band scanner closes with this (undefined = cancelled). */
+  const dialogReturns = (result: any) =>
+    dialogSpy.open.and.returnValue({ afterClosed: () => of(result) } as any);
 
   const buttonClick = (label: string) =>
     (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
@@ -32,7 +40,12 @@ describe('AttendeeListComponent', () => {
 
   const configureWith = (ticket: Ticket) => {
     TestBed.resetTestingModule();
-    boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['checkIn']);
+    boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['checkIn', 'linkBand', 'replaceBand', 'bandHistory']);
+    authSpy = jasmine.createSpyObj('AuthService', ['hasPermission', 'hasDepartmentAccess'], {
+      currentUser: { role: 'VOL', departments: [], permissions: [] }
+    });
+    authSpy.hasPermission.and.returnValue(false);
+    authSpy.hasDepartmentAccess.and.callFake(() => canReplace);
     accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', ['getTentById', 'vacateTentSlot']);
     accomodationServiceSpy.getTentById.and.returnValue(of({} as Tent));
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
@@ -47,6 +60,7 @@ describe('AttendeeListComponent', () => {
         { provide: NotificationService, useValue: notificationSpy },
         { provide: MatDialog, useValue: dialogSpy },
         { provide: GateFeedbackService, useValue: feedbackSpy },
+        { provide: AuthService, useValue: authSpy },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     });
@@ -57,7 +71,10 @@ describe('AttendeeListComponent', () => {
     fixture.detectChanges();
   };
 
-  beforeEach(() => configureWith(mockTicket));
+  beforeEach(() => {
+    canReplace = true;
+    configureWith(mockTicket);
+  });
 
   it('loads tent details for any allocatedTentId on the input ticket', () => {
     // TestBed.createComponent() doesn't run through a parent template binding,
@@ -179,79 +196,107 @@ describe('AttendeeListComponent', () => {
   });
 
   describe('admitAttendee()', () => {
-    it('replaces the item with the admitted version on success', () => {
+    const scanned = { raw: 'https://wallet.example/p?eventid=E&tagid=T1', code: 'E:T1' };
+
+    it('scans the band first, then admits with it', () => {
       const localTicket = { ...mockTicket, shopcart: mockTicket.shopcart!.map(i => ({ ...i })) } as Ticket;
       component.ticket = localTicket;
-
-      const updated = { ...localTicket.shopcart![0], isAdmitted: true };
+      dialogReturns(scanned);
+      const updated = { ...localTicket.shopcart![0], isAdmitted: true, band: 'b1' };
       boxOfficeServiceSpy.checkIn.and.returnValue(of(updated));
 
       component.admitAttendee(localTicket.shopcart![0]);
 
-      expect(boxOfficeServiceSpy.checkIn).toHaveBeenCalledWith('s1');
-      expect(component.ticket.shopcart![0].isAdmitted).toBeTrue();
-      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Admitted');
+      expect(feedbackSpy.unlock).toHaveBeenCalled();
+      expect(dialogSpy.open).toHaveBeenCalledWith(BoxOfficeQrscannerPopupComponent, jasmine.objectContaining({
+        data: { mode: 'band', purpose: 'admit', attendeeName: 'Arjun Mehta', passId: 's1' }
+      }));
+      expect(boxOfficeServiceSpy.checkIn).toHaveBeenCalledWith('s1', scanned.raw);
+      expect(component.ticket.shopcart![0].band).toBe('b1');
+      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Admitted, band linked');
     });
 
-    it('shows an error notification on failure', () => {
-      boxOfficeServiceSpy.checkIn.and.returnValue(throwError(() => ({ error: { message: 'Attendee details are incomplete' } })));
-
+    it('does not admit when the scanner is cancelled', () => {
+      dialogReturns(undefined);
       component.admitAttendee(mockTicket.shopcart![0]);
+      expect(boxOfficeServiceSpy.checkIn).not.toHaveBeenCalled();
+    });
 
-      expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('Attendee details are incomplete');
+    it('shows the server reason on failure (e.g. band already on someone)', () => {
+      dialogReturns(scanned);
+      boxOfficeServiceSpy.checkIn.and.returnValue(throwError(() => ({ error: { message: 'This band is already linked to Kabir Das.' } })));
+      component.admitAttendee(mockTicket.shopcart![0]);
+      expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('This band is already linked to Kabir Das.');
     });
 
     it('falls back to "Admission failed" when the server gives no message', () => {
+      dialogReturns(scanned);
       boxOfficeServiceSpy.checkIn.and.returnValue(throwError(() => ({})));
-
       component.admitAttendee(mockTicket.shopcart![0]);
-
       expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('Admission failed');
+    });
+
+    it('falls back to "Attendee" when the pass has no name', () => {
+      dialogReturns(undefined);
+      component.admitAttendee({ ...mockTicket.shopcart![0], name: '' } as any);
+      expect(dialogSpy.open).toHaveBeenCalledWith(BoxOfficeQrscannerPopupComponent, jasmine.objectContaining({
+        data: jasmine.objectContaining({ attendeeName: 'Attendee' })
+      }));
     });
   });
 
-  describe('Admit / Link Band buttons', () => {
+  describe('Admit / band buttons', () => {
     const buttonsNamed = (label: string): HTMLButtonElement[] =>
       (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
         .filter(b => b.textContent?.trim() === label);
 
-    const notAdmittedTicket = (): Ticket => ({
+    const withFestival = (extra: any): Ticket => ({
       ...mockTicket,
-      shopcart: [{ ...mockTicket.shopcart![0], isAdmitted: false } as any, { ...mockTicket.shopcart![1] } as any]
+      shopcart: [{ ...mockTicket.shopcart![0], ...extra } as any, { ...mockTicket.shopcart![1] } as any]
     } as Ticket);
 
     it('labels the admission button "Admit", with no "Check In" left', () => {
-      configureWith(notAdmittedTicket());
+      configureWith(withFestival({ isAdmitted: false }));
       expect(buttonsNamed('Admit').length).toBe(1);
       expect(buttonsNamed('Check In').length).toBe(0);
     });
 
-    it('shows Link Band on a complete Festival Pass, before admission', () => {
-      configureWith(notAdmittedTicket());
-      expect(buttonsNamed('Link Band').length).toBe(1);
+    it('offers only Admit before admission (the band is scanned inside Admit)', () => {
+      configureWith(withFestival({ isAdmitted: false }));
+      expect(buttonsNamed('Link Band').length).toBe(0);
+      expect(buttonsNamed('Replace Band').length).toBe(0);
     });
 
-    it('still shows Link Band after admission (no Admit button then)', () => {
-      // mockTicket's Festival Pass is already admitted.
+    it('offers Link Band on an admitted pass with no band (admitted before bands existed)', () => {
+      // mockTicket's Festival Pass is admitted, with no band.
       expect(buttonsNamed('Admit').length).toBe(0);
       expect(buttonsNamed('Link Band').length).toBe(1);
     });
 
-    it('does not show Link Band on a Festival Pass with incomplete details', () => {
-      configureWith({
-        ...mockTicket,
-        shopcart: [{ ...mockTicket.shopcart![0], email: '' } as any]
-      } as Ticket);
+    it('offers Replace Band once a band is linked, to Box Office staff', () => {
+      configureWith(withFestival({ band: 'b1' }));
+      expect(buttonsNamed('Link Band').length).toBe(0);
+      expect(buttonsNamed('Replace Band').length).toBe(1);
+    });
+
+    it('hides Replace Band from people outside Box Office', () => {
+      canReplace = false;
+      configureWith(withFestival({ band: 'b1' }));
+      expect(buttonsNamed('Replace Band').length).toBe(0);
+    });
+
+    it('does not show band buttons on a Festival Pass with incomplete details', () => {
+      configureWith(withFestival({ email: '' }));
       expect(buttonsNamed('Link Band').length).toBe(0);
     });
 
-    it('does not show Link Band on Tent Pass rows', () => {
-      configureWith({ ...mockTicket, shopcart: [{ ...mockTicket.shopcart![1], name: 'A', phone_no: '1', email: 'a@b.c' } as any] } as Ticket);
+    it('does not show band buttons on Tent Pass rows', () => {
+      configureWith({ ...mockTicket, shopcart: [{ ...mockTicket.shopcart![1], name: 'A', phone_no: '1', email: 'a@b.c', isAdmitted: true } as any] } as Ticket);
       expect(buttonsNamed('Link Band').length).toBe(0);
     });
 
     it('shows "Not admitted" (not "Not arrived") on a pass not yet admitted', () => {
-      configureWith(notAdmittedTicket());
+      configureWith(withFestival({ isAdmitted: false }));
       expect(fixture.nativeElement.textContent).toContain('Not admitted');
       expect(fixture.nativeElement.textContent).not.toContain('Not arrived');
     });
@@ -262,20 +307,74 @@ describe('AttendeeListComponent', () => {
     });
   });
 
-  describe('openLinkBand()', () => {
-    it('opens the gate scanner in band mode for that attendee and unlocks sound', () => {
-      buttonClick('Link Band');
-      expect(feedbackSpy.unlock).toHaveBeenCalled();
+  describe('Link / Replace band', () => {
+    const scanned = { raw: 'BAND-0002', code: 'BAND-0002', reason: 'Broke' };
+
+    it('links a band to an admitted pass and updates the row', () => {
+      const localTicket = { ...mockTicket, shopcart: mockTicket.shopcart!.map(i => ({ ...i })) } as Ticket;
+      component.ticket = localTicket;
+      dialogReturns(scanned);
+      boxOfficeServiceSpy.linkBand.and.returnValue(of({ pass: { ...localTicket.shopcart![0], band: 'b2' }, band: { _id: 'b2', code: 'BAND-0002' } }));
+
+      component.openLinkBand(localTicket.shopcart![0]);
+
       expect(dialogSpy.open).toHaveBeenCalledWith(BoxOfficeQrscannerPopupComponent, jasmine.objectContaining({
-        data: { mode: 'band', attendeeName: 'Arjun Mehta' }
+        data: jasmine.objectContaining({ purpose: 'link' })
       }));
+      expect(boxOfficeServiceSpy.linkBand).toHaveBeenCalledWith('s1', 'BAND-0002');
+      expect(component.ticket.shopcart![0].band).toBe('b2');
+      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Band linked');
     });
 
-    it('falls back to "Attendee" when the pass has no name', () => {
-      component.openLinkBand({ ...mockTicket.shopcart![0], name: '' } as any);
+    it('replaces the band with the reason given in the scanner', () => {
+      component.ticket = { ...mockTicket, shopcart: mockTicket.shopcart!.map(i => ({ ...i })) } as Ticket;
+      dialogReturns(scanned);
+      boxOfficeServiceSpy.replaceBand.and.returnValue(of({ pass: { ...mockTicket.shopcart![0], band: 'b3' }, band: { _id: 'b3', code: 'BAND-0002' } } as any));
+
+      component.openReplaceBand(mockTicket.shopcart![0]);
+
       expect(dialogSpy.open).toHaveBeenCalledWith(BoxOfficeQrscannerPopupComponent, jasmine.objectContaining({
-        data: { mode: 'band', attendeeName: 'Attendee' }
+        data: jasmine.objectContaining({ purpose: 'replace' })
       }));
+      expect(boxOfficeServiceSpy.replaceBand).toHaveBeenCalledWith('s1', 'BAND-0002', 'Broke');
+      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Band replaced');
+    });
+
+    it('shows the server reason when replacing fails', () => {
+      dialogReturns(scanned);
+      boxOfficeServiceSpy.replaceBand.and.returnValue(throwError(() => ({ error: { message: 'Only DEV, DIR, ADMIN or Box Office staff can replace a band' } })));
+      component.openReplaceBand(mockTicket.shopcart![0]);
+      expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('Only DEV, DIR, ADMIN or Box Office staff can replace a band');
+    });
+  });
+
+  describe('band details', () => {
+    const history = [
+      { _id: 'b2', code: 'E:T2', status: 'active', linkedAt: '2026-11-03T10:00:00Z', linkedBy: { name: 'Box Office Lead' } },
+      { _id: 'b1', code: 'E:T1', status: 'replaced', reason: 'Broke', linkedAt: '2026-11-03T09:00:00Z', retiredAt: '2026-11-03T10:00:00Z' }
+    ] as any;
+
+    it('loads the band history once when the Band badge is opened, and closes on a second tap', () => {
+      configureWith({ ...mockTicket, shopcart: [{ ...mockTicket.shopcart![0], band: 'b2' } as any] } as Ticket);
+      boxOfficeServiceSpy.bandHistory.and.returnValue(of({ bands: history, canReplace: true }));
+      const badge = () => fixture.nativeElement.querySelector('.band-badge') as HTMLButtonElement;
+
+      badge().click();
+      fixture.detectChanges();
+      expect(boxOfficeServiceSpy.bandHistory).toHaveBeenCalledWith('s1');
+      expect(fixture.nativeElement.textContent).toContain('E:T2');
+      expect(fixture.nativeElement.textContent).toContain('Box Office Lead');
+      expect(fixture.nativeElement.textContent).toContain('Broke');
+
+      badge().click();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.band-history')).toBeNull();
+      badge().click();
+      expect(boxOfficeServiceSpy.bandHistory).toHaveBeenCalledTimes(1);
+    });
+
+    it('has no Band badge on a pass without a band', () => {
+      expect(fixture.nativeElement.querySelector('.band-badge')).toBeNull();
     });
   });
 

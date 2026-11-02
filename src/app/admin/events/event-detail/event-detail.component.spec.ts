@@ -10,6 +10,7 @@ import { EventService } from '../../../core/event.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventDetail } from '../../../models/event.model';
 import { ConfirmationService } from '../../../shared/confirm-dialog/confirmation.service';
+import { LocationService } from '../../../venue-map/location.service';
 
 const mockDetail: EventDetail = {
   _id: 'evt1', name: 'BiG 6.0', description: 'Main festival', status: 'draft',
@@ -28,12 +29,15 @@ describe('EventDetailComponent', () => {
   let notificationSpy: jasmine.SpyObj<NotificationService>;
   let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
   let router: Router;
+  let locationSpy: jasmine.SpyObj<LocationService>;
 
   beforeEach(async () => {
     eventServiceSpy = jasmine.createSpyObj('EventService', [
       'getEventDetail', 'updateEvent', 'deleteEvent', 'loadEvents',
-      'createPassType', 'updatePassType', 'deletePassType'
+      'createPassType', 'updatePassType', 'deletePassType', 'setActiveEvent'
     ]);
+    locationSpy = jasmine.createSpyObj('LocationService', ['listAreas']);
+    locationSpy.listAreas.and.resolveTo({ areas: [], canDraw: true, canDrawBoundary: true });
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     confirmationServiceSpy = jasmine.createSpyObj('ConfirmationService', ['confirm']);
     eventServiceSpy.getEventDetail.and.returnValue(of(mockDetail));
@@ -45,6 +49,7 @@ describe('EventDetailComponent', () => {
         { provide: EventService, useValue: eventServiceSpy },
         { provide: NotificationService, useValue: notificationSpy },
         { provide: ConfirmationService, useValue: confirmationServiceSpy },
+        { provide: LocationService, useValue: locationSpy },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'evt1' } } } },
       ],
       schemas: [NO_ERRORS_SCHEMA]
@@ -65,6 +70,30 @@ describe('EventDetailComponent', () => {
     eventServiceSpy.getEventDetail.and.returnValue(throwError(() => new Error('fail')));
     component.loadDetail('evt1');
     expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('Error loading event');
+  });
+
+  describe('venue boundary', () => {
+    it('says when the event has no boundary yet', async () => {
+      await fixture.whenStable(); fixture.detectChanges();
+      expect(locationSpy.listAreas).toHaveBeenCalledWith(mockDetail._id);
+      expect(component.hasBoundary).toBe(false);
+      expect(fixture.nativeElement.textContent).toContain('Venue boundary: not drawn yet');
+      expect(fixture.nativeElement.textContent).toContain('Draw on Venue Map');
+    });
+
+    it('says when it is drawn', async () => {
+      locationSpy.listAreas.and.resolveTo({ areas: [{ kind: 'boundary' } as any], canDraw: true, canDrawBoundary: true });
+      component.loadDetail('evt1');
+      await fixture.whenStable(); fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Venue boundary: drawn');
+    });
+
+    it('opens the Venue Map on this event, ready for the boundary', () => {
+      const navSpy = spyOn(router, 'navigate');
+      component.openVenueMap();
+      expect(eventServiceSpy.setActiveEvent).toHaveBeenCalledWith(mockDetail);
+      expect(navSpy).toHaveBeenCalledWith(['/venue-map'], { queryParams: { draw: 'boundary' } });
+    });
   });
 
   it('goBack() navigates to /admin/events', () => {

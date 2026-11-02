@@ -15,7 +15,6 @@ import { UserRegisteryComponent } from "../admin/user-registery/user-registery.c
 import { AuthPermissionGuard } from "./auth-permission-guard.service";
 import { ProfileComponent } from "../profile/profile.component";
 import { DepartmentsComponent } from "../admin/departments/departments.component";
-import { DepartmentDetailComponent } from "../admin/departments/department-detail/department-detail.component";
 import { BookingsComponent } from "../box-office/bookings/bookings.component";
 import { RegistrationComponent } from "../box-office/registration/registration.component";
 import { BookingFoundComponent } from "../box-office/registration/booking-found/booking-found.component";
@@ -25,6 +24,12 @@ import { EventDetailComponent } from "../admin/events/event-detail/event-detail.
 import { EmailReportComponent } from "../admin/email-report/email-report.component";
 import { AnnouncementsComponent } from "../admin/announcements/announcements.component";
 import { BillboardComponent } from "../billboard/billboard.component";
+import { VenueMapComponent } from "../venue-map/venue-map.component";
+import { WorkshopSetupComponent } from "../workshops/setup/workshop-setup.component";
+import { WorkshopPlannerComponent } from "../workshops/planner/workshop-planner.component";
+import { SessionListsComponent } from "../workshops/session/session-lists.component";
+import { WorkshopReadGuard, WorkshopRunGuard } from "../workshops/workshop-run.guard";
+import { WorkshopReportsComponent } from "../workshops/reports/workshop-reports.component";
 import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
@@ -74,6 +79,16 @@ const appRoutes: Routes = [
     { path: 'dashboard', redirectTo: '',  pathMatch: 'full'},
     { path: 'profile', canActivate:[AuthGuard] ,component: ProfileComponent },
     { path: 'billboard', canActivate: [AuthGuard], component: BillboardComponent },
+    { path: 'venue-map', canActivate: [AuthGuard], component: VenueMapComponent },
+    // Workshops planner — everyone signed in (changes are checked per action, server-side too).
+    { path: 'workshops', canActivate: [AuthGuard], component: WorkshopPlannerComponent },
+    // A session's lists and door — the Workshop team (members, workshop:write, the Plan group).
+    { path: 'workshops/sessions/:id', canActivate: [AuthGuard, WorkshopRunGuard], component: SessionListsComponent },
+    // Reports (with names) — the Workshop team and workshop:read.
+    { path: 'workshops/reports', canActivate: [AuthGuard, WorkshopReadGuard], component: WorkshopReportsComponent },
+    // Workshops setup — the Plan group: DEV/DIR/ADMIN, the Workshop TL (automatic
+    // workshop:manage via the department key), anyone granted workshop:manage.
+    { path: 'workshops/setup', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['workshop:manage'] }, component: WorkshopSetupComponent },
     { path: 'my-department', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL', 'VOL'] }, component: MyDepartmentComponent },
     { path: 'box-office/bookings', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BookingsComponent },
     { path: 'box-office/registration', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: RegistrationComponent },
@@ -87,7 +102,7 @@ const appRoutes: Routes = [
     { path: 'admin', canActivate:[AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: AdminComponent, children: [
         { path: 'user', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: UserRegisteryComponent },
         { path: 'departments', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentsComponent },
-        { path: 'departments/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentDetailComponent },
+        { path: 'departments/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentsComponent }, // opens that department's panel
         { path: 'events', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventsComponent },
         { path: 'events/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventDetailComponent },
         // DEV/DIR/ADMIN only (decided by the backend via /emails/config)

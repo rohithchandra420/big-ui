@@ -1073,9 +1073,16 @@ select:focus {
   flex: 1;
 }
 
+/* Action row rule (app-wide, user decision 2026-11-03): one row at the
+   bottom, right-aligned. Close / Cancel / Back is ALWAYS the leftmost button
+   and the main action (Save, Create, Edit, Send…) ALWAYS the rightmost; other
+   actions sit in between. Phones keep the same order, buttons sharing the
+   width. Panels have BOTH: the ✕ in the header's top-right corner and a
+   Close button here. Same rule for dialogs (.mat-mdc-dialog-actions). */
 .panel-actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 7px;
   padding: 0.9rem 1.25rem;
   border-top: 1px solid var(--border-subtle);
@@ -1084,7 +1091,10 @@ select:focus {
 
 @media (max-width: 480px) {
   .panel { width: 100%; max-width: 100%; }
-  .panel-actions { flex-direction: column; }
+  /* Same order as desktop, buttons share the row; labels (and icons) centred */
+  .panel-actions > button,
+  .mat-mdc-dialog-actions > button { flex: 1 1 0; min-width: 0; justify-content: center; text-align: center; }
+  .mat-mdc-dialog-actions { flex-wrap: wrap; }
 }
 
 /* Panel summary boxes (adapted from BiG6 Wireframe - BoxOffice.html's
@@ -1270,3 +1280,122 @@ select:focus {
   border-left: 1px solid var(--color-secondary);
   border-top: 1px solid var(--color-secondary);
 }
+
+/* ── Venue Map pins (Leaflet draws them outside Angular's view encapsulation) ── */
+.vm-pin-wrap { background: none; border: 0; }
+.vm-pin {
+  width: 34px; height: 34px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  display: grid; place-items: center; border: 2px solid #fff; box-shadow: 0 3px 6px rgba(0, 0, 0, .35);
+}
+.vm-pin .material-symbols-rounded { transform: rotate(45deg); color: #fff; font-size: 18px; font-variation-settings: 'FILL' 1; }
+.vm-pin.sel { outline: 3px solid var(--color-info); outline-offset: 2px; }
+.vm-pin.draft { animation: vm-bob 1s ease-in-out infinite alternate; }
+@keyframes vm-bob { to { margin-top: -6px; } }
+.vm-area-ic {
+  width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, .3); opacity: .92;
+}
+.vm-area-ic .material-symbols-rounded { color: #fff; font-size: 16px; font-variation-settings: 'FILL' 1; }
+.vm-area-ic.sel { outline: 3px solid var(--color-info); outline-offset: 2px; opacity: 1; }
+
+/* ── Autocomplete list (mat-autocomplete) ───────────────────────────────
+   <mat-autocomplete class="app-ac-panel"> — styled like <app-select>'s
+   panel so a search-and-pick list looks the same as every dropdown. */
+.mat-mdc-autocomplete-panel.app-ac-panel {
+  margin-top: 4px;
+  padding: 4px !important;
+  background: var(--surface-card, #fff);
+  border: 1px solid #ddd;
+  border-radius: 8px !important;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04)) !important;
+  max-height: 240px;
+}
+.app-ac-panel .mat-mdc-option {
+  min-height: 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1a1a1a;
+}
+.app-ac-panel .mat-mdc-option .mdc-list-item__primary-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: inherit;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.app-ac-panel .mat-mdc-option:hover:not(.mdc-list-item--disabled),
+.app-ac-panel .mat-mdc-option.mat-mdc-option-active {
+  background: #f3f4f6;
+}
+.app-ac-panel .mat-mdc-option.mdc-list-item--disabled {
+  opacity: 1;
+}
+.app-ac-panel .mat-mdc-option.mdc-list-item--disabled .mdc-list-item__primary-text {
+  color: var(--text-muted);
+  font-style: italic;
+}
+@media (max-width: 600px) {
+  .mat-mdc-autocomplete-panel.app-ac-panel { max-height: 200px; }
+}
+
+
+/* Venue Map: "Workshop areas only" banner (opened from Workshops › Setup).
+   Global to keep venue-map.component.css under the 6 kB component budget. */
+.vm-focus { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; padding: 10px 12px;
+  border: 1px solid var(--color-primary); border-radius: 10px; background: var(--surface-card); font-size: 12px; color: var(--text-secondary); }
+.vm-focus > mat-icon { color: var(--color-primary); }
+.vm-focus b { display: block; color: var(--text-primary); font-size: 13px; }
+.vm-focus .btn-ghost { display: inline-flex; align-items: center; gap: 4px; }
+.vm-focus .btn-ghost mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+/* Workshop Planner: markup DayPilot writes itself (session cards, venue
+   headers), so these can't live in the component's own styles. */
+.wp-col { display: flex; flex-direction: column; align-items: center; padding: 4px 0; line-height: 1.25; }
+.wp-col b { font-size: 12px; color: var(--text-primary); }
+.wp-col span { font-size: 11px; color: var(--text-muted); }
+.wp-ev { padding: 3px 4px; font-size: 11px; line-height: 1.3; color: var(--text-primary); overflow: hidden; }
+.wp-ev .wp-t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wp-ev .wp-m { color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wp-chips { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+.wp-chip { padding: 0 6px; border-radius: 999px; font-size: 10px; font-weight: 600; background: #f1f5f2; color: var(--text-secondary); }
+.wp-chip.open { background: #dcfce7; color: #166534; }
+.wp-chip.soon { background: #e0f2fe; color: #075985; }
+.wp-chip.closed { background: #f1f5f9; color: #475569; }
+.wp-chip.warn { background: #fef3c7; color: #92400e; }
+
+/* Venue Map: a session running now in a Workshop area (Workshops W8) — the
+   count on the area's badge, and the "Now" block in its panel. */
+.vm-area-ic { position: relative; }
+.vm-live {
+  position: absolute; left: 50%; top: 100%; transform: translate(-50%, 3px);
+  padding: 0 6px; border-radius: 999px; background: #16a34a; color: #fff;
+  font: 700 10px/16px system-ui, sans-serif; white-space: nowrap; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.vm-live.full { background: #d97706; }
+/* A Workshop area's timeline (on now → upcoming → past, past dimmed) */
+.vm-tl { margin: 6px 0 8px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border-default); background: var(--surface-input); }
+.vm-tl-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.vm-tl-hd b { color: var(--text-primary); }
+.vm-tl-hd a { font-weight: 600; color: var(--color-primary); }
+.vm-tl-list { list-style: none; margin: 0; padding: 0; max-height: 280px; overflow-y: auto; }
+.vm-tl-item { position: relative; display: flex; gap: 8px; padding: 6px 0 6px 2px; font-size: 12px; color: var(--text-secondary); }
+.vm-tl-item + .vm-tl-item { border-top: 1px dashed var(--border-default); }
+.vm-tl-dot { width: 10px; height: 10px; margin-top: 3px; border-radius: 999px; flex: 0 0 auto; }
+.vm-tl-when { font-size: 11px; color: var(--text-muted); }
+.vm-tl-title { font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+.vm-tl-meta { font-size: 11px; }
+.vm-tl-tag { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 999px; background: #16a34a; color: #fff; font-size: 10px; font-weight: 700; }
+.vm-tl-item.now { background: #f0fdf4; border-radius: 8px; padding-left: 6px; }
+.vm-tl-item.now .vm-tl-dot { box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2); }
+.vm-tl-item.past, .vm-tl-item.cancelled { opacity: 0.45; }
+.vm-tl-item.cancelled .vm-tl-title { text-decoration: line-through; }
+.vm-fold {
+  display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-left: 4px;
+  border: 1px solid var(--border-default); border-radius: 8px; background: var(--surface-card); color: var(--text-secondary); cursor: pointer;
+}
+.vm-fold:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.vm-fold mat-icon { font-size: 20px; width: 20px; height: 20px; }

@@ -1,0 +1,52 @@
+/* Full-width like Bookings (stat row + table + side panel). */
+
+.rp-scroll { max-height: calc(100vh - 340px); min-height: 160px; }
+
+.rp-seg {
+  display: inline-flex; border: 1.5px solid var(--border-default); border-radius: 999px; overflow: hidden;
+  background: var(--surface-card);
+}
+.rp-seg button {
+  border: 0; background: none; padding: 5px 14px; font-size: 12px; font-weight: 500;
+  color: var(--text-secondary); cursor: pointer;
+}
+.rp-seg button + button { border-left: 1px solid var(--border-default); }
+.rp-seg button.on { background: var(--color-primary); color: #fff; }
+
+.tbl tbody tr { cursor: pointer; }
+.tbl tr.cancelled td { color: var(--text-muted); }
+.tbl td.strong { color: var(--text-primary); font-weight: 600; }
+.tbl td.warn { color: #b45309; font-weight: 600; }
+.tbl .badge { margin-left: 6px; }
+.muted { color: var(--text-muted); }
+
+.cat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 999px; margin-right: 6px; }
+
+/* Turnout: how much of the list came */
+.bar {
+  display: inline-block; width: 44px; height: 5px; margin-left: 8px; vertical-align: middle;
+  border-radius: 999px; background: var(--surface-input); overflow: hidden;
+}
+.bar i { display: block; height: 100%; background: var(--color-primary); }
+
+.rp-empty { padding: 24px 16px; text-align: center; font-size: 12px; color: var(--text-muted); }
+
+/* People in the panel */
+.panel-title { font-size: 15px; font-weight: 600; color: var(--text-primary); word-break: break-word; }
+.panel-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.rp-person {
+  display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle); font-size: 12px;
+}
+.rp-person mat-icon { font-size: 20px; width: 20px; height: 20px; color: var(--text-muted); flex: 0 0 auto; }
+.rp-person mat-icon.in { color: #16a34a; }
+.rp-p-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.rp-p-main b { color: var(--text-primary); overflow-wrap: anywhere; }
+.rp-p-main span { color: var(--text-muted); }
+.rp-p-when { color: var(--text-secondary); white-space: nowrap; }
+
+@media (max-width: 600px) {
+  .hide-sm { display: none; }
+  .filter-bar input { width: 100%; }
+  .rp-scroll { max-height: none; }
+}

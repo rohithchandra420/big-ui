@@ -9,6 +9,130 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.26.0] - 2026-11-03
+
+### Added
+- **Workshops › Reports** (the Workshop team and Workshop "read" access): totals (sessions, on the lists, attended, no-shows), one row per session or per workshop with a turnout bar, a side panel listing who came and who didn't, and **Export to Excel** (Sessions, Workshops and People sheets).
+- **Planner › Now:** sessions running right now, each with a capacity meter and places left; refreshes by itself. Tap one to open it.
+- **Venue Map:**
+  - A Workshop area with a session running shows its count ("28/40") on the map.
+  - Selecting a Workshop area shows a timeline of its workshop sessions: on now, then upcoming (list and registration status), then past (dimmed, how many attended). It keeps itself up to date.
+  - **Locations** and **Areas & lines** can be folded away with an arrow button (remembered in this browser).
+
+### Notes
+- No new dependencies. 12 new unit tests (862/862).
+- Build size warning raised to 2.4 MB (the app is 2.37 MB with the Workshops pages; the calendar and map libraries load separately).
+
+---
+
+## [1.25.0] - 2026-11-03
+
+### Added
+- **Workshops › session lists and door** (for the Workshop team), opened from a session in the Planner with **Open lists & door**:
+  - The session's numbers at the top: on the list (and its limit), waitlist, walk-ins, attended (and the venue's capacity), plus whether pre-registration is open.
+  - **List** and **Door** modes. In both, find a person by **scanning their wrist band** or **searching** by name, email, phone or order number.
+  - A large, colour-coded result card with the Found / Not found / Error sounds: added to the list or the waitlist; let in; already in; on the waitlist (Let in anyway); a walk-in or a late arrival after the cut-off (Let in now / Keep waiting); a replaced band (Checked: continue with its owner); not admitted at the gate; unknown band; connection trouble.
+  - The pre-registration list, waitlist and walk-ins in order, with who's in and when, Let in for those waiting, and Remove. Removing someone from the list says who moved up from the waitlist.
+- **Planner:** each session shows how many are on its list (and waiting) on the calendar, and its numbers in the side panel.
+
+### Notes
+- No new dependencies. 13 new unit tests (850/850).
+
+---
+
+## [1.24.0] - 2026-11-03
+
+### Added
+- **Workshops › Planner** (everyone signed in): the event's sessions on a calendar, one tab per event day, with the workshop venues as columns.
+  - The Workshop Team Lead, Directors, Admins and Developers drag a session to another venue or time, drag its edge to change its length, or select empty time to add one. Warnings (two sessions in one venue at once, the same workshop twice in a day, a limit above capacity, outside the event's dates) show but never block.
+  - A session opens a side panel: venue, facilitators (a substitute for this session shows as such), registration window, cut-off and list limit, with Edit and Delete for the Workshop Team Lead and above.
+  - **Pre-registration switch** for the Workshop team: Follow times / Open now / Close now.
+  - On phones the venue columns scroll sideways.
+- **Workshops › Setup** (the Workshop Team Lead, Directors, Admins, Developers and Workshop "manage" access): venues, workshops and categories, each a list with a side panel to view, edit or add.
+  - A venue can draw a new Workshop area, or change its own, straight from its form: the Venue Map opens for Workshop areas only, and the form comes back filled in with the area selected. The responsible department there is Workshop or General.
+  - Categories have a colour and an icon, picked from swatches and tiles.
+- **Venue Map:** a "Workshop areas only" mode (opened from Workshops › Setup), and links that open the map on a given area.
+- **Departments:** each department has a fixed key, set when it's created and shown on its panel, so a rename never changes anyone's access.
+
+### Changed
+- **Admin › Departments:** a card opens a side panel with the department's details and an Edit button; Create Department opens the same panel. The separate department page and the create dialog are gone.
+- **Buttons in panels and dialogs, app-wide:** Close / Cancel always on the left and the main action on the right, on phones too (buttons share the row, labels centred). Every side panel has a Close button at the bottom as well as the ✕ at the top.
+- The search boxes and suggestion lists for adding team leaders and volunteers to a department match the rest of the app, with photos in the suggestions.
+
+### Notes
+- New dependency: DayPilot Lite 6.1.0 (open source, Apache-2.0) for the Planner calendar. It loads only when the Planner opens.
+- 60 new unit tests (837/837).
+
+---
+
+## [1.23.0] - 2026-11-03
+
+### Added
+- **Wrist bands** (Workshops epic, first part):
+  - **Admit** now opens the wrist band scanner: scan the person's band to admit them and link the band in one step.
+  - **Link Band** (now saved) for people admitted before bands existed.
+  - **Replace Band** with a reason, for a lost or broken band (Box Office staff, Directors, Admins, Developers).
+  - A band badge on each admitted Festival Pass opens its band history: current and replaced bands, who linked or replaced them and when.
+  - A band already linked to someone else is refused, naming who has it. A replaced band shows a red "Replaced band" card: whose it was, why, and their band now.
+- **Scan Ticket QR or Band** on Registration: the scanner now also reads wrist bands and opens that person's booking.
+
+### Changed
+- Link Band is no longer a demo: it saves the band to the Festival Pass.
+
+### Notes
+- No new dependencies. 777/777 unit tests, 22/22 end-to-end tests.
+
+---
+
+## [1.22.0] - 2026-11-02
+
+### Added
+- **Venue Map — areas and lines:** draw the festival boundary, zones and lines on the map, each with a name, kind, responsible department and notes.
+  - **Draw boundary / Draw area / Draw line**, with corner handles to adjust the shape afterwards, and **Undo point** (or Ctrl+Z) while drawing.
+  - Each kind has its own colour and icon: the boundary is a dashed light-green outline; roads are thick dark grey and walkable paths thin beige; Medical camp has a red cross.
+  - Each area shows its kind's icon in the middle on the map (tap it to select the area).
+  - **Directions** and **Street View** for areas and lines too (to the middle of an area, or halfway along a line).
+  - Areas show their size. The **Areas & lines** list sits beside the map, with a Shown/Hidden switch (the boundary always stays visible).
+  - Locations show which zone they're in, and a warning when they're outside the festival boundary.
+  - **Import KML** now also reads areas and lines, with the kind guessed from the name and a review list before importing.
+  - Team Leads draw only for their own department and only inside the festival boundary; the boundary itself is for Directors, Admins and Developers.
+  - **Admin › Events:** each event shows whether its venue boundary is drawn, with a button to draw or view it on the Venue Map.
+- New location type **Entry point**.
+
+### Removed
+- Location types **Workshop venue** and **First aid**: draw a Workshop area or Medical camp instead.
+
+### Changed
+- Venue Map on desktop: the page fits the screen — the map stays in place and only the side panel scrolls.
+- Venue Map on phones: picking a location, area or line from a list scrolls back up to the map.
+- The **Go to** coordinates box shows only for people who can add or draw.
+
+### Notes
+- New dependency: Leaflet-Geoman (free edition, exact version) for drawing; it loads only when the Venue Map is opened, like the map itself.
+- Requires big-api 1.15.0.
+
+---
+
+## [1.21.0] - 2026-11-01
+
+### Added
+- **Venue Map** (new, under Main for everyone signed in): places on the festival ground for the active event, on a street map or satellite view.
+  - Coloured pins by type (Workshop venue, Water station, First aid, Toilets, Stage, Gate / Box Office, Tent field, Other) with a name tooltip, type filters with counts, and a list beside the map (below it on phones).
+  - **Add a location** by tapping the map or with **Use my location** (shows how accurate the phone's position is); drag a pin to fine-tune it; edit name, type, responsible department and notes; delete with a confirmation.
+  - **Directions** and **Street View** open Google Maps at that spot. **Go to** jumps to pasted coordinates.
+  - **Import KML** (DEV, DIR, ADMIN): pins exported from Google My Maps or Google Earth, shown as a review list first so each type can be checked or a place left out. Clear messages for KMZ files, online-only (network link) exports and files with shapes but no pins.
+  - Directors, Admins and Developers can change any location; Team Leads add and change locations of their own department; Volunteers view.
+  - The map library loads only when the Venue Map is opened, so the rest of the app stays as light as before.
+- Requires big-api 1.14.0.
+
+### Development
+- Guide screenshots: the sample announcements now record who they went to and who opened them, plus a sample "Emails sent" note, so the Billboard shows notes; new Billboard shots (board, opened note, phone menu with the unread count) taken as a sample volunteer.
+- Optional sharper `.png` screenshots (`SHOT_FORMAT=png`, `SHOT_SCALE=2`) for team updates; the guide keeps `.webp`.
+- The sample volunteer account was renamed to a new invented name.
+- Bundle size warning raised from 2.2 MB to 2.3 MB (user decision); the map library is a separate on-demand file.
+
+---
+
 ## [1.20.0] - 2026-11-01
 
 ### Added

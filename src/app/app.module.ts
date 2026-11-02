@@ -49,7 +49,6 @@ import { TooltipDirective } from './directives/tooltip.directive';
 import { ProfileComponent } from './profile/profile.component';
 import { DepartmentsComponent } from './admin/departments/departments.component';
 import { DepartmentDetailComponent } from './admin/departments/department-detail/department-detail.component';
-import { DepartmentCreateDialogComponent } from './admin/departments/department-create-dialog/department-create-dialog.component';
 import { DepartmentDeleteDialogComponent } from './admin/departments/department-delete-dialog/department-delete-dialog.component';
 import { BookingsComponent } from './box-office/bookings/bookings.component';
 import { RegistrationComponent } from './box-office/registration/registration.component';
@@ -72,6 +71,7 @@ import { AppSelectComponent } from './shared/app-select/app-select.component';
 import { AppOptionComponent } from './shared/app-select/app-option.component';
 import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.component';
 import { UserAvatarComponent } from './shared/user-avatar/user-avatar.component';
+import { BandAlertComponent } from './shared/band-alert/band-alert.component';
 import { RichTextEditorComponent } from './shared/rich-text-editor/rich-text-editor.component';
 import { TicketEmailDialogComponent } from './box-office/email/ticket-email-dialog/ticket-email-dialog.component';
 import { CustomEmailDialogComponent } from './box-office/email/custom-email-dialog/custom-email-dialog.component';
@@ -79,6 +79,13 @@ import { EmailProgressComponent } from './box-office/email/email-progress/email-
 import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
 import { NotificationSettingsComponent } from './profile/notification-settings/notification-settings.component';
 import { AnnouncementsComponent } from './admin/announcements/announcements.component';
+import { VenueMapComponent } from './venue-map/venue-map.component';
+import { WorkshopSetupComponent } from './workshops/setup/workshop-setup.component';
+import { WorkshopSetupPanelComponent } from './workshops/setup/setup-panel/setup-panel.component';
+import { WorkshopPlannerComponent } from './workshops/planner/workshop-planner.component';
+import { SessionPanelComponent } from './workshops/planner/session-panel/session-panel.component';
+import { SessionListsComponent } from './workshops/session/session-lists.component';
+import { WorkshopReportsComponent } from './workshops/reports/workshop-reports.component';
 import { BillboardComponent } from './billboard/billboard.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
@@ -107,7 +114,6 @@ LOAD_WASM().subscribe()
     ProfileComponent,
     DepartmentsComponent,
     DepartmentDetailComponent,
-    DepartmentCreateDialogComponent,
     DepartmentDeleteDialogComponent,
     BookingsComponent,
     RegistrationComponent,
@@ -130,6 +136,7 @@ LOAD_WASM().subscribe()
     AppOptionComponent,
     ConfirmDialogComponent,
     UserAvatarComponent,
+    BandAlertComponent,
     RichTextEditorComponent,
     TicketEmailDialogComponent,
     CustomEmailDialogComponent,
@@ -139,7 +146,14 @@ LOAD_WASM().subscribe()
     PwaStatusComponent,
     NotificationSettingsComponent,
     AnnouncementsComponent,
-    BillboardComponent
+    BillboardComponent,
+    VenueMapComponent,
+    WorkshopSetupComponent,
+    WorkshopSetupPanelComponent,
+    WorkshopPlannerComponent,
+    SessionPanelComponent,
+    SessionListsComponent,
+    WorkshopReportsComponent
   ],
   imports: [
     BrowserModule,
