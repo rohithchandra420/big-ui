@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { AdminService, DeptSummary } from '../admin.service';
 import { NotificationService } from '../../core/notification.service';
-import { DepartmentCreateDialogComponent } from './department-create-dialog/department-create-dialog.component';
 import { DepartmentDeleteDialogComponent } from './department-delete-dialog/department-delete-dialog.component';
 
 @Component({
@@ -16,15 +15,25 @@ export class DepartmentsComponent implements OnInit {
   loading = false;
   deletingId: string | null = null;
 
+  // Slide-in panel (view / edit / create). panelDeptId null = Create.
+  panelOpen = false;
+  panelDeptId: string | null = null;
+
   constructor(
     private adminService: AdminService,
     private notificationService: NotificationService,
     private router: Router,
+    private route: ActivatedRoute,
     private dialog: MatDialog
   ) {}
 
   ngOnInit() {
     this.loadDepartments();
+    // /admin/departments/:id opens the list with that department's panel open.
+    this.route.paramMap.subscribe(p => {
+      const id = p.get('id');
+      if (id) this.openPanel(id);
+    });
   }
 
   loadDepartments() {
@@ -35,18 +44,29 @@ export class DepartmentsComponent implements OnInit {
     });
   }
 
-  openCreateDialog() {
-    const ref = this.dialog.open(DepartmentCreateDialogComponent, { width: '480px', disableClose: true });
-    ref.afterClosed().subscribe(created => {
-      if (created) {
-        this.notificationService.openSucessSnackBar('Department created');
-        this.loadDepartments();
-      }
-    });
+  openCreate() {
+    this.openPanel(null);
   }
 
-  editDepartment(dept: DeptSummary) {
-    this.router.navigate(['/admin/departments', dept._id]);
+  openDepartment(dept: DeptSummary) {
+    this.openPanel(dept._id);
+  }
+
+  private openPanel(id: string | null) {
+    this.panelDeptId = id;
+    this.panelOpen = true;
+  }
+
+  closePanel() {
+    this.panelOpen = false;
+    // Leave a deep link (/admin/departments/:id) once the panel closes.
+    if (this.route.snapshot.paramMap.get('id')) this.router.navigate(['/admin/departments']);
+  }
+
+  /** After a create or save: refresh the cards and show that department. */
+  onDeptChanged(id: string) {
+    this.loadDepartments();
+    this.panelDeptId = id;
   }
 
   openDeleteDialog(dept: DeptSummary) {
@@ -58,7 +78,9 @@ export class DepartmentsComponent implements OnInit {
           data: { deptName: dept.name, users: allUsers }
         });
         ref.afterClosed().subscribe(confirmed => {
-          if (confirmed) this.deleteDepartment(dept._id, allUsers.length > 0);
+          if (!confirmed) return;
+          if (this.panelDeptId === dept._id) this.closePanel();
+          this.deleteDepartment(dept._id, allUsers.length > 0);
         });
       },
       error: () => this.notificationService.openErrorSnackBar('Error loading department details')

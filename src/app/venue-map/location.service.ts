@@ -107,7 +107,7 @@ export class LocationService {
   }
 
   /** Departments this user may pick: everyone for DEV/DIR/ADMIN, own ones for a Team Lead. */
-  myDepartments(): Promise<{ _id: string; name: string }[]> {
-    return firstValueFrom(this.http.get<{ _id: string; name: string }[]>(`${this.url}/department/mine`));
+  myDepartments(): Promise<{ _id: string; name: string; key?: string }[]> {
+    return firstValueFrom(this.http.get<{ _id: string; name: string; key?: string }[]>(`${this.url}/department/mine`));
   }
 }

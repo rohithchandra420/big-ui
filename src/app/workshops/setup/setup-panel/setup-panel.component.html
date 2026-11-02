@@ -1,0 +1,227 @@
+<!-- Content of Workshop Setup's slide-in panel (the .panel shell is in
+     workshop-setup.component.html): view · edit · add. -->
+
+<div class="panel-hd">
+  <div class="hd-text">
+    <div class="panel-title">{{ title }}</div>
+    <div class="panel-sub" *ngIf="mode === 'view' && kind === 'workshop' && workshop.category as c">
+      <span class="cat-pill" [style.--c]="c.colour"><mat-icon>{{ c.icon }}</mat-icon>{{ c.name }}</span>
+    </div>
+    <div class="panel-sub" *ngIf="mode === 'view' && kind === 'venue'">Capacity {{ venue.capacity }}</div>
+    <div class="panel-sub" *ngIf="mode !== 'view' && item">{{ kind === 'workshop' ? workshop.title : $any(item).name }}</div>
+  </div>
+  <button class="panel-close" (click)="close()" aria-label="Close" title="Close">✕</button>
+</div>
+
+<!-- ── View ───────────────────────────────────────────────── -->
+<ng-container *ngIf="mode === 'view' && item">
+  <div class="panel-body">
+
+    <ng-container *ngIf="kind === 'venue'">
+      <dl class="kv">
+        <dt>Capacity</dt><dd>{{ venue.capacity }} people <span class="muted">(soft limit)</span></dd>
+        <dt>Workshop area</dt>
+        <dd>
+          <ng-container *ngIf="venue.area; else noArea">
+            {{ venue.area.name }}
+            <a class="map-link" routerLink="/venue-map" [queryParams]="{ area: venue.area._id }">
+              <mat-icon>map</mat-icon>Show on map
+            </a>
+          </ng-container>
+          <ng-template #noArea><span class="muted">Not linked to the Venue Map</span></ng-template>
+        </dd>
+        <dt>Amenities</dt><dd [class.muted]="!venue.amenities">{{ venue.amenities || 'None noted' }}</dd>
+        <dt *ngIf="venue.notes">Notes</dt><dd *ngIf="venue.notes">{{ venue.notes }}</dd>
+        <dt>Sessions</dt><dd>{{ venue.sessionCount || 0 }}</dd>
+      </dl>
+    </ng-container>
+
+    <ng-container *ngIf="kind === 'workshop'">
+      <p class="desc" [class.muted]="!workshop.description">{{ workshop.description || 'No description' }}</p>
+      <dl class="kv">
+        <dt>Facilitators</dt>
+        <dd>
+          <div class="name-chips" *ngIf="workshop.facilitators.length; else noFac">
+            <span class="name-chip" *ngFor="let f of workshop.facilitators; trackBy: trackStr">{{ f }}</span>
+          </div>
+          <ng-template #noFac><span class="muted">None yet</span></ng-template>
+        </dd>
+        <dt>Items required</dt><dd [class.muted]="!workshop.itemsRequired">{{ workshop.itemsRequired || '—' }}</dd>
+        <dt>Bring your own</dt><dd [class.muted]="!workshop.bringYourOwn">{{ workshop.bringYourOwn || '—' }}</dd>
+        <dt>Age limit</dt><dd [class.muted]="!workshop.ageLimit">{{ workshop.ageLimit || 'All ages' }}</dd>
+        <dt>Language</dt><dd [class.muted]="!workshop.language">{{ workshop.language || '—' }}</dd>
+        <dt *ngIf="workshop.notes">Notes</dt><dd *ngIf="workshop.notes">{{ workshop.notes }}</dd>
+        <dt>Sessions</dt><dd>{{ workshop.sessionCount || 0 }}</dd>
+      </dl>
+    </ng-container>
+
+    <ng-container *ngIf="kind === 'category'">
+      <div class="cat-preview" [style.--c]="category.colour">
+        <span class="cat-ic"><mat-icon class="ms-fill">{{ category.icon }}</mat-icon></span>
+        <span class="cat-name">{{ category.name }}</span>
+      </div>
+      <dl class="kv">
+        <dt>Workshops</dt><dd>{{ category.workshopCount || 0 }} <span class="muted">(across all events)</span></dd>
+      </dl>
+    </ng-container>
+
+    <p class="note" *ngIf="usedBy">
+      <mat-icon>info</mat-icon>
+      In use by {{ usedBy }} {{ kind === 'category' ? 'workshop' : 'session' }}{{ usedBy === 1 ? '' : 's' }}, so it can't be deleted.
+    </p>
+  </div>
+
+  <div class="panel-actions">
+    <button class="btn-ghost" (click)="close()">Close</button>
+    <button class="btn-danger" *ngIf="canChange" (click)="remove()" [disabled]="saving || usedBy > 0">Delete</button>
+    <button class="btn-cta" *ngIf="canChange" (click)="edit()">
+      <mat-icon>edit</mat-icon> Edit
+    </button>
+  </div>
+</ng-container>
+
+<!-- ── Edit / Add ─────────────────────────────────────────── -->
+<ng-container *ngIf="mode !== 'view'">
+  <div class="panel-body">
+    <form [formGroup]="form" (ngSubmit)="save()" class="form">
+
+      <!-- Venue -->
+      <ng-container *ngIf="kind === 'venue'">
+        <div class="field">
+          <label>Name *</label>
+          <input type="text" formControlName="name" maxlength="60" placeholder="e.g. Bamboo Dome">
+          <span class="field-error" *ngIf="form.get('name')?.touched && form.get('name')?.invalid">Name is required</span>
+        </div>
+        <div class="field">
+          <label>Capacity *</label>
+          <input type="number" formControlName="capacity" min="1" max="10000" placeholder="e.g. 40">
+          <span class="field-hint">How many people fit. A soft limit: staff are warned, never blocked.</span>
+          <span class="field-error" *ngIf="form.get('capacity')?.touched && form.get('capacity')?.invalid">Enter 1 to 10000</span>
+        </div>
+        <div class="field">
+          <label>Workshop area on the Venue Map</label>
+          <app-select formControlName="area">
+            <app-option value="">Not linked</app-option>
+            <app-option *ngFor="let a of setup?.workshopAreas; trackBy: trackId" [value]="a._id">{{ a.name }}</app-option>
+          </app-select>
+          <div class="map-acts" *ngIf="canDrawAreas; else askDraw">
+            <button type="button" class="pill-btn" (click)="openMap('new')">
+              <mat-icon>pentagon</mat-icon>Draw a new Workshop area
+            </button>
+            <button type="button" class="pill-btn" *ngIf="form.get('area')?.value" (click)="openMap('change')">
+              <mat-icon>edit_location_alt</mat-icon>Change this area on the map
+            </button>
+          </div>
+          <ng-template #askDraw>
+            <span class="field-hint">To add or change a Workshop area, ask the Workshop Team Lead or an admin to draw it on the Venue Map.</span>
+          </ng-template>
+          <span class="field-hint" *ngIf="canDrawAreas">Opens the Venue Map for Workshop areas only. This form is kept and comes back when you return.</span>
+        </div>
+        <div class="field">
+          <label>Amenities</label>
+          <textarea formControlName="amenities" rows="2" maxlength="300" placeholder="e.g. Shade, mats, power point, sound system"></textarea>
+        </div>
+        <div class="field">
+          <label>Notes</label>
+          <textarea formControlName="notes" rows="2" maxlength="300"></textarea>
+        </div>
+      </ng-container>
+
+      <!-- Workshop -->
+      <ng-container *ngIf="kind === 'workshop'">
+        <div class="field">
+          <label>Title *</label>
+          <input type="text" formControlName="title" maxlength="80" placeholder="e.g. Hand Drumming">
+          <span class="field-error" *ngIf="form.get('title')?.touched && form.get('title')?.invalid">Title is required</span>
+        </div>
+        <div class="field">
+          <label>Category *</label>
+          <app-select formControlName="category">
+            <app-option value="" [disabled]="true">Pick a category</app-option>
+            <app-option *ngFor="let c of setup?.categories; trackBy: trackId" [value]="c._id">{{ c.name }}</app-option>
+          </app-select>
+          <span class="field-error" *ngIf="form.get('category')?.touched && form.get('category')?.invalid">Pick a category</span>
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <textarea formControlName="description" rows="3" maxlength="1000" placeholder="What happens in this workshop?"></textarea>
+        </div>
+        <div class="field">
+          <label>Facilitators</label>
+          <div class="name-chips" *ngIf="facilitators.length">
+            <span class="name-chip removable" *ngFor="let f of facilitators; let i = index; trackBy: trackStr">
+              {{ f }}<button type="button" (click)="removeFacilitator(i)" [attr.aria-label]="'Remove ' + f">×</button>
+            </span>
+          </div>
+          <div class="add-row">
+            <input type="text" [formControl]="facilitatorCtrl" maxlength="60" placeholder="Type a name, then Add"
+                   (keydown.enter)="addFacilitator($event)" [attr.disabled]="facilitators.length >= 10 ? '' : null">
+            <button type="button" class="pill-btn" (click)="addFacilitator()" [disabled]="!facilitatorCtrl.value.trim() || facilitators.length >= 10">
+              <mat-icon>add</mat-icon>Add
+            </button>
+          </div>
+          <span class="field-hint">Outside artists, by name. Up to 10.</span>
+        </div>
+        <div class="form-two-col">
+          <div class="field">
+            <label>Age limit</label>
+            <input type="text" formControlName="ageLimit" maxlength="30" placeholder="e.g. 12+">
+          </div>
+          <div class="field">
+            <label>Language</label>
+            <input type="text" formControlName="language" maxlength="40" placeholder="e.g. English">
+          </div>
+        </div>
+        <div class="field">
+          <label>Items required</label>
+          <input type="text" formControlName="itemsRequired" maxlength="300" placeholder="What the venue needs ready">
+        </div>
+        <div class="field">
+          <label>Bring your own</label>
+          <input type="text" formControlName="bringYourOwn" maxlength="200" placeholder="What participants should bring">
+        </div>
+        <div class="field">
+          <label>Notes</label>
+          <textarea formControlName="notes" rows="2" maxlength="300"></textarea>
+        </div>
+      </ng-container>
+
+      <!-- Category -->
+      <ng-container *ngIf="kind === 'category'">
+        <div class="field">
+          <label>Name *</label>
+          <input type="text" formControlName="name" maxlength="40" placeholder="e.g. Wellness">
+          <span class="field-error" *ngIf="form.get('name')?.touched && form.get('name')?.invalid">Name is required</span>
+        </div>
+        <div class="field">
+          <label id="colour-lbl">Colour</label>
+          <div class="swatches" role="radiogroup" aria-labelledby="colour-lbl">
+            <label class="swatch" *ngFor="let c of setup?.colours; trackBy: trackStr" [style.--c]="c"
+                   [class.on]="form.get('colour')?.value === c">
+              <input class="sr-only" type="radio" formControlName="colour" [value]="c" [attr.aria-label]="c">
+              <mat-icon class="ms-fill" *ngIf="form.get('colour')?.value === c">check</mat-icon>
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label id="icon-lbl">Icon</label>
+          <div class="icons" role="radiogroup" aria-labelledby="icon-lbl" [style.--c]="form.get('colour')?.value">
+            <label class="icon-tile" *ngFor="let ic of icons; trackBy: trackStr" [class.on]="form.get('icon')?.value === ic">
+              <input class="sr-only" type="radio" formControlName="icon" [value]="ic" [attr.aria-label]="ic">
+              <mat-icon class="ms-fill">{{ ic }}</mat-icon>
+            </label>
+          </div>
+        </div>
+      </ng-container>
+
+      <button type="submit" hidden></button>
+    </form>
+  </div>
+
+  <div class="panel-actions">
+    <button class="btn-ghost" (click)="cancel()" [disabled]="saving">Cancel</button>
+    <button class="btn-cta" (click)="save()" [disabled]="saving">
+      {{ saving ? 'Saving…' : (mode === 'create' ? 'Add ' + label : 'Save Changes') }}
+    </button>
+  </div>
+</ng-container>

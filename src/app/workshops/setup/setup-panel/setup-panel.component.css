@@ -1,0 +1,176 @@
+/* Rendered inside the global .panel (styles.css) on Workshop Setup. */
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.hd-text { min-width: 0; }
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.panel-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  word-break: break-word;
+}
+
+.muted { color: var(--text-muted); }
+
+/* Category pill: --c = the category colour */
+.cat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--c);
+  color: var(--c);
+  font-size: 11px;
+  font-weight: 600;
+}
+.cat-pill mat-icon { font-size: 14px; width: 14px; height: 14px; }
+
+.desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 14px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* Label / value list */
+.kv {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 10px 12px;
+  margin: 0;
+  font-size: 12px;
+}
+.kv dt { color: var(--text-muted); font-weight: 500; }
+.kv dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
+
+.map-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.map-link:hover { text-decoration: underline; }
+.map-link mat-icon { font-size: 15px; width: 15px; height: 15px; }
+
+.name-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.name-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-input);
+  border: 1px solid var(--border-default);
+  font-size: 12px;
+  color: var(--text-primary);
+}
+.name-chip.removable { padding-right: 4px; }
+.name-chip button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+.name-chip button:hover { color: var(--text-primary); }
+
+.add-row { display: flex; gap: 6px; margin-top: 6px; }
+.add-row input { flex: 1 1 auto; min-width: 0; }
+
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 16px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface-input);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.note mat-icon { font-size: 16px; width: 16px; height: 16px; color: var(--text-muted); }
+
+/* Category preview, swatches and icon tiles: --c = the colour */
+.cat-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.cat-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--c);
+  color: #fff;
+}
+.cat-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+
+.swatches, .icons { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--c);
+  cursor: pointer;
+  box-shadow: 0 0 0 2px var(--surface-card), 0 0 0 3px transparent;
+  transition: box-shadow 0.12s, transform 0.12s;
+}
+.swatch:hover { transform: scale(1.08); }
+.swatch.on { box-shadow: 0 0 0 2px var(--surface-card), 0 0 0 4px var(--c); }
+.swatch:focus-within { box-shadow: 0 0 0 2px var(--surface-card), 0 0 0 4px var(--text-muted); }
+.swatch mat-icon { font-size: 18px; width: 18px; height: 18px; color: #fff; }
+
+.icon-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-default);
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.icon-tile:hover { border-color: var(--c); color: var(--c); }
+.icon-tile.on { border-color: var(--c); background: var(--c); color: #fff; }
+.icon-tile:focus-within { box-shadow: 0 0 0 3px rgba(30, 70, 56, 0.12); }
+
+.panel-actions .btn-cta { display: inline-flex; align-items: center; gap: 4px; }
+.panel-actions .btn-cta mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+@media (max-width: 480px) {
+  .kv { grid-template-columns: 1fr; gap: 2px 0; }
+  .kv dd { margin-bottom: 8px; }
+}
+
+.map-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }

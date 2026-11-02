@@ -218,5 +218,9 @@
         <div class="empty-note" *ngIf="activeBody">Placeholders like {{ '{' }}name{{ '}' }} were filled in per recipient when sent.</div>
       </ng-container>
     </div>
+
+    <div class="panel-actions">
+      <button class="btn-ghost" (click)="closePanel()">Close</button>
+    </div>
   </ng-container>
 </div>

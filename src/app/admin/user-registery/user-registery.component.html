@@ -245,13 +245,13 @@
         </ng-template>
       </div>
 
-      <div class="panel-actions"
-           *ngIf="canEditUser(activeUser) || canDeleteUser(activeUser) || canReactivateUser(activeUser)">
-        <button class="btn-cta" *ngIf="canEditUser(activeUser)" (click)="startEdit()">Edit</button>
+      <div class="panel-actions">
+        <button class="btn-ghost" (click)="closePanel()">Close</button>
         <button class="btn-danger" *ngIf="canDeleteUser(activeUser)"
                 [disabled]="removing" (click)="deleteUser(activeUser)">Delete</button>
         <button class="btn-cta" *ngIf="canReactivateUser(activeUser)"
                 [disabled]="removing" (click)="reactivateUser(activeUser)">Reactivate</button>
+        <button class="btn-cta" *ngIf="canEditUser(activeUser)" (click)="startEdit()">Edit</button>
       </div>
     </ng-container>
   </ng-container>

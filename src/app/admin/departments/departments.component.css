@@ -40,14 +40,27 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: box-shadow 0.12s;
+  cursor: pointer;
+  transition: box-shadow 0.12s, border-color 0.12s, transform 0.12s;
 }
 
 .dept-card:hover {
   box-shadow: var(--shadow-sm);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.dept-card:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(30, 70, 56, 0.12);
 }
 
 .dept-card-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-subtle);
   background: #fafafa;
@@ -58,6 +71,15 @@
   font-weight: 600;
   color: var(--text-primary);
 }
+
+.dept-open {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+  transition: color 0.12s, transform 0.12s;
+}
+.dept-card:hover .dept-open { color: var(--color-primary); transform: translateX(2px); }
 
 .dept-card-body {
   padding: 12px 16px;
@@ -117,6 +139,7 @@
 /* ── Card actions ────────────────────────────────────────── */
 .dept-card-actions {
   display: flex;
+  justify-content: flex-end;
   gap: 6px;
   padding: 10px 16px;
   border-top: 1px solid var(--border-subtle);
@@ -151,3 +174,8 @@
 
 .btn-sm-danger:hover:not(:disabled) { background: #fecaca; }
 .btn-sm-danger:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.dept-card.selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(30, 70, 56, 0.12);
+}

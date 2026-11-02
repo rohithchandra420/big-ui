@@ -49,7 +49,6 @@ import { TooltipDirective } from './directives/tooltip.directive';
 import { ProfileComponent } from './profile/profile.component';
 import { DepartmentsComponent } from './admin/departments/departments.component';
 import { DepartmentDetailComponent } from './admin/departments/department-detail/department-detail.component';
-import { DepartmentCreateDialogComponent } from './admin/departments/department-create-dialog/department-create-dialog.component';
 import { DepartmentDeleteDialogComponent } from './admin/departments/department-delete-dialog/department-delete-dialog.component';
 import { BookingsComponent } from './box-office/bookings/bookings.component';
 import { RegistrationComponent } from './box-office/registration/registration.component';
@@ -81,6 +80,10 @@ import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
 import { NotificationSettingsComponent } from './profile/notification-settings/notification-settings.component';
 import { AnnouncementsComponent } from './admin/announcements/announcements.component';
 import { VenueMapComponent } from './venue-map/venue-map.component';
+import { WorkshopSetupComponent } from './workshops/setup/workshop-setup.component';
+import { WorkshopSetupPanelComponent } from './workshops/setup/setup-panel/setup-panel.component';
+import { WorkshopPlannerComponent } from './workshops/planner/workshop-planner.component';
+import { SessionPanelComponent } from './workshops/planner/session-panel/session-panel.component';
 import { BillboardComponent } from './billboard/billboard.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
@@ -109,7 +112,6 @@ LOAD_WASM().subscribe()
     ProfileComponent,
     DepartmentsComponent,
     DepartmentDetailComponent,
-    DepartmentCreateDialogComponent,
     DepartmentDeleteDialogComponent,
     BookingsComponent,
     RegistrationComponent,
@@ -143,7 +145,11 @@ LOAD_WASM().subscribe()
     NotificationSettingsComponent,
     AnnouncementsComponent,
     BillboardComponent,
-    VenueMapComponent
+    VenueMapComponent,
+    WorkshopSetupComponent,
+    WorkshopSetupPanelComponent,
+    WorkshopPlannerComponent,
+    SessionPanelComponent
   ],
   imports: [
     BrowserModule,

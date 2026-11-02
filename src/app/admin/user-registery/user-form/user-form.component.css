@@ -83,3 +83,17 @@
   justify-content: flex-end;
   margin-top: 16px;
 }
+
+/* Inside the Users side panel: Cancel / Save become the panel's bottom bar
+   (pinned, same look and position as .panel-actions — the app-wide rule). */
+:host-context(.panel) .form-actions {
+  position: sticky;
+  bottom: -1.1rem;
+  margin: 16px -1.25rem -1.1rem;
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-input);
+}
+@media (max-width: 480px) {
+  :host-context(.panel) .form-actions > button { flex: 1 1 0; min-width: 0; text-align: center; }
+}

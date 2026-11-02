@@ -75,30 +75,46 @@ describe('DepartmentsComponent', () => {
     });
   });
 
-  it('editDepartment() navigates to /admin/departments/:id', () => {
+  it('clicking a card opens that department in the side panel, without leaving the page', () => {
     const navSpy = spyOn(router, 'navigate');
-    component.editDepartment(mockDepts[0]);
-    expect(navSpy).toHaveBeenCalledWith(['/admin/departments', 'd1']);
+    (fixture.nativeElement.querySelector('.dept-card') as HTMLElement).click();
+    fixture.detectChanges();
+    expect(component.panelOpen).toBeTrue();
+    expect(component.panelDeptId).toBe('d1');
+    expect(fixture.nativeElement.querySelector('.panel.open app-department-detail')).toBeTruthy();
+    expect(navSpy).not.toHaveBeenCalled();
   });
 
-  it('openCreateDialog() opens the create dialog', () => {
-    const afterClosedSpy = jasmine.createSpyObj({ afterClosed: of(null) });
-    dialogSpy.open.and.returnValue(afterClosedSpy);
-
-    component.openCreateDialog();
-
-    expect(dialogSpy.open).toHaveBeenCalled();
+  it('Delete on a card does not open the department, and there is no Edit button', () => {
+    spyOn(component, 'openDeleteDialog');
+    fixture.detectChanges();
+    const card = fixture.nativeElement.querySelector('.dept-card') as HTMLElement;
+    (card.querySelector('.btn-sm-danger') as HTMLElement).click();
+    expect(component.openDeleteDialog).toHaveBeenCalled();
+    expect(component.panelOpen).toBeFalse();
+    expect(card.textContent).not.toContain('Edit');
   });
 
-  it('openCreateDialog() reloads departments when dialog returns a created dept', () => {
-    const created = { _id: 'd3', name: 'New Dept' };
-    const afterClosedSpy = jasmine.createSpyObj({ afterClosed: of(created) });
-    dialogSpy.open.and.returnValue(afterClosedSpy);
+  it('Create Department opens an empty panel (Create mode), not a dialog', () => {
+    (fixture.nativeElement.querySelector('.page-ph .btn-cta') as HTMLElement).click();
+    fixture.detectChanges();
+    expect(component.panelOpen).toBeTrue();
+    expect(component.panelDeptId).toBeNull();
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+  });
 
-    component.openCreateDialog();
-
+  it('after a create or save, refreshes the cards and shows that department', () => {
+    component.openCreate();
+    component.onDeptChanged('d3');
     expect(adminServiceSpy.getDepartmentsSummary).toHaveBeenCalledTimes(2);
-    expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Department created');
+    expect(component.panelDeptId).toBe('d3');
+    expect(component.panelOpen).toBeTrue();
+  });
+
+  it('closing the panel hides it', () => {
+    component.openDepartment(mockDepts[0]);
+    component.closePanel();
+    expect(component.panelOpen).toBeFalse();
   });
 
   it('openDeleteDialog() fetches detail then opens delete dialog', () => {

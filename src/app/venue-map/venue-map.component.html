@@ -8,6 +8,16 @@
 <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar to see its venue.</div>
 <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
 
+<!-- Opened from Workshops › Setup (a venue form): Workshop areas only -->
+<div class="vm-focus" *ngIf="workshopMode">
+  <mat-icon class="ms-fill">pentagon</mat-icon>
+  <div class="vm-grow">
+    <b>Workshop areas only</b>
+    <span>Draw, change or remove Workshop areas. Everything else is view-only here. Saving an area takes you back to your venue.</span>
+  </div>
+  <button type="button" class="btn-ghost" (click)="backToWorkshops()"><mat-icon>arrow_back</mat-icon>Back to Workshop Setup</button>
+</div>
+
 <div class="vm">
   <div class="vm-card">
     <div class="vm-bar">
@@ -15,19 +25,19 @@
         <button type="button" [class.on]="layerName === 'street'" (click)="setLayer('street')">Street</button>
         <button type="button" [class.on]="layerName === 'sat'" (click)="setLayer('sat')">Satellite</button>
       </div>
-      <ng-container *ngIf="canAdd && event">
+      <ng-container *ngIf="canAdd && event && !workshopMode">
         <button type="button" class="pill-btn" [class.primary]="adding" (click)="toggleAdding()">
           <mat-icon class="ms-fill">add_location_alt</mat-icon>{{ adding ? 'Tap the map…' : 'Add location' }}
         </button>
         <button type="button" class="pill-btn" (click)="useMyLocation()"><mat-icon>my_location</mat-icon>Use my location</button>
       </ng-container>
       <ng-container *ngIf="canDraw && event">
-        <button type="button" class="pill-btn" *ngIf="canDrawBoundary && !boundary" (click)="startDraw('boundary')">
+        <button type="button" class="pill-btn" *ngIf="canDrawBoundary && !boundary && !workshopMode" (click)="startDraw('boundary')">
           <mat-icon>fence</mat-icon>Draw boundary</button>
-        <button type="button" class="pill-btn" (click)="startDraw('area')"><mat-icon>pentagon</mat-icon>Draw area</button>
-        <button type="button" class="pill-btn" (click)="startDraw('line')"><mat-icon>polyline</mat-icon>Draw line</button>
+        <button type="button" class="pill-btn" [class.primary]="workshopMode" (click)="startDraw('area')"><mat-icon>pentagon</mat-icon>{{ workshopMode ? 'Draw Workshop area' : 'Draw area' }}</button>
+        <button type="button" class="pill-btn" *ngIf="!workshopMode" (click)="startDraw('line')"><mat-icon>polyline</mat-icon>Draw line</button>
       </ng-container>
-      <label class="pill-btn" *ngIf="canImport && event">
+      <label class="pill-btn" *ngIf="canImport && event && !workshopMode">
         <mat-icon>upload_file</mat-icon>Import KML
         <input #kml type="file" accept=".kml,application/vnd.google-earth.kml+xml" class="sr-only" (change)="onKmlFile(kml)">
       </label>
@@ -91,7 +101,7 @@
         <label for="vm-aname">Name</label>
         <input id="vm-aname" [(ngModel)]="areaForm.name" maxlength="60" placeholder="e.g. Workshop area A">
       </div>
-      <div class="field" *ngIf="areaForm.kind !== 'boundary'">
+      <div class="field" *ngIf="areaForm.kind !== 'boundary' && !workshopMode">
         <label>Kind</label>
         <app-select [(ngModel)]="areaForm.kind">
           <app-option *ngFor="let k of kindOptions(areaForm.shape); trackBy: trackByValue" [value]="k.value">{{ k.label }}</app-option>
@@ -100,8 +110,8 @@
       <div class="field" *ngIf="areaForm.kind !== 'boundary'">
         <label>Department responsible</label>
         <app-select [(ngModel)]="areaForm.department" placeholder="Pick a department">
-          <app-option *ngIf="!isTL" [value]="null">No department</app-option>
-          <app-option *ngFor="let d of departments; trackBy: trackById" [value]="d._id">{{ d.name }}</app-option>
+          <app-option *ngIf="!isTL && !workshopMode" [value]="null">No department</app-option>
+          <app-option *ngFor="let d of areaDepartments; trackBy: trackById" [value]="d._id">{{ d.name }}</app-option>
         </app-select>
       </div>
       <div class="field">
@@ -161,7 +171,7 @@
         <a class="pill-btn" target="_blank" rel="noopener" [href]="directionsUrl(selected.lat, selected.lng)"><mat-icon>directions</mat-icon>Directions</a>
         <a class="pill-btn" target="_blank" rel="noopener" [href]="streetViewUrl(selected.lat, selected.lng)"><mat-icon>streetview</mat-icon>Street View</a>
       </div>
-      <div class="vm-actions" *ngIf="selected.canEdit">
+      <div class="vm-actions" *ngIf="selected.canEdit && !workshopMode">
         <button type="button" class="pill-btn primary" (click)="startEdit(selected)"><mat-icon>edit</mat-icon>Edit</button>
         <button type="button" class="pill-btn vm-danger" (click)="remove(selected)"><mat-icon>delete</mat-icon>Delete</button>
       </div>
@@ -181,7 +191,7 @@
         <a class="pill-btn" target="_blank" rel="noopener" [href]="directionsUrl(c[0], c[1])"><mat-icon>directions</mat-icon>Directions</a>
         <a class="pill-btn" target="_blank" rel="noopener" [href]="streetViewUrl(c[0], c[1])"><mat-icon>streetview</mat-icon>Street View</a>
       </div>
-      <div class="vm-actions" *ngIf="selectedArea.canEdit">
+      <div class="vm-actions" *ngIf="canChangeArea(selectedArea)">
         <button type="button" class="pill-btn primary" (click)="startEditArea(selectedArea)"><mat-icon>edit</mat-icon>Edit shape & details</button>
         <button type="button" class="pill-btn vm-danger" (click)="removeArea(selectedArea)"><mat-icon>delete</mat-icon>Delete</button>
       </div>
