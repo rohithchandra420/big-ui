@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { DeskDecision, DeskGuestHit, DeskPerson, DeskState, Guest, GuestOutcome, GuestPass, FiguresInput, MealDay, MealRef, MessDay, MessReport, MessSetup, MessSetupInput, PassCard, PassInput, ScanOutcome, ServedRow } from './hospitality.model';
+import { DeskDecision, DeskGuestHit, DeskPerson, DeskState, Guest, GuestOutcome, GuestPass, FiguresInput, MealDay, MealRef, MessDay, MessReport, MessSetup, MessSetupInput, PassCard, PassInput, ScanOutcome, ServedRow, StayItem, StayOverview, StayPerson, StayTypeItem, UnitInput, Gender } from './hospitality.model';
 
 /** Hospitality (H1): the mess plan, the day's meals, kitchen count and alerts. */
 @Injectable({ providedIn: 'root' })
@@ -64,10 +64,10 @@ export class HospitalityService {
   getGuests(eventId: string): Promise<{ today: string; guests: Guest[] }> {
     return firstValueFrom(this.http.get<{ today: string; guests: Guest[] }>(this.url + '/guests', { params: { event: eventId } }));
   }
-  addGuest(eventId: string, data: { name: string; phone?: string; note?: string }): Promise<Guest> {
+  addGuest(eventId: string, data: { name: string; phone?: string; note?: string; gender?: string | null }): Promise<Guest> {
     return firstValueFrom(this.http.post<Guest>(this.url + '/guests', { event: eventId, ...data }));
   }
-  updateGuest(id: string, data: { name?: string; phone?: string; note?: string }): Promise<Guest> {
+  updateGuest(id: string, data: { name?: string; phone?: string; note?: string; gender?: string | null }): Promise<Guest> {
     return firstValueFrom(this.http.patch<Guest>(`${this.url}/guests/${id}`, data));
   }
   deleteGuest(id: string): Promise<unknown> {
@@ -104,6 +104,51 @@ export class HospitalityService {
     if (q.to) p['to'] = q.to;
     if (q.department) p['department'] = q.department;
     return p;
+  }
+
+  // ── Stay (H6) ──
+  getStay(eventId: string, from?: string, to?: string, night?: string): Promise<StayOverview> {
+    const params: Record<string, string> = { event: eventId };
+    if (night) params['night'] = night;
+    if (from) params['from'] = from;
+    if (to) params['to'] = to;
+    return firstValueFrom(this.http.get<StayOverview>(this.url + '/stay', { params }));
+  }
+  addStayType(eventId: string, data: { name: string; icon?: string }): Promise<StayTypeItem> {
+    return firstValueFrom(this.http.post<StayTypeItem>(this.url + '/stay/types', { event: eventId, ...data }));
+  }
+  updateStayType(id: string, data: { name?: string; icon?: string }): Promise<StayTypeItem> {
+    return firstValueFrom(this.http.patch<StayTypeItem>(this.url + '/stay/types/' + id, data));
+  }
+  deleteStayType(id: string): Promise<unknown> {
+    return firstValueFrom(this.http.delete(this.url + '/stay/types/' + id));
+  }
+  addUnit(eventId: string, data: UnitInput): Promise<{ _id: string; name: string }> {
+    return firstValueFrom(this.http.post<{ _id: string; name: string }>(this.url + '/stay/units', { event: eventId, ...data }));
+  }
+  addUnits(eventId: string, data: UnitInput & { prefix: string; start: number; count: number; pad?: number }): Promise<{ created: number; first: string; last: string }> {
+    return firstValueFrom(this.http.post<{ created: number; first: string; last: string }>(this.url + '/stay/units/batch', { event: eventId, ...data }));
+  }
+  updateUnit(id: string, data: UnitInput): Promise<unknown> {
+    return firstValueFrom(this.http.patch(this.url + '/stay/units/' + id, data));
+  }
+  deleteUnit(id: string): Promise<unknown> {
+    return firstValueFrom(this.http.delete(this.url + '/stay/units/' + id));
+  }
+  searchStayPeople(eventId: string, q: string): Promise<{ people: StayPerson[] }> {
+    return firstValueFrom(this.http.get<{ people: StayPerson[] }>(this.url + '/stay/people', { params: { event: eventId, q } }));
+  }
+  addStay(eventId: string, data: { unit: string; kind: 'staff' | 'guest'; person: string; from: string; to: string; gender?: Gender | null; people?: number; confirmGender?: boolean; note?: string }): Promise<StayItem> {
+    return firstValueFrom(this.http.post<StayItem>(this.url + '/stay/stays', { event: eventId, ...data }));
+  }
+  updateStay(id: string, data: { unit?: string; from?: string; to?: string; confirmGender?: boolean; note?: string }): Promise<StayItem> {
+    return firstValueFrom(this.http.patch<StayItem>(this.url + '/stay/stays/' + id, data));
+  }
+  cancelStay(id: string): Promise<unknown> {
+    return firstValueFrom(this.http.delete(this.url + '/stay/stays/' + id));
+  }
+  moveStay(id: string, which: 'move-in' | 'move-out', undo = false): Promise<StayItem> {
+    return firstValueFrom(this.http.post<StayItem>(this.url + '/stay/stays/' + id + '/' + which, { undo }));
   }
 
   sendAlert(eventId: string, message: string): Promise<{ recipients: number; delivered: number }> {

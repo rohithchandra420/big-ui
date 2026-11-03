@@ -76,7 +76,7 @@ describe('HospitalityGuestsComponent', () => {
     component.form.name = ' Sound crew ';
     component.saveGuest();
     flushMicrotasks();
-    expect(service.addGuest).toHaveBeenCalledWith('e1', { name: 'Sound crew', phone: '', note: '' });
+    expect(service.addGuest).toHaveBeenCalledWith('e1', { name: 'Sound crew', phone: '', note: '', gender: null });
     expect(component.selected?._id).toBe('g1');
     expect(component.issuing).toBeTrue();
   }));

@@ -87,11 +87,12 @@ describe('BillboardComponent', () => {
     expect(meta).toContain('To: Only you');
   }));
 
-  it('a private Task (Hospitality Remind TLs) is to Only you; a meal alert is to Everyone', () => {
+  it('a private Task (Hospitality Remind TLs) is to Only you; a meal alert is to Everyone', fakeAsync(() => {
+    setup(); settle();
     expect(component.audience(note('t', { type: 'task', roles: [] }))).toBe('Only you');
     expect(component.audience(note('m', { type: 'meal', roles: [] }))).toBe('Everyone');
     expect(component.audience(note('a', { type: 'task', roles: ['TL'] }))).toBe('Team Leads');
-  });
+  }));
 
   it('closes with the close button, Escape, or a tap outside', fakeAsync(() => {
     setup(); settle();

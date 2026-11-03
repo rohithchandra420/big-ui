@@ -33,6 +33,14 @@ export class ProfileService {
     return this.http.post<{ image: string }>(this.url + '/user/me/meal-qr/reset', {});
   }
 
+  /** Hospitality H6: own gender, and own stays for an event. */
+  setGender(gender: string) {
+    return this.http.patch<{ gender: string }>(this.url + '/user/me/gender', { gender });
+  }
+  getMyStay(eventId: string) {
+    return this.http.get<{ stays: { _id: string; from: string; to: string; unit: string; type: string; icon: string; area: { _id: string; name: string } | null; movedInAt: string | null; movedOutAt: string | null }[] }>(this.url + '/user/me/stay', { params: new HttpParams().set('event', eventId) });
+  }
+
   getProfileDetails(userId: string) {
     return this.http.get<User>(this.url + "/user/profile", {
       params: new HttpParams().set('id', userId),

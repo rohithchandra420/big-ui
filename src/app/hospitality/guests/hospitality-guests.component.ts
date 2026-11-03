@@ -37,7 +37,8 @@ export class HospitalityGuestsComponent implements OnInit, OnDestroy {
   selected: Guest | null = null;
   /** 'new' = Add guest form; 'edit' = editing the selected guest. */
   mode: 'view' | 'new' | 'edit' = 'view';
-  form = { name: '', phone: '', note: '' };
+  form = { name: '', phone: '', note: '', gender: '' };
+  readonly genders = ['Male', 'Female', 'Prefer not to say'];
   formError = '';
 
   issuing = false;
@@ -115,20 +116,20 @@ export class HospitalityGuestsComponent implements OnInit, OnDestroy {
   newGuest() {
     this.selected = null;
     this.mode = 'new';
-    this.form = { name: '', phone: '', note: '' };
+    this.form = { name: '', phone: '', note: '', gender: '' };
     this.formError = '';
   }
   editGuest() {
     if (!this.selected) return;
     this.mode = 'edit';
-    this.form = { name: this.selected.name, phone: this.selected.phone, note: this.selected.note };
+    this.form = { name: this.selected.name, phone: this.selected.phone, note: this.selected.note, gender: (this.selected as any).gender || '' };
     this.formError = '';
   }
   closePanel() { this.selected = null; this.mode = 'view'; this.issuing = false; }
 
   async saveGuest() {
     if (!this.event || this.busy) return;
-    const data = { name: this.form.name.trim(), phone: this.form.phone.trim(), note: this.form.note.trim() };
+    const data = { name: this.form.name.trim(), phone: this.form.phone.trim(), note: this.form.note.trim(), gender: this.form.gender || null };
     if (!data.name) { this.formError = 'Name is required.'; return; }
     this.busy = true;
     try {

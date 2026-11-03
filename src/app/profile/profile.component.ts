@@ -8,6 +8,7 @@ import { DepartmentService, MyAttendanceRecord } from '../core/department.servic
 import { deptShortCode } from '../core/department.utils';
 import { AvatarService } from '../core/avatar.service';
 import { ConfirmationService } from '../shared/confirm-dialog/confirmation.service';
+import { EventService } from '../core/event.service';
 
 interface PermissionEntry {
   moduleKey: string;
@@ -35,6 +36,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
   readonly superuserRoles = ['DEV', 'DIR'];
 
   savingFood = false;
+  savingGender = false;
+  readonly genders = ['Male', 'Female', 'Prefer not to say'];
+  myStays: { _id: string; from: string; to: string; unit: string; type: string; icon: string; area: { _id: string; name: string } | null; movedInAt: string | null; movedOutAt: string | null }[] = [];
+  private eventSub?: Subscription;
   mealQr = '';
   mealQrBusy = false;
 
@@ -53,7 +58,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private departmentService: DepartmentService,
     private avatarService: AvatarService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private eventService: EventService
   ) {}
 
   ngOnInit(): void {
@@ -71,6 +77,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       if (user?._id) {
         this.loadProfile();
         this.loadMealQr();
+        if (!this.eventSub) this.eventSub = this.eventService.activeEvent.subscribe(ev => this.loadMyStay(ev?._id));
         this.loadAttendanceHistory();
       }
     });
@@ -128,6 +135,24 @@ export class ProfileComponent implements OnInit, OnDestroy {
       });
     });
   }
+
+  setGender(g: string) {
+    if (g === this.profileData?.gender || this.savingGender) return;
+    this.savingGender = true;
+    this.profileService.setGender(g).subscribe({
+      next: () => { this.profileData = { ...this.profileData, gender: g }; this.savingGender = false; this.notificationService.openSucessSnackBar('Saved'); },
+      error: () => { this.savingGender = false; this.notificationService.openErrorSnackBar('Could not save your gender'); }
+    });
+  }
+
+  /** Hospitality H6: where you sleep at the event picked in the sidebar. */
+  private loadMyStay(eventId: string | undefined) {
+    this.myStays = [];
+    if (!eventId) return;
+    this.profileService.getMyStay(eventId).subscribe({ next: r => this.myStays = r.stays, error: () => this.myStays = [] });
+  }
+  stayDate(d: string) { return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); }
+  trackStay(_: number, s: { _id: string }) { return s._id; }
 
   loadProfile() {
     this.profileService.getProfileDetails(this.loggedInUser._id).subscribe({
@@ -241,5 +266,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.userSub?.unsubscribe();
+    this.eventSub?.unsubscribe();
   }
 }

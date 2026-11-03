@@ -43,6 +43,12 @@
         <div class="hx-bd hg-form">
           <div class="field"><label for="hg-name">Name *</label><input id="hg-name" type="text" maxlength="60" [(ngModel)]="form.name" placeholder="e.g. Sound crew" /></div>
           <div class="field"><label for="hg-note">Organisation / note</label><input id="hg-note" type="text" maxlength="120" [(ngModel)]="form.note" placeholder="e.g. Echo Rentals" /></div>
+          <div class="field">
+            <label>Gender <span class="hx-muted">(needed for a bed)</span></label>
+            <div class="food-opts" role="radiogroup" aria-label="Gender">
+              <button type="button" class="toggle-chip" role="radio" *ngFor="let gd of genders" [class.on]="form.gender === gd" [attr.aria-checked]="form.gender === gd" (click)="form.gender = form.gender === gd ? '' : gd">{{ gd }}</button>
+            </div>
+          </div>
           <div class="field"><label for="hg-phone">Phone</label><input id="hg-phone" type="tel" maxlength="20" [(ngModel)]="form.phone" /></div>
           <div class="field-error" *ngIf="formError">{{ formError }}</div>
           <div class="hg-acts"><button type="button" class="btn-cta" [disabled]="busy" (click)="saveGuest()">{{ mode === 'new' ? 'Add guest' : 'Save' }}</button></div>

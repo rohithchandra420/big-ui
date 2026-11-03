@@ -145,6 +145,7 @@ export interface Guest {
   name: string;
   phone: string;
   note: string;
+  gender?: string | null;
   passes: GuestPass[];
 }
 
@@ -212,3 +213,73 @@ export interface MessReport {
 export interface ServedRow { date: string; meal: string; at: string; name: string; kind: string; department: string; food: string; plates: number; decision: DeskDecision; reason: string; by: string }
 
 export interface FiguresInput { vegPrepared: number; nonVegPrepared: number; leftoverKg?: number | null; note?: string }
+
+// ── Stay: staff / guest accommodation (H6) ─────────────────────
+export type Gender = 'Male' | 'Female' | 'Prefer not to say';
+export const GENDERS: Gender[] = ['Male', 'Female', 'Prefer not to say'];
+
+export interface StayTypeItem { _id: string; name: string; icon: string; units?: number }
+export interface StayNight { date: string; taken: number; open: boolean }
+export interface StayItem {
+  _id: string;
+  unit: string;
+  from: string;
+  /** The day they leave (the bed is free that night). */
+  to: string;
+  nights: number;
+  gender: Gender;
+  note: string;
+  /** Guest groups: beds this stay takes (always 1 for staff). */
+  people: number;
+  person: { kind: 'staff' | 'guest'; _id: string; name: string };
+  movedInAt: string | null;
+  movedOutAt: string | null;
+}
+export interface StayUnitItem {
+  _id: string;
+  name: string;
+  beds: number;
+  notes: string;
+  type: StayTypeItem | null;
+  area: { _id: string; name: string } | null;
+  /** Nights as first / last night (inclusive). Empty = the whole mess period. */
+  available: { from: string; to: string }[];
+  nights: StayNight[];
+  stays: StayItem[];
+}
+export interface StayOverview {
+  messDates: { opensOn: string; closesOn: string };
+  from: string;
+  to: string;
+  today: string;
+  types: StayTypeItem[];
+  icons: string[];
+  units: StayUnitItem[];
+  areas: { _id: string; name: string }[];
+  /** One night's counts (default tonight). */
+  nightStats: NightStats;
+}
+export interface NightStats {
+  date: string;
+  staffInBed: number;
+  guestsInBed: number;
+  movedIn: number;
+  staffTotal: number;
+  withoutBed: { _id: string; name: string; detail: string }[];
+}
+export interface StayPerson {
+  kind: 'staff' | 'guest';
+  _id: string;
+  name: string;
+  gender: Gender | null;
+  detail: string;
+  stays: { _id: string; unit: string; from: string; to: string }[];
+}
+export interface UnitInput {
+  type?: string;
+  name?: string;
+  beds?: number;
+  available?: { from: string; to: string }[];
+  area?: string | null;
+  notes?: string;
+}
