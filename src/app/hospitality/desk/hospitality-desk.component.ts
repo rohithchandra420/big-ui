@@ -8,6 +8,7 @@ import { EventItem } from '../../models/event.model';
 import { BoxOfficeQrscannerPopupComponent, QrScannerData } from '../../box-office/registration/qrscanner-popup/qrscanner-popup.component';
 import { localTime } from '../../workshops/planner.utils';
 import { HospitalityService } from '../hospitality.service';
+import { StaffBandService } from '../../core/staff-band.service';
 import { DeskDecision, DeskGuestHit, DeskPerson, DeskState, GuestOutcome, ScanOutcome, SLOT_LABELS } from '../hospitality.model';
 
 const REFRESH_MS = 30 * 1000;
@@ -50,6 +51,9 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
   /** "Guest pass" for a walk-in. */
   walkOpen = false;
   walk = { name: '', note: '', veg: 1, nonVeg: 0 };
+  /** H5: Replace band needs a reason first. */
+  bandReasonOpen = false;
+  bandReason = '';
   readonly reasons = REASONS;
   readonly decisionLabels = DECISION_LABELS;
 
@@ -61,7 +65,8 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     private hospitality: HospitalityService,
     private notify: NotificationService,
     private gate: GateFeedbackService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private staffBands: StaffBandService
   ) {}
 
   ngOnInit() {
@@ -106,6 +111,32 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
   }
   get chosenReason(): string {
     return this.reason === 'Other' ? this.otherReason.trim() : this.reason;
+  }
+
+  /** H5: link the scanned band to the staff member on the card (or replace theirs). */
+  async linkBand(replace = false) {
+    const o = this.staffOutcome;
+    if (!o || !this.event || this.busy) return;
+    if (replace && !this.bandReason.trim()) { this.bandReasonOpen = true; return; }
+    this.gate.unlock();
+    const raw = await this.staffBands.scan(replace ? `Replace band: ${o.person.name}` : `Link band: ${o.person.name}`);
+    if (!raw) return;
+    this.busy = true;
+    try {
+      const r = replace
+        ? await this.staffBands.replace(o.person._id, this.event._id, raw, this.bandReason.trim())
+        : await this.staffBands.link(o.person._id, this.event._id, raw);
+      o.person.band = r.band.code;
+      this.bandReasonOpen = false;
+      this.bandReason = '';
+      this.gate.found();
+      this.notify.openSucessSnackBar(replace ? 'Band replaced' : 'Band linked — they can scan it at the desk now');
+    } catch (err: any) {
+      this.gate.notFound();
+      this.notify.openErrorSnackBar(err?.error?.message || err?.error?.errors?.[0]?.msg || 'Could not save the band.');
+    } finally {
+      this.busy = false;
+    }
   }
 
   scanQr() {
@@ -189,6 +220,8 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
   clear() {
     this.outcome = null;
     this.done = '';
+    this.bandReasonOpen = false;
+    this.bandReason = '';
   }
 
   /** The staff result card (served / flag / duplicate), or null for a guest. */

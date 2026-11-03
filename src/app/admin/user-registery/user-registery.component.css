@@ -199,3 +199,6 @@
   border-color: var(--color-primary);
   color: #fff;
 }
+
+/* Wrist band reason (Hospitality H5) */
+.band-reason { flex: 1 1 160px; min-width: 0; border: 1px solid var(--border-default); border-radius: 8px; padding: 6px 8px; font: inherit; color: var(--text-primary); }

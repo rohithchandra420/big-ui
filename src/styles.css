@@ -1436,3 +1436,11 @@ select:focus {
 /* My Profile › My meal QR (kept global: the profile component is at its style budget). */
 .meal-qr { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 .meal-qr img { border-radius: 12px; border: 1px solid var(--border-default); background: #fff; padding: 6px; }
+
+/* Serving desk (Hospitality): result-card title strip, staff wrist band line (H5) and action rows — global to keep the desk under its style budget. */
+.hd-band { padding: 10px 14px; font-weight: 700; font-size: 13px; display: flex; gap: 8px; align-items: center; color: #fff; }
+.hd-wband { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; font-weight: 600; color: var(--text-muted); }
+.hd-wband mat-icon { font-size: 15px; width: 15px; height: 15px; }
+.hd-breason { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.hd-breason input { flex: 1 1 180px; border: 1px solid var(--border-default); border-radius: 8px; padding: 6px 8px; font: inherit; color: var(--text-primary); }
+.hd-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }

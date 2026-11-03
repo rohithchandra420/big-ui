@@ -10,6 +10,8 @@ import { AuthService } from 'src/app/core/auth.service';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
 import { ConfirmDialogData } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { AvatarService } from '../../core/avatar.service';
+import { EventService } from '../../core/event.service';
+import { StaffBandInfo, StaffBandService } from '../../core/staff-band.service';
 
 type UserStatFilter = 'admins' | 'leads' | 'volunteers' | 'noDept' | null;
 export type UserStatusFilter = 'active' | 'deactivated' | 'all';
@@ -64,13 +66,22 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
   removing = false;
   photoBusy = false;
 
+  /** H5: the panel user's wrist band for the event picked in the sidebar (null = not allowed / not loaded). */
+  band: StaffBandInfo | null = null;
+  bandBusy = false;
+  bandReasonOpen = false;
+  bandReason = '';
+  private bandFor = '';
+
   constructor(
     private adminService: AdminService,
     private notificationService: NotificationService,
     private authService: AuthService,
     private confirmationService: ConfirmationService,
     private dialog: MatDialog,
-    private avatarService: AvatarService
+    private avatarService: AvatarService,
+    private eventService: EventService,
+    private staffBands: StaffBandService
   ) { }
 
   // ── Role checks ──────────────────────────────────────────
@@ -373,7 +384,47 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     this.activeUser = u;
     this.panelMode = 'view';
     this.panelOpen = true;
+    this.loadBand();
   }
+
+  // ── Wrist band (Hospitality H5) ──────────────────────────
+
+  get bandEvent() { return this.eventService.activeEvent.value; }
+
+  /** Shown only to people the server lets change this user's band (403 → hidden). */
+  async loadBand() {
+    this.band = null;
+    this.bandReasonOpen = false;
+    this.bandReason = '';
+    const u = this.activeUser, ev = this.bandEvent;
+    if (!u?._id || !ev || !this.isActive(u)) return;
+    const key = this.bandFor = u._id + '|' + ev._id;
+    try {
+      const info = await this.staffBands.get(u._id, ev._id);
+      if (this.bandFor === key) this.band = info;
+    } catch { /* not allowed or not reachable: no band row */ }
+  }
+
+  async changeBand(replace: boolean) {
+    const u = this.activeUser, ev = this.bandEvent;
+    if (!u || !ev || this.bandBusy) return;
+    if (replace && !this.bandReason.trim()) { this.bandReasonOpen = true; return; }
+    const raw = await this.staffBands.scan(`${replace ? 'Replace' : 'Link'} band: ${u.name}`);
+    if (!raw) return;
+    this.bandBusy = true;
+    try {
+      if (replace) await this.staffBands.replace(u._id, ev._id, raw, this.bandReason.trim());
+      else await this.staffBands.link(u._id, ev._id, raw);
+      this.notificationService.openSucessSnackBar(replace ? 'Band replaced' : 'Band linked');
+      await this.loadBand();
+    } catch (err: any) {
+      this.notificationService.openErrorSnackBar(err?.error?.message || err?.error?.errors?.[0]?.msg || 'Could not save the band');
+    } finally {
+      this.bandBusy = false;
+    }
+  }
+
+  trackBand(_: number, b: { _id: string }) { return b._id; }
 
   openCreate() {
     if (!this.canCreateUsers) return;

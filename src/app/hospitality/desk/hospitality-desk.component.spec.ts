@@ -7,6 +7,7 @@ import { HospitalityDeskComponent } from './hospitality-desk.component';
 import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
 import { GateFeedbackService } from '../../core/gate-feedback.service';
+import { StaffBandService } from '../../core/staff-band.service';
 import { HospitalityService } from '../hospitality.service';
 import { DeskPerson, DeskState } from '../hospitality.model';
 
@@ -23,6 +24,7 @@ describe('HospitalityDeskComponent', () => {
   let component: HospitalityDeskComponent;
   let service: jasmine.SpyObj<HospitalityService>;
   let gate: jasmine.SpyObj<GateFeedbackService>;
+  let bands: jasmine.SpyObj<StaffBandService>;
   let notify: jasmine.SpyObj<NotificationService>;
   let dialog: jasmine.SpyObj<MatDialog>;
 
@@ -39,6 +41,7 @@ describe('HospitalityDeskComponent', () => {
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
         { provide: NotificationService, useValue: notify },
         { provide: GateFeedbackService, useValue: gate },
+        { provide: StaffBandService, useValue: bands = jasmine.createSpyObj('StaffBandService', ['get', 'link', 'replace', 'scan']) },
         { provide: MatDialog, useValue: dialog },
         { provide: HospitalityService, useValue: service }
       ],
@@ -78,6 +81,35 @@ describe('HospitalityDeskComponent', () => {
     expect(service.scan).toHaveBeenCalledWith('e1', { qr: '{"t":"staff"}' });
     expect(gate.found).toHaveBeenCalled();
     expect(text()).toContain('Enjoy your meal');
+    discardPeriodicTasks();
+  }));
+
+  // Hospitality H5: staff wrist bands from the person's card.
+  it('links a band to the person on the card; Replace asks for a reason first', fakeAsync(() => {
+    start();
+    service.scan.and.returnValue(Promise.resolve({ result: 'served', person: { ...person, band: null } }));
+    component.check({ user: 'u1' });
+    flushMicrotasks();
+    fixture.detectChanges();
+    expect(text()).toContain('No band');
+
+    bands.scan.and.returnValue(Promise.resolve('https://wallet.example/pay?tagid=K1'));
+    bands.link.and.returnValue(Promise.resolve({ band: { _id: 'b1', code: 'BIG7:K1' } }));
+    component.linkBand(false);
+    flushMicrotasks();
+    fixture.detectChanges();
+    expect(bands.link).toHaveBeenCalledWith('u1', 'e1', 'https://wallet.example/pay?tagid=K1');
+    expect(text()).toContain('Band linked');
+
+    component.linkBand(true);
+    flushMicrotasks();
+    expect(component.bandReasonOpen).toBeTrue();
+    expect(bands.replace).not.toHaveBeenCalled();
+    component.bandReason = 'Lost it';
+    bands.replace.and.returnValue(Promise.resolve({ band: { _id: 'b2', code: 'BIG7:K2' } }));
+    component.linkBand(true);
+    flushMicrotasks();
+    expect(bands.replace).toHaveBeenCalledWith('u1', 'e1', 'https://wallet.example/pay?tagid=K1', 'Lost it');
     discardPeriodicTasks();
   }));
 

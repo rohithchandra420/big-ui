@@ -222,3 +222,31 @@
   color: #ccc;
   user-select: none;
 }
+
+/* Collapsible group titles (user, 2026-11-03): same look as before, now a
+   button with a chevron. Open / closed is remembered in the browser. */
+.nav-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: 0;
+  text-align: left;
+  font-family: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+}
+.nav-group-toggle:hover { color: #777; }
+.nav-group-toggle:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 4px; }
+.nav-group-toggle .nav-count { margin-left: auto; text-transform: none; letter-spacing: 0; }
+.nav-chev {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  transform: rotate(-90deg);
+  transition: transform 0.15s ease;
+}
+.nav-group-toggle .nav-count + .nav-chev { margin-left: 0; }
+.nav-chev.open { transform: rotate(0deg); }

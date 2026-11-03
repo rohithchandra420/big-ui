@@ -283,7 +283,8 @@ export class SessionListsComponent implements OnInit, OnDestroy {
       return;
     }
     this.gate.notFound();
-    const title = body.state === 'unknown' ? 'Unknown band' : body.state === 'not_admitted' ? 'Not admitted at the gate' : 'Not added';
+    const title = body.state === 'unknown' ? 'Unknown band' : body.state === 'not_admitted' ? 'Not admitted at the gate'
+      : body.state === 'staff' ? 'Staff band' : 'Not added';
     this.outcome = { tone: 'bad', icon: 'block', title, detail: body.message || 'Something went wrong' };
   }
 

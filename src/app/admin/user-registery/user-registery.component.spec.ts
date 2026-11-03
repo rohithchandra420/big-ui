@@ -12,6 +12,8 @@ import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.se
 import { AppSelectComponent } from '../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../shared/app-select/app-option.component';
 import { AvatarService } from '../../core/avatar.service';
+import { EventService } from '../../core/event.service';
+import { StaffBandService } from '../../core/staff-band.service';
 
 const ops = { _id: 'd-ops', name: 'Operations' };
 const box = { _id: 'd-box', name: 'Box Office' };
@@ -54,6 +56,7 @@ describe('UserRegisteryComponent', () => {
   let notificationSpy: jasmine.SpyObj<NotificationService>;
   let confirmSpy: jasmine.SpyObj<ConfirmationService>;
   let avatarSpy: jasmine.SpyObj<AvatarService>;
+  let bandSpy: jasmine.SpyObj<StaffBandService>;
   let userSubject: BehaviorSubject<any>;
 
   const authStub = {
@@ -81,6 +84,8 @@ describe('UserRegisteryComponent', () => {
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     confirmSpy = jasmine.createSpyObj('ConfirmationService', ['confirm']);
     avatarSpy = jasmine.createSpyObj('AvatarService', ['effectiveVersion', 'changePhoto', 'remove']);
+    bandSpy = jasmine.createSpyObj('StaffBandService', ['get', 'link', 'replace', 'scan']);
+    bandSpy.get.and.callFake(() => Promise.reject({ status: 403 }));
     avatarSpy.effectiveVersion.and.callFake((_id: string, v: any) => v || 0);
 
     await TestBed.configureTestingModule({
@@ -93,6 +98,8 @@ describe('UserRegisteryComponent', () => {
         { provide: ConfirmationService, useValue: confirmSpy },
         { provide: MatDialog, useValue: { openDialogs: [] } },
         { provide: AvatarService, useValue: avatarSpy },
+        { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
+        { provide: StaffBandService, useValue: bandSpy },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -257,6 +264,25 @@ describe('UserRegisteryComponent', () => {
 
       component.startEdit();
       expect(component.panelMode).toBe('edit');
+    });
+
+    // Hospitality H5: the wrist band row shows only when the server allows it.
+    it('shows the wrist band row only when allowed, and links a band for the picked event', async () => {
+      const vol = component.users.find(u => u._id === 'vol1');
+      component.openUser(vol);
+      await fixture.whenStable();
+      expect(component.band).toBeNull();          // 403 → no row
+
+      bandSpy.get.and.callFake(() => Promise.resolve({ current: null, bands: [], canChange: true }));
+      component.openUser(vol);
+      await fixture.whenStable();
+      expect(component.band?.current).toBeNull();
+      expect(bandSpy.get).toHaveBeenCalledWith('vol1', 'e1');
+
+      bandSpy.scan.and.returnValue(Promise.resolve('BAND-RAW-01'));
+      bandSpy.link.and.returnValue(Promise.resolve({ band: { _id: 'b1', code: 'X' } }));
+      await component.changeBand(false);
+      expect(bandSpy.link).toHaveBeenCalledWith('vol1', 'e1', 'BAND-RAW-01');
     });
 
     it('cancelling an edit returns to view; cancelling a create closes the panel', () => {

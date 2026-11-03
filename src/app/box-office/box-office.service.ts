@@ -11,12 +11,16 @@ export interface BulkUploadResult {
 
 /** Who a band (or a band conflict) belongs to. */
 export interface BandOwner {
-    passId: string;
-    ticketId: string | null;
-    orderId: number | null;
+    /** 'staff' = a staff member's band (Hospitality H5): no pass, no booking. */
+    kind?: 'pass' | 'staff';
+    passId?: string;
+    ticketId?: string | null;
+    orderId?: number | null;
     name: string;
-    passTypeName: string;
-    isAdmitted: boolean;
+    passTypeName?: string;
+    isAdmitted?: boolean;
+    userId?: string;
+    department?: string | null;
 }
 
 /** GET /bands/lookup — what a scanned band is. 'replaced' must be flagged and block. */

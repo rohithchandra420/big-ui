@@ -13,6 +13,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.31.0] - 2026-11-03
+
+### Added
+- **Staff wrist bands:** **Link band** / **Replace band** on the Serving desk's person card and in the Users page side panel (for the event picked in the sidebar, with the band history). A staff band scanned at the desk serves like the meal QR.
+- Box Office gate and Workshop door: a staff band is recognised ("This is a staff band" / "Staff band") instead of "unknown band".
+
+### Changed
+- **Sidebar groups collapse.** Each group title (Main, Box Office, Accommodation, Workshops, Hospitality, Admin) opens and closes with a tap. Main starts open, the others closed, the group of the page you're on always opens, and your choice is remembered in this browser. When Main is closed, the Billboard's unread count shows on its title.
+
+---
+
 ## [1.30.0] - 2026-11-03
 
 ### Added
