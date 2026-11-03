@@ -235,7 +235,8 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
     }
     if (band.state === 'active' && !this.isOwnBand) {
       const order = band.owner?.orderId != null ? ` (order ${band.owner.orderId})` : '';
-      this.message = `This band is already linked to ${band.owner?.name || 'someone else'}${order}.`;
+      const staff = band.owner?.kind === 'staff' ? ' (staff)' : '';
+      this.message = `This band is already linked to ${band.owner?.name || 'someone else'}${staff}${order}.`;
       this.gateFeedback.notFound();
       return;
     }
@@ -250,6 +251,13 @@ export class BoxOfficeQrscannerPopupComponent implements AfterViewInit, OnDestro
 
   /** Booking mode: a band scanned at the gate opens its owner's booking. */
   private onBandAtGate(band: BandLookup, text: string, action: any): void {
+    if (band.owner?.kind === 'staff') {
+      // Hospitality H5: a staff band has no booking.
+      this.lastRejected = text;
+      this.message = `This is a staff band (${band.owner.name || 'staff member'}${band.state === 'replaced' ? ', replaced' : ''}). Staff don't have bookings.`;
+      this.gateFeedback.notFound();
+      return;
+    }
     if (band.state === 'active' && band.owner?.ticketId) {
       this.gateFeedback.found();
       action?.stop();

@@ -230,6 +230,30 @@
           </div>
         </div>
 
+        <!-- Wrist band (Hospitality H5) — for the event picked in the sidebar -->
+        <ng-container *ngIf="band">
+          <div class="divider"></div>
+          <div class="section-lbl">Wrist Band · {{ bandEvent?.name }}</div>
+          <div class="detail-list">
+            <div class="detail-row">
+              <span class="detail-l">{{ band.current ? 'Linked' : 'No band yet' }}</span>
+              <span class="detail-v">
+                <button type="button" class="pill-btn" [disabled]="bandBusy" (click)="changeBand(!!band.current)">
+                  <mat-icon>watch</mat-icon>{{ band.current ? 'Replace band' : 'Link band' }}
+                </button>
+              </span>
+            </div>
+            <div class="detail-row" *ngIf="bandReasonOpen">
+              <input class="band-reason" type="text" maxlength="200" [(ngModel)]="bandReason" placeholder="Why replace? e.g. Lost it" aria-label="Reason to replace the band" (keyup.enter)="changeBand(true)" />
+              <button type="button" class="pill-btn" [disabled]="!bandReason.trim() || bandBusy" (click)="changeBand(true)"><mat-icon>qr_code_scanner</mat-icon>Scan new band</button>
+            </div>
+            <div class="detail-row" *ngFor="let b of band.bands; trackBy: trackBand">
+              <span class="detail-l">{{ b.status === 'active' ? 'Current' : 'Replaced' }} · {{ b.linkedAt | date:'mediumDate' }}</span>
+              <span class="detail-v">{{ b.status === 'replaced' ? (b.reason || '—') : (b.linkedBy?.name ? 'by ' + b.linkedBy?.name : '') }}</span>
+            </div>
+          </div>
+        </ng-container>
+
         <div class="divider"></div>
         <div class="section-lbl">Department Access</div>
         <div class="detail-list" *ngIf="permissionRows(activeUser).length; else noPerms">

@@ -35,7 +35,7 @@
                 <input type="text" [(ngModel)]="search" (keyup.enter)="findStaff()" [disabled]="!desk.open"
                        placeholder="Search staff or guests by name" aria-label="Search staff" />
               </div>
-              <p class="hx-muted">Staff: the meal QR on My Profile, or search. Guests: their Meal Pass QR.
+              <p class="hx-muted">Staff: the meal QR on My Profile, their wrist band, or search. Guests: their Meal Pass QR.
                 <button type="button" class="hd-link" [disabled]="!desk.open" (click)="openWalkIn()">Walk-in guest? Issue a pass</button></p>
               <div class="hd-results" *ngIf="results.length || guestResults.length">
                 <button type="button" class="hd-pick" *ngFor="let p of results; trackBy: trackPerson" (click)="pick(p)">
@@ -113,7 +113,14 @@
               <div>
                 <div class="hd-nm">{{ r.person.name }}</div>
                 <div class="hx-muted">{{ r.person.role }} · {{ r.person.department?.name || 'No department' }}<ng-container *ngIf="r.result === 'flag' && $any(r).teamLeads.length"> · TL: {{ $any(r).teamLeads.join(', ') }}</ng-container><ng-container *ngIf="r.result === 'duplicate' && $any(r).lastServedBy"> · served by {{ $any(r).lastServedBy }}</ng-container></div>
-                <div class="hd-food"><span class="food-mark" [ngClass]="r.person.foodPreference === 'non-veg' ? 'nonveg' : 'veg'"></span>{{ r.person.foodPreference === 'non-veg' ? 'Non-veg' : 'Veg' }}</div>
+                <div class="hd-food"><span class="food-mark" [ngClass]="r.person.foodPreference === 'non-veg' ? 'nonveg' : 'veg'"></span>{{ r.person.foodPreference === 'non-veg' ? 'Non-veg' : 'Veg' }}
+                  <span class="hd-wband"><mat-icon>watch</mat-icon>{{ r.person.band ? 'Band linked' : 'No band' }}</span>
+                  <button type="button" class="hd-link" [disabled]="busy" (click)="linkBand(!!r.person.band)">{{ r.person.band ? 'Replace band' : 'Link band' }}</button>
+                </div>
+                <div class="hd-breason" *ngIf="bandReasonOpen">
+                  <input type="text" maxlength="200" [(ngModel)]="bandReason" placeholder="Why replace? e.g. Lost it" aria-label="Reason to replace the band" (keyup.enter)="linkBand(true)" />
+                  <button type="button" class="pill-btn" [disabled]="!bandReason.trim() || busy" (click)="linkBand(true)"><mat-icon>qr_code_scanner</mat-icon>Scan new band</button>
+                </div>
               </div>
             </div>
 

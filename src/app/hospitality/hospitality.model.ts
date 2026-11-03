@@ -95,6 +95,8 @@ export interface DeskPerson {
   department: { _id: string; name: string } | null;
   foodPreference: 'veg' | 'non-veg';
   avatarVersion: number;
+  /** H5: their wrist band for this event (shown on the desk card). */
+  band?: string | null;
 }
 
 /** A guest found by the desk search: one row per pass valid for the open meal (H3). */

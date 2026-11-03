@@ -26,7 +26,6 @@
 .hd-pick small { display: block; font-size: 12px; color: var(--text-muted); }
 
 .hd-result { margin-top: 16px; border-radius: 16px; border: 2px solid var(--border-default); overflow: hidden; }
-.hd-band { padding: 10px 14px; font-weight: 700; font-size: 13px; display: flex; gap: 8px; align-items: center; color: #fff; }
 .hd-result.served { border-color: #86efac; } .hd-result.served .hd-band { background: #15803d; }
 .hd-result.flag { border-color: #fcd34d; } .hd-result.flag .hd-band { background: #b45309; }
 .hd-result.duplicate { border-color: #fca5a5; } .hd-result.duplicate .hd-band { background: #dc2626; }
@@ -35,10 +34,9 @@
 .hd-x mat-icon { font-size: 18px; width: 18px; height: 18px; }
 .hd-who { display: flex; gap: 12px; align-items: center; padding: 14px; }
 .hd-nm { font-size: 17px; font-weight: 700; color: var(--text-primary); }
-.hd-food { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; margin-top: 6px; color: var(--text-primary); }
+.hd-food { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 12px; font-weight: 700; margin-top: 6px; color: var(--text-primary); }
 .hd-body { padding: 0 14px 14px; }
 .hd-reasons { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
-.hd-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .pill-btn.hd-refuse { color: #dc2626; border-color: #fecaca; font-weight: 600; }
 .pill-btn.hd-block { background: #dc2626; border-color: #dc2626; color: #fff; font-weight: 600; }
 
