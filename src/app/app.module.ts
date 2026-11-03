@@ -88,6 +88,7 @@ import { SessionListsComponent } from './workshops/session/session-lists.compone
 import { WorkshopReportsComponent } from './workshops/reports/workshop-reports.component';
 import { HospitalityTodayComponent } from './hospitality/today/hospitality-today.component';
 import { HospitalitySetupComponent } from './hospitality/setup/hospitality-setup.component';
+import { HospitalityDeskComponent } from './hospitality/desk/hospitality-desk.component';
 import { BillboardComponent } from './billboard/billboard.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
@@ -157,7 +158,8 @@ LOAD_WASM().subscribe()
     SessionListsComponent,
     WorkshopReportsComponent,
     HospitalityTodayComponent,
-    HospitalitySetupComponent
+    HospitalitySetupComponent,
+    HospitalityDeskComponent
   ],
   imports: [
     BrowserModule,

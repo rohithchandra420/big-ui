@@ -43,10 +43,11 @@
         <mat-icon class="ms-fill">{{ s.status === 'open' ? 'lunch_dining' : 'door_front' }}</mat-icon>
         <div class="ht-now-t">
           <b>{{ s.status === 'open' ? s.label + ' is open' : s.status === 'upcoming' ? s.label + ' opens at ' + time(s.start) : s.label + (s.closedEarly ? ' — Mess Hall closed early' : ' is over') }}</b>
-          <small>{{ time(s.start) }} – {{ time(s.end) }}<ng-container *ngIf="closesIn"> · {{ closesIn }}</ng-container></small>
+          <small>{{ time(s.start) }} – {{ time(s.end) }}<ng-container *ngIf="closesIn"> · {{ closesIn }}</ng-container><ng-container *ngIf="s.status !== 'upcoming'"> · {{ s.served }} served</ng-container></small>
         </div>
         <ng-container *ngIf="!editingTime">
           <button type="button" class="pill-btn" *ngIf="s.status === 'upcoming'" (click)="startEditTime()"><mat-icon>schedule</mat-icon>Change time</button>
+          <a class="pill-btn" *ngIf="s.status === 'open'" routerLink="/hospitality/desk"><mat-icon>qr_code_scanner</mat-icon>Serving desk</a>
           <button type="button" class="pill-btn ht-danger" *ngIf="s.status === 'open'" [disabled]="!!busy" (click)="closeMess()"><mat-icon>door_front</mat-icon>Close Mess Hall</button>
           <button type="button" class="pill-btn" *ngIf="s.closedEarly && s.status === 'closed'" [disabled]="!!busy" (click)="reopenMess()"><mat-icon>door_open</mat-icon>Reopen</button>
         </ng-container>

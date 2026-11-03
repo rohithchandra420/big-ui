@@ -21,6 +21,8 @@ export interface MessPlan {
   openMinutes: number;
   snacksBasis: 'morning' | 'afternoon';
   countDueAfterMin: number;
+  /** H2: automatic Remind-TL Task this many minutes before the count is due. */
+  remindBeforeMin?: number;
   messHall: string | null;
 }
 
@@ -28,7 +30,7 @@ export interface MessSetup {
   plan: MessPlan | null;
   messHalls: { _id: string; name: string }[];
   messStatus: { open: boolean; label: string } | null;
-  defaults: { times: Record<MealKey, string>; openMinutes: number; snacksBasis: 'morning' | 'afternoon'; countDueAfterMin: number };
+  defaults: { times: Record<MealKey, string>; openMinutes: number; snacksBasis: 'morning' | 'afternoon'; countDueAfterMin: number; remindBeforeMin?: number };
 }
 
 export interface MessSetupInput {
@@ -39,6 +41,7 @@ export interface MessSetupInput {
   openMinutes: number;
   snacksBasis: 'morning' | 'afternoon';
   countDueAfterMin: number;
+  remindBeforeMin: number;
   messHall: string | null;
 }
 
@@ -64,6 +67,8 @@ export interface MealDay {
   countDueAt: string;
   notMarked: NotMarkedRow[];
   notMarkedTotal: number;
+  /** Plates handed out at the Serving desk (H2). */
+  served: number;
 }
 
 export interface MessDay {
@@ -75,3 +80,27 @@ export interface MessDay {
 }
 
 export interface MealRef { event: string; date: string; meal: MealKey }
+
+// ── Serving desk (H2) ──────────────────────────────────────────
+export interface DeskPerson {
+  _id: string;
+  name: string;
+  role: string;
+  department: { _id: string; name: string } | null;
+  foodPreference: 'veg' | 'non-veg';
+  avatarVersion: number;
+}
+
+export type DeskDecision = 'served' | 'served_flagged' | 'refused' | 'blocked' | 'extra';
+
+export interface DeskState {
+  open: { meal: MealKey; label: string; date: string; start: string; end: string; served: number; expected: number } | null;
+  next?: string;
+  recent?: { _id: string; name: string; decision: DeskDecision; reason: string; at: string }[];
+  flaggedToReport?: number;
+}
+
+export type ScanOutcome =
+  | { result: 'served'; person: DeskPerson }
+  | { result: 'flag'; person: DeskPerson; slot: Slot; teamLeads: string[] }
+  | { result: 'duplicate'; person: DeskPerson; lastServedAt: string; lastServedBy: string };
