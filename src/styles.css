@@ -498,6 +498,8 @@ select:focus {
   border-radius: 8px;
   padding: 12px 14px;
   margin-bottom: 4px;
+  color: #92400e;
+  font-size: 13px;
 }
 .warn-banner .warn-icon {
   color: #f59e0b;
