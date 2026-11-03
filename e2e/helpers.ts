@@ -12,8 +12,17 @@ export const PASSWORD = 'Demo@12345';
 
 const DATA_DIR = path.join(__dirname, '.data');
 
-/** Ids written by e2e/seed.js for this run (active event, bookings by buyer first name). */
-export function seedIds(): { eventId: string; tickets: Record<string, string> } {
+/** Sample Workshops ids and names written by e2e/seed-workshops.js. */
+export interface WorkshopSeedIds {
+  workshopTl: string;
+  sessions: Record<string, string>;
+  doorName: string;
+  liveArea: string;
+  pastSessionTitle: string;
+}
+
+/** Ids written by e2e/seed.js for this run (active event, bookings by buyer first name, workshops). */
+export function seedIds(): { eventId: string; tickets: Record<string, string>; workshops: WorkshopSeedIds } {
   return JSON.parse(readFileSync(path.join(DATA_DIR, 'ids.json'), 'utf8'));
 }
 
