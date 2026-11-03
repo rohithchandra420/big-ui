@@ -33,21 +33,72 @@
               <div class="search-field">
                 <mat-icon>search</mat-icon>
                 <input type="text" [(ngModel)]="search" (keyup.enter)="findStaff()" [disabled]="!desk.open"
-                       placeholder="Search staff by name or email" aria-label="Search staff" />
+                       placeholder="Search staff or guests by name" aria-label="Search staff" />
               </div>
-              <p class="hx-muted">Their meal QR is on My Profile. No phone? Search them.</p>
-              <div class="hd-results" *ngIf="results.length">
+              <p class="hx-muted">Staff: the meal QR on My Profile, or search. Guests: their Meal Pass QR.
+                <button type="button" class="hd-link" [disabled]="!desk.open" (click)="openWalkIn()">Walk-in guest? Issue a pass</button></p>
+              <div class="hd-results" *ngIf="results.length || guestResults.length">
                 <button type="button" class="hd-pick" *ngFor="let p of results; trackBy: trackPerson" (click)="pick(p)">
                   <app-user-avatar [userId]="p._id" [name]="p.name" [version]="p.avatarVersion" [size]="28"></app-user-avatar>
                   <span>{{ p.name }}<small>{{ p.department?.name || 'No department' }}</small></span>
                 </button>
+                <button type="button" class="hd-pick" *ngFor="let g of guestResults; trackBy: trackGuestHit" (click)="pickGuest(g)">
+                  <span class="hd-gav sm">{{ g.name.charAt(0) }}</span>
+                  <span>{{ g.name }}<small>Guest · {{ g.label }}{{ g.note ? ' · ' + g.note : '' }}</small></span>
+                </button>
               </div>
-              <p class="hx-muted" *ngIf="searched && !results.length">No active staff found.</p>
+              <p class="hx-muted" *ngIf="searched && !results.length && !guestResults.length">Nobody found — guests show only with a pass valid for this meal.</p>
             </div>
           </div>
 
-          <!-- Result -->
-          <div class="hd-result" *ngIf="outcome as r" [ngClass]="done ? 'done' : r.result">
+          <!-- Walk-in guest pass -->
+          <div class="hd-walk" *ngIf="walkOpen">
+            <div class="hd-walk-t"><b>Guest pass for {{ desk.open?.label }}</b><button type="button" class="hd-x dark" aria-label="Cancel" (click)="walkOpen = false"><mat-icon>close</mat-icon></button></div>
+            <div class="hd-two">
+              <div class="field"><label for="hd-wn">Name *</label><input id="hd-wn" type="text" maxlength="60" [(ngModel)]="walk.name" placeholder="e.g. Bus driver" /></div>
+              <div class="field"><label for="hd-wo">Note</label><input id="hd-wo" type="text" maxlength="120" [(ngModel)]="walk.note" placeholder="Organisation, role…" /></div>
+            </div>
+            <div class="hd-acts">
+              <span class="hd-step"><span class="food-mark veg"></span><button type="button" (click)="stepWalk('veg', -1)" aria-label="Fewer Veg">−</button><b>{{ walk.veg }}</b><button type="button" (click)="stepWalk('veg', 1)" aria-label="More Veg">+</button></span>
+              <span class="hd-step"><span class="food-mark nonveg"></span><button type="button" (click)="stepWalk('nonVeg', -1)" aria-label="Fewer Non-veg">−</button><b>{{ walk.nonVeg }}</b><button type="button" (click)="stepWalk('nonVeg', 1)" aria-label="More Non-veg">+</button></span>
+              <button type="button" class="pill-btn hx-primary" [disabled]="busy || !walk.name.trim() || walk.veg + walk.nonVeg < 1" (click)="submitWalkIn()"><mat-icon>confirmation_number</mat-icon>Issue pass</button>
+            </div>
+          </div>
+
+          <!-- Guest (Meal Pass) -->
+          <div class="hd-result guest" *ngIf="guest as g" [class.done]="!!done">
+            <div class="hd-band">
+              <mat-icon class="ms-fill">{{ done ? 'task_alt' : 'confirmation_number' }}</mat-icon>
+              {{ done || ('Meal Pass · ' + g.pass.label) }}
+              <span class="grow"></span>
+              <button type="button" class="hd-x" aria-label="Next person" (click)="clear()"><mat-icon>close</mat-icon></button>
+            </div>
+            <div class="hd-who">
+              <span class="hd-gav">{{ g.guest.name.charAt(0) }}</span>
+              <div>
+                <div class="hd-nm">{{ g.guest.name }}</div>
+                <div class="hx-muted">Guest<ng-container *ngIf="g.guest.note"> · {{ g.guest.note }}</ng-container> · {{ g.pass.vegPlates + g.pass.nonVegPlates }} plate{{ g.pass.vegPlates + g.pass.nonVegPlates === 1 ? '' : 's' }} per meal · {{ g.used.veg + g.used.nonVeg }} served this meal</div>
+              </div>
+            </div>
+            <div class="hd-body" *ngIf="!done">
+              <div class="hx-muted">{{ guestHasPlates ? 'Plates now (' + g.left.veg + ' Veg, ' + g.left.nonVeg + ' Non-veg left):' : 'All plates on this pass are used for this meal.' }}</div>
+              <div class="hd-acts">
+                <span class="hd-step"><span class="food-mark veg"></span><button type="button" (click)="stepGuest('gVeg', -1)" aria-label="Fewer Veg">−</button><b>{{ gVeg }}</b><button type="button" (click)="stepGuest('gVeg', 1)" aria-label="More Veg">+</button></span>
+                <span class="hd-step"><span class="food-mark nonveg"></span><button type="button" (click)="stepGuest('gNonVeg', -1)" aria-label="Fewer Non-veg">−</button><b>{{ gNonVeg }}</b><button type="button" (click)="stepGuest('gNonVeg', 1)" aria-label="More Non-veg">+</button></span>
+                <ng-container *ngIf="guestHasPlates && gVeg <= g.left.veg && gNonVeg <= g.left.nonVeg; else overLimit">
+                  <button type="button" class="pill-btn hx-primary" [disabled]="busy || gVeg + gNonVeg < 1" (click)="serveGuest()"><mat-icon>restaurant</mat-icon>Serve</button>
+                </ng-container>
+                <ng-template #overLimit>
+                  <button type="button" class="pill-btn hd-block" [disabled]="busy" (click)="blockGuest()"><mat-icon>block</mat-icon>Block</button>
+                  <button type="button" class="pill-btn" [disabled]="busy || gVeg + gNonVeg < 1" (click)="serveGuest(true)"><mat-icon>add</mat-icon>Allow extra</button>
+                </ng-template>
+              </div>
+            </div>
+            <div class="hd-body hx-muted" *ngIf="done">Recorded — ready for the next person.</div>
+          </div>
+
+          <!-- Result (staff) -->
+          <div class="hd-result" *ngIf="staffOutcome as r" [ngClass]="done ? 'done' : r.result">
             <div class="hd-band">
               <mat-icon class="ms-fill">{{ done ? 'task_alt' : r.result === 'served' ? 'check_circle' : r.result === 'flag' ? 'flag' : 'error' }}</mat-icon>
               <ng-container *ngIf="done">{{ done }}</ng-container>
@@ -100,7 +151,7 @@
       <div class="hx-bd">
         <div class="hd-li" *ngFor="let x of desk.recent; trackBy: trackLog">
           <span class="hd-t">{{ time(x.at) }}</span>
-          <span class="grow">{{ x.name }}</span>
+          <span class="grow">{{ x.name }}<ng-container *ngIf="x.guest"> · {{ x.plates }} plate{{ x.plates === 1 ? '' : 's' }}</ng-container></span>
           <span class="hd-tag" [ngClass]="x.decision">{{ x.decision === 'served_flagged' ? (x.reason || 'Served') : decisionLabels[x.decision] }}</span>
         </div>
         <p class="hx-muted" *ngIf="!desk.recent?.length">Nobody served yet this meal.</p>

@@ -101,14 +101,14 @@
             <div><b>Mess Hall</b><small>{{ setup.messStatus?.label || (messHall ? 'Saved status shows after Save' : 'Not on the map yet') }}</small></div>
           </div>
           <div class="field hs-pick" *ngIf="setup.messHalls.length">
-            <label>Mess Hall pin</label>
+            <label>Mess Hall area</label>
             <app-select [(ngModel)]="messHall">
               <app-option [value]="''">Not shown on the map</app-option>
               <app-option *ngFor="let h of setup.messHalls" [value]="h._id">{{ h.name }}</app-option>
             </app-select>
           </div>
           <div class="hx-acts"><a class="pill-btn" routerLink="/venue-map"><mat-icon>edit_location_alt</mat-icon>{{ setup.messHalls.length ? 'Open the Venue Map' : 'Pick on Venue Map' }}</a></div>
-          <p class="hx-muted hs-note">{{ setup.messHalls.length ? 'Everyone sees open / closed on the map pin.' : 'Add a location of type "Mess Hall" on the Venue Map, then pick it here.' }}</p>
+          <p class="hx-muted hs-note">{{ setup.messHalls.length ? 'Everyone sees open / closed on its badge on the map.' : 'Draw an area of type "Mess Hall" on the Venue Map, then pick it here.' }}</p>
         </div>
       </section>
     </div>

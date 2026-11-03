@@ -40,8 +40,12 @@ export interface VenueLocation {
   department: { _id: string; name: string } | null;
   notes: string;
   canEdit: boolean;       // decided by the server for the signed-in user
-  /** Mess Hall pin only (Hospitality): live open / closed, e.g. "Lunch · open until 15:00". */
-  messStatus?: { open: boolean; label: string };
+}
+
+/** GET /map/status: live statuses by map item id (today: the Mess Hall area). */
+export interface MapStatus {
+  areas: Record<string, { kind: string; open: boolean; label: string }>;
+  locations: Record<string, unknown>;
 }
 
 export interface LocationList {
@@ -65,6 +69,11 @@ export class LocationService {
   private url = environment.URL;
 
   constructor(private http: HttpClient) {}
+
+  /** The one small live-status call the open map repeats once a minute (Hospitality H3). */
+  status(eventId: string): Promise<MapStatus> {
+    return firstValueFrom(this.http.get<MapStatus>(`${this.url}/map/status?event=${encodeURIComponent(eventId)}`));
+  }
 
   list(eventId: string): Promise<LocationList> {
     return firstValueFrom(this.http.get<LocationList>(`${this.url}/locations?event=${encodeURIComponent(eventId)}`));

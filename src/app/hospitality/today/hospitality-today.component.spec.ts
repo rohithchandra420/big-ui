@@ -66,6 +66,8 @@ describe('HospitalityTodayComponent', () => {
     expect(text()).toContain('6 missing');
     expect(text()).toContain('No department');
     expect(text()).toContain('Mess day 24 of 31');
+    expect(text()).toContain('Count: morning attendance + guest passes');
+    expect(text()).toContain('Count from');
     discardPeriodicTasks();
   }));
 

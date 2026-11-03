@@ -138,6 +138,8 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Side panel sections the viewer folded away (kept in this browser). */
   folded = new Set<string>(this.readFolded());
   private liveTimer?: ReturnType<typeof setInterval>;
+  /** Live statuses from GET /map/status (Hospitality H3: the Mess Hall), by area id. */
+  statusByArea = new Map<string, { kind: string; open: boolean; label: string }>();
   /** Per area: its size, for polygons. */
   areaSize = new Map<string, string>();
 
@@ -204,11 +206,13 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subs.add(this.eventService.activeEvent.subscribe(ev => {
       const changed = ev?._id !== this.event?._id;
       this.event = ev;
-      if (changed) { this.closePanels(); this.fittedFor = ''; this.workshopSchedule = null; this.liveByArea = new Map(); }
+      if (changed) { this.closePanels(); this.fittedFor = ''; this.workshopSchedule = null; this.liveByArea = new Map(); this.statusByArea = new Map(); }
       this.load();
       this.loadWorkshops();
+      this.loadStatus();
     }));
-    this.liveTimer = setInterval(() => this.loadWorkshops(), 60000);
+    // Once a minute while the page is visible: workshop live counts + the map status call.
+    this.liveTimer = setInterval(() => { this.loadWorkshops(); this.loadStatus(); }, 60000);
   }
 
   ngOnDestroy(): void {
@@ -268,13 +272,12 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private pin(type: string, isSel = false, draft = false, status?: { open: boolean }): Leaflet.DivIcon {
+  private pin(type: string, isSel = false, draft = false): Leaflet.DivIcon {
     const t = typeInfo(type);
-    const dot = status ? `<i class="vm-status${status.open ? ' open' : ''}"></i>` : '';
     return this.L!.divIcon({
       className: 'vm-pin-wrap', iconSize: [34, 34], iconAnchor: [17, 34], tooltipAnchor: [0, -30],
       html: `<div class="vm-pin${isSel ? ' sel' : ''}${draft ? ' draft' : ''}" style="background:${t.color}">` +
-            `<span class="material-symbols-rounded">${draft ? 'add_location' : t.icon}</span>${dot}</div>`
+            `<span class="material-symbols-rounded">${draft ? 'add_location' : t.icon}</span></div>`
     });
   }
 
@@ -285,12 +288,11 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.markers = this.visible.map(loc => {
       const editingThis = this.form?._id === loc._id;
       const m = L.marker([loc.lat, loc.lng], {
-        icon: this.pin(loc.type, this.selected?._id === loc._id || editingThis, false, loc.messStatus),
+        icon: this.pin(loc.type, this.selected?._id === loc._id || editingThis),
         draggable: loc.canEdit && !this.drawing, title: loc.name, keyboard: true
       });
       const outside = this.locInfo.get(loc._id)?.outside ? '<br><i>Outside the festival boundary</i>' : '';
-      const status = loc.messStatus ? `<br>${escapeHtml(loc.messStatus.label)}` : '';
-      m.bindTooltip(`<b>${escapeHtml(loc.name)}</b><br>${typeInfo(loc.type).label}${status}${outside}`, { direction: 'top' });
+      m.bindTooltip(`<b>${escapeHtml(loc.name)}</b><br>${typeInfo(loc.type).label}${outside}`, { direction: 'top' });
       m.on('click', () => this.zone.run(() => this.select(loc)));
       m.on('dragend', () => this.zone.run(() => { const p = m.getLatLng(); this.onDragEnd(loc, p.lat, p.lng); }));
       return m.addTo(this.map!);
@@ -316,7 +318,8 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
           : { color: info.color, weight, dashArray: a.kind === 'emergency' ? '8 6' : undefined };
       const layer = a.shape === 'polygon' ? L.polygon(a.points, style) : L.polyline(a.points, style);
       (layer as any).pm?.setOptions?.({ allowEditing: false });
-      layer.bindTooltip(`<b>${escapeHtml(a.name)}</b><br>${info.label}`, { sticky: true });
+      const st = this.statusByArea.get(a._id);
+      layer.bindTooltip(`<b>${escapeHtml(a.name)}</b><br>${info.label}${st ? '<br>' + escapeHtml(st.label) : ''}`, { sticky: true });
       layer.on('click', (e: any) => { L.DomEvent.stopPropagation(e); this.zone.run(() => this.selectArea(a)); });
       layer.addTo(this.map);
       this.areaLayers.set(a._id, layer);
@@ -378,7 +381,21 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @HostListener('document:visibilitychange')
   onVisible(): void {
-    if (!document.hidden) this.loadWorkshops();
+    if (!document.hidden) { this.loadWorkshops(); this.loadStatus(); }
+  }
+
+  /** GET /map/status — redraws the area badges only when a status changed. Quietly keeps the last one on failure. */
+  async loadStatus(): Promise<void> {
+    if (!this.event || document.hidden) return;
+    try {
+      const res = await this.locationService.status(this.event._id);
+      const next = new Map(Object.entries(res.areas || {}));
+      const same = next.size === this.statusByArea.size &&
+        [...next].every(([id, s]) => { const o = this.statusByArea.get(id); return !!o && o.open === s.open && o.label === s.label; });
+      if (same) return;
+      this.statusByArea = next;
+      if (this.map) this.drawAreas();
+    } catch { /* keep the last status */ }
   }
 
   /** Recompute the live counts and the selected area's timeline. */
@@ -451,6 +468,8 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** '28/40' on an area's badge while a session runs in its venue. */
   private liveBadge(a: VenueArea): string {
+    const st = this.statusByArea.get(a._id);
+    if (st) return `<i class="vm-status${st.open ? ' open' : ''}"></i>`;
     const l = this.liveByArea.get(a._id);
     if (!l) return '';
     return `<span class="vm-live${l.placesLeft ? '' : ' full'}">${l.attended}/${l.capacity}</span>`;

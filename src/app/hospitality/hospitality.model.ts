@@ -45,7 +45,8 @@ export interface MessSetupInput {
   messHall: string | null;
 }
 
-export interface Plates { veg: number; nonVeg: number; guests: number; total?: number }
+/** veg / nonVeg = totals; guestVeg / guestNonVeg = the guest part of them (H3). */
+export interface Plates { veg: number; nonVeg: number; guests: number; guestVeg?: number; guestNonVeg?: number; total?: number }
 
 export interface NotMarkedRow {
   department: { _id: string; name: string } | null;
@@ -91,16 +92,71 @@ export interface DeskPerson {
   avatarVersion: number;
 }
 
+/** A guest found by the desk search: one row per pass valid for the open meal (H3). */
+export interface DeskGuestHit { guestId: string; name: string; note: string; passId: string; label: string }
+
 export type DeskDecision = 'served' | 'served_flagged' | 'refused' | 'blocked' | 'extra';
 
 export interface DeskState {
   open: { meal: MealKey; label: string; date: string; start: string; end: string; served: number; expected: number } | null;
   next?: string;
-  recent?: { _id: string; name: string; decision: DeskDecision; reason: string; at: string }[];
+  recent?: { _id: string; name: string; guest?: boolean; plates?: number; decision: DeskDecision; reason: string; at: string }[];
   flaggedToReport?: number;
 }
 
 export type ScanOutcome =
   | { result: 'served'; person: DeskPerson }
   | { result: 'flag'; person: DeskPerson; slot: Slot; teamLeads: string[] }
-  | { result: 'duplicate'; person: DeskPerson; lastServedAt: string; lastServedBy: string };
+  | { result: 'duplicate'; person: DeskPerson; lastServedAt: string; lastServedBy: string }
+  | GuestOutcome;
+
+// ── Guests and Meal Passes (H3) ────────────────────────────────
+export type PassKind = 'one_meal' | 'one_day' | 'range';
+
+export const PASS_KINDS: { key: PassKind; label: string; icon: string; hint: string }[] = [
+  { key: 'one_meal', label: 'One Meal', icon: 'restaurant', hint: 'One specific meal' },
+  { key: 'one_day', label: 'One Day', icon: 'today', hint: 'All four meals that day' },
+  { key: 'range', label: 'Date Range', icon: 'date_range', hint: 'Every meal, several days' },
+];
+
+export interface GuestPass {
+  _id: string;
+  kind: PassKind;
+  meal: MealKey | null;
+  from: string;
+  to: string;
+  vegPlates: number;
+  nonVegPlates: number;
+  label: string;
+  revoked: boolean;
+  validToday: boolean;
+  ended: boolean;
+}
+
+export interface Guest {
+  _id: string;
+  name: string;
+  phone: string;
+  note: string;
+  passes: GuestPass[];
+}
+
+export interface PassInput {
+  kind: PassKind;
+  meal?: MealKey | null;
+  from: string;
+  to?: string | null;
+  vegPlates: number;
+  nonVegPlates: number;
+}
+
+export interface PassCard { image: string; guest: string; note: string; label: string; vegPlates: number; nonVegPlates: number }
+
+export interface GuestOutcome {
+  result: 'guest';
+  guest: { _id: string; name: string; note: string };
+  pass: { _id: string; label: string; vegPlates: number; nonVegPlates: number };
+  used: { veg: number; nonVeg: number };
+  left: { veg: number; nonVeg: number };
+  decision?: DeskDecision;
+}

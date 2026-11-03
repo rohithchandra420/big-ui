@@ -32,6 +32,7 @@
         <span class="ht-cnt" *ngIf="r.countText" [class.sent]="r.countSent">{{ r.countText }}</span>
         <span class="ht-nm"><mat-icon class="ms-fill">{{ r.icon }}</mat-icon>{{ r.meal.label }}</span>
         <span class="ht-tm">{{ time(r.meal.start) }} – {{ time(r.meal.end) }}<ng-container *ngIf="r.meal.ownTimes"> · changed</ng-container></span>
+        <span class="ht-src">{{ r.sourceText }}</span>
         <span class="ht-st" [ngClass]="r.meal.status"><i></i>{{ r.statusText }}</span>
         <span class="ht-prog" *ngIf="r.meal.status === 'closed'"><i></i></span>
       </button>
@@ -72,28 +73,28 @@
               <div class="ht-plate veg">
                 <div class="ht-lbl"><span class="food-mark"></span>Veg</div>
                 <div class="ht-big">{{ s.expected.veg }}</div>
-                <div class="ht-split">{{ s.expected.veg }} staff · 0 guest plates</div>
+                <div class="ht-split">{{ s.expected.veg - (s.expected.guestVeg || 0) }} staff · {{ s.expected.guestVeg || 0 }} guest plates</div>
               </div>
               <div class="ht-plate nonveg">
                 <div class="ht-lbl"><span class="food-mark"></span>Non-veg</div>
                 <div class="ht-big">{{ s.expected.nonVeg }}</div>
-                <div class="ht-split">{{ s.expected.nonVeg }} staff · 0 guest plates</div>
+                <div class="ht-split">{{ s.expected.nonVeg - (s.expected.guestNonVeg || 0) }} staff · {{ s.expected.guestNonVeg || 0 }} guest plates</div>
               </div>
             </div>
             <div class="ht-total"><b>{{ s.expected.total }}</b> plates expected</div>
-            <div class="ht-basis">Based on <span class="hx-tag"><mat-icon class="ms-fill">{{ basisIcon }}</mat-icon>{{ basisText }}</span> + guest passes valid for this meal</div>
+            <div class="ht-basis">Count from <span class="hx-tag"><mat-icon class="ms-fill">{{ basisIcon }}</mat-icon>{{ basisText }}</span> + guest passes valid for this meal</div>
 
             <div class="ht-dl done" *ngIf="s.count">
               <mat-icon class="ms-fill">check_circle</mat-icon>
-              <div>Sent to the kitchen at <b>{{ time(s.count.sentAt) }}</b>: {{ s.count.veg }} Veg · {{ s.count.nonVeg }} Non-veg. Served vs sent shows in the daily report.</div>
+              <div>Count saved at <b>{{ time(s.count.sentAt) }}</b>: {{ s.count.veg }} Veg · {{ s.count.nonVeg }} Non-veg. Copy for WhatsApp to give it to the kitchen.</div>
             </div>
             <div class="ht-dl" *ngIf="!s.count && s.status === 'upcoming'" [class.late]="isToday && minutesToDue < 0">
               <mat-icon>schedule</mat-icon>
-              <div>Count due to the kitchen by <b>{{ time(s.countDueAt) }}</b><ng-container *ngIf="isToday"> — {{ minutesToDue >= 0 ? minutesToDue + ' min left' : -minutesToDue + ' min late' }}</ng-container>. {{ s.notMarkedTotal }} {{ s.notMarkedTotal === 1 ? 'person' : 'people' }} not marked yet.</div>
+              <div>Kitchen needs the count by <b>{{ time(s.countDueAt) }}</b><ng-container *ngIf="isToday"> — {{ minutesToDue >= 0 ? minutesToDue + ' min left' : -minutesToDue + ' min late' }}</ng-container>. {{ s.notMarkedTotal }} {{ s.notMarkedTotal === 1 ? 'person' : 'people' }} not marked yet.</div>
             </div>
 
             <div class="ht-acts">
-              <button type="button" class="pill-btn hx-primary" [disabled]="!!busy" (click)="sendCount()"><mat-icon>send</mat-icon>{{ s.count ? 'Send updated count' : 'Send count to kitchen' }}</button>
+              <button type="button" class="pill-btn hx-primary" [disabled]="!!busy" (click)="sendCount()"><mat-icon>save</mat-icon>{{ s.count ? 'Save updated count' : 'Save count' }}</button>
               <button type="button" class="pill-btn hx-wa" (click)="copyWhatsapp()"><mat-icon>chat</mat-icon>Copy for WhatsApp</button>
             </div>
             <pre class="hx-wa-prev" *ngIf="whatsapp">{{ whatsapp }}</pre>
