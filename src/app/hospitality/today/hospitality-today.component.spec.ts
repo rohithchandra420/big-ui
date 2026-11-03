@@ -17,7 +17,7 @@ const meal = (key: MealKey, label: string, status: MealDay['status'], extra: Par
     { department: { _id: 'd1', name: 'Stage Crew' }, total: 34, missing: 6 },
     { department: null, total: 7, missing: 1 }
   ],
-  notMarkedTotal: 7, ...extra
+  notMarkedTotal: 7, served: 0, ...extra
 });
 const day = (): MessDay => ({
   plan: { _id: 'p1', opensOn: '2026-10-20T00:00:00.000Z', closesOn: '2026-11-19T00:00:00.000Z' } as any, date: '2026-11-12', today: '2026-11-12', inMessDates: true,

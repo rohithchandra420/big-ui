@@ -77,6 +77,12 @@
                 <app-option *ngFor="let m of dueOptions" [value]="m">{{ m }} min after the previous meal closes</app-option>
               </app-select>
             </div>
+            <div class="field hs-wide">
+              <label>Remind TLs automatically</label>
+              <app-select name="remindBefore" [(ngModel)]="remindBeforeMin">
+                <app-option *ngFor="let m of remindOptions" [value]="m">{{ m }} min before the count is due</app-option>
+              </app-select>
+            </div>
           </div>
         </div>
       </section>

@@ -25,6 +25,14 @@ export class ProfileService {
     return this.http.patch<{ foodPreference: string }>(this.url + '/user/me/food-preference', { foodPreference });
   }
 
+  /** Hospitality H2: the signed-in user's own meal QR, and a fresh one (the old stops working). */
+  getMealQr() {
+    return this.http.get<{ image: string }>(this.url + '/user/me/meal-qr');
+  }
+  resetMealQr() {
+    return this.http.post<{ image: string }>(this.url + '/user/me/meal-qr/reset', {});
+  }
+
   getProfileDetails(userId: string) {
     return this.http.get<User>(this.url + "/user/profile", {
       params: new HttpParams().set('id', userId),

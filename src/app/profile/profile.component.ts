@@ -35,6 +35,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   readonly superuserRoles = ['DEV', 'DIR'];
 
   savingFood = false;
+  mealQr = '';
+  mealQrBusy = false;
 
   attendanceHistory: MyAttendanceRecord[] = [];
   loadingAttendance = false;
@@ -68,6 +70,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       this.loggedInRole = user?.role || '';
       if (user?._id) {
         this.loadProfile();
+        this.loadMealQr();
         this.loadAttendanceHistory();
       }
     });
@@ -103,6 +106,26 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.savingFood = false;
         this.notificationService.openErrorSnackBar('Could not save your food preference');
       }
+    });
+  }
+
+  /** Hospitality H2: shown at the Serving desk. */
+  loadMealQr() {
+    this.profileService.getMealQr().subscribe({ next: r => this.mealQr = r.image, error: () => this.mealQr = '' });
+  }
+
+  newMealQr() {
+    this.confirmationService.confirm({
+      title: 'Get a New Meal QR',
+      message: 'Your current meal QR (and any screenshot of it) will stop working at the Serving desk.',
+      confirmText: 'Get a new QR'
+    }).subscribe(ok => {
+      if (!ok) return;
+      this.mealQrBusy = true;
+      this.profileService.resetMealQr().subscribe({
+        next: r => { this.mealQr = r.image; this.mealQrBusy = false; this.notificationService.openSucessSnackBar('New meal QR ready'); },
+        error: () => { this.mealQrBusy = false; this.notificationService.openErrorSnackBar('Could not make a new meal QR'); }
+      });
     });
   }
 

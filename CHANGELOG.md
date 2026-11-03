@@ -13,6 +13,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.28.0] - 2026-11-03
+
+### Added
+- **Hospitality › Serving desk** (sidebar, between Today and Setup): the open meal with plates served and Close Mess Hall; a big **Scan QR** button and staff search; a coloured card for each case — **Enjoy your meal** (marked), **No attendance marked** (pick a reason and Serve, or Refuse), **Already ate** (Block or Allow a second plate) — with the Found / Not Found sounds; a **Just served** log and **Notify TLs** for people who ate without attendance.
+- **My meal QR** on My Profile, with **Get a new QR**.
+- Setup: **Remind TLs automatically** N minutes before the count is due.
+- Today: plates served on the open meal, and a shortcut to the Serving desk.
+
+---
+
 ## [1.27.0] - 2026-11-03
 
 ### Added

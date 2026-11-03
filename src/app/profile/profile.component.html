@@ -113,6 +113,18 @@
       </div>
     </div>
 
+    <!-- Hospitality H2 — shown at the Serving desk -->
+    <div class="profile-section" *ngIf="mealQr">
+      <div class="section-label">My meal QR</div>
+      <div class="meal-qr">
+        <img [src]="mealQr" alt="Your meal QR code" width="180" height="180" />
+        <div>
+          <p class="no-data">Show this at the Mess Hall's Serving desk.</p>
+          <button type="button" class="pill-btn" [disabled]="mealQrBusy" (click)="newMealQr()"><mat-icon>autorenew</mat-icon>Get a new QR</button>
+        </div>
+      </div>
+    </div>
+
     <!-- PWA Phase 2 — push notifications for this device -->
     <app-notification-settings></app-notification-settings>
 

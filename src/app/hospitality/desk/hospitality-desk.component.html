@@ -1,0 +1,111 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Serving Desk</div>
+    <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · scan or search, then serve</div>
+  </div>
+</div>
+
+<div class="hd-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <div class="hd-grid" *ngIf="desk">
+    <div class="hd-main">
+      <!-- The open meal -->
+      <div class="hd-now" *ngIf="desk.open as o">
+        <mat-icon class="ms-fill">lunch_dining</mat-icon>
+        <div><b>{{ o.label }} is open</b><small>{{ time(o.start) }} – {{ time(o.end) }} · {{ closesIn }}</small></div>
+        <div class="hd-served"><b>{{ o.served }}</b><small>of {{ o.expected }} served</small></div>
+        <button type="button" class="pill-btn hd-close" [disabled]="busy" (click)="closeMess()"><mat-icon>door_front</mat-icon>Close Mess Hall</button>
+      </div>
+      <div class="hd-now closed" *ngIf="!desk.open">
+        <mat-icon class="ms-fill">door_front</mat-icon>
+        <div><b>Mess Hall closed</b><small>{{ desk.next }} · serving starts when a meal opens</small></div>
+      </div>
+
+      <section class="hx-card">
+        <div class="hx-bd">
+          <div class="hd-scan">
+            <button type="button" class="hd-scanbtn" [disabled]="!desk.open || busy" (click)="scanQr()">
+              <mat-icon class="ms-fill">qr_code_scanner</mat-icon>Scan QR
+            </button>
+            <div class="hd-find">
+              <div class="search-field">
+                <mat-icon>search</mat-icon>
+                <input type="text" [(ngModel)]="search" (keyup.enter)="findStaff()" [disabled]="!desk.open"
+                       placeholder="Search staff by name or email" aria-label="Search staff" />
+              </div>
+              <p class="hx-muted">Their meal QR is on My Profile. No phone? Search them.</p>
+              <div class="hd-results" *ngIf="results.length">
+                <button type="button" class="hd-pick" *ngFor="let p of results; trackBy: trackPerson" (click)="pick(p)">
+                  <app-user-avatar [userId]="p._id" [name]="p.name" [version]="p.avatarVersion" [size]="28"></app-user-avatar>
+                  <span>{{ p.name }}<small>{{ p.department?.name || 'No department' }}</small></span>
+                </button>
+              </div>
+              <p class="hx-muted" *ngIf="searched && !results.length">No active staff found.</p>
+            </div>
+          </div>
+
+          <!-- Result -->
+          <div class="hd-result" *ngIf="outcome as r" [ngClass]="done ? 'done' : r.result">
+            <div class="hd-band">
+              <mat-icon class="ms-fill">{{ done ? 'task_alt' : r.result === 'served' ? 'check_circle' : r.result === 'flag' ? 'flag' : 'error' }}</mat-icon>
+              <ng-container *ngIf="done">{{ done }}</ng-container>
+              <ng-container *ngIf="!done && r.result === 'served'">Enjoy your meal</ng-container>
+              <ng-container *ngIf="!done && r.result === 'flag'">No attendance marked for the {{ slotText }} slot</ng-container>
+              <ng-container *ngIf="!done && r.result === 'duplicate'">Already ate this meal at {{ time($any(r).lastServedAt) }}</ng-container>
+              <span class="grow"></span>
+              <button type="button" class="hd-x" aria-label="Next person" (click)="clear()"><mat-icon>close</mat-icon></button>
+            </div>
+            <div class="hd-who">
+              <app-user-avatar [userId]="r.person._id" [name]="r.person.name" [version]="r.person.avatarVersion" [size]="52"></app-user-avatar>
+              <div>
+                <div class="hd-nm">{{ r.person.name }}</div>
+                <div class="hx-muted">{{ r.person.role }} · {{ r.person.department?.name || 'No department' }}<ng-container *ngIf="r.result === 'flag' && $any(r).teamLeads.length"> · TL: {{ $any(r).teamLeads.join(', ') }}</ng-container><ng-container *ngIf="r.result === 'duplicate' && $any(r).lastServedBy"> · served by {{ $any(r).lastServedBy }}</ng-container></div>
+                <div class="hd-food"><span class="food-mark" [ngClass]="r.person.foodPreference === 'non-veg' ? 'nonveg' : 'veg'"></span>{{ r.person.foodPreference === 'non-veg' ? 'Non-veg' : 'Veg' }}</div>
+              </div>
+            </div>
+
+            <div class="hd-body" *ngIf="!done && r.result === 'flag'">
+              <div class="hx-muted">Serve anyway? Pick a reason (it's recorded):</div>
+              <div class="hd-reasons">
+                <button type="button" class="toggle-chip" *ngFor="let x of reasons" [class.on]="reason === x" (click)="reason = x">{{ x }}</button>
+                <button type="button" class="toggle-chip" [class.on]="reason === 'Other'" (click)="reason = 'Other'">Other…</button>
+              </div>
+              <div class="field" *ngIf="reason === 'Other'"><input type="text" maxlength="120" [(ngModel)]="otherReason" placeholder="Reason" aria-label="Other reason" /></div>
+              <div class="hd-acts">
+                <button type="button" class="pill-btn hx-warn" [disabled]="busy || !chosenReason" (click)="decide('serve')"><mat-icon>restaurant</mat-icon>Serve with reason</button>
+                <button type="button" class="pill-btn hd-refuse" [disabled]="busy" (click)="decide('refuse')"><mat-icon>block</mat-icon>Refuse</button>
+              </div>
+            </div>
+            <div class="hd-body hd-acts" *ngIf="!done && r.result === 'duplicate'">
+              <button type="button" class="pill-btn hd-block" [disabled]="busy" (click)="decide('block')"><mat-icon>block</mat-icon>Block</button>
+              <button type="button" class="pill-btn" [disabled]="busy" (click)="decide('extra')"><mat-icon>add</mat-icon>Allow a second plate</button>
+            </div>
+            <div class="hd-body hx-muted" *ngIf="done || r.result === 'served'">Recorded — ready for the next person.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Just served -->
+    <section class="hx-card hd-log">
+      <div class="hx-hd">
+        <h2><mat-icon class="ms-fill">history</mat-icon>Just served</h2>
+        <span class="grow"></span>
+        <button type="button" class="pill-btn hx-warn" *ngIf="desk.flaggedToReport" [disabled]="busy" (click)="notifyTls()">
+          <mat-icon>notifications_active</mat-icon>Notify TLs ({{ desk.flaggedToReport }})
+        </button>
+      </div>
+      <div class="hx-bd">
+        <div class="hd-li" *ngFor="let x of desk.recent; trackBy: trackLog">
+          <span class="hd-t">{{ time(x.at) }}</span>
+          <span class="grow">{{ x.name }}</span>
+          <span class="hd-tag" [ngClass]="x.decision">{{ x.decision === 'served_flagged' ? (x.reason || 'Served') : decisionLabels[x.decision] }}</span>
+        </div>
+        <p class="hx-muted" *ngIf="!desk.recent?.length">Nobody served yet this meal.</p>
+        <p class="hx-muted hd-note" *ngIf="desk.flaggedToReport">Notify TLs sends each Team Lead one Task listing their people who ate without attendance.</p>
+      </div>
+    </section>
+  </div>
+</div>

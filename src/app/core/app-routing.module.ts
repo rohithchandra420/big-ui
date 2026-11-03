@@ -33,6 +33,7 @@ import { WorkshopReportsComponent } from "../workshops/reports/workshop-reports.
 import { HospitalityTodayComponent } from "../hospitality/today/hospitality-today.component";
 import { HospitalitySetupComponent } from "../hospitality/setup/hospitality-setup.component";
 import { HospitalityGuard } from "../hospitality/hospitality.guard";
+import { HospitalityDeskComponent } from "../hospitality/desk/hospitality-desk.component";
 import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
@@ -85,6 +86,7 @@ const appRoutes: Routes = [
     { path: 'venue-map', canActivate: [AuthGuard], component: VenueMapComponent },
     // Workshops planner — everyone signed in (changes are checked per action, server-side too).
     { path: 'hospitality', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityTodayComponent },
+    { path: 'hospitality/desk', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityDeskComponent },
     { path: 'hospitality/setup', canActivate: [AuthGuard, HospitalityGuard], component: HospitalitySetupComponent },
     { path: 'workshops', canActivate: [AuthGuard], component: WorkshopPlannerComponent },
     // A session's lists and door — the Workshop team (members, workshop:write, the Plan group).
