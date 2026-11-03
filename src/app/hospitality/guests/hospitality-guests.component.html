@@ -1,0 +1,118 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Guests</div>
+    <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · Meal Passes for people without a BiG account</div>
+  </div>
+  <button type="button" class="btn-cta" [disabled]="!event" (click)="newGuest()">Add guest</button>
+</div>
+
+<div class="hg-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <div class="hg-grid" *ngIf="event">
+    <!-- List -->
+    <section class="hx-card hg-list">
+      <div class="hx-hd hg-tools">
+        <div class="search-field">
+          <mat-icon>search</mat-icon>
+          <input type="text" [(ngModel)]="search" (ngModelChange)="apply()" placeholder="Search name, note or phone" aria-label="Search guests" />
+        </div>
+        <div class="hg-chips" role="group" aria-label="Show">
+          <button type="button" class="toggle-chip" [class.on]="filter === 'all'" (click)="setFilter('all')">All · {{ counts.all }}</button>
+          <button type="button" class="toggle-chip" [class.on]="filter === 'today'" (click)="setFilter('today')">Valid today · {{ counts.today }}</button>
+          <button type="button" class="toggle-chip" [class.on]="filter === 'nopass'" (click)="setFilter('nopass')">No active pass · {{ counts.nopass }}</button>
+        </div>
+      </div>
+      <div class="hg-rows">
+        <button type="button" class="hg-row" *ngFor="let g of shown; trackBy: trackGuest" [class.sel]="selected?._id === g._id" (click)="open(g)">
+          <span class="hg-av">{{ g.name.charAt(0) }}</span>
+          <span class="grow"><b>{{ g.name }}</b><small>{{ g.note || g.phone || '—' }}</small></span>
+          <span class="hg-badge" *ngIf="g.passes.length" [class.ok]="g.passes[g.passes.length - 1].validToday">{{ g.passes.length }} pass{{ g.passes.length === 1 ? '' : 'es' }}</span>
+        </button>
+        <p class="hx-muted hg-empty" *ngIf="!shown.length && !loading">{{ guests.length ? 'No guests match.' : 'No guests yet — add the first one.' }}</p>
+      </div>
+    </section>
+
+    <!-- Panel -->
+    <section class="hx-card hg-panel" *ngIf="mode === 'new' || selected">
+      <!-- Add / edit -->
+      <ng-container *ngIf="mode !== 'view'">
+        <div class="hx-hd"><h2><mat-icon class="ms-fill">person_add</mat-icon>{{ mode === 'new' ? 'Add guest' : 'Edit guest' }}</h2><span class="grow"></span>
+          <button type="button" class="hg-x" aria-label="Close" (click)="mode === 'new' ? closePanel() : (mode = 'view')"><mat-icon>close</mat-icon></button></div>
+        <div class="hx-bd hg-form">
+          <div class="field"><label for="hg-name">Name *</label><input id="hg-name" type="text" maxlength="60" [(ngModel)]="form.name" placeholder="e.g. Sound crew" /></div>
+          <div class="field"><label for="hg-note">Organisation / note</label><input id="hg-note" type="text" maxlength="120" [(ngModel)]="form.note" placeholder="e.g. Echo Rentals" /></div>
+          <div class="field">
+            <label>Gender <span class="hx-muted">(needed for a bed)</span></label>
+            <div class="food-opts" role="radiogroup" aria-label="Gender">
+              <button type="button" class="toggle-chip" role="radio" *ngFor="let gd of genders" [class.on]="form.gender === gd" [attr.aria-checked]="form.gender === gd" (click)="form.gender = form.gender === gd ? '' : gd">{{ gd }}</button>
+            </div>
+          </div>
+          <div class="field"><label for="hg-phone">Phone</label><input id="hg-phone" type="tel" maxlength="20" [(ngModel)]="form.phone" /></div>
+          <div class="field-error" *ngIf="formError">{{ formError }}</div>
+          <div class="hg-acts"><button type="button" class="btn-cta" [disabled]="busy" (click)="saveGuest()">{{ mode === 'new' ? 'Add guest' : 'Save' }}</button></div>
+        </div>
+      </ng-container>
+
+      <!-- Guest + passes -->
+      <ng-container *ngIf="mode === 'view' && selected as g">
+        <div class="hx-hd">
+          <span class="hg-av big">{{ g.name.charAt(0) }}</span>
+          <div class="grow"><h2>{{ g.name }}</h2><div class="hx-muted">{{ g.note }}{{ g.note && g.phone ? ' · ' : '' }}{{ g.phone }}</div></div>
+          <button type="button" class="hg-x" aria-label="Close" (click)="closePanel()"><mat-icon>close</mat-icon></button>
+        </div>
+        <div class="hx-bd">
+          <div class="hg-acts">
+            <button type="button" class="pill-btn hx-primary" *ngIf="!issuing" (click)="startPass()"><mat-icon>confirmation_number</mat-icon>Issue pass</button>
+            <button type="button" class="pill-btn" (click)="editGuest()"><mat-icon>edit</mat-icon>Edit</button>
+            <button type="button" class="pill-btn hg-danger" (click)="deleteGuest()"><mat-icon>delete</mat-icon>Delete</button>
+          </div>
+
+          <!-- Issue pass -->
+          <div class="hg-issue" *ngIf="issuing">
+            <div class="hg-kinds">
+              <button type="button" class="choice-tile" *ngFor="let k of kinds" [class.selected]="pass.kind === k.key" (click)="pass.kind = k.key">
+                <span class="choice-tile-ic"><mat-icon class="ms-fill">{{ k.icon }}</mat-icon></span>
+                <span class="choice-tile-name">{{ k.label }}</span>
+                <span class="choice-tile-short">{{ k.hint }}</span>
+              </button>
+            </div>
+            <div class="hg-two">
+              <div class="field"><label>{{ pass.kind === 'range' ? 'From' : 'Day' }}</label><input type="date" [(ngModel)]="pass.from" /></div>
+              <div class="field" *ngIf="pass.kind === 'range'"><label>To</label><input type="date" [(ngModel)]="pass.to" /></div>
+              <div class="field" *ngIf="pass.kind === 'one_meal'"><label>Meal</label>
+                <app-select [(ngModel)]="pass.meal"><app-option *ngFor="let m of meals" [value]="m.key">{{ m.label }}</app-option></app-select></div>
+            </div>
+            <div class="hg-two">
+              <div class="hg-step"><span class="hg-sl"><span class="food-mark veg"></span>Veg plates</span>
+                <span class="hg-stepper"><button type="button" (click)="step('veg', -1)" aria-label="Fewer Veg">−</button><b>{{ pass.veg }}</b><button type="button" (click)="step('veg', 1)" aria-label="More Veg">+</button></span></div>
+              <div class="hg-step"><span class="hg-sl"><span class="food-mark nonveg"></span>Non-veg plates</span>
+                <span class="hg-stepper"><button type="button" (click)="step('nonVeg', -1)" aria-label="Fewer Non-veg">−</button><b>{{ pass.nonVeg }}</b><button type="button" (click)="step('nonVeg', 1)" aria-label="More Non-veg">+</button></span></div>
+            </div>
+            <p class="hx-muted">Plates per meal. A group can share one pass.</p>
+            <div class="field-error" *ngIf="passError">{{ passError }}</div>
+            <div class="hg-acts">
+              <button type="button" class="btn-cta" [disabled]="busy" (click)="issuePass()">Issue and download</button>
+              <button type="button" class="btn-ghost" (click)="issuing = false">Cancel</button>
+            </div>
+          </div>
+
+          <div class="hg-pass" *ngFor="let p of g.passes; trackBy: trackPass" [class.off]="p.revoked || p.ended">
+            <div class="grow">
+              <b>{{ p.label }}</b>
+              <small>{{ platesText(p) }} · <span [class.ok]="p.validToday">{{ passState(p) }}</span></small>
+            </div>
+            <ng-container *ngIf="!p.revoked">
+              <button type="button" class="hg-ic" title="Download" aria-label="Download pass" (click)="share(p, 'download')"><mat-icon>download</mat-icon></button>
+              <button type="button" class="hg-ic" title="Share" aria-label="Share pass" (click)="share(p, 'share')"><mat-icon>share</mat-icon></button>
+              <button type="button" class="hg-ic" title="Print" aria-label="Print pass" (click)="share(p, 'print')"><mat-icon>print</mat-icon></button>
+              <button type="button" class="hg-ic danger" title="Revoke" aria-label="Revoke pass" (click)="revoke(p)"><mat-icon>block</mat-icon></button>
+            </ng-container>
+          </div>
+          <p class="hx-muted" *ngIf="!g.passes.length && !issuing">No passes yet.</p>
+        </div>
+      </ng-container>
+    </section>
+  </div>
+</div>

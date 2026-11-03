@@ -43,6 +43,7 @@ export class UserFormComponent implements OnInit {
   @Output() cancelled = new EventEmitter<void>();
 
   readonly permLevels: PermLevel[] = ['read', 'write', 'manage'];
+  readonly genders = ['Male', 'Female', 'Prefer not to say'];
   deptSelections: { [deptId: string]: PermLevel } = {};
   saving = false;
 
@@ -53,7 +54,11 @@ export class UserFormComponent implements OnInit {
     confirmPassword: new FormControl<string | null>(null, Validators.required),
     role: new FormControl<string>('', Validators.required),
     homeDepartment: new FormControl<string>('', Validators.required),
-    dateOfJoining: new FormControl<string | null>(null, Validators.required)
+    dateOfJoining: new FormControl<string | null>(null, Validators.required),
+    // Hospitality: what the kitchen counts them as (missing = Veg on the server).
+    foodPreference: new FormControl<'veg' | 'non-veg'>('veg', { nonNullable: true }),
+    // Hospitality H6: needed before giving them a bed (optional here).
+    gender: new FormControl<string>('', { nonNullable: true })
   }, { validators: passwordsMatch });
 
   constructor(
@@ -116,7 +121,9 @@ export class UserFormComponent implements OnInit {
       email: u.email,
       role: u.role?.name || u.role || '',
       homeDepartment: homeDeptId || '',
-      dateOfJoining: u.dateOfJoining ? u.dateOfJoining.substring(0, 10) : null
+      dateOfJoining: u.dateOfJoining ? u.dateOfJoining.substring(0, 10) : null,
+      foodPreference: u.foodPreference === 'non-veg' ? 'non-veg' : 'veg',
+      gender: u.gender || ''
     });
 
     (u.permissions || []).forEach((perm: string) => {
@@ -158,7 +165,9 @@ export class UserFormComponent implements OnInit {
       roleName: raw.role,
       departmentIds: raw.homeDepartment ? [raw.homeDepartment] : [],
       permissions: this.buildPermissions(),
-      dateOfJoining: raw.dateOfJoining
+      dateOfJoining: raw.dateOfJoining,
+      foodPreference: raw.foodPreference,
+      ...(raw.gender ? { gender: raw.gender } : {})
     };
 
     this.saving = true;
@@ -182,7 +191,9 @@ export class UserFormComponent implements OnInit {
       name: raw.userName,
       email: raw.email,
       roleName: raw.role,
-      permissions: this.buildPermissions()
+      permissions: this.buildPermissions(),
+      foodPreference: raw.foodPreference,
+      ...(raw.gender ? { gender: raw.gender } : {})
     };
 
     if (this.isTopLevel) {

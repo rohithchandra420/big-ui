@@ -62,6 +62,12 @@ async function emailDialog(page: Page, item: string) {
   }
 }
 
+// Venue Map on the Street layer, with the tiles loaded.
+async function streetMap(page: Page) {
+  await page.locator('.vm-seg button', { hasText: 'Street' }).click();
+  await settle(page, 2500);
+}
+
 // A Weather announcement to Volunteers in Operations, filled in but NOT sent.
 async function announcementForm(page: Page) {
   await page.locator('.ann-type', { hasText: 'Weather' }).click();
@@ -74,7 +80,7 @@ async function announcementForm(page: Page) {
 
 test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
   mkdirSync(OUT, { recursive: true });
-  const { eventId, tickets } = seedIds();
+  const { eventId, tickets, workshops } = seedIds();
   const ticketId = tickets['Vikram'];   // complete, not yet admitted: shows Admit + Link Band
 
   type Screen = [string, string, ((p: Page) => Promise<void>)?, string?];   // name, route, prepare, clipAbove
@@ -109,6 +115,41 @@ test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
     }],
     ['ticket-email-dialog', '/box-office/bookings', p => emailDialog(p, 'Send Ticket Email')],
     ['custom-email-dialog', '/box-office/bookings', p => emailDialog(p, 'Send Custom Email')],
+
+    // ── Release 2026-11-03: Venue Map, wrist bands, Workshops, Departments panel ──
+    // Booking Found for Asha Menon: her band badge opened, showing the current and the replaced band.
+    ['booking-band', '/box-office/registration/' + tickets['Asha'], async p => {
+      await p.locator('.band-badge').first().click(); await p.waitForTimeout(800);
+    }],
+    // The Street map (Satellite waits for the imagery decision), then a Workshop area with a session on now.
+    ['venue-map', '/venue-map', p => streetMap(p)],
+    ['venue-map-area', '/venue-map', async p => {
+      await streetMap(p);
+      await p.locator('.vm-item', { hasText: workshops.liveArea }).first().click();
+      await settle(p, 2000);
+    }],
+    ['workshop-planner', '/workshops', p => settle(p, 1500)],
+    // The session running now, opened from the Now strip.
+    ['workshop-session', '/workshops', async p => {
+      await p.locator('.wp-now-card').first().click(); await p.waitForTimeout(900);
+    }],
+    ['workshop-setup', '/workshops/setup'],
+    ['workshop-lists', '/workshops/sessions/' + workshops.sessions['now']],
+    // Door: search someone already let in — the "Already in" card; changes nothing.
+    ['workshop-door', '/workshops/sessions/' + workshops.sessions['now'], async p => {
+      await p.locator('.sl-tabs button', { hasText: 'Door' }).click();
+      await p.locator('.sl-search input').fill(workshops.doorName);
+      await p.locator('.sl-result', { hasText: workshops.doorName }).first().click();
+      await settle(p, 1200);
+    }],
+    ['workshop-reports', '/workshops/reports'],
+    ['workshop-reports-panel', '/workshops/reports', async p => {
+      await p.locator('table tbody tr', { hasText: workshops.pastSessionTitle }).first().click();
+      await settle(p, 1200);
+    }],
+    ['departments-panel', '/admin/departments', async p => {
+      await p.locator('.dept-card').first().click(); await settle(p, 1000);
+    }],
   ];
 
   for (const [size, opts] of Object.entries(SIZES)) {

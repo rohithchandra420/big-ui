@@ -100,6 +100,52 @@
 
     </ng-container>
 
+    <!-- Hospitality — what the kitchen counts this person as -->
+    <div class="profile-section" *ngIf="profileData">
+      <div class="section-label">Food</div>
+      <div class="food-opts" role="radiogroup" aria-label="Food preference">
+        <button type="button" class="toggle-chip" role="radio" [disabled]="savingFood"
+                [class.on]="foodPreference === 'veg'" [attr.aria-checked]="foodPreference === 'veg'"
+                (click)="setFood('veg')"><span class="food-mark veg"></span>Veg</button>
+        <button type="button" class="toggle-chip" role="radio" [disabled]="savingFood"
+                [class.on]="foodPreference === 'non-veg'" [attr.aria-checked]="foodPreference === 'non-veg'"
+                (click)="setFood('non-veg')"><span class="food-mark nonveg"></span>Non-veg</button>
+      </div>
+    </div>
+
+    <div class="profile-section" *ngIf="profileData">
+      <div class="section-label">Gender</div>
+      <div class="food-opts" role="radiogroup" aria-label="Gender">
+        <button type="button" class="toggle-chip" role="radio" *ngFor="let g of genders" [disabled]="savingGender"
+                [class.on]="profileData.gender === g" [attr.aria-checked]="profileData.gender === g" (click)="setGender(g)">{{ g }}</button>
+      </div>
+    </div>
+
+    <!-- Hospitality H6 — where you sleep -->
+    <div class="profile-section" *ngIf="myStays.length">
+      <div class="section-label">My stay</div>
+      <div class="my-stay" *ngFor="let s of myStays; trackBy: trackStay">
+        <mat-icon class="ms-fill">{{ s.icon }}</mat-icon>
+        <div class="grow">
+          <b>{{ s.unit }}</b> <span class="no-data">· {{ s.type }}</span><br />
+          <span class="no-data">{{ stayDate(s.from) }} → {{ stayDate(s.to) }}{{ s.movedOutAt ? ' · moved out' : s.movedInAt ? ' · moved in' : '' }}</span>
+        </div>
+        <a class="pill-btn" *ngIf="s.area" routerLink="/venue-map" [queryParams]="{ area: s.area._id }"><mat-icon>map</mat-icon>{{ s.area.name }}</a>
+      </div>
+    </div>
+
+    <!-- Hospitality H2 — shown at the Serving desk -->
+    <div class="profile-section" *ngIf="mealQr">
+      <div class="section-label">My meal QR</div>
+      <div class="meal-qr">
+        <img [src]="mealQr" alt="Your meal QR code" width="180" height="180" />
+        <div>
+          <p class="no-data">Show this at the Mess Hall's Serving desk.</p>
+          <button type="button" class="pill-btn" [disabled]="mealQrBusy" (click)="newMealQr()"><mat-icon>autorenew</mat-icon>Get a new QR</button>
+        </div>
+      </div>
+    </div>
+
     <!-- PWA Phase 2 — push notifications for this device -->
     <app-notification-settings></app-notification-settings>
 

@@ -41,9 +41,31 @@
     </div>
   </div>
 
+  <div class="form-two-col">
+    <div class="field">
+      <label>Date of Joining *</label>
+      <input type="date" formControlName="dateOfJoining">
+    </div>
+    <div class="field">
+      <label>Food</label>
+      <div class="food-opts" role="radiogroup" aria-label="Food preference">
+        <button type="button" class="toggle-chip" role="radio"
+                [class.on]="form.controls.foodPreference.value === 'veg'" [attr.aria-checked]="form.controls.foodPreference.value === 'veg'"
+                (click)="form.controls.foodPreference.setValue('veg')"><span class="food-mark veg"></span>Veg</button>
+        <button type="button" class="toggle-chip" role="radio"
+                [class.on]="form.controls.foodPreference.value === 'non-veg'" [attr.aria-checked]="form.controls.foodPreference.value === 'non-veg'"
+                (click)="form.controls.foodPreference.setValue('non-veg')"><span class="food-mark nonveg"></span>Non-veg</button>
+      </div>
+    </div>
+  </div>
+
   <div class="field">
-    <label>Date of Joining *</label>
-    <input type="date" formControlName="dateOfJoining">
+    <label>Gender</label>
+    <div class="food-opts" role="radiogroup" aria-label="Gender">
+      <button type="button" class="toggle-chip" role="radio" *ngFor="let g of genders"
+              [class.on]="form.controls.gender.value === g" [attr.aria-checked]="form.controls.gender.value === g"
+              (click)="form.controls.gender.setValue(g)">{{ g }}</button>
+    </div>
   </div>
 
   <div class="section-lbl">Department Access</div>

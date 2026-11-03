@@ -7,6 +7,7 @@ export interface LocationTypeInfo { value: LocationType; label: string; icon: st
 /**
  * The fixed list of location types (user decision 2026-11-01); same values as the server.
  * No workshop / medical pins (user, 2026-11-02): draw a Workshop area or Medical camp instead.
+ * The Mess Hall is an area (Hospitality H3), not a pin.
  */
 export const LOCATION_TYPES: LocationTypeInfo[] = [
   { value: 'water',    label: 'Water station',     icon: 'water_drop',       color: '#0284c7' },
@@ -97,7 +98,7 @@ export const streetViewUrl = (lat: number, lng: number) =>
 // ── Areas and lines (story A2) ─────────────────────────────────────────
 
 export type AreaKind = 'boundary' | 'workshop_area' | 'camping' | 'washroom' | 'parking' | 'stage_area'
-  | 'medical_camp' | 'office' | 'crew_area' | 'nogo' | 'other_area'
+  | 'medical_camp' | 'office' | 'crew_area' | 'mess_hall' | 'nogo' | 'other_area'
   | 'fence' | 'road' | 'path' | 'entry' | 'emergency' | 'other_line';
 export type AreaShape = 'polygon' | 'line';
 export type LatLng = [number, number];
@@ -118,6 +119,8 @@ export const AREA_KINDS: AreaKindInfo[] = [
   { value: 'medical_camp',  label: 'Medical camp',          shape: 'polygon', color: '#dc2626', icon: 'local_hospital' },
   { value: 'office',        label: 'Office',                shape: 'polygon', color: '#4f46e5', icon: 'business_center' },
   { value: 'crew_area',     label: 'Crew area',             shape: 'polygon', color: '#a16207', icon: 'badge' },
+  // Hospitality: its badge shows open / closed (GET /map/status)
+  { value: 'mess_hall',     label: 'Mess Hall',             shape: 'polygon', color: '#b45309', icon: 'restaurant' },
   { value: 'nogo',          label: 'No-go zone',            shape: 'polygon', color: '#7f1d1d', icon: 'block' },
   { value: 'other_area',    label: 'Other area',            shape: 'polygon', color: '#0284c7', icon: 'pentagon' },
   { value: 'fence',         label: 'Fence',                 shape: 'line',    color: '#78350f', icon: 'fence' },
@@ -207,6 +210,7 @@ export function guessAreaKind(name: string, shape: AreaShape): AreaKind {
   if (/boundary|perimeter|festival ground|outer wall/.test(n)) return 'boundary';
   if (/workshop/.test(n)) return 'workshop_area';
   if (/medical|first aid|clinic/.test(n)) return 'medical_camp';
+  if (/mess|canteen|dining/.test(n)) return 'mess_hall';
   if (/camp|tent/.test(n)) return 'camping';
   if (/toilet|wash|wc/.test(n)) return 'washroom';
   if (/park/.test(n)) return 'parking';

@@ -1,0 +1,49 @@
+/* Layout and look follow mocks/mock-hospitality.html (approved). Card shell: .hx-card in styles.css. */
+.hs-page { padding: 16px 20px 40px; }   /* full width, like Bookings */
+.hs-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.hs-col { display: grid; gap: 16px; min-width: 0; }
+.grow { flex: 1; }
+.hs-note { margin: 8px 0 0; }
+.hx-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+.hs-range { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.hs-more { margin-top: 14px; }
+.hs-wide { grid-column: span 2; }
+.hs-strip { display: flex; gap: 3px; margin-top: 14px; flex-wrap: wrap; }
+.hs-strip i { width: 14px; height: 22px; border-radius: 4px; background: #dbe7df; }
+.hs-strip i.fest { background: var(--color-primary); }
+.hs-strip i.today { outline: 2px solid #b45309; outline-offset: 1px; }
+.hs-legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-muted); margin-top: 8px; flex-wrap: wrap; }
+.hs-legend span::before { content: ''; display: none; }
+.hs-legend .crew::before, .hs-legend .fest::before, .hs-legend .today::before { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.hs-legend .crew::before { background: #dbe7df; }
+.hs-legend .fest::before { background: var(--color-primary); }
+.hs-legend .today::before { background: #fff; outline: 2px solid #b45309; }
+
+.hs-scroll { overflow-x: auto; }
+.hs-table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 13.5px; }
+.hs-table th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); padding: 8px 6px; border-bottom: 1px solid var(--border-default); font-weight: 600; }
+.hs-table td { padding: 10px 6px; border-bottom: 1px solid var(--border-default); color: var(--text-primary); }
+.hs-table input { border: 1px solid var(--border-default); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 13px; color: var(--text-primary); background: #fff; }
+.hs-nm { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+.hs-nm i { width: 10px; height: 10px; border-radius: 3px; }
+.hs-seg { display: inline-flex; border: 1px solid var(--border-default); border-radius: 999px; padding: 2px; }
+.hs-seg button { border: 0; background: none; border-radius: 999px; padding: 4px 10px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
+.hs-seg button.on { background: #eef3ef; color: var(--color-primary); font-weight: 700; }
+.hs-acts { display: flex; justify-content: flex-end; }
+
+.hs-pinprev { display: flex; gap: 14px; align-items: center; padding: 14px; border-radius: 12px; background: repeating-linear-gradient(45deg, #e8efe9 0 10px, #eef3ef 10px 20px); }
+.hs-pinprev b { display: block; font-size: 14px; color: var(--text-primary); }
+.hs-pinprev small { display: block; font-size: 12px; color: var(--text-muted); }
+.hs-pin { width: 44px; height: 44px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: #b45309; display: grid; place-items: center; box-shadow: 0 3px 8px rgba(0, 0, 0, .2); position: relative; flex: none; }
+.hs-pin mat-icon { transform: rotate(45deg); color: #fff; }
+.hs-pin::after { content: ''; position: absolute; right: -2px; top: -2px; width: 13px; height: 13px; border-radius: 50%; background: #16a34a; border: 2px solid #fff; }
+.hs-pin.closed::after { background: #9ca3af; }
+.hs-pick { margin-top: 12px; }
+
+@media (max-width: 900px) { .hs-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 520px) {
+  .hs-page { padding: 12px 16px 40px; }
+  .hs-range { grid-template-columns: 1fr; }
+  .hs-wide { grid-column: auto; }
+}

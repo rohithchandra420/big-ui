@@ -21,6 +21,13 @@ describe('LocationService', () => {
     expect(await p).toEqual({ locations: [], canAdd: true, canImport: false });
   });
 
+  it('gets the live map status (Mess Hall area)', async () => {
+    const p = service.status('ev1');
+    const body = { areas: { a1: { kind: 'mess_hall', open: true, label: 'Lunch · open until 15:00' } }, locations: {} };
+    http.expectOne(`${url}/map/status?event=ev1`).flush(body);
+    expect(await p).toEqual(body);
+  });
+
   it('creates, updates and deletes', async () => {
     const input = { name: 'WS', type: 'water' as const, lat: 1, lng: 2 };
     const c = service.create('ev1', input);

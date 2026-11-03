@@ -184,6 +184,7 @@
         <div class="vm-grow"><div class="vm-name">{{ selectedArea.name }}</div><div class="vm-muted">{{ areaInfo(selectedArea.kind).label }}</div></div>
         <button type="button" class="vm-x" aria-label="Close" (click)="closePanels()"><mat-icon>close</mat-icon></button>
       </div>
+      <div class="vm-row" *ngIf="statusByArea.get(selectedArea._id) as ms"><b>{{ ms.open ? 'Open' : 'Closed' }}</b> · {{ ms.label }}</div>
       <!-- Workshops (W8): this area's sessions, on now → upcoming → past -->
       <div class="vm-tl" *ngIf="selectedArea.kind === 'workshop_area'">
         <div class="vm-tl-hd">

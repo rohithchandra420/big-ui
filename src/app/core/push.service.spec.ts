@@ -9,7 +9,7 @@ describe('PushService', () => {
   let http: HttpTestingController;
   let swSub$: BehaviorSubject<PushSubscription | null>;
   let swPush: any;
-  const config = { enabled: true, publicKey: 'PUBKEY', preferences: { emailBatch: true, announcements: true }, canAnnounce: false };
+  const config = { enabled: true, publicKey: 'PUBKEY', preferences: { emailBatch: true, announcements: true, meals: true }, canAnnounce: false };
   const fakeSub = (endpoint = 'https://push.example.com/abc') => ({
     endpoint,
     toJSON: () => ({ endpoint, keys: { p256dh: 'p256dh-key', auth: 'auth-key' } })

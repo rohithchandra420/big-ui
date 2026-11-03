@@ -6,7 +6,9 @@ import { EmailService } from "../core/email.service";
 import { BillboardService } from "../core/billboard.service";
 import { User } from "../core/user.model";
 import { EventItem } from "../models/event.model";
-import { Subscription } from "rxjs";
+import { Subscription, filter } from "rxjs";
+import { NavigationEnd, Router } from "@angular/router";
+import { NavGroup, groupOfUrl, readOpenGroups, writeOpenGroups } from "./nav-groups";
 import { environment } from "src/environments/environment.development";
 
 @Component({
@@ -38,6 +40,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private unreadSub!: Subscription;
     private eventsSub!: Subscription;
     private activeEventSub!: Subscription;
+    private routeSub!: Subscription;
+
+    /** Collapsible sidebar groups (user, 2026-11-03): remembered in this browser. */
+    openGroups: Partial<Record<NavGroup, boolean>> = readOpenGroups();
 
     events: EventItem[] = [];
     activeEvent: EventItem | null = null;
@@ -51,8 +57,28 @@ export class HeaderComponent implements OnInit, OnDestroy {
         private eventService: EventService,
         private avatarService: AvatarService,
         private emailService: EmailService,
-        private billboardService: BillboardService
+        private billboardService: BillboardService,
+        private router: Router
     ) {}
+
+    /** Main starts open; every other group starts closed. */
+    isOpen(group: NavGroup): boolean {
+        return this.openGroups[group] ?? group === 'main';
+    }
+
+    toggleGroup(group: NavGroup) {
+        this.openGroups = { ...this.openGroups, [group]: !this.isOpen(group) };
+        writeOpenGroups(this.openGroups);
+    }
+
+    /** The group holding the page you're on always opens (and stays remembered as open). */
+    private openGroupOf(url: string) {
+        const g = groupOfUrl(url);
+        if (g && !this.isOpen(g)) {
+            this.openGroups = { ...this.openGroups, [g]: true };
+            writeOpenGroups(this.openGroups);
+        }
+    }
 
     /** Box Office is visible to admin roles, or users with the permission/department access */
     get canSeeBoxOffice(): boolean {
@@ -88,6 +114,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
     /** Workshops › Reports: the Workshop team and workshop:read. */
     get canSeeWorkshopReports(): boolean {
         return this.authService.canReadWorkshops(this.currentUser);
+    }
+
+    /** Hospitality: DEV/DIR/ADMIN, the Hospitality TL, hospitality:manage (same rule as the server). */
+    get canSeeHospitality(): boolean {
+        return this.authService.canManageHospitality(this.currentUser);
     }
 
     get canSeeAdminMenu(): boolean {
@@ -133,6 +164,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
         this.eventsSub = this.eventService.events.subscribe(events => this.events = events);
         this.activeEventSub = this.eventService.activeEvent.subscribe(event => this.activeEvent = event);
         this.unreadSub = this.billboardService.unread$.subscribe(n => this.unreadNotes = n);
+        this.openGroupOf(this.router.url);
+        this.routeSub = this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+            .subscribe(e => this.openGroupOf(e.urlAfterRedirects));
     }
 
     onEventChange(eventId: string) {
@@ -145,6 +179,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
         this.eventsSub?.unsubscribe();
         this.activeEventSub?.unsubscribe();
         this.unreadSub?.unsubscribe();
+        this.routeSub?.unsubscribe();
     }
 
     onLogOut() {

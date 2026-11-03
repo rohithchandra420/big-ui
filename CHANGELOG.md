@@ -7,6 +7,99 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Development
+- Product Guide screenshots: sample Workshops data for the isolated e2e stack (`e2e/seed-workshops.js`: Workshop department and team, venue map with areas, venues, workshops and sessions placed around the current time, pre-registration lists and wrist bands). The sample event now runs yesterday to tomorrow.
+- 11 new screens in `e2e/screens.spec.ts`: Venue Map, a Workshop area, a booking's band history, the Workshop Planner, a session's panel, Setup, the session lists and door, Reports and its panel, and the Departments panel.
+
+---
+
+## [1.32.0] - 2026-11-03
+
+### Added
+- **Hospitality › Stay** (sidebar, between Report and Setup), with three tabs:
+  - **Units**: types with an icon, one unit or many at once, beds, "Only on certain days", the Venue Map area, and each unit's busiest night.
+  - **Allocate**: find a staff member or guest, pick Stay from / Stay to and gender, and choose from the units with a free bed every night (a different gender there is flagged and asks to confirm). The list of stays has **Moved in** / **Moved out** and cancel.
+  - **Calendar**: units against nights — beds taken of beds, full nights dark, unavailable nights hatched; tap a night to see who is there (shown beside the calendar, above it on phones). **No bed** counts every staff member.
+  - **Counts for a night** above the tabs (‹ › to change night): staff with a bed, **No bed** (with the list and an Allocate button for each), guests with a bed, moved in.
+  - A **search** next to the tabs: units (by name, type, area, or who sleeps there on the night picked above — on the Calendar, during the week on screen) and stays (by person or unit). **Filters**: Type (on every tab — on Allocate it narrows the free units and the stays), and Empty / Has room / Full / Not available on the picked night (Units, Calendar).
+  - The calendar's nights header and unit column stay in place while it scrolls; the Stays list scrolls under its header.
+  - Guests: **How many people** for a group. Stays list: undo **Moved in**; moving someone in while they're still in another unit is refused.
+- **Gender** in the user form, on My Profile and on the Guests page.
+- **My stay** on My Profile: your unit, dates and a link to its area on the Venue Map.
+
+---
+
+## [1.31.0] - 2026-11-03
+
+### Added
+- **Staff wrist bands:** **Link band** / **Replace band** on the Serving desk's person card and in the Users page side panel (for the event picked in the sidebar, with the band history). A staff band scanned at the desk serves like the meal QR.
+- Box Office gate and Workshop door: a staff band is recognised ("This is a staff band" / "Staff band") instead of "unknown band".
+
+### Changed
+- **Sidebar groups collapse.** Each group title (Main, Box Office, Accommodation, Workshops, Hospitality, Admin) opens and closes with a tap. Main starts open, the others closed, the group of the page you're on always opens, and your choice is remembered in this browser. When Main is closed, the Billboard's unread count shows on its title.
+
+---
+
+## [1.30.0] - 2026-11-03
+
+### Added
+- **Hospitality › Report** (sidebar, between Guests and Setup): Day or Date range, Whole mess period and a Department filter; tiles for Prepared, Served, Left over and Count accuracy; a table with a block per day, a **day total** and a **grand total**; open a meal to see it by department; **Add kitchen figures** right in the table; the left-over trend per day against the goal; and an **Excel** file with three sheets — Meals (by day, with day totals and a grand total), Served and Flagged.
+- Today: **Add kitchen figures** (or Edit) on a meal that has closed.
+- Setup: **Left-over goal (%)**.
+
+---
+
+## [1.29.0] - 2026-11-03
+
+### Added
+- **Hospitality › Guests** (sidebar, between Serving desk and Setup): guest list with search and All / Valid today / No active pass filters; add, edit and delete guests; issue Meal Passes (One Meal / One Day / Date Range tiles, Veg and Non-veg plate steppers); per pass **Download** a QR card, **Share** it (phone share sheet) or **Print** it, and **Revoke**.
+- Serving desk: a purple guest card for Meal Passes with Veg / Non-veg plate steppers, Block / Allow extra once the plates are used, and **Walk-in guest? Issue a pass** for the open meal. The search finds guests too (shown with their pass), when their pass is valid for the open meal.
+- Today: real guest plates in the Veg / Non-veg split, and in the WhatsApp message. Each meal card now says where its count comes from (e.g. Breakfast: "Count: previous night's attendance + guest passes").
+- Venue Map: new area type **Mess Hall** with an open / closed dot on its badge and the status in its tooltip and panel, refreshed once a minute while the map is open.
+
+### Changed
+- The Mess Hall is drawn as an area, not placed as a pin; Setup picks the Mess Hall area.
+- Today: **Send count to kitchen** is now **Save count** (and **Save updated count**), since it only saves the count — the kitchen gets it through Copy for WhatsApp. The badge reads "Count saved".
+
+---
+
+## [1.28.0] - 2026-11-03
+
+### Added
+- **Hospitality › Serving desk** (sidebar, between Today and Setup): the open meal with plates served and Close Mess Hall; a big **Scan QR** button and staff search; a coloured card for each case — **Enjoy your meal** (marked), **No attendance marked** (pick a reason and Serve, or Refuse), **Already ate** (Block or Allow a second plate) — with the Found / Not Found sounds; a **Just served** log and **Notify TLs** for people who ate without attendance.
+- **My meal QR** on My Profile, with **Get a new QR**.
+- Setup: **Remind TLs automatically** N minutes before the count is due.
+- Today: plates served on the open meal, and a shortcut to the Serving desk.
+
+---
+
+## [1.27.0] - 2026-11-03
+
+### Added
+- **Hospitality** in the sidebar (Today and Setup), for Directors, Admins, Developers, the Hospitality Team Lead and anyone with Hospitality "manage" access.
+  - **Today**: the day's four meals with their times and open / closed status; the kitchen count for the chosen meal in big Veg / Non-veg numbers with when it's due; **Send count to kitchen** and **Copy for WhatsApp**; who isn't marked yet per department with **Remind TLs** (each Team Lead gets a private Task on their Billboard, shown as "To: Only you"); close or reopen the Mess Hall, change one day's meal time, and send a meal alert to all staff. Look at other days with the day arrows.
+  - **Setup**: mess dates, usual meal times, how long the Mess Hall stays open, which attendance slot the Snacks count uses, when the kitchen count is due, and which Venue Map pin is the Mess Hall.
+- **Food preference** (Veg / Non-veg): in the user form, and on My Profile for everyone to set their own.
+- **Mess Hall** place type on the Venue Map, with a green / grey dot for open / closed and the current status on the pin.
+- **Meals** switch in My Profile › Notifications; meal alerts show on the Billboard.
+
+---
+
+## [1.26.2] - 2026-11-03
+
+### Fixed
+- **Warning banners are readable again.** Banners with plain text only (for example "Pre-registration is closed…" on a session's List tab, and the banner on Workshops › Setup) showed their text in a very faint colour. Their text now uses the same dark amber as banner titles.
+
+---
+
+## [1.26.1] - 2026-11-03
+
+### Fixed
+- **Dropdowns no longer get cut off.** A dropdown inside a short table or panel (for example the Tent Pass Type filter on Accommodation › Inventory when only one unit is listed) had its list clipped by the box around it. Every dropdown in the app now opens its list above the page: as wide as its box, below it (or above it when there's no room below), and moving with the page when you scroll.
+
+### Notes
+- No new dependencies (uses Angular's built-in overlay, already part of Angular Material). 2 new unit tests (864/864), 22/22 end-to-end tests.
+
 ---
 
 ## [1.26.0] - 2026-11-03
