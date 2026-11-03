@@ -7,6 +7,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Development
+- Product Guide screenshots: sample Workshops data for the isolated e2e stack (`e2e/seed-workshops.js`: Workshop department and team, venue map with areas, venues, workshops and sessions placed around the current time, pre-registration lists and wrist bands). The sample event now runs yesterday to tomorrow.
+- 11 new screens in `e2e/screens.spec.ts`: Venue Map, a Workshop area, a booking's band history, the Workshop Planner, a session's panel, Setup, the session lists and door, Reports and its panel, and the Departments panel.
+
 ---
 
 ## [1.26.1] - 2026-11-03
