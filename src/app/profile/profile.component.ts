@@ -34,6 +34,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   permissionEntries: PermissionEntry[] = [];
   readonly superuserRoles = ['DEV', 'DIR'];
 
+  savingFood = false;
+
   attendanceHistory: MyAttendanceRecord[] = [];
   loadingAttendance = false;
   readonly deptShortCode = deptShortCode;
@@ -80,6 +82,27 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.loadingAttendance = false;
       },
       error: () => { this.loadingAttendance = false; }
+    });
+  }
+
+  /** Hospitality: Veg / Non-veg for the kitchen count (missing = Veg). */
+  get foodPreference(): 'veg' | 'non-veg' {
+    return this.profileData?.foodPreference === 'non-veg' ? 'non-veg' : 'veg';
+  }
+
+  setFood(pref: 'veg' | 'non-veg') {
+    if (pref === this.foodPreference || this.savingFood) return;
+    this.savingFood = true;
+    this.profileService.setFoodPreference(pref).subscribe({
+      next: () => {
+        this.profileData = { ...this.profileData, foodPreference: pref };
+        this.savingFood = false;
+        this.notificationService.openSucessSnackBar(pref === 'veg' ? 'You are down as Veg' : 'You are down as Non-veg');
+      },
+      error: () => {
+        this.savingFood = false;
+        this.notificationService.openErrorSnackBar('Could not save your food preference');
+      }
     });
   }
 

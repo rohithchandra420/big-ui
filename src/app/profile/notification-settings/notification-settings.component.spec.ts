@@ -14,7 +14,7 @@ describe('NotificationSettingsComponent', () => {
   beforeEach(() => {
     push = {
       state$: new BehaviorSubject('off'),
-      config$: new BehaviorSubject({ enabled: true, publicKey: 'k', preferences: { emailBatch: true, announcements: false }, canAnnounce: false }),
+      config$: new BehaviorSubject({ enabled: true, publicKey: 'k', preferences: { emailBatch: true, announcements: false, meals: true }, canAnnounce: false }),
       load: jasmine.createSpy('load').and.resolveTo(null),
       enable: jasmine.createSpy('enable').and.resolveTo('on'),
       disable: jasmine.createSpy('disable').and.resolveTo(undefined),
@@ -63,7 +63,7 @@ describe('NotificationSettingsComponent', () => {
 
   it('shows the category switches with the saved values and saves a change', fakeAsync(() => {
     const boxes = el().querySelectorAll<HTMLInputElement>('.ns-pref input');
-    expect(boxes.length).toBe(2);
+    expect(boxes.length).toBe(3);
     expect(boxes[0].checked).toBeTrue();    // Email batch finished
     expect(boxes[1].checked).toBeFalse();   // Announcements
     boxes[0].click(); tick();

@@ -1,0 +1,110 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Hospitality</div>
+    <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · mess dates and meal times</div>
+  </div>
+  <a class="btn-ghost" routerLink="/hospitality">Back to Today</a>
+</div>
+
+<div class="hs-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <div class="hs-grid" *ngIf="setup">
+    <form class="hs-col" (ngSubmit)="save()">
+      <!-- Mess calendar -->
+      <section class="hx-card">
+        <div class="hx-hd"><h2><mat-icon class="ms-fill">calendar_month</mat-icon>Mess calendar</h2></div>
+        <div class="hx-bd">
+          <div class="hs-range">
+            <div class="field">
+              <label for="hs-open">Mess opens</label>
+              <input id="hs-open" type="date" name="opensOn" [(ngModel)]="opensOn" (ngModelChange)="buildStrip()" required />
+            </div>
+            <div class="field">
+              <label for="hs-close">Mess closes</label>
+              <input id="hs-close" type="date" name="closesOn" [(ngModel)]="closesOn" (ngModelChange)="buildStrip()" required />
+            </div>
+            <div class="field">
+              <label for="hs-fest">Fest days</label>
+              <input id="hs-fest" type="text" [value]="festDays" disabled />
+            </div>
+          </div>
+          <div class="hs-strip" *ngIf="strip.length">
+            <i *ngFor="let d of strip; trackBy: trackDay" [class.fest]="d.fest" [class.today]="d.today" [title]="d.title"></i>
+          </div>
+          <div class="hs-legend" *ngIf="strip.length">
+            <span class="crew">Crew days</span><span class="fest">Fest days</span><span class="today">Today</span>
+            <span>· {{ messDays }} mess days</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Meals -->
+      <section class="hx-card">
+        <div class="hx-hd">
+          <h2><mat-icon class="ms-fill">schedule</mat-icon>Meals · default times</h2>
+          <span class="grow"></span><span class="hx-muted">Change one day only on the Today page</span>
+        </div>
+        <div class="hx-bd hs-scroll">
+          <table class="hs-table">
+            <thead><tr><th>Meal</th><th>Opens</th><th>Open for</th><th>Count based on</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let r of rows; trackBy: trackRow">
+                <td><span class="hs-nm"><i [style.background]="r.colour"></i>{{ r.label }}</span></td>
+                <td><input type="time" [name]="'t-' + r.key" [(ngModel)]="times[r.key]" required [attr.aria-label]="r.label + ' opens at'" /></td>
+                <td>{{ openText }}</td>
+                <td>
+                  <span class="hx-tag" *ngIf="r.basis">{{ r.basis }}</span>
+                  <span class="hs-seg" *ngIf="!r.basis" role="group" aria-label="Snacks count based on">
+                    <button type="button" [class.on]="snacksBasis === 'morning'" (click)="snacksBasis = 'morning'">Morning</button>
+                    <button type="button" [class.on]="snacksBasis === 'afternoon'" (click)="snacksBasis = 'afternoon'">Noon</button>
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="hs-range hs-more">
+            <div class="field">
+              <label>Mess Hall open for</label>
+              <app-select name="openHours" [(ngModel)]="openHours">
+                <app-option *ngFor="let h of openOptions" [value]="h">{{ h }} hours</app-option>
+              </app-select>
+            </div>
+            <div class="field hs-wide">
+              <label>Kitchen count due</label>
+              <app-select name="countDue" [(ngModel)]="countDueAfterMin">
+                <app-option *ngFor="let m of dueOptions" [value]="m">{{ m }} min after the previous meal closes</app-option>
+              </app-select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="field-error" *ngIf="error">{{ error }}</div>
+      <div class="hs-acts"><button type="submit" class="btn-cta" [disabled]="saving">{{ saving ? 'Saving…' : 'Save setup' }}</button></div>
+    </form>
+
+    <div class="hs-col">
+      <!-- Mess Hall on the map -->
+      <section class="hx-card">
+        <div class="hx-hd"><h2><mat-icon class="ms-fill">location_on</mat-icon>Mess Hall on the map</h2></div>
+        <div class="hx-bd">
+          <div class="hs-pinprev">
+            <div class="hs-pin" [class.closed]="!setup.messStatus?.open"><mat-icon class="ms-fill">restaurant</mat-icon></div>
+            <div><b>Mess Hall</b><small>{{ setup.messStatus?.label || (messHall ? 'Saved status shows after Save' : 'Not on the map yet') }}</small></div>
+          </div>
+          <div class="field hs-pick" *ngIf="setup.messHalls.length">
+            <label>Mess Hall pin</label>
+            <app-select [(ngModel)]="messHall">
+              <app-option [value]="''">Not shown on the map</app-option>
+              <app-option *ngFor="let h of setup.messHalls" [value]="h._id">{{ h.name }}</app-option>
+            </app-select>
+          </div>
+          <div class="hx-acts"><a class="pill-btn" routerLink="/venue-map"><mat-icon>edit_location_alt</mat-icon>{{ setup.messHalls.length ? 'Open the Venue Map' : 'Pick on Venue Map' }}</a></div>
+          <p class="hx-muted hs-note">{{ setup.messHalls.length ? 'Everyone sees open / closed on the map pin.' : 'Add a location of type "Mess Hall" on the Venue Map, then pick it here.' }}</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

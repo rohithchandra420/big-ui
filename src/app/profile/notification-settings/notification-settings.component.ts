@@ -14,7 +14,8 @@ export class NotificationSettingsComponent implements OnInit {
 
   readonly categories: { key: keyof NotificationPrefs; label: string; hint: string }[] = [
     { key: 'emailBatch', label: 'Email batch finished', hint: 'When ticket or custom emails you sent have all gone out.' },
-    { key: 'announcements', label: 'Announcements', hint: 'Messages from the festival organisers.' }
+    { key: 'announcements', label: 'Announcements', hint: 'Messages from the festival organisers.' },
+    { key: 'meals', label: 'Meals', hint: 'Meal time changes and when the Mess Hall opens or closes.' }
   ];
 
   constructor(public push: PushService, private notifications: NotificationService) { }

@@ -20,6 +20,11 @@ export class ProfileService {
     });
   }
 
+  /** Hospitality: the signed-in user's own food preference. */
+  setFoodPreference(foodPreference: 'veg' | 'non-veg') {
+    return this.http.patch<{ foodPreference: string }>(this.url + '/user/me/food-preference', { foodPreference });
+  }
+
   getProfileDetails(userId: string) {
     return this.http.get<User>(this.url + "/user/profile", {
       params: new HttpParams().set('id', userId),

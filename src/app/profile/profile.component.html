@@ -100,6 +100,19 @@
 
     </ng-container>
 
+    <!-- Hospitality — what the kitchen counts this person as -->
+    <div class="profile-section" *ngIf="profileData">
+      <div class="section-label">Food</div>
+      <div class="food-opts" role="radiogroup" aria-label="Food preference">
+        <button type="button" class="toggle-chip" role="radio" [disabled]="savingFood"
+                [class.on]="foodPreference === 'veg'" [attr.aria-checked]="foodPreference === 'veg'"
+                (click)="setFood('veg')"><span class="food-mark veg"></span>Veg</button>
+        <button type="button" class="toggle-chip" role="radio" [disabled]="savingFood"
+                [class.on]="foodPreference === 'non-veg'" [attr.aria-checked]="foodPreference === 'non-veg'"
+                (click)="setFood('non-veg')"><span class="food-mark nonveg"></span>Non-veg</button>
+      </div>
+    </div>
+
     <!-- PWA Phase 2 — push notifications for this device -->
     <app-notification-settings></app-notification-settings>
 

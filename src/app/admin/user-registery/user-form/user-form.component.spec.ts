@@ -100,7 +100,16 @@ describe('UserFormComponent', () => {
       const payload = adminSpy.createUser.calls.mostRecent().args[0];
       expect(payload.departmentIds).toEqual(['d-box']);
       expect(payload.permissions).toEqual(['general:read', 'box-office:manage']);
+      expect(payload.foodPreference).toBe('veg');   // Veg unless changed
       expect(savedSpy).toHaveBeenCalledWith(created);
+    });
+
+    it('sends Non-veg when picked', () => {
+      adminSpy.createUser.and.returnValue(of({ _id: 'new2', name: 'X' }));
+      fillCreateForm();
+      component.form.controls.foodPreference.setValue('non-veg');
+      component.submit();
+      expect(adminSpy.createUser.calls.mostRecent().args[0].foodPreference).toBe('non-veg');
     });
 
     it('clicking the active chip level clears it', () => {
@@ -190,6 +199,7 @@ describe('UserFormComponent', () => {
       expect(payload.departments).toBeUndefined();
       expect(payload.dateOfJoining).toBeUndefined();
       expect(payload.permissions).toEqual(['box-office:write']);
+      expect(payload.foodPreference).toBe('veg');      // a TL may set it
     });
   });
 });

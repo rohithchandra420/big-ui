@@ -1,0 +1,138 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Hospitality</div>
+    <div class="page-ph-sub">
+      {{ event?.name || 'No event selected' }} · meals, kitchen count and Mess Hall
+    </div>
+  </div>
+</div>
+
+<div class="ht-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <!-- Day picker -->
+  <div class="ht-daybar" *ngIf="day?.plan">
+    <button type="button" class="pill-btn" (click)="shiftDay(-1)" aria-label="Previous day"><mat-icon>chevron_left</mat-icon></button>
+    <div class="ht-dname"><b>{{ dayLabel }}</b><small>{{ isToday ? 'Today' : '' }}{{ isToday && messDayText ? ' · ' : '' }}{{ messDayText }}</small></div>
+    <button type="button" class="pill-btn" (click)="shiftDay(1)" aria-label="Next day"><mat-icon>chevron_right</mat-icon></button>
+    <button type="button" class="pill-btn" *ngIf="!isToday" (click)="date = null; load(true)"><mat-icon>today</mat-icon>Back to today</button>
+  </div>
+
+  <div class="warn-banner" *ngIf="day && !day.plan">
+    The mess isn't set up for this event yet. <a routerLink="/hospitality/setup">Open Setup</a> to pick the mess dates and meal times.
+  </div>
+  <div class="warn-banner" *ngIf="day?.plan && !day?.inMessDates">This day is outside the mess dates — nothing to serve.</div>
+
+  <ng-container *ngIf="day?.plan && day?.inMessDates">
+    <!-- Day rail: the four meals as a timeline -->
+    <div class="ht-rail">
+      <button type="button" class="ht-meal" *ngFor="let r of rail; trackBy: trackRail"
+              [class.sel]="r.meal.meal === selectedKey" [style.--c]="r.colour" (click)="select(r.meal.meal)">
+        <span class="ht-cnt" *ngIf="r.countText" [class.sent]="r.countSent">{{ r.countText }}</span>
+        <span class="ht-nm"><mat-icon class="ms-fill">{{ r.icon }}</mat-icon>{{ r.meal.label }}</span>
+        <span class="ht-tm">{{ time(r.meal.start) }} – {{ time(r.meal.end) }}<ng-container *ngIf="r.meal.ownTimes"> · changed</ng-container></span>
+        <span class="ht-st" [ngClass]="r.meal.status"><i></i>{{ r.statusText }}</span>
+        <span class="ht-prog" *ngIf="r.meal.status === 'closed'"><i></i></span>
+      </button>
+    </div>
+
+    <ng-container *ngIf="selected as s">
+      <!-- The selected meal's Mess Hall: open / close, today's time -->
+      <div class="ht-now" [class.open]="s.status === 'open'">
+        <mat-icon class="ms-fill">{{ s.status === 'open' ? 'lunch_dining' : 'door_front' }}</mat-icon>
+        <div class="ht-now-t">
+          <b>{{ s.status === 'open' ? s.label + ' is open' : s.status === 'upcoming' ? s.label + ' opens at ' + time(s.start) : s.label + (s.closedEarly ? ' — Mess Hall closed early' : ' is over') }}</b>
+          <small>{{ time(s.start) }} – {{ time(s.end) }}<ng-container *ngIf="closesIn"> · {{ closesIn }}</ng-container></small>
+        </div>
+        <ng-container *ngIf="!editingTime">
+          <button type="button" class="pill-btn" *ngIf="s.status === 'upcoming'" (click)="startEditTime()"><mat-icon>schedule</mat-icon>Change time</button>
+          <button type="button" class="pill-btn ht-danger" *ngIf="s.status === 'open'" [disabled]="!!busy" (click)="closeMess()"><mat-icon>door_front</mat-icon>Close Mess Hall</button>
+          <button type="button" class="pill-btn" *ngIf="s.closedEarly && s.status === 'closed'" [disabled]="!!busy" (click)="reopenMess()"><mat-icon>door_open</mat-icon>Reopen</button>
+        </ng-container>
+        <div class="ht-time" *ngIf="editingTime">
+          <input type="time" [(ngModel)]="newTime" aria-label="New opening time" />
+          <button type="button" class="btn-cta" [disabled]="!newTime" (click)="saveTime()">Save</button>
+          <button type="button" class="btn-ghost" *ngIf="s.ownTimes" (click)="resetTime()">Usual time</button>
+          <button type="button" class="btn-ghost" (click)="editingTime = false">Cancel</button>
+        </div>
+      </div>
+
+      <div class="ht-grid">
+        <!-- Kitchen count -->
+        <section class="hx-card">
+          <div class="hx-hd">
+            <h2><mat-icon class="ms-fill">soup_kitchen</mat-icon>Kitchen count · {{ s.label }}</h2>
+            <span class="grow"></span>
+            <span class="hx-muted">{{ isToday ? 'live · updates as attendance is marked' : dayLabel }}</span>
+          </div>
+          <div class="hx-bd">
+            <div class="ht-kc">
+              <div class="ht-plate veg">
+                <div class="ht-lbl"><span class="food-mark"></span>Veg</div>
+                <div class="ht-big">{{ s.expected.veg }}</div>
+                <div class="ht-split">{{ s.expected.veg }} staff · 0 guest plates</div>
+              </div>
+              <div class="ht-plate nonveg">
+                <div class="ht-lbl"><span class="food-mark"></span>Non-veg</div>
+                <div class="ht-big">{{ s.expected.nonVeg }}</div>
+                <div class="ht-split">{{ s.expected.nonVeg }} staff · 0 guest plates</div>
+              </div>
+            </div>
+            <div class="ht-total"><b>{{ s.expected.total }}</b> plates expected</div>
+            <div class="ht-basis">Based on <span class="hx-tag"><mat-icon class="ms-fill">{{ basisIcon }}</mat-icon>{{ basisText }}</span> + guest passes valid for this meal</div>
+
+            <div class="ht-dl done" *ngIf="s.count">
+              <mat-icon class="ms-fill">check_circle</mat-icon>
+              <div>Sent to the kitchen at <b>{{ time(s.count.sentAt) }}</b>: {{ s.count.veg }} Veg · {{ s.count.nonVeg }} Non-veg. Served vs sent shows in the daily report.</div>
+            </div>
+            <div class="ht-dl" *ngIf="!s.count && s.status === 'upcoming'" [class.late]="isToday && minutesToDue < 0">
+              <mat-icon>schedule</mat-icon>
+              <div>Count due to the kitchen by <b>{{ time(s.countDueAt) }}</b><ng-container *ngIf="isToday"> — {{ minutesToDue >= 0 ? minutesToDue + ' min left' : -minutesToDue + ' min late' }}</ng-container>. {{ s.notMarkedTotal }} {{ s.notMarkedTotal === 1 ? 'person' : 'people' }} not marked yet.</div>
+            </div>
+
+            <div class="ht-acts">
+              <button type="button" class="pill-btn hx-primary" [disabled]="!!busy" (click)="sendCount()"><mat-icon>send</mat-icon>{{ s.count ? 'Send updated count' : 'Send count to kitchen' }}</button>
+              <button type="button" class="pill-btn hx-wa" (click)="copyWhatsapp()"><mat-icon>chat</mat-icon>Copy for WhatsApp</button>
+            </div>
+            <pre class="hx-wa-prev" *ngIf="whatsapp">{{ whatsapp }}</pre>
+          </div>
+        </section>
+
+        <!-- Not marked yet -->
+        <section class="hx-card">
+          <div class="hx-hd">
+            <h2><mat-icon class="ms-fill hx-amber">how_to_reg</mat-icon>Not marked yet</h2>
+            <span class="grow"></span>
+            <button type="button" class="pill-btn hx-warn" [disabled]="!!busy || !s.notMarkedTotal" (click)="remindTls()"><mat-icon>notifications_active</mat-icon>Remind TLs</button>
+          </div>
+          <div class="hx-bd">
+            <div class="ht-dept" *ngFor="let r of notMarked; trackBy: trackDept">
+              <div class="grow"><div class="ht-dn">{{ r.department?.name || 'No department' }}</div>
+                <div class="ht-ds">{{ r.department ? r.total + ' people' : 'goes to the Hospitality TL' }}</div></div>
+              <div class="ht-meter"><i [style.width.%]="meterOf(r)"></i></div>
+              <div class="ht-miss" [class.ok]="!r.missing">{{ r.missing ? r.missing + ' missing' : 'All marked' }}</div>
+            </div>
+            <p class="hx-muted" *ngIf="!notMarked.length">No Team Leads or Volunteers on this day.</p>
+          </div>
+          <div class="hx-bd hx-foot hx-muted">Each TL gets a Task on their Billboard with their own unmarked count, plus a notification that reaches them even if they muted Meals. No department → Hospitality TL.</div>
+        </section>
+      </div>
+    </ng-container>
+
+    <!-- Meal alert -->
+    <section class="hx-card ht-alert">
+      <div class="hx-hd"><h2><mat-icon class="ms-fill">campaign</mat-icon>Meal alert</h2></div>
+      <div class="hx-bd">
+        <div class="field">
+          <label for="ht-alert">Message</label>
+          <input id="ht-alert" type="text" maxlength="240" [(ngModel)]="alertText" placeholder="Lunch moved to 13:00 today" (keyup.enter)="sendAlert()" />
+        </div>
+        <div class="ht-acts">
+          <button type="button" class="pill-btn hx-primary" [disabled]="!alertText.trim() || !!busy" (click)="sendAlert()"><mat-icon>send</mat-icon>Send to all staff</button>
+          <span class="hx-muted">Push in the "Meals" category (people can mute it) + a Billboard note.</span>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</div>

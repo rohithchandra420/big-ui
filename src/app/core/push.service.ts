@@ -7,6 +7,7 @@ import { environment } from '../../environments/environment';
 export interface NotificationPrefs {
   emailBatch: boolean;
   announcements: boolean;
+  meals: boolean;
 }
 
 export interface PushConfig {

@@ -90,6 +90,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
         return this.authService.canReadWorkshops(this.currentUser);
     }
 
+    /** Hospitality: DEV/DIR/ADMIN, the Hospitality TL, hospitality:manage (same rule as the server). */
+    get canSeeHospitality(): boolean {
+        return this.authService.canManageHospitality(this.currentUser);
+    }
+
     get canSeeAdminMenu(): boolean {
         return this.adminMenuRoles.includes(this.userRole);
     }

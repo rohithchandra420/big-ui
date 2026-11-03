@@ -23,7 +23,8 @@ export class BillboardComponent implements OnInit, OnDestroy {
     weather:  { icon: 'thunderstorm',         label: 'Weather' },
     reminder: { icon: 'notifications_active', label: 'Reminder' },
     task:     { icon: 'task_alt',             label: 'Task' },
-    email:    { icon: 'mark_email_read',      label: 'Emails sent' }
+    email:    { icon: 'mark_email_read',      label: 'Emails sent' },
+    meal:     { icon: 'restaurant',           label: 'Meals' }
   };
   private readonly ROLE_LABELS: Record<string, string> = {
     DEV: 'Developers', DIR: 'Directors', ADMIN: 'Admins', TL: 'Team Leads', VOL: 'Volunteers'
@@ -123,9 +124,10 @@ export class BillboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** "Team Leads, Volunteers in Operations"; "Only you" for BiG's own notes. */
+  /** "Team Leads, Volunteers in Operations"; "Only you" for BiG's own private
+   *  notes ("Emails sent", Hospitality's Remind-TL tasks — no roles or departments). */
   audience(n: BillboardNote): string {
-    if (n.type === 'email') return 'Only you';
+    if (n.type === 'email' || (!n.roles.length && !n.departments.length && n.type !== 'meal')) return 'Only you';
     const who = n.roles.length ? n.roles.map(r => this.ROLE_LABELS[r] ?? r).join(', ') : 'Everyone';
     return n.departments.length ? `${who} in ${n.departments.join(', ')}` : who;
   }

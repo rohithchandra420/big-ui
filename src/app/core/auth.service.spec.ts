@@ -213,6 +213,22 @@ describe('AuthService', () => {
         });
     });
 
+    describe('hospitality access (by department key)', () => {
+        const hosp = { _id: 'd1', name: 'Food & Rest', key: 'hospitality' };
+        const mk = (role: string, depts: any[] = [], perms: string[] = []) =>
+            new User('Test', 'a@b.com', '', role, '', '', '123', undefined, depts.map(d => ({ department: d, access: ['read'] })), perms);
+
+        it('top roles, the Hospitality TL and hospitality:manage only', () => {
+            expect(service.canManageHospitality(mk('DIR'))).toBeTrue();
+            expect(service.canManageHospitality(mk('TL', [hosp]))).toBeTrue();
+            expect(service.canManageHospitality(mk('VOL', [], ['hospitality:manage']))).toBeTrue();
+            expect(service.canManageHospitality(mk('VOL', [hosp]))).toBeFalse();
+            expect(service.canManageHospitality(mk('VOL', [], ['hospitality:write']))).toBeFalse();
+            expect(service.canManageHospitality(mk('TL', [{ _id: 'd2', name: 'Hospitality', key: 'ops' }]))).toBeFalse();
+            expect(service.canManageHospitality(null)).toBeFalse();
+        });
+    });
+
     describe('deptKeyOf', () => {
         it('returns the stored key, or the name-based key until migrated', () => {
             expect(service.deptKeyOf({ name: 'Front Gate', key: 'box-office' })).toBe('box-office');

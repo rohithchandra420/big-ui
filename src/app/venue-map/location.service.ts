@@ -40,6 +40,8 @@ export interface VenueLocation {
   department: { _id: string; name: string } | null;
   notes: string;
   canEdit: boolean;       // decided by the server for the signed-in user
+  /** Mess Hall pin only (Hospitality): live open / closed, e.g. "Lunch · open until 15:00". */
+  messStatus?: { open: boolean; label: string };
 }
 
 export interface LocationList {
