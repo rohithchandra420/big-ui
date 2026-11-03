@@ -47,6 +47,9 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
   editingTime = false;
   newTime = '';
   whatsapp = '';
+  /** H4: kitchen figures form for the selected (closed) meal. */
+  figOpen = false;
+  fig = { veg: null as number | null, nonVeg: null as number | null, kg: null as number | null, note: '' };
   alertText = '';
 
   private sub = new Subscription();
@@ -114,6 +117,7 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
   select(key: MealKey) {
     this.selectedKey = key;
     this.editingTime = false;
+    this.figOpen = false;
     this.whatsapp = '';
     this.apply();
   }
@@ -208,6 +212,30 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
   resetTime() {
     this.editingTime = false;
     this.run('time', r => this.hospitality.resetMealTime(r), 'Back to the usual time');
+  }
+
+  openFigures() {
+    const f = this.selected?.figures;
+    this.fig = { veg: f?.vegPrepared ?? null, nonVeg: f?.nonVegPrepared ?? null, kg: f?.leftoverKg ?? null, note: f?.note || '' };
+    this.figOpen = true;
+  }
+
+  async saveFigures() {
+    const ref = this.ref();
+    const f = this.fig;
+    if (!ref || this.busy) return;
+    if (f.veg === null || f.nonVeg === null || f.veg < 0 || f.nonVeg < 0) { this.notify.openErrorSnackBar('Enter how many Veg and Non-veg plates were prepared.'); return; }
+    this.busy = 'figures';
+    try {
+      await this.hospitality.saveFigures(ref, { vegPrepared: Math.round(f.veg), nonVegPrepared: Math.round(f.nonVeg), leftoverKg: f.kg === null || (f.kg as any) === '' ? null : f.kg, note: f.note.trim() });
+      this.figOpen = false;
+      this.notify.openSucessSnackBar('Kitchen figures saved — see them in the Report');
+      await this.load();
+    } catch (err: any) {
+      this.notify.openErrorSnackBar(err?.error?.message || err?.error?.errors?.[0]?.msg || 'Could not save the kitchen figures.');
+    } finally {
+      this.busy = '';
+    }
   }
 
   async remindTls() {

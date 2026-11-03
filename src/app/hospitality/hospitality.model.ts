@@ -23,6 +23,8 @@ export interface MessPlan {
   countDueAfterMin: number;
   /** H2: automatic Remind-TL Task this many minutes before the count is due. */
   remindBeforeMin?: number;
+  /** H4: meals leaving more than this % are highlighted in the report. */
+  leftoverGoalPct?: number;
   messHall: string | null;
 }
 
@@ -30,7 +32,7 @@ export interface MessSetup {
   plan: MessPlan | null;
   messHalls: { _id: string; name: string }[];
   messStatus: { open: boolean; label: string } | null;
-  defaults: { times: Record<MealKey, string>; openMinutes: number; snacksBasis: 'morning' | 'afternoon'; countDueAfterMin: number; remindBeforeMin?: number };
+  defaults: { times: Record<MealKey, string>; openMinutes: number; snacksBasis: 'morning' | 'afternoon'; countDueAfterMin: number; remindBeforeMin?: number; leftoverGoalPct?: number };
 }
 
 export interface MessSetupInput {
@@ -42,6 +44,7 @@ export interface MessSetupInput {
   snacksBasis: 'morning' | 'afternoon';
   countDueAfterMin: number;
   remindBeforeMin: number;
+  leftoverGoalPct: number;
   messHall: string | null;
 }
 
@@ -70,6 +73,8 @@ export interface MealDay {
   notMarkedTotal: number;
   /** Plates handed out at the Serving desk (H2). */
   served: number;
+  /** H4: what the kitchen prepared, once entered. */
+  figures?: { vegPrepared: number; nonVegPrepared: number; leftoverKg: number | null; note: string } | null;
 }
 
 export interface MessDay {
@@ -160,3 +165,48 @@ export interface GuestOutcome {
   left: { veg: number; nonVeg: number };
   decision?: DeskDecision;
 }
+
+// ── Daily report (H4) ──────────────────────────────────────────
+export interface ServedSide { staff: number; guests: number; veg: number; nonVeg: number; flagged: number; refused: number; blocked: number; extra: number }
+
+export interface ReportMeal extends ServedSide {
+  meal: MealKey;
+  label: string;
+  /** null = not known (no saved count / no figures) or hidden by a department filter. */
+  asked: number | null;
+  prepared: number | null;
+  vegPrepared: number | null;
+  nonVegPrepared: number | null;
+  served: number;
+  leftover: number | null;
+  leftoverPct: number | null;
+  leftoverKg: number | null;
+  note: string;
+  overGoal: boolean;
+  hasFigures: boolean;
+  /** The meal has closed, so its kitchen figures can be entered. */
+  closed: boolean;
+  perDept: { department: { _id: string; name: string } | null; served: number; flagged: number; refused: number }[];
+}
+
+export interface ReportTotal extends ServedSide {
+  asked: number; prepared: number; served: number; leftover: number; leftoverKg: number;
+  leftoverPct: number | null; countAccuracy?: number | null;
+}
+
+export interface MessReport {
+  from: string;
+  to: string;
+  department: string | null;
+  goalPct: number;
+  days: { date: string; meals: ReportMeal[]; total: ReportTotal }[];
+  total: ReportTotal;
+  trend: { date: string; leftoverPct: number | null }[];
+  messDates: { opensOn: string; closesOn: string };
+  today: string;
+  departments: { _id: string; name: string }[];
+}
+
+export interface ServedRow { date: string; meal: string; at: string; name: string; kind: string; department: string; food: string; plates: number; decision: DeskDecision; reason: string; by: string }
+
+export interface FiguresInput { vegPrepared: number; nonVegPrepared: number; leftoverKg?: number | null; note?: string }

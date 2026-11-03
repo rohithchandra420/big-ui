@@ -13,6 +13,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.30.0] - 2026-11-03
+
+### Added
+- **Hospitality › Report** (sidebar, between Guests and Setup): Day or Date range, Whole mess period and a Department filter; tiles for Prepared, Served, Left over and Count accuracy; a table with a block per day, a **day total** and a **grand total**; open a meal to see it by department; **Add kitchen figures** right in the table; the left-over trend per day against the goal; and an **Excel** file with three sheets — Meals (by day, with day totals and a grand total), Served and Flagged.
+- Today: **Add kitchen figures** (or Edit) on a meal that has closed.
+- Setup: **Left-over goal (%)**.
+
+---
+
 ## [1.29.0] - 2026-11-03
 
 ### Added
