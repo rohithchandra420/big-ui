@@ -1,12 +1,13 @@
 // Venue Map helpers with no Angular or Leaflet in them, so they're easy to test.
 
-export type LocationType = 'water' | 'toilets' | 'stage' | 'gate' | 'entry' | 'field' | 'other';
+export type LocationType = 'water' | 'toilets' | 'stage' | 'gate' | 'entry' | 'field' | 'mess_hall' | 'other';
 
 export interface LocationTypeInfo { value: LocationType; label: string; icon: string; color: string; }
 
 /**
  * The fixed list of location types (user decision 2026-11-01); same values as the server.
  * No workshop / medical pins (user, 2026-11-02): draw a Workshop area or Medical camp instead.
+ * Mess Hall (Hospitality): its pin shows open / closed from the mess plan.
  */
 export const LOCATION_TYPES: LocationTypeInfo[] = [
   { value: 'water',    label: 'Water station',     icon: 'water_drop',       color: '#0284c7' },
@@ -15,6 +16,7 @@ export const LOCATION_TYPES: LocationTypeInfo[] = [
   { value: 'gate',     label: 'Gate / Box Office', icon: 'door_front',       color: '#1E4638' },
   { value: 'entry',    label: 'Entry point',       icon: 'login',            color: '#16a34a' },
   { value: 'field',    label: 'Tent field',        icon: 'camping',          color: '#386e5b' },
+  { value: 'mess_hall', label: 'Mess Hall',        icon: 'restaurant',       color: '#b45309' },
   { value: 'other',    label: 'Other',             icon: 'location_on',      color: '#475569' }
 ];
 
@@ -37,6 +39,7 @@ export function guessType(name: string): LocationType {
   if (/stage|amphi/.test(n)) return 'stage';
   if (/entry|entrance/.test(n)) return 'entry';
   if (/gate|box office/.test(n)) return 'gate';
+  if (/mess|canteen|dining|kitchen/.test(n)) return 'mess_hall';
   if (/tent|camp|field/.test(n)) return 'field';
   return 'other';
 }

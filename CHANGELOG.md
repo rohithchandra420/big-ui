@@ -13,6 +13,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.27.0] - 2026-11-03
+
+### Added
+- **Hospitality** in the sidebar (Today and Setup), for Directors, Admins, Developers, the Hospitality Team Lead and anyone with Hospitality "manage" access.
+  - **Today**: the day's four meals with their times and open / closed status; the kitchen count for the chosen meal in big Veg / Non-veg numbers with when it's due; **Send count to kitchen** and **Copy for WhatsApp**; who isn't marked yet per department with **Remind TLs** (each Team Lead gets a private Task on their Billboard, shown as "To: Only you"); close or reopen the Mess Hall, change one day's meal time, and send a meal alert to all staff. Look at other days with the day arrows.
+  - **Setup**: mess dates, usual meal times, how long the Mess Hall stays open, which attendance slot the Snacks count uses, when the kitchen count is due, and which Venue Map pin is the Mess Hall.
+- **Food preference** (Veg / Non-veg): in the user form, and on My Profile for everyone to set their own.
+- **Mess Hall** place type on the Venue Map, with a green / grey dot for open / closed and the current status on the pin.
+- **Meals** switch in My Profile › Notifications; meal alerts show on the Billboard.
+
+---
+
 ## [1.26.2] - 2026-11-03
 
 ### Fixed

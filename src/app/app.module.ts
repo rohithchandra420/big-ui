@@ -86,6 +86,8 @@ import { WorkshopPlannerComponent } from './workshops/planner/workshop-planner.c
 import { SessionPanelComponent } from './workshops/planner/session-panel/session-panel.component';
 import { SessionListsComponent } from './workshops/session/session-lists.component';
 import { WorkshopReportsComponent } from './workshops/reports/workshop-reports.component';
+import { HospitalityTodayComponent } from './hospitality/today/hospitality-today.component';
+import { HospitalitySetupComponent } from './hospitality/setup/hospitality-setup.component';
 import { BillboardComponent } from './billboard/billboard.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
@@ -153,7 +155,9 @@ LOAD_WASM().subscribe()
     WorkshopPlannerComponent,
     SessionPanelComponent,
     SessionListsComponent,
-    WorkshopReportsComponent
+    WorkshopReportsComponent,
+    HospitalityTodayComponent,
+    HospitalitySetupComponent
   ],
   imports: [
     BrowserModule,

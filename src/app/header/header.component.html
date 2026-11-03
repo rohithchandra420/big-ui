@@ -126,6 +126,28 @@
       </a>
     </ng-container>
 
+    <!-- Hospitality group — the Hospitality TL, hospitality:manage and top roles -->
+    <ng-container *ngIf="isAuthenticated && canSeeHospitality">
+      <div class="nav-group-label">Hospitality</div>
+
+      <a class="nav-item"
+         routerLink="/hospitality"
+         routerLinkActive="active"
+         [routerLinkActiveOptions]="{ exact: true }"
+         (click)="onNavClick()">
+        <span class="nav-dot"></span>
+        Today
+      </a>
+
+      <a class="nav-item"
+         routerLink="/hospitality/setup"
+         routerLinkActive="active"
+         (click)="onNavClick()">
+        <span class="nav-dot"></span>
+        Setup
+      </a>
+    </ng-container>
+
     <!-- Admin group — visible to DEV / DIR / ADMIN / TL -->
     <ng-container *ngIf="isAuthenticated && canSeeAdminMenu">
       <div class="nav-group-label">Admin</div>

@@ -25,6 +25,7 @@
 .t-reminder { --bg: #fff1b8; --ink: #5c4a00; --accent: #d97706; --fold: #dccd96; --pin-d: #8c4d04; }
 .t-task     { --bg: #e9e0ff; --ink: #3f1f86; --accent: #7c3aed; --fold: #c6bddc; --pin-d: #4f249a; }
 .t-email    { --bg: #eceff1; --ink: #2f3a40; --accent: #546e7a; --fold: #c9cccf; --pin-d: #36474f; }
+.t-meal     { --bg: #ffe8d6; --ink: #6b2f0a; --accent: #c2410c; --fold: #e2c3a9; --pin-d: #7c2d12; }
 
 .bb-note {
   --corner: 22px;

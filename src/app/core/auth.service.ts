@@ -99,6 +99,15 @@ export class AuthService {
         return this.canRunWorkshops(user) || (user.permissions || []).some(p => p.startsWith('workshop:'));
     }
 
+    /** Hospitality (H1), same rule as big-api utils/hospitalityAccess.js —
+     *  DEV/DIR/ADMIN, the Hospitality department's TL, hospitality:manage. */
+    canManageHospitality(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        if (user.role === 'TL' && this.inDepartmentKey(user, 'hospitality')) return true;
+        return (user.permissions || []).includes('hospitality:manage');
+    }
+
     hasDepartmentAccess(user: User, deptName: string): boolean {
         return (user.departments || []).some(d =>
             d.department?.name?.toLowerCase() === deptName.toLowerCase()

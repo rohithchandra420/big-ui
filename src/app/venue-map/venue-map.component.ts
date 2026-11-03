@@ -268,12 +268,13 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private pin(type: string, isSel = false, draft = false): Leaflet.DivIcon {
+  private pin(type: string, isSel = false, draft = false, status?: { open: boolean }): Leaflet.DivIcon {
     const t = typeInfo(type);
+    const dot = status ? `<i class="vm-status${status.open ? ' open' : ''}"></i>` : '';
     return this.L!.divIcon({
       className: 'vm-pin-wrap', iconSize: [34, 34], iconAnchor: [17, 34], tooltipAnchor: [0, -30],
       html: `<div class="vm-pin${isSel ? ' sel' : ''}${draft ? ' draft' : ''}" style="background:${t.color}">` +
-            `<span class="material-symbols-rounded">${draft ? 'add_location' : t.icon}</span></div>`
+            `<span class="material-symbols-rounded">${draft ? 'add_location' : t.icon}</span>${dot}</div>`
     });
   }
 
@@ -284,11 +285,12 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.markers = this.visible.map(loc => {
       const editingThis = this.form?._id === loc._id;
       const m = L.marker([loc.lat, loc.lng], {
-        icon: this.pin(loc.type, this.selected?._id === loc._id || editingThis),
+        icon: this.pin(loc.type, this.selected?._id === loc._id || editingThis, false, loc.messStatus),
         draggable: loc.canEdit && !this.drawing, title: loc.name, keyboard: true
       });
       const outside = this.locInfo.get(loc._id)?.outside ? '<br><i>Outside the festival boundary</i>' : '';
-      m.bindTooltip(`<b>${escapeHtml(loc.name)}</b><br>${typeInfo(loc.type).label}${outside}`, { direction: 'top' });
+      const status = loc.messStatus ? `<br>${escapeHtml(loc.messStatus.label)}` : '';
+      m.bindTooltip(`<b>${escapeHtml(loc.name)}</b><br>${typeInfo(loc.type).label}${status}${outside}`, { direction: 'top' });
       m.on('click', () => this.zone.run(() => this.select(loc)));
       m.on('dragend', () => this.zone.run(() => { const p = m.getLatLng(); this.onDragEnd(loc, p.lat, p.lng); }));
       return m.addTo(this.map!);
