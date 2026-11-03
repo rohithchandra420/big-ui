@@ -13,6 +13,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.29.0] - 2026-11-03
+
+### Added
+- **Hospitality › Guests** (sidebar, between Serving desk and Setup): guest list with search and All / Valid today / No active pass filters; add, edit and delete guests; issue Meal Passes (One Meal / One Day / Date Range tiles, Veg and Non-veg plate steppers); per pass **Download** a QR card, **Share** it (phone share sheet) or **Print** it, and **Revoke**.
+- Serving desk: a purple guest card for Meal Passes with Veg / Non-veg plate steppers, Block / Allow extra once the plates are used, and **Walk-in guest? Issue a pass** for the open meal. The search finds guests too (shown with their pass), when their pass is valid for the open meal.
+- Today: real guest plates in the Veg / Non-veg split, and in the WhatsApp message. Each meal card now says where its count comes from (e.g. Breakfast: "Count: previous night's attendance + guest passes").
+- Venue Map: new area type **Mess Hall** with an open / closed dot on its badge and the status in its tooltip and panel, refreshed once a minute while the map is open.
+
+### Changed
+- The Mess Hall is drawn as an area, not placed as a pin; Setup picks the Mess Hall area.
+- Today: **Send count to kitchen** is now **Save count** (and **Save updated count**), since it only saves the count — the kitchen gets it through Copy for WhatsApp. The badge reads "Count saved".
+
+---
+
 ## [1.28.0] - 2026-11-03
 
 ### Added

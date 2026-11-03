@@ -8,7 +8,7 @@ import { EventItem } from '../../models/event.model';
 import { BoxOfficeQrscannerPopupComponent, QrScannerData } from '../../box-office/registration/qrscanner-popup/qrscanner-popup.component';
 import { localTime } from '../../workshops/planner.utils';
 import { HospitalityService } from '../hospitality.service';
-import { DeskDecision, DeskPerson, DeskState, ScanOutcome, SLOT_LABELS } from '../hospitality.model';
+import { DeskDecision, DeskGuestHit, DeskPerson, DeskState, GuestOutcome, ScanOutcome, SLOT_LABELS } from '../hospitality.model';
 
 const REFRESH_MS = 30 * 1000;
 const REASONS = ['Arrived late', 'TL confirmed by phone', 'Off-site duty', 'New joiner'];
@@ -36,6 +36,7 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
 
   search = '';
   results: DeskPerson[] = [];
+  guestResults: DeskGuestHit[] = [];
   searched = false;
 
   outcome: ScanOutcome | null = null;
@@ -43,6 +44,12 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
   done: string = '';
   reason = '';
   otherReason = '';
+  /** Guest card (H3): plates to hand out now. */
+  gVeg = 0;
+  gNonVeg = 0;
+  /** "Guest pass" for a walk-in. */
+  walkOpen = false;
+  walk = { name: '', note: '', veg: 1, nonVeg: 0 };
   readonly reasons = REASONS;
   readonly decisionLabels = DECISION_LABELS;
 
@@ -115,14 +122,27 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     if (!this.event || q.length < 2) return;
     this.gate.unlock();
     try {
-      this.results = (await this.hospitality.searchStaff(this.event._id, q)).people;
+      const found = await this.hospitality.searchStaff(this.event._id, q);
+      this.results = found.people;
+      this.guestResults = found.guests || [];
       this.searched = true;
     } catch (err: any) {
       this.notify.openErrorSnackBar(err?.error?.message || err?.error?.errors?.[0]?.msg || 'Could not search staff.');
     }
   }
 
+  /** A guest from the search → their card, as if their pass was scanned. */
+  pickGuest(g: DeskGuestHit) {
+    this.results = [];
+    this.guestResults = [];
+    this.search = '';
+    this.searched = false;
+    this.check({ pass: g.passId });
+  }
+  trackGuestHit = (_: number, g: DeskGuestHit) => g.passId;
+
   pick(p: DeskPerson) {
+    this.guestResults = [];
     this.results = [];
     this.search = '';
     this.searched = false;
@@ -130,7 +150,7 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
   }
 
   /** Scan or pick → the server says served / flag / duplicate. */
-  async check(who: { qr?: string; user?: string }) {
+  async check(who: { qr?: string; user?: string; pass?: string }) {
     if (!this.event || this.busy) return;
     this.busy = true;
     this.done = '';
@@ -138,7 +158,8 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     this.otherReason = '';
     try {
       this.outcome = await this.hospitality.scan(this.event._id, who);
-      if (this.outcome.result === 'served') this.gate.found(); else this.gate.notFound();
+      if (this.outcome.result === 'guest') this.prepareGuest(this.outcome);
+      if (this.outcome.result === 'served' || (this.outcome.result === 'guest' && this.guestHasPlates)) this.gate.found(); else this.gate.notFound();
       await this.load();
     } catch (err: any) {
       this.outcome = null;
@@ -150,7 +171,7 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
   }
 
   async decide(decision: 'serve' | 'refuse' | 'block' | 'extra') {
-    const o = this.outcome;
+    const o = this.staffOutcome;
     if (!o || !this.event || this.busy) return;
     if (decision === 'serve' && !this.chosenReason) return;
     this.busy = true;
@@ -168,6 +189,78 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
   clear() {
     this.outcome = null;
     this.done = '';
+  }
+
+  /** The staff result card (served / flag / duplicate), or null for a guest. */
+  get staffOutcome(): Exclude<ScanOutcome, GuestOutcome> | null {
+    return this.outcome && this.outcome.result !== 'guest' ? this.outcome : null;
+  }
+
+  // ── guests (H3) ──
+  get guest(): GuestOutcome | null { return this.outcome?.result === 'guest' ? this.outcome : null; }
+  get guestHasPlates(): boolean { const g = this.guest; return !!g && g.left.veg + g.left.nonVeg > 0; }
+
+  /** Suggest all the plates left for this meal. */
+  private prepareGuest(g: GuestOutcome) {
+    this.gVeg = g.left.veg;
+    this.gNonVeg = g.left.nonVeg;
+  }
+  stepGuest(field: 'gVeg' | 'gNonVeg', by: number) { this[field] = Math.max(0, Math.min(50, this[field] + by)); }
+
+  /** Serve the chosen plates; past the pass's plates only with extra (the "Allow" answer). */
+  async serveGuest(extra = false) {
+    const g = this.guest;
+    if (!g || !this.event || this.busy || this.gVeg + this.gNonVeg < 1) return;
+    this.busy = true;
+    try {
+      const r = await this.hospitality.servePass(this.event._id, g.pass._id, { veg: this.gVeg, nonVeg: this.gNonVeg, extra });
+      this.outcome = r;
+      this.done = r.decision === 'extra' ? 'Extra plates' : `${this.gVeg + this.gNonVeg} plate${this.gVeg + this.gNonVeg === 1 ? '' : 's'} served`;
+      await this.load();
+    } catch (err: any) {
+      this.notify.openErrorSnackBar(err?.error?.message || 'Could not serve this guest.');
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  async blockGuest() {
+    const g = this.guest;
+    if (!g || !this.event || this.busy) return;
+    this.busy = true;
+    try {
+      this.outcome = await this.hospitality.servePass(this.event._id, g.pass._id, { block: true });
+      this.done = 'Blocked';
+      await this.load();
+    } catch (err: any) {
+      this.notify.openErrorSnackBar(err?.error?.message || 'Could not save that.');
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  openWalkIn() {
+    this.walk = { name: '', note: '', veg: 1, nonVeg: 0 };
+    this.walkOpen = true;
+  }
+  stepWalk(field: 'veg' | 'nonVeg', by: number) { this.walk[field] = Math.max(0, Math.min(50, this.walk[field] + by)); }
+
+  /** A One Meal pass for the open meal, then straight to the guest card. */
+  async submitWalkIn() {
+    const w = this.walk;
+    if (!this.event || this.busy || !w.name.trim() || w.veg + w.nonVeg < 1) return;
+    this.busy = true;
+    try {
+      const g = await this.hospitality.walkIn(this.event._id, { name: w.name.trim(), note: w.note.trim(), vegPlates: w.veg, nonVegPlates: w.nonVeg });
+      this.walkOpen = false;
+      this.done = '';
+      this.outcome = g;
+      this.prepareGuest(g);
+    } catch (err: any) {
+      this.notify.openErrorSnackBar(err?.error?.message || err?.error?.errors?.[0]?.msg || 'Could not issue the guest pass.');
+    } finally {
+      this.busy = false;
+    }
   }
 
   async closeMess() {

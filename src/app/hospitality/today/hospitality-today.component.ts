@@ -5,9 +5,16 @@ import { NotificationService } from '../../core/notification.service';
 import { EventItem } from '../../models/event.model';
 import { localDate, localTime } from '../../workshops/planner.utils';
 import { HospitalityService } from '../hospitality.service';
-import { MEALS, MealDay, MealKey, MealRef, MessDay, NotMarkedRow, SLOT_LABELS } from '../hospitality.model';
+import { MEALS, MealDay, MealKey, MealRef, MessDay, NotMarkedRow, Slot } from '../hospitality.model';
 
-interface RailItem { meal: MealDay; icon: string; colour: string; statusText: string; countText: string; countSent: boolean }
+/** Where a meal's count comes from, worded from the meal's own day (user wording, 2026-11-03). */
+const SOURCE_TEXT: Record<Slot, string> = {
+  night: "previous night's attendance",
+  morning: 'morning attendance',
+  afternoon: 'noon attendance'
+};
+
+interface RailItem { meal: MealDay; icon: string; colour: string; statusText: string; countText: string; countSent: boolean; sourceText: string }
 
 const REFRESH_MS = 60 * 1000;
 
@@ -89,8 +96,9 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
       return {
         meal: m, icon: info.icon, colour: info.colour,
         statusText: this.statusText(m),
+        sourceText: `Count: ${SOURCE_TEXT[m.basis.slot]} + guest passes`,
         countSent: !!m.count,
-        countText: m.count ? 'Count sent' : (m.status === 'upcoming' ? `Count due ${this.time(m.countDueAt)}` : '')
+        countText: m.count ? 'Count saved' : (m.status === 'upcoming' ? `Count due ${this.time(m.countDueAt)}` : '')
       };
     });
     this.selected = meals.find(m => m.meal === this.selectedKey) || null;
@@ -141,7 +149,9 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
   }
   get basisText(): string {
     const s = this.selected;
-    return s ? `${SLOT_LABELS[s.basis.slot]} attendance` : '';
+    if (!s) return '';
+    const text = SOURCE_TEXT[s.basis.slot];
+    return text.charAt(0).toUpperCase() + text.slice(1);
   }
   /** % of a department already marked. */
   meterOf(r: NotMarkedRow): number { return r.total ? Math.round((r.total - r.missing) / r.total * 100) : 100; }
@@ -181,7 +191,7 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
     }
   }
 
-  sendCount() { this.run('count', r => this.hospitality.sendCount(r), 'Count saved for the kitchen'); }
+  sendCount() { this.run('count', r => this.hospitality.sendCount(r), 'Count saved — copy it for WhatsApp to give it to the kitchen'); }
   closeMess() { this.run('close', r => this.hospitality.close(r), 'Mess Hall closed — staff notified'); }
   reopenMess() { this.run('reopen', r => this.hospitality.reopen(r), 'Mess Hall open again — staff notified'); }
 
@@ -225,7 +235,8 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
       `*${this.event.name} · ${s.label} · ${this.dayLabel}*`,
       `🟢 Veg: ${n.veg}`,
       `🔴 Non-veg: ${n.nonVeg}`,
-      `*Total: ${n.veg + n.nonVeg}*`
+      `*Total: ${n.veg + n.nonVeg}*`,
+      ...(n.guests ? [`(incl. ${n.guests} guest plate${n.guests === 1 ? '' : 's'})`] : [])
     ].join('\n');
     try {
       await navigator.clipboard.writeText(this.whatsapp);

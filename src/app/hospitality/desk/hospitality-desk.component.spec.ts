@@ -27,7 +27,7 @@ describe('HospitalityDeskComponent', () => {
   let dialog: jasmine.SpyObj<MatDialog>;
 
   beforeEach(async () => {
-    service = jasmine.createSpyObj('HospitalityService', ['getDesk', 'searchStaff', 'scan', 'decide', 'notifyFlaggedTls', 'close']);
+    service = jasmine.createSpyObj('HospitalityService', ['getDesk', 'searchStaff', 'scan', 'decide', 'notifyFlaggedTls', 'close', 'servePass', 'walkIn']);
     service.getDesk.and.callFake(() => Promise.resolve(open()));
     gate = jasmine.createSpyObj('GateFeedbackService', ['unlock', 'found', 'notFound', 'error']);
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
@@ -122,6 +122,72 @@ describe('HospitalityDeskComponent', () => {
     flushMicrotasks();
     expect(gate.notFound).toHaveBeenCalled();
     expect(notify.openErrorSnackBar).toHaveBeenCalledWith('This QR has been replaced');
+    discardPeriodicTasks();
+  }));
+
+  const guestOut = (left: { veg: number; nonVeg: number }) => ({
+    result: 'guest' as const, guest: { _id: 'g1', name: 'Sound crew', note: 'Echo Rentals' },
+    pass: { _id: 'p1', label: 'One Day · 12 Nov', vegPlates: 3, nonVegPlates: 2 },
+    used: { veg: 3 - left.veg, nonVeg: 2 - left.nonVeg }, left
+  });
+
+  it('a Meal Pass shows the guest card with the plates left, and serves them', fakeAsync(() => {
+    start();
+    service.scan.and.returnValue(Promise.resolve(guestOut({ veg: 3, nonVeg: 2 })));
+    component.check({ qr: '{"t":"pass"}' });
+    flushMicrotasks();
+    fixture.detectChanges();
+    expect(gate.found).toHaveBeenCalled();
+    expect(text()).toContain('Sound crew');
+    expect(component.gVeg).toBe(3);
+    expect(component.gNonVeg).toBe(2);
+    component.stepGuest('gVeg', -1);
+    service.servePass.and.returnValue(Promise.resolve({ ...guestOut({ veg: 1, nonVeg: 0 }), decision: 'served' }));
+    component.serveGuest();
+    flushMicrotasks();
+    expect(service.servePass).toHaveBeenCalledWith('e1', 'p1', { veg: 2, nonVeg: 2, extra: false });
+    expect(component.done).toBe('4 plates served');
+    discardPeriodicTasks();
+  }));
+
+  it('a used-up Meal Pass plays Not Found and offers Block / Allow extra', fakeAsync(() => {
+    start();
+    service.scan.and.returnValue(Promise.resolve(guestOut({ veg: 0, nonVeg: 0 })));
+    component.check({ qr: 'x' });
+    flushMicrotasks();
+    fixture.detectChanges();
+    expect(gate.notFound).toHaveBeenCalled();
+    expect(text()).toContain('All plates on this pass are used');
+    expect(text()).toContain('Allow extra');
+    discardPeriodicTasks();
+  }));
+
+  it('search shows guests with a pass valid now; picking one opens their card', fakeAsync(() => {
+    start();
+    service.searchStaff.and.returnValue(Promise.resolve({ people: [], guests: [{ guestId: 'g1', name: 'Sound crew', note: 'Echo Rentals', passId: 'p1', label: 'One Day · 12 Nov' }] }));
+    component.search = 'echo';
+    component.findStaff();
+    flushMicrotasks();
+    fixture.detectChanges();
+    expect(text()).toContain('Guest · One Day · 12 Nov');
+    service.scan.and.returnValue(Promise.resolve(guestOut({ veg: 3, nonVeg: 2 })));
+    component.pickGuest(component.guestResults[0]);
+    flushMicrotasks();
+    expect(service.scan).toHaveBeenCalledWith('e1', { pass: 'p1' });
+    expect(component.guest?.guest.name).toBe('Sound crew');
+    discardPeriodicTasks();
+  }));
+
+  it('a walk-in guest gets a pass for the open meal', fakeAsync(() => {
+    start();
+    component.openWalkIn();
+    component.walk.name = 'Bus driver';
+    service.walkIn.and.returnValue(Promise.resolve(guestOut({ veg: 1, nonVeg: 0 })));
+    component.submitWalkIn();
+    flushMicrotasks();
+    expect(service.walkIn).toHaveBeenCalledWith('e1', { name: 'Bus driver', note: '', vegPlates: 1, nonVegPlates: 0 });
+    expect(component.walkOpen).toBeFalse();
+    expect(component.guest?.guest.name).toBe('Sound crew');
     discardPeriodicTasks();
   }));
 

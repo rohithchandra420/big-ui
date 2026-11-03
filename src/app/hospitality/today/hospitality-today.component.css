@@ -14,6 +14,7 @@
 .ht-nm { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; color: var(--text-primary); }
 .ht-nm mat-icon { color: var(--c); font-size: 18px; width: 18px; height: 18px; }
 .ht-tm { display: block; font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+.ht-src { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 6px; }
 .ht-st { margin-top: 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
 .ht-st i { width: 8px; height: 8px; border-radius: 50%; background: #d1d5db; }
 .ht-st.open { color: #15803d; } .ht-st.open i { background: #15803d; box-shadow: 0 0 0 3px #bbf7d0; }

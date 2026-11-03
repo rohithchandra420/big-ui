@@ -12,7 +12,7 @@ interface StripDay { key: string; fest: boolean; today: boolean; title: string }
 /**
  * Hospitality › Setup (H1): the mess dates, the usual meal times, how long the
  * Mess Hall stays open, the Snacks count basis, when the kitchen count is due,
- * and which Venue Map pin is the Mess Hall. Layout as
+ * and which Venue Map area is the Mess Hall. Layout as
  * mocks/mock-hospitality.html. HospitalityGuard; the server checks too.
  */
 @Component({

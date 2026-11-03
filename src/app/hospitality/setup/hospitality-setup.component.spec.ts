@@ -42,7 +42,7 @@ describe('HospitalitySetupComponent', () => {
     start();
     expect(component.times.lunch).toBe('12:30');
     expect(component.openHours).toBe(2.5);
-    expect(fixture.nativeElement.textContent).toContain('Add a location of type "Mess Hall"');
+    expect(fixture.nativeElement.textContent).toContain('Draw an area of type "Mess Hall"');
     expect(fixture.nativeElement.textContent).toContain('Not on the map yet');
   }));
 

@@ -34,6 +34,7 @@ import { HospitalityTodayComponent } from "../hospitality/today/hospitality-toda
 import { HospitalitySetupComponent } from "../hospitality/setup/hospitality-setup.component";
 import { HospitalityGuard } from "../hospitality/hospitality.guard";
 import { HospitalityDeskComponent } from "../hospitality/desk/hospitality-desk.component";
+import { HospitalityGuestsComponent } from "../hospitality/guests/hospitality-guests.component";
 import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
@@ -87,6 +88,7 @@ const appRoutes: Routes = [
     // Workshops planner — everyone signed in (changes are checked per action, server-side too).
     { path: 'hospitality', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityTodayComponent },
     { path: 'hospitality/desk', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityDeskComponent },
+    { path: 'hospitality/guests', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityGuestsComponent },
     { path: 'hospitality/setup', canActivate: [AuthGuard, HospitalityGuard], component: HospitalitySetupComponent },
     { path: 'workshops', canActivate: [AuthGuard], component: WorkshopPlannerComponent },
     // A session's lists and door — the Workshop team (members, workshop:write, the Plan group).

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { DeskDecision, DeskPerson, DeskState, MealDay, MealRef, MessDay, MessSetup, MessSetupInput, ScanOutcome } from './hospitality.model';
+import { DeskDecision, DeskGuestHit, DeskPerson, DeskState, Guest, GuestOutcome, GuestPass, MealDay, MealRef, MessDay, MessSetup, MessSetupInput, PassCard, PassInput, ScanOutcome } from './hospitality.model';
 
 /** Hospitality (H1): the mess plan, the day's meals, kitchen count and alerts. */
 @Injectable({ providedIn: 'root' })
@@ -46,10 +46,11 @@ export class HospitalityService {
   getDesk(eventId: string): Promise<DeskState> {
     return firstValueFrom(this.http.get<DeskState>(this.url + '/desk', { params: { event: eventId } }));
   }
-  searchStaff(eventId: string, q: string): Promise<{ people: DeskPerson[] }> {
-    return firstValueFrom(this.http.get<{ people: DeskPerson[] }>(this.url + '/staff', { params: { event: eventId, q } }));
+  /** Staff by name / email, and guests with a pass valid for the open meal. */
+  searchStaff(eventId: string, q: string): Promise<{ people: DeskPerson[]; guests: DeskGuestHit[] }> {
+    return firstValueFrom(this.http.get<{ people: DeskPerson[]; guests: DeskGuestHit[] }>(this.url + '/staff', { params: { event: eventId, q } }));
   }
-  scan(eventId: string, who: { qr?: string; user?: string }): Promise<ScanOutcome> {
+  scan(eventId: string, who: { qr?: string; user?: string; pass?: string }): Promise<ScanOutcome> {
     return firstValueFrom(this.http.post<ScanOutcome>(this.url + '/desk/scan', { event: eventId, ...who }));
   }
   decide(eventId: string, user: string, decision: 'serve' | 'refuse' | 'block' | 'extra', reason?: string): Promise<{ decision: DeskDecision; person: DeskPerson }> {
@@ -57,6 +58,35 @@ export class HospitalityService {
   }
   notifyFlaggedTls(eventId: string): Promise<{ tls: number; people: number; delivered: number }> {
     return firstValueFrom(this.http.post<{ tls: number; people: number; delivered: number }>(this.url + '/desk/notify-tls', { event: eventId }));
+  }
+
+  // ── Guests and Meal Passes (H3) ──
+  getGuests(eventId: string): Promise<{ today: string; guests: Guest[] }> {
+    return firstValueFrom(this.http.get<{ today: string; guests: Guest[] }>(this.url + '/guests', { params: { event: eventId } }));
+  }
+  addGuest(eventId: string, data: { name: string; phone?: string; note?: string }): Promise<Guest> {
+    return firstValueFrom(this.http.post<Guest>(this.url + '/guests', { event: eventId, ...data }));
+  }
+  updateGuest(id: string, data: { name?: string; phone?: string; note?: string }): Promise<Guest> {
+    return firstValueFrom(this.http.patch<Guest>(`${this.url}/guests/${id}`, data));
+  }
+  deleteGuest(id: string): Promise<unknown> {
+    return firstValueFrom(this.http.delete(`${this.url}/guests/${id}`));
+  }
+  issuePass(guestId: string, data: PassInput): Promise<GuestPass> {
+    return firstValueFrom(this.http.post<GuestPass>(`${this.url}/guests/${guestId}/passes`, data));
+  }
+  revokePass(id: string): Promise<GuestPass> {
+    return firstValueFrom(this.http.post<GuestPass>(`${this.url}/passes/${id}/revoke`, {}));
+  }
+  passCard(id: string): Promise<PassCard> {
+    return firstValueFrom(this.http.get<PassCard>(`${this.url}/passes/${id}/qr`));
+  }
+  servePass(eventId: string, pass: string, body: { veg?: number; nonVeg?: number; extra?: boolean; block?: boolean }): Promise<GuestOutcome> {
+    return firstValueFrom(this.http.post<GuestOutcome>(this.url + '/desk/serve-pass', { event: eventId, pass, ...body }));
+  }
+  walkIn(eventId: string, data: { name: string; note?: string; vegPlates: number; nonVegPlates: number }): Promise<GuestOutcome> {
+    return firstValueFrom(this.http.post<GuestOutcome>(this.url + '/desk/walk-in', { event: eventId, ...data }));
   }
 
   sendAlert(eventId: string, message: string): Promise<{ recipients: number; delivered: number }> {
