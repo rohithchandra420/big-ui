@@ -13,6 +13,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.26.2] - 2026-11-03
+
+### Fixed
+- **Warning banners are readable again.** Banners with plain text only (for example "Pre-registration is closed…" on a session's List tab, and the banner on Workshops › Setup) showed their text in a very faint colour. Their text now uses the same dark amber as banner titles.
+
+---
+
 ## [1.26.1] - 2026-11-03
 
 ### Fixed
