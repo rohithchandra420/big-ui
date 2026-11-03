@@ -1,0 +1,284 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Stay</div>
+    <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · beds for staff and guests</div>
+  </div>
+</div>
+
+<div class="hy-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <ng-container *ngIf="data as d">
+    <!-- One night's counts (user, 2026-11-04) -->
+    <div class="hy-stats">
+      <div class="hy-night">
+        <button type="button" class="pill-btn" (click)="shiftStats(-1)" aria-label="Previous night"><mat-icon>chevron_left</mat-icon></button>
+        <div><b>Night of {{ short(d.nightStats.date) }}</b><small>{{ d.nightStats.date === d.today ? 'Tonight' : '' }}</small></div>
+        <button type="button" class="pill-btn" (click)="shiftStats(1)" aria-label="Next night"><mat-icon>chevron_right</mat-icon></button>
+      </div>
+      <div class="hy-stat"><span>Staff with a bed</span><b>{{ d.nightStats.staffInBed }}</b><small>of {{ d.nightStats.staffTotal }} staff</small></div>
+      <div class="hy-stat" [class.warn]="d.nightStats.withoutBed.length"><span>No bed</span><b>{{ d.nightStats.withoutBed.length }}</b><small>staff</small></div>
+      <div class="hy-stat"><span>Guests with a bed</span><b>{{ d.nightStats.guestsInBed }}</b><small>people</small></div>
+      <div class="hy-stat"><span>Moved in</span><b>{{ d.nightStats.movedIn }}</b><small>people</small></div>
+    </div>
+    <details class="hy-nobed" *ngIf="d.nightStats.withoutBed.length">
+      <summary>{{ d.nightStats.withoutBed.length }} without a bed on the night of {{ short(d.nightStats.date) }}</summary>
+      <div class="hy-nb" *ngFor="let p of d.nightStats.withoutBed; trackBy: trackId">
+        <span class="grow">{{ p.name }} <span class="hx-muted">· {{ p.detail }}</span></span>
+        <button type="button" class="pill-btn" (click)="allocateFor(p)"><mat-icon>person_add</mat-icon>Allocate</button>
+      </div>
+    </details>
+
+    <div class="hy-bar">
+      <nav class="hy-tabs" aria-label="Stay">
+        <button type="button" [class.on]="tab === 'units'" (click)="setTab('units')"><mat-icon class="ms-fill">bed</mat-icon>Units</button>
+        <button type="button" [class.on]="tab === 'allocate'" (click)="setTab('allocate')"><mat-icon class="ms-fill">person_add</mat-icon>Allocate</button>
+        <button type="button" [class.on]="tab === 'calendar'" (click)="setTab('calendar')"><mat-icon class="ms-fill">calendar_view_week</mat-icon>Calendar</button>
+      </nav>
+      <div class="search-field hy-search"><mat-icon>search</mat-icon>
+        <input type="text" [(ngModel)]="filter" (ngModelChange)="applyFilter()" [placeholder]="filterHint" [attr.aria-label]="filterHint" />
+        <button type="button" class="hy-x" *ngIf="filter" aria-label="Clear search" (click)="filter = ''; applyFilter()"><mat-icon>close</mat-icon></button>
+      </div>
+      <app-select [(ngModel)]="typeFilter" (ngModelChange)="onTypeFilter()" aria-label="Type">
+        <app-option value="">All types</app-option>
+        <app-option *ngFor="let t of d.types; trackBy: trackId" [value]="t._id">{{ t.name }}</app-option>
+      </app-select>
+      <ng-container *ngIf="tab !== 'allocate'">
+        <app-select [(ngModel)]="nightFilter" (ngModelChange)="applyFilter()" aria-label="On the picked night">
+          <app-option value="">Any ({{ short(d.nightStats.date) }})</app-option>
+          <app-option *ngFor="let o of nightOptions; trackBy: trackOpt" [value]="o.value">{{ o.label }} · {{ short(d.nightStats.date) }}</app-option>
+        </app-select>
+      </ng-container>
+      <button type="button" class="pill-btn" *ngIf="filtersOn" (click)="clearFilters()"><mat-icon>filter_alt_off</mat-icon>Clear</button>
+    </div>
+
+    <!-- ═══ UNITS ═══ -->
+    <div class="hy-grid" *ngIf="tab === 'units'">
+      <section class="hx-card">
+        <div class="hx-hd">
+          <h2><mat-icon class="ms-fill">meeting_room</mat-icon>Units ({{ filter ? shownUnits.length + ' of ' : '' }}{{ d.units.length }})</h2>
+          <span class="grow"></span>
+          <button type="button" class="pill-btn" [disabled]="!d.types.length" (click)="newUnit(false)"><mat-icon>add</mat-icon>One unit</button>
+          <button type="button" class="pill-btn hx-primary" [disabled]="!d.types.length" (click)="newUnit(true)"><mat-icon>library_add</mat-icon>Many at once</button>
+        </div>
+        <div>
+          <p class="hx-muted hx-bd" *ngIf="!d.types.length">Add a type first (Dorm, Tent, Villa…).</p>
+          <p class="hx-muted hx-bd" *ngIf="d.types.length && !d.units.length">No units yet.</p>
+          <p class="hx-muted hx-bd" *ngIf="d.units.length && !shownUnits.length">Nothing matches "{{ filter }}".</p>
+          <div class="hy-unit" *ngFor="let u of shownUnits; trackBy: trackId">
+            <button type="button" class="hy-uhead" (click)="expanded = expanded === u._id ? '' : u._id">
+              <span class="hy-uic"><mat-icon class="ms-fill">{{ u.type?.icon || 'bed' }}</mat-icon></span>
+              <span class="grow"><b>{{ u.name }}</b><small>{{ u.type?.name }} · {{ u.beds }} bed{{ u.beds === 1 ? '' : 's' }}{{ u.area ? ' · ' + u.area.name : '' }}</small></span>
+              <span class="hy-occ" [class.full]="peak(u) >= u.beds">busiest night {{ peak(u) }}/{{ u.beds }}</span>
+            </button>
+            <div class="hy-udet" *ngIf="expanded === u._id">
+              <div><b>Available:</b> {{ availText(u) }}</div>
+              <div *ngIf="u.notes"><b>Notes:</b> {{ u.notes }}</div>
+              <div><b>Stays:</b> {{ u.stays.length }}</div>
+              <div class="hy-acts">
+                <button type="button" class="pill-btn" (click)="editUnit(u)"><mat-icon>edit</mat-icon>Edit</button>
+                <button type="button" class="pill-btn" *ngIf="!u.stays.length" (click)="deleteUnit(u)"><mat-icon>delete</mat-icon>Delete</button>
+                <a class="pill-btn" *ngIf="u.area" routerLink="/venue-map" [queryParams]="{ area: u.area._id }"><mat-icon>map</mat-icon>On the map</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="hy-col">
+        <!-- Unit form -->
+        <section class="hx-card" *ngIf="form as f">
+          <div class="hx-hd"><h2><mat-icon class="ms-fill">{{ f._id ? 'edit' : 'add_home' }}</mat-icon>{{ f._id ? 'Edit ' + f.name : f.batch ? 'Many units at once' : 'New unit' }}</h2>
+            <span class="grow"></span><button type="button" class="hy-x" aria-label="Close" (click)="form = null"><mat-icon>close</mat-icon></button></div>
+          <div class="hx-bd hy-form">
+            <div class="field">
+              <label>Type</label>
+              <app-select [(ngModel)]="f.type">
+                <app-option *ngFor="let t of d.types; trackBy: trackId" [value]="t._id">{{ t.name }}</app-option>
+              </app-select>
+            </div>
+            <div class="field" *ngIf="!f.batch"><label for="hy-n">Name</label><input id="hy-n" type="text" maxlength="40" [(ngModel)]="f.name" placeholder="e.g. A-01" /></div>
+            <div class="hy-two" *ngIf="f.batch">
+              <div class="field"><label for="hy-p">Name starts with</label><input id="hy-p" type="text" maxlength="20" [(ngModel)]="f.prefix" /></div>
+              <div class="field"><label for="hy-s">First number</label><input id="hy-s" type="number" min="0" [(ngModel)]="f.start" /></div>
+              <div class="field"><label for="hy-c">How many</label><input id="hy-c" type="number" min="1" max="100" [(ngModel)]="f.count" /></div>
+              <div class="field"><label>Names</label><input type="text" [value]="batchPreview" disabled /></div>
+            </div>
+            <div class="field"><label for="hy-b">Beds</label><input id="hy-b" type="number" min="1" max="200" [(ngModel)]="f.beds" /></div>
+            <div class="field">
+              <label>Available</label>
+              <p class="hx-muted" *ngIf="!f.ranges.length">The whole mess period.</p>
+              <div class="hy-range" *ngFor="let r of f.ranges; let i = index">
+                <input type="date" [(ngModel)]="r.from" [min]="d.messDates.opensOn" [max]="d.messDates.closesOn" aria-label="First night" />
+                <span class="hx-muted">to</span>
+                <input type="date" [(ngModel)]="r.to" [min]="d.messDates.opensOn" [max]="d.messDates.closesOn" aria-label="Last night" />
+                <button type="button" class="hy-x" aria-label="Remove range" (click)="removeRange(i)"><mat-icon>close</mat-icon></button>
+              </div>
+              <button type="button" class="pill-btn" (click)="addRange()"><mat-icon>date_range</mat-icon>Only on certain days</button>
+            </div>
+            <div class="field">
+              <label>On the Venue Map</label>
+              <app-select [(ngModel)]="f.area">
+                <app-option value="">No area</app-option>
+                <app-option *ngFor="let a of d.areas; trackBy: trackId" [value]="a._id">{{ a.name }}</app-option>
+              </app-select>
+            </div>
+            <div class="field"><label for="hy-o">Notes</label><input id="hy-o" type="text" maxlength="200" [(ngModel)]="f.notes" /></div>
+            <div class="hy-acts"><button type="button" class="pill-btn hx-primary" [disabled]="busy" (click)="saveUnit()"><mat-icon>save</mat-icon>Save</button></div>
+          </div>
+        </section>
+
+        <!-- Types -->
+        <section class="hx-card">
+          <div class="hx-hd"><h2><mat-icon class="ms-fill">category</mat-icon>Types</h2></div>
+          <div class="hx-bd hy-form">
+            <div class="hy-unit" *ngFor="let t of d.types; trackBy: trackId">
+              <div class="hy-row hy-type"><span class="hy-uic"><mat-icon class="ms-fill">{{ t.icon }}</mat-icon></span><span class="grow"><b>{{ t.name }}</b> <span class="hx-muted">· {{ t.units }} unit{{ t.units === 1 ? '' : 's' }}</span></span>
+                <button type="button" class="hy-x" *ngIf="!t.units" [attr.aria-label]="'Delete ' + t.name" (click)="deleteType(t)"><mat-icon>delete</mat-icon></button></div>
+            </div>
+            <div class="hy-chips" role="radiogroup" aria-label="Icon">
+              <button type="button" class="toggle-chip" *ngFor="let ic of d.icons" [class.on]="typeIcon === ic" [attr.aria-label]="ic" (click)="typeIcon = ic"><mat-icon>{{ ic }}</mat-icon></button>
+            </div>
+            <div class="hy-row">
+              <input type="text" maxlength="40" [(ngModel)]="typeName" placeholder="New type, e.g. Dorm" aria-label="New type name" (keyup.enter)="addType()" />
+              <button type="button" class="pill-btn" [disabled]="!typeName.trim() || busy" (click)="addType()"><mat-icon>add</mat-icon>Add</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ═══ ALLOCATE ═══ -->
+    <div class="hy-grid" *ngIf="tab === 'allocate'">
+      <section class="hx-card">
+        <div class="hx-hd"><h2><mat-icon class="ms-fill">person_add</mat-icon>Give someone a bed</h2></div>
+        <div class="hx-bd hy-form">
+          <ng-container *ngIf="!person">
+            <div class="search-field"><mat-icon>search</mat-icon>
+              <input type="text" [(ngModel)]="q" (keyup.enter)="search()" placeholder="Search staff or guests by name" aria-label="Search staff or guests" /></div>
+            <div>
+              <button type="button" class="hy-pick" *ngFor="let p of people; trackBy: trackId" (click)="pick(p)">
+                <mat-icon class="ms-fill">{{ p.kind === 'guest' ? 'confirmation_number' : 'person' }}</mat-icon>
+                <span class="grow">{{ p.name }}<small>{{ p.detail }}{{ p.stays.length ? ' · ' + p.stays.length + ' stay' + (p.stays.length === 1 ? '' : 's') : '' }}</small></span>
+              </button>
+              <p class="hx-muted" *ngIf="searched && !people.length">Nobody found.</p>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="person as p">
+            <div class="hy-who">
+              <mat-icon class="ms-fill">{{ p.kind === 'guest' ? 'confirmation_number' : 'person' }}</mat-icon>
+              <span class="grow"><b>{{ p.name }}</b><br /><small class="hx-muted">{{ p.detail }}</small></span>
+              <button type="button" class="hy-x" aria-label="Pick someone else" (click)="person = null"><mat-icon>close</mat-icon></button>
+            </div>
+            <div class="hx-muted" *ngIf="p.stays.length">Already: <ng-container *ngFor="let s of p.stays; let last = last">{{ s.unit }} {{ short(s.from) }}–{{ short(s.to) }}{{ last ? '' : ', ' }}</ng-container></div>
+            <div class="hy-two">
+              <div class="field"><label for="hy-f">Stay from</label><input id="hy-f" type="date" [(ngModel)]="from" (ngModelChange)="buildFree()" [min]="d.messDates.opensOn" [max]="d.messDates.closesOn" /></div>
+              <div class="field"><label for="hy-t">Stay to (the day they leave)</label><input id="hy-t" type="date" [(ngModel)]="to" (ngModelChange)="buildFree()" [min]="from" /></div>
+            </div>
+            <div class="field">
+              <label>Gender</label>
+              <div class="food-opts" role="radiogroup" aria-label="Gender">
+                <button type="button" class="toggle-chip" *ngFor="let g of genders" role="radio" [attr.aria-checked]="gender === g" [class.on]="gender === g" (click)="gender = g; buildFree()">{{ g }}</button>
+              </div>
+            </div>
+            <div class="field" *ngIf="p.kind === 'guest'">
+              <label>How many people (same gender)</label>
+              <div class="hy-row">
+                <span class="hy-step"><button type="button" (click)="stepPeople(-1)" aria-label="Fewer">−</button><b>{{ groupSize }}</b><button type="button" (click)="stepPeople(1)" aria-label="More">+</button></span>
+                <span class="hx-muted">A mixed group: book one stay per gender.</span>
+              </div>
+            </div>
+            <div class="hx-muted" *ngIf="from && to && to <= from">Stay to must be after Stay from.</div>
+            <div *ngIf="to > from">
+              <div class="hx-muted">{{ typeFilter ? 'Filtered by type · ' : '' }}Units with {{ groupSize > 1 ? groupSize + ' free beds' : 'a free bed' }} every night ({{ freeUnits.length }}):</div>
+              <div class="hy-free" *ngFor="let f of freeUnits; trackBy: trackFree">
+                <mat-icon class="ms-fill">{{ f.unit.type?.icon || 'bed' }}</mat-icon>
+                <span class="grow"><b>{{ f.unit.name }}</b> <span class="hx-muted">· {{ f.unit.type?.name }} · {{ f.free }} free</span>
+                  <span class="hy-warn" *ngIf="f.mixed"> · different gender there</span></span>
+                <button type="button" class="pill-btn hx-primary" [disabled]="busy || !gender" (click)="assign(f)">Allocate</button>
+              </div>
+              <p class="hx-muted" *ngIf="!freeUnits.length">No unit has a free bed on all those nights.</p>
+            </div>
+          </ng-container>
+        </div>
+      </section>
+
+      <section class="hx-card">
+        <div class="hx-hd"><h2><mat-icon class="ms-fill">list</mat-icon>Stays ({{ filter ? shownStays.length + ' of ' : '' }}{{ stays.length }})</h2></div>
+        <div class="hx-bd hy-scroll">
+          <div class="hy-stay" *ngFor="let s of shownStays; trackBy: trackId">
+            <span class="grow">{{ s.person.name }}{{ s.people > 1 ? ' ×' + s.people : '' }}<small>{{ s.unitName }} · {{ short(s.from) }} → {{ short(s.to) }} · {{ s.nights }} night{{ s.nights === 1 ? '' : 's' }}{{ s.person.kind === 'guest' ? ' · guest' : '' }}</small></span>
+            <span class="hy-tag" [class.in]="s.movedInAt && !s.movedOutAt" [class.out]="s.movedOutAt"
+                  [title]="s.movedOutAt ? 'Moved out ' + time(s.movedOutAt) : s.movedInAt ? 'Moved in ' + time(s.movedInAt) : ''">
+              {{ s.movedOutAt ? 'Moved out' : s.movedInAt ? 'Moved in' : 'Booked' }}</span>
+            <button type="button" class="pill-btn" *ngIf="!s.movedInAt" [disabled]="busy" (click)="move(s, 'move-in')">Moved in</button>
+            <button type="button" class="pill-btn" *ngIf="s.movedInAt && !s.movedOutAt" [disabled]="busy" (click)="move(s, 'move-out')">Moved out</button>
+            <button type="button" class="hy-x" *ngIf="s.movedInAt && !s.movedOutAt" [disabled]="busy" aria-label="Undo moved in" title="Undo Moved in (back to Booked)" (click)="move(s, 'move-in', true)"><mat-icon>undo</mat-icon></button>
+            <button type="button" class="hy-x" *ngIf="s.movedOutAt" [disabled]="busy" aria-label="Undo moved out" title="Undo Moved out" (click)="move(s, 'move-out', true)"><mat-icon>undo</mat-icon></button>
+            <button type="button" class="hy-x" *ngIf="!s.movedInAt" [disabled]="busy" aria-label="Cancel stay" title="Cancel stay" (click)="cancelStay(s)"><mat-icon>delete</mat-icon></button>
+          </div>
+          <p class="hx-muted" *ngIf="!stays.length">No stays yet.</p>
+          <p class="hx-muted" *ngIf="stays.length && !shownStays.length">Nothing matches "{{ filter }}".</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- ═══ CALENDAR ═══ -->
+    <div class="hy-calwrap" *ngIf="tab === 'calendar'">
+    <section class="hx-card hy-calcard">
+      <div class="hx-hd">
+        <h2><mat-icon class="ms-fill">calendar_view_week</mat-icon>Nights</h2>
+        <span class="grow"></span>
+        <button type="button" class="pill-btn" (click)="shiftCal(-calDays)" aria-label="Earlier"><mat-icon>chevron_left</mat-icon></button>
+        <span class="hx-muted">{{ short(calDates[0]) }} – {{ short(calDates[calDates.length - 1]) }}</span>
+        <button type="button" class="pill-btn" (click)="shiftCal(calDays)" aria-label="Later"><mat-icon>chevron_right</mat-icon></button>
+      </div>
+      <div class="hx-bd">
+        <div class="hy-cal" *ngIf="d.units.length; else noUnits">
+          <table>
+            <thead><tr><th class="u">Unit</th><th *ngFor="let dt of calDates; trackBy: trackDate">{{ dow(dt) }}<br />{{ short(dt) }}</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let u of shownUnits; trackBy: trackId">
+                <td class="u">{{ u.name }} <span class="hx-muted">· {{ u.beds }}</span></td>
+                <td *ngFor="let dt of calDates; trackBy: trackDate">
+                  <ng-container *ngIf="night(u, dt) as nt">
+                    <button type="button" class="hy-c" [disabled]="!nt.open"
+                            [class.off]="!nt.open" [class.some]="nt.open && nt.taken > 0 && nt.taken < u.beds" [class.full]="nt.open && nt.taken >= u.beds"
+                            [class.sel]="cell?.unit?._id === u._id && cell?.date === dt"
+                            [attr.aria-label]="u.name + ' ' + dt + ': ' + nt.taken + ' of ' + u.beds"
+                            (click)="openCell(u, dt)">{{ nt.open ? nt.taken + '/' + u.beds : '' }}</button>
+                  </ng-container>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #noUnits><p class="hx-muted">No units yet — add them on the Units tab.</p></ng-template>
+        <div class="hy-legend">
+          <span><i style="background:#f3f6f4"></i>Empty</span><span><i style="background:#d7e7dd"></i>Some beds taken</span>
+          <span><i style="background:var(--color-primary)"></i>Full</span><span><i style="background:repeating-linear-gradient(45deg,#eceeed 0 4px,#f6f7f6 4px 8px)"></i>Not available</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- The picked night — beside the calendar on wide screens, above it on phones -->
+    <section class="hx-card hy-celldet">
+      <div class="hx-hd"><h2><mat-icon class="ms-fill">bed</mat-icon>{{ cell ? cell.unit.name : 'Pick a night' }}</h2>
+        <span class="grow"></span><button type="button" class="hy-x" *ngIf="cell" aria-label="Close" (click)="cell = null"><mat-icon>close</mat-icon></button></div>
+      <div class="hx-bd">
+        <p class="hx-muted" *ngIf="!cell">Tap a night in the calendar to see who sleeps there.</p>
+        <ng-container *ngIf="cell as c">
+          <div class="hx-muted">Night of {{ short(c.date) }} · {{ night(c.unit, c.date)?.taken }} of {{ c.unit.beds }} beds · {{ c.unit.type?.name }}</div>
+          <div class="hy-stay" *ngFor="let s of c.who; trackBy: trackId">
+            <span class="grow">{{ s.person.name }}{{ s.people > 1 ? ' ×' + s.people : '' }}<small>{{ s.person.kind === 'guest' ? 'Guest' : 'Staff' }} · {{ short(s.from) }} → {{ short(s.to) }}</small></span>
+            <span class="hy-tag" [class.in]="s.movedInAt && !s.movedOutAt" [class.out]="s.movedOutAt">{{ s.movedOutAt ? 'Moved out' : s.movedInAt ? 'Moved in' : 'Booked' }}</span>
+          </div>
+          <p class="hx-muted" *ngIf="!c.who.length">Nobody that night.</p>
+        </ng-container>
+      </div>
+    </section>
+    </div>
+  </ng-container>
+</div>

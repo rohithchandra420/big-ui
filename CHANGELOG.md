@@ -13,6 +13,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.32.0] - 2026-11-03
+
+### Added
+- **Hospitality › Stay** (sidebar, between Report and Setup), with three tabs:
+  - **Units**: types with an icon, one unit or many at once, beds, "Only on certain days", the Venue Map area, and each unit's busiest night.
+  - **Allocate**: find a staff member or guest, pick Stay from / Stay to and gender, and choose from the units with a free bed every night (a different gender there is flagged and asks to confirm). The list of stays has **Moved in** / **Moved out** and cancel.
+  - **Calendar**: units against nights — beds taken of beds, full nights dark, unavailable nights hatched; tap a night to see who is there (shown beside the calendar, above it on phones). **No bed** counts every staff member.
+  - **Counts for a night** above the tabs (‹ › to change night): staff with a bed, **No bed** (with the list and an Allocate button for each), guests with a bed, moved in.
+  - A **search** next to the tabs: units (by name, type, area, or who sleeps there on the night picked above — on the Calendar, during the week on screen) and stays (by person or unit). **Filters**: Type (on every tab — on Allocate it narrows the free units and the stays), and Empty / Has room / Full / Not available on the picked night (Units, Calendar).
+  - The calendar's nights header and unit column stay in place while it scrolls; the Stays list scrolls under its header.
+  - Guests: **How many people** for a group. Stays list: undo **Moved in**; moving someone in while they're still in another unit is refused.
+- **Gender** in the user form, on My Profile and on the Guests page.
+- **My stay** on My Profile: your unit, dates and a link to its area on the Venue Map.
+
+---
+
 ## [1.31.0] - 2026-11-03
 
 ### Added
