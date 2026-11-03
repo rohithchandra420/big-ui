@@ -35,6 +35,7 @@ export class HospitalitySetupComponent implements OnInit, OnDestroy {
   snacksBasis: 'morning' | 'afternoon' = 'morning';
   countDueAfterMin = 45;
   remindBeforeMin = 30;
+  leftoverGoalPct = 5;
   messHall = '';
   /** One block per mess day for the calendar strip (stored, rebuilt on date change). */
   strip: StripDay[] = [];
@@ -79,6 +80,7 @@ export class HospitalitySetupComponent implements OnInit, OnDestroy {
       this.snacksBasis = p?.snacksBasis || d.snacksBasis;
       this.countDueAfterMin = p?.countDueAfterMin ?? d.countDueAfterMin;
       this.remindBeforeMin = p?.remindBeforeMin ?? d.remindBeforeMin ?? 30;
+      this.leftoverGoalPct = p?.leftoverGoalPct ?? d.leftoverGoalPct ?? 5;
       this.messHall = p?.messHall || '';
       this.buildStrip();
     } catch {
@@ -132,7 +134,7 @@ export class HospitalitySetupComponent implements OnInit, OnDestroy {
       await this.hospitality.saveSetup({
         event: this.event._id, opensOn: this.opensOn, closesOn: this.closesOn, times: { ...this.times },
         openMinutes: Math.round(this.openHours * 60), snacksBasis: this.snacksBasis,
-        countDueAfterMin: this.countDueAfterMin, remindBeforeMin: this.remindBeforeMin, messHall: this.messHall || null
+        countDueAfterMin: this.countDueAfterMin, remindBeforeMin: this.remindBeforeMin, leftoverGoalPct: Math.max(0, Math.min(100, Math.round(this.leftoverGoalPct || 0))), messHall: this.messHall || null
       });
       this.notify.openSucessSnackBar('Mess setup saved');
       await this.load();

@@ -50,6 +50,7 @@
           <button type="button" class="pill-btn" *ngIf="s.status === 'upcoming'" (click)="startEditTime()"><mat-icon>schedule</mat-icon>Change time</button>
           <a class="pill-btn" *ngIf="s.status === 'open'" routerLink="/hospitality/desk"><mat-icon>qr_code_scanner</mat-icon>Serving desk</a>
           <button type="button" class="pill-btn ht-danger" *ngIf="s.status === 'open'" [disabled]="!!busy" (click)="closeMess()"><mat-icon>door_front</mat-icon>Close Mess Hall</button>
+          <button type="button" class="pill-btn" *ngIf="s.status === 'closed' && !figOpen" (click)="openFigures()"><mat-icon>{{ s.figures ? 'edit' : 'add' }}</mat-icon>{{ s.figures ? 'Edit kitchen figures' : 'Add kitchen figures' }}</button>
           <button type="button" class="pill-btn" *ngIf="s.closedEarly && s.status === 'closed'" [disabled]="!!busy" (click)="reopenMess()"><mat-icon>door_open</mat-icon>Reopen</button>
         </ng-container>
         <div class="ht-time" *ngIf="editingTime">
@@ -59,6 +60,24 @@
           <button type="button" class="btn-ghost" (click)="editingTime = false">Cancel</button>
         </div>
       </div>
+
+      <!-- Kitchen figures (H4): what was prepared, once the meal has closed -->
+      <section class="hx-card ht-fig" *ngIf="figOpen">
+        <div class="hx-hd"><h2><mat-icon class="ms-fill">inventory</mat-icon>Kitchen figures · {{ s.label }}</h2></div>
+        <div class="hx-bd">
+          <div class="ht-fgrid">
+            <div class="field"><label for="ht-fv">Prepared · Veg</label><input id="ht-fv" type="number" min="0" [(ngModel)]="fig.veg" /></div>
+            <div class="field"><label for="ht-fn">Prepared · Non-veg</label><input id="ht-fn" type="number" min="0" [(ngModel)]="fig.nonVeg" /></div>
+            <div class="field"><label for="ht-fk">Left over (kg, optional)</label><input id="ht-fk" type="number" min="0" step="0.1" [(ngModel)]="fig.kg" /></div>
+            <div class="field"><label for="ht-fo">Note</label><input id="ht-fo" type="text" maxlength="200" [(ngModel)]="fig.note" /></div>
+          </div>
+          <p class="hx-muted">Left over plates = prepared − served ({{ s.served }}), worked out in the Report.</p>
+          <div class="ht-acts">
+            <button type="button" class="pill-btn hx-primary" [disabled]="!!busy" (click)="saveFigures()"><mat-icon>save</mat-icon>Save figures</button>
+            <button type="button" class="btn-ghost" (click)="figOpen = false">Cancel</button>
+          </div>
+        </div>
+      </section>
 
       <div class="ht-grid">
         <!-- Kitchen count -->

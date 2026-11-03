@@ -1,0 +1,160 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Mess Report</div>
+    <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · prepared, served and left over</div>
+  </div>
+  <button type="button" class="btn-cta" [disabled]="!report || exporting" (click)="exportExcel()">{{ exporting ? 'Exporting…' : 'Excel' }}</button>
+</div>
+
+<div class="hr-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <ng-container *ngIf="report as r">
+    <!-- Filters -->
+    <div class="hr-bar">
+      <div class="hr-seg" role="group" aria-label="Show">
+        <button type="button" [class.on]="mode === 'day'" (click)="setMode('day')">Day</button>
+        <button type="button" [class.on]="mode === 'range'" (click)="setMode('range')">Date range</button>
+      </div>
+      <ng-container *ngIf="mode === 'day'">
+        <button type="button" class="pill-btn" (click)="shiftDay(-1)" aria-label="Previous day"><mat-icon>chevron_left</mat-icon></button>
+        <span class="hr-dname">{{ dayLabel(r.from) }}</span>
+        <button type="button" class="pill-btn" (click)="shiftDay(1)" aria-label="Next day"><mat-icon>chevron_right</mat-icon></button>
+      </ng-container>
+      <ng-container *ngIf="mode === 'range'">
+        <input type="date" class="hr-date" [(ngModel)]="from" (change)="load()" aria-label="From" />
+        <span class="hx-muted">to</span>
+        <input type="date" class="hr-date" [(ngModel)]="to" (change)="load()" aria-label="To" />
+      </ng-container>
+      <button type="button" class="pill-btn" (click)="wholeMess()"><mat-icon>date_range</mat-icon>Whole mess period</button>
+      <span class="grow"></span>
+      <app-select class="hr-dept" [ngModel]="department" (ngModelChange)="setDepartment($event)">
+        <app-option [value]="''">All departments</app-option>
+        <app-option *ngFor="let d of departments; trackBy: trackOpt" [value]="d._id">{{ d.name }}</app-option>
+      </app-select>
+    </div>
+
+    <!-- Tiles -->
+    <div class="hr-tiles">
+      <div class="hr-tile" *ngIf="!filtered"><div class="hr-l"><mat-icon class="ms-fill">soup_kitchen</mat-icon>Prepared</div><div class="hr-v">{{ r.total.prepared }}</div><div class="hr-s">asked for {{ r.total.asked }}</div></div>
+      <div class="hr-tile"><div class="hr-l"><mat-icon class="ms-fill">restaurant</mat-icon>Served</div><div class="hr-v">{{ r.total.served }}</div><div class="hr-s">{{ r.total.staff }} staff · {{ r.total.guests }} guest plates</div></div>
+      <div class="hr-tile" *ngIf="!filtered" [class.warn]="r.total.leftoverPct !== null && r.total.leftoverPct > r.goalPct"><div class="hr-l"><mat-icon class="ms-fill">delete</mat-icon>Left over</div><div class="hr-v">{{ r.total.leftover }}</div><div class="hr-s">{{ r.total.leftoverPct ?? '—' }}% of prepared<ng-container *ngIf="r.total.leftoverKg"> · {{ r.total.leftoverKg }} kg</ng-container></div></div>
+      <div class="hr-tile" *ngIf="!filtered"><div class="hr-l"><mat-icon class="ms-fill">target</mat-icon>Count accuracy</div><div class="hr-v">{{ r.total.countAccuracy ?? '—' }}<ng-container *ngIf="r.total.countAccuracy !== null">%</ng-container></div><div class="hr-s">served vs asked for</div></div>
+      <div class="hr-tile" *ngIf="filtered"><div class="hr-l"><mat-icon class="ms-fill">flag</mat-icon>Without attendance</div><div class="hr-v">{{ r.total.flagged }}</div><div class="hr-s">{{ r.total.refused }} refused</div></div>
+    </div>
+    <p class="hx-muted hr-note" *ngIf="filtered">One department: only its people's plates. Asked for, prepared and left over are for the whole kitchen, so they're hidden.</p>
+
+    <!-- Table: a block per day -->
+    <section class="hx-card">
+      <div class="hr-scroll">
+        <table class="hr-tbl">
+          <thead><tr>
+            <th>Meal</th><th class="num" *ngIf="!filtered">Asked</th><th class="num" *ngIf="!filtered">Prepared</th><th class="num">Served</th>
+            <th class="num">Guests</th><th class="num">No att.</th><th class="num">Refused</th><th class="num" *ngIf="!filtered">Left over</th><th *ngIf="!filtered" class="hr-flowh">Where it went</th><th></th>
+          </tr></thead>
+          <tbody *ngFor="let d of r.days; trackBy: trackDay">
+            <tr class="hr-day" *ngIf="r.days.length > 1"><td [attr.colspan]="filtered ? 6 : 10">{{ dayLabel(d.date) }}</td></tr>
+            <ng-container *ngFor="let m of d.meals; trackBy: trackMeal">
+              <tr class="hr-row" (click)="toggle(d.date, m.meal)">
+                <td><span class="hr-nm"><i [style.background]="colour(m.meal)"></i>{{ m.label }}</span></td>
+                <td class="num" *ngIf="!filtered">{{ m.asked ?? '—' }}</td>
+                <td class="num" *ngIf="!filtered">
+                  <ng-container *ngIf="m.hasFigures">{{ m.prepared }}</ng-container>
+                  <button type="button" class="hr-add" *ngIf="!m.hasFigures && m.closed" (click)="$event.stopPropagation(); startFigures(d.date, m)">Add kitchen figures</button>
+                  <span class="hx-muted" *ngIf="!m.hasFigures && !m.closed">—</span>
+                </td>
+                <td class="num">{{ m.served }}</td>
+                <td class="num">{{ m.guests }}</td>
+                <td class="num">{{ m.flagged }}</td>
+                <td class="num">{{ m.refused }}</td>
+                <td class="num" *ngIf="!filtered">
+                  <ng-container *ngIf="m.leftover !== null; else dash">{{ m.leftover }} <span class="hr-pct" [class.hi]="m.overGoal">· {{ m.leftoverPct }}%</span></ng-container>
+                  <ng-template #dash>—</ng-template>
+                </td>
+                <td *ngIf="!filtered">
+                  <div class="hr-flow" *ngIf="m.prepared; else waiting"><i class="s" [style.flex]="m.served"></i><i class="w" [style.flex]="m.leftover || 0.001"></i></div>
+                  <ng-template #waiting><span class="hx-muted">waiting</span></ng-template>
+                </td>
+                <td><mat-icon class="hr-chev">{{ expanded.has(key(d.date, m.meal)) ? 'expand_less' : 'expand_more' }}</mat-icon></td>
+              </tr>
+              <tr class="hr-form" *ngIf="editing === key(d.date, m.meal)">
+                <td [attr.colspan]="10">
+                  <div class="hr-fgrid">
+                    <div class="field"><label>Prepared · Veg</label><input type="number" min="0" [(ngModel)]="fig.veg" /></div>
+                    <div class="field"><label>Prepared · Non-veg</label><input type="number" min="0" [(ngModel)]="fig.nonVeg" /></div>
+                    <div class="field"><label>Left over (kg, optional)</label><input type="number" min="0" step="0.1" [(ngModel)]="fig.kg" placeholder="e.g. 2.5" /></div>
+                    <div class="field"><label>Note</label><input type="text" maxlength="200" [(ngModel)]="fig.note" placeholder="e.g. Rain — 30 ate at the site" /></div>
+                  </div>
+                  <p class="hx-muted">Left over plates = prepared − served ({{ m.served }}), worked out for you.</p>
+                  <div class="hr-acts">
+                    <button type="button" class="btn-cta" [disabled]="busy" (click)="saveFigures(d.date, m)">Save figures</button>
+                    <button type="button" class="btn-ghost" (click)="editing = ''">Cancel</button>
+                  </div>
+                </td>
+              </tr>
+              <tr class="hr-more" *ngIf="expanded.has(key(d.date, m.meal))">
+                <td [attr.colspan]="10">
+                  <div class="hr-more-in">
+                    <div class="hr-depts">
+                      <div class="hr-dh">By department (staff)</div>
+                      <div class="hr-drow" *ngFor="let x of m.perDept; trackBy: trackDept">
+                        <span class="grow">{{ x.department?.name || 'No department' }}</span><b>{{ x.served }}</b>
+                        <span class="hx-muted" *ngIf="x.flagged || x.refused">{{ x.flagged }} without attendance · {{ x.refused }} refused</span>
+                      </div>
+                      <p class="hx-muted" *ngIf="!m.perDept.length">Nobody from the staff was served.</p>
+                    </div>
+                    <div class="hr-side">
+                      <div>Veg {{ m.veg }} · Non-veg {{ m.nonVeg }} · {{ m.blocked }} blocked · {{ m.extra }} extra plates</div>
+                      <div *ngIf="m.hasFigures">Prepared {{ m.vegPrepared }} Veg · {{ m.nonVegPrepared }} Non-veg<ng-container *ngIf="m.leftoverKg !== null"> · {{ m.leftoverKg }} kg left</ng-container></div>
+                      <div *ngIf="m.note" class="hx-muted">“{{ m.note }}”</div>
+                      <button type="button" class="pill-btn" *ngIf="m.hasFigures && !filtered" (click)="startFigures(d.date, m)"><mat-icon>edit</mat-icon>Edit kitchen figures</button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+            <tr class="hr-total">
+              <td>{{ r.days.length > 1 ? 'Day total' : 'Total' }}</td>
+              <td class="num" *ngIf="!filtered">{{ d.total.asked }}</td>
+              <td class="num" *ngIf="!filtered">{{ d.total.prepared }}</td>
+              <td class="num">{{ d.total.served }}</td>
+              <td class="num">{{ d.total.guests }}</td>
+              <td class="num">{{ d.total.flagged }}</td>
+              <td class="num">{{ d.total.refused }}</td>
+              <td class="num" *ngIf="!filtered">{{ d.total.leftover }}<ng-container *ngIf="d.total.leftoverPct !== null"> · {{ d.total.leftoverPct }}%</ng-container></td>
+              <td *ngIf="!filtered"></td><td></td>
+            </tr>
+          </tbody>
+          <tbody *ngIf="r.days.length > 1">
+            <tr class="hr-grand">
+              <td>Grand total</td>
+              <td class="num" *ngIf="!filtered">{{ r.total.asked }}</td>
+              <td class="num" *ngIf="!filtered">{{ r.total.prepared }}</td>
+              <td class="num">{{ r.total.served }}</td>
+              <td class="num">{{ r.total.guests }}</td>
+              <td class="num">{{ r.total.flagged }}</td>
+              <td class="num">{{ r.total.refused }}</td>
+              <td class="num" *ngIf="!filtered">{{ r.total.leftover }}<ng-container *ngIf="r.total.leftoverPct !== null"> · {{ r.total.leftoverPct }}%</ng-container></td>
+              <td *ngIf="!filtered"></td><td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="hr-legend" *ngIf="!filtered"><span class="s">Served</span><span class="w">Left over</span><span class="hx-muted">Goal: {{ r.goalPct }}% or less left over (Setup)</span></div>
+    </section>
+
+    <!-- Trend -->
+    <section class="hx-card hr-trend" *ngIf="!filtered && bars.length > 1">
+      <div class="hx-hd"><h2><mat-icon class="ms-fill">bar_chart</mat-icon>Left over per day · % of prepared</h2></div>
+      <div class="hx-bd">
+        <div class="hr-chart" role="img" aria-label="Left over percent per day">
+          <div class="hr-goal" [style.bottom.%]="goalBottom"><span>{{ r.goalPct }}% goal</span></div>
+          <div class="hr-b" *ngFor="let b of bars; trackBy: trackBar" [class.over]="b.over" [class.none]="b.pct === null" [style.height.%]="b.height"
+               [title]="dayLabel(b.date) + ': ' + (b.pct === null ? 'no figures' : b.pct + '% left over')"></div>
+        </div>
+        <div class="hr-xl"><span *ngFor="let b of bars; trackBy: trackBar">{{ b.label }}</span></div>
+      </div>
+    </section>
+  </ng-container>
+</div>

@@ -83,6 +83,10 @@
                 <app-option *ngFor="let m of remindOptions" [value]="m">{{ m }} min before the count is due</app-option>
               </app-select>
             </div>
+            <div class="field">
+              <label for="hs-goal">Left-over goal (%)</label>
+              <input id="hs-goal" type="number" name="leftoverGoalPct" min="0" max="100" [(ngModel)]="leftoverGoalPct" />
+            </div>
           </div>
         </div>
       </section>

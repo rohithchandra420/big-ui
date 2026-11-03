@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { DeskDecision, DeskGuestHit, DeskPerson, DeskState, Guest, GuestOutcome, GuestPass, MealDay, MealRef, MessDay, MessSetup, MessSetupInput, PassCard, PassInput, ScanOutcome } from './hospitality.model';
+import { DeskDecision, DeskGuestHit, DeskPerson, DeskState, Guest, GuestOutcome, GuestPass, FiguresInput, MealDay, MealRef, MessDay, MessReport, MessSetup, MessSetupInput, PassCard, PassInput, ScanOutcome, ServedRow } from './hospitality.model';
 
 /** Hospitality (H1): the mess plan, the day's meals, kitchen count and alerts. */
 @Injectable({ providedIn: 'root' })
@@ -87,6 +87,23 @@ export class HospitalityService {
   }
   walkIn(eventId: string, data: { name: string; note?: string; vegPlates: number; nonVegPlates: number }): Promise<GuestOutcome> {
     return firstValueFrom(this.http.post<GuestOutcome>(this.url + '/desk/walk-in', { event: eventId, ...data }));
+  }
+
+  // ── Daily report (H4) ──
+  getReport(eventId: string, q: { from: string; to?: string; department?: string | null }): Promise<MessReport> {
+    return firstValueFrom(this.http.get<MessReport>(this.url + '/report', { params: this.reportParams(eventId, q) }));
+  }
+  getServedList(eventId: string, q: { from: string; to?: string; department?: string | null }): Promise<{ rows: ServedRow[] }> {
+    return firstValueFrom(this.http.get<{ rows: ServedRow[] }>(this.url + '/report/served', { params: this.reportParams(eventId, q) }));
+  }
+  saveFigures(ref: MealRef, data: FiguresInput): Promise<{ ok: boolean }> {
+    return firstValueFrom(this.http.put<{ ok: boolean }>(this.url + '/meals/figures', { ...ref, ...data }));
+  }
+  private reportParams(eventId: string, q: { from: string; to?: string; department?: string | null }): Record<string, string> {
+    const p: Record<string, string> = { event: eventId, from: q.from };
+    if (q.to) p['to'] = q.to;
+    if (q.department) p['department'] = q.department;
+    return p;
   }
 
   sendAlert(eventId: string, message: string): Promise<{ recipients: number; delivered: number }> {

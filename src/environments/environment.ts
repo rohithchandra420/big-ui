@@ -4,5 +4,5 @@ export const environment = {
     URL: 'https://api.rchomeproject.in',
     // Kept in sync manually with CHANGELOG.md's latest version — no build
     // tooling currently wires package.json's version into the bundle.
-    version: '1.29.0'
+    version: '1.30.0'
 };

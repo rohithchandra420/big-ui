@@ -75,3 +75,6 @@
   .ht-meter { flex-basis: 50px; }
 }
 .ht-alert { margin-top: 16px; }
+.ht-fig { margin-bottom: 16px; }
+.ht-fgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 700px) { .ht-fgrid { grid-template-columns: 1fr 1fr; } }
