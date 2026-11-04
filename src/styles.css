@@ -1371,6 +1371,9 @@ select:focus {
 .wp-chip.soon { background: #e0f2fe; color: #075985; }
 .wp-chip.closed { background: #f1f5f9; color: #475569; }
 .wp-chip.warn { background: #fef3c7; color: #92400e; }
+.wp-chip.shut { background: #fee2e2; color: #b91c1c; }
+/* Phones: an empty calendar slot, tapped to add a session (WorkshopPlannerComponent.listenForTaps) */
+.wp-cell { position: absolute; inset: 0; display: block; }
 
 /* Venue Map: a session running now in a Workshop area (Workshops W8) — the
    count on the area's badge, and the "Now" block in its panel. */
@@ -1381,6 +1384,42 @@ select:focus {
   font: 700 10px/16px system-ui, sans-serif; white-space: nowrap; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 .vm-live.full { background: #d97706; }
+/* One status per Workshop area (2026-11-04): before = grey, registration open = purple,
+   entry open for the list = blue, open = green, entry closed by staff = red.
+   .pulse (from registration open to the end) rings in the badge's own colour (--pc). */
+.vm-live.k-before { background: #64748b; }
+.vm-live.k-reg { background: #7c3aed; --pc: 124, 58, 237; }
+.vm-live.k-list { background: #0369a1; --pc: 3, 105, 161; }
+.vm-live.k-all { --pc: 22, 163, 74; }
+.vm-live.k-closed { background: #dc2626; --pc: 220, 38, 38; }
+.vm-live.pulse { animation: vm-pulse 1.6s ease-out infinite; }
+@keyframes vm-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(var(--pc, 22, 163, 74), .55); }
+  100% { box-shadow: 0 0 0 8px rgba(var(--pc, 22, 163, 74), 0); }
+}
+@media (prefers-reduced-motion: reduce) { .vm-live.pulse { animation: none; } }
+/* The same badge inside a line of text (map tooltip / popup, Planner's Now row) */
+.vm-live.inline { position: static; transform: none; display: inline-block; vertical-align: middle; margin-right: 4px; }
+/* A Workshop area's tooltip / popup: area, then badge + session, then its status — 2–3 short lines */
+.vm-tip { font-size: 12px; line-height: 1.45; color: #1f2937; max-width: 240px; white-space: normal; }
+.vm-tip b { color: #111827; }
+.vm-tip-row { display: flex; align-items: center; gap: 6px; margin-top: 3px; font-weight: 600; color: #111827; }
+/* The tooltip's state dot, same colours as the badge; pulses until the session ends */
+.vm-dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; background: #16a34a; --pc: 22, 163, 74; }
+.vm-dot.k-before { background: #64748b; --pc: 100, 116, 139; }
+.vm-dot.k-reg { background: #7c3aed; --pc: 124, 58, 237; }
+.vm-dot.k-list { background: #0369a1; --pc: 3, 105, 161; }
+.vm-dot.k-closed { background: #dc2626; --pc: 220, 38, 38; }
+.vm-dot.k-ended, .vm-dot.k-cancelled { background: #9ca3af; }
+.vm-dot.pulse { animation: vm-pulse 1.6s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .vm-dot.pulse { animation: none; } }
+.vm-tip-row span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vm-tip-sub { color: #4b5563; }
+/* Touch screens: a pin's / area's info opens as a small popup on tap */
+.vm-info-pop .leaflet-popup-content { margin: 8px 12px; font-size: 12px; line-height: 1.4; color: #1f2937; }
+.vm-info-pop .leaflet-popup-content b { color: #111827; }
+/* Planner: the current-time line, drawn in the calendar cell that holds "now" (every venue) */
+.wp-now-line { position: absolute; left: 0; right: 0; height: 2px; margin-top: -1px; background: #dc2626; pointer-events: none; z-index: 1; }
 /* A Workshop area's timeline (on now → upcoming → past, past dimmed) */
 .vm-tl { margin: 6px 0 8px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border-default); background: var(--surface-input); }
 .vm-tl-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 12px; }

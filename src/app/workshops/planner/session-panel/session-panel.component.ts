@@ -4,7 +4,10 @@ import { NotificationService } from '../../../core/notification.service';
 import { ConfirmationService } from '../../../shared/confirm-dialog/confirmation.service';
 import { WorkshopService } from '../../workshop.service';
 import { SessionInput, WorkshopSchedule, WorkshopSession } from '../../workshops.model';
-import { PlannerDay, RegState, localDate, localTime, overlapsOf, regState, toInstant } from '../../planner.utils';
+import {
+  PlannerDay, RegState, addMinutes, defaultSessionTimes, doorIsOpen, effectiveCutoff, effectiveRegCloses, localDate, localTime,
+  minutesBetween, overlapsOf, regState, sessionPhase, toInstant
+} from '../../planner.utils';
 
 type PanelMode = 'view' | 'edit' | 'create';
 
@@ -74,6 +77,23 @@ export class SessionPanelComponent implements OnChanges {
 
   get state(): RegState | null { return this.session ? regState(this.session) : null; }
 
+  /** When registration closes / the cut-off, as in force (defaults filled in). */
+  get regCloses(): Date | null { return this.session ? effectiveRegCloses(this.session) : null; }
+  get cutoff(): Date | null { return this.session ? effectiveCutoff(this.session) : null; }
+
+  get doorOpen(): boolean { return !!this.session && doorIsOpen(this.session); }
+
+  /** The door's headline: what it means for who gets in right now. */
+  get doorTitle(): string {
+    const s = this.session;
+    if (!s) return '';
+    if (s.doorManual === false) return 'Entry closed by staff: nobody else is let in';
+    const phase = sessionPhase(s);
+    if (phase === 'ended') return 'Entry closed: the session has ended';
+    if (!this.doorOpen) return `Entry closed: opens at ${this.time(this.regCloses)}`;
+    if (phase === 'all') return 'Entry open to everyone';
+    return `Entry open for the list · walk-ins from ${this.time(this.cutoff)}`;
+  }
   get overlaps(): WorkshopSession[] {
     return this.session && this.schedule ? overlapsOf(this.session, this.schedule.sessions) : [];
   }
@@ -93,7 +113,7 @@ export class SessionPanelComponent implements OnChanges {
     return day ? `${day.label} (${day.sub})` : new Date(s.start).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
   }
 
-  time(iso: string | null): string { return iso ? localTime(new Date(iso)) : ''; }
+  time(iso: string | Date | null | undefined): string { return iso ? localTime(new Date(iso)) : ''; }
 
   reset() {
     this.saving = false;
@@ -123,15 +143,37 @@ export class SessionPanelComponent implements OnChanges {
         regOpens: this.time(s.regOpensAt), regCloses: this.time(s.regClosesAt), cutoff: this.time(s.cutoffAt),
         limit: s.preRegLimit, substitutes: (s.facilitatorsOverride || []).join(', ')
       });
+      this.lastStart = this.time(s.start);
       return;
     }
     const p = this.prefill;
     const venue = p?.venue || sc?.venues[0]?._id || '';
+    const start = p?.start || '10:00';
     this.form.reset({
       workshop: sc?.workshops[0]?._id || '', venue, day: p?.day || this.days[0]?.date || localDate(new Date()),
-      start: p?.start || '10:00', end: p?.end || '11:00',
-      regOpens: '', regCloses: '', cutoff: '', limit: null, substitutes: ''
+      start, end: p?.end || '11:00', ...defaultSessionTimes(start), limit: null, substitutes: ''
     });
+    this.lastStart = start;
+  }
+
+  /** The start before the last change: moving it moves the end and the registration / cut-off times with it. */
+  private lastStart = '';
+
+  /** Start changed in the form: shift the end, registration and cut-off by the same amount (the empty ones stay empty). */
+  onStartChange(): void {
+    const start = this.form.controls.start.value;
+    const valid = (x: string) => /^\d\d:\d\d$/.test(x);
+    if (!valid(start)) return;
+    if (!valid(this.lastStart)) { this.lastStart = start; return; }
+    const delta = minutesBetween(this.lastStart, start);
+    this.lastStart = start;
+    if (!delta) return;
+    const shift: Partial<Record<'end' | 'regOpens' | 'regCloses' | 'cutoff', string>> = {};
+    for (const k of ['end', 'regOpens', 'regCloses', 'cutoff'] as const) {
+      const v = this.form.controls[k].value;
+      if (valid(v)) shift[k] = addMinutes(v, delta);
+    }
+    this.form.patchValue(shift);
   }
 
   /** Live, before saving: the same soft checks the server runs. */
@@ -151,14 +193,23 @@ export class SessionPanelComponent implements OnChanges {
     return out;
   }
 
-  /** Hard rules, checked before sending (the server checks them too). */
-  private problem(v: { start: string; end: string; regOpens: string; regCloses: string; cutoff: string }): string | null {
+  /**
+   * Hard rules, checked before sending (the server checks them too):
+   * registration opens < registration closes ≤ cut-off < start < end.
+   */
+  problem(v: { start: string; end: string; regOpens: string; regCloses: string; cutoff: string }): string | null {
     if (v.end <= v.start) return 'The end must be after the start';
-    if (v.regOpens && v.regCloses && v.regCloses <= v.regOpens) return 'Registration must close after it opens';
-    if (v.regCloses && v.regCloses > v.end) return 'Registration must close by the end of the session';
-    if (v.cutoff && (v.cutoff < v.start || v.cutoff > v.end)) return 'The cut-off must be during the session';
+    if (v.cutoff && v.cutoff >= v.start) return 'The cut-off must be before the start';
+    const cutoff = v.cutoff || addMinutes(v.start, -15);
+    if (v.regCloses && v.regCloses > cutoff) {
+      return v.cutoff ? 'Registration must close by the cut-off'
+        : 'Registration must close by the cut-off (15 minutes before the start when none is set)';
+    }
+    const closes = v.regCloses || cutoff;
+    if (v.regOpens && closes <= v.regOpens) return 'Registration must close after it opens';
     return null;
   }
+
 
   // ── closing ────────────────────────────────────────────────
 
@@ -234,10 +285,16 @@ export class SessionPanelComponent implements OnChanges {
     });
   }
 
-  /** The registration switch: open / close by hand, or follow the times again. */
-  async setRegistration(open: boolean | null) {
+  /**
+   * The registration switch. Picking what the times already say goes back to
+   * following the times (so nothing stays stuck by hand); otherwise by hand.
+   */
+  async setRegistration(choice: boolean | null) {
     const s = this.session;
-    if (!s || this.saving || s.regManual === open) return;
+    if (!s || this.saving) return;
+    const byTimes = regState({ ...s, regManual: null }) === 'open';
+    const open = choice === null || choice === byTimes ? null : choice;
+    if (s.regManual === open) return;
     this.saving = true;
     try {
       await this.workshops.setRegistration(s._id, open);
@@ -248,6 +305,35 @@ export class SessionPanelComponent implements OnChanges {
     } catch (err: any) {
       this.saving = false;
       this.notify.openErrorSnackBar(err?.error?.message || 'Could not change registration');
+    }
+  }
+
+  /** The door switch: same idea as registration. Closed = nobody is let in. */
+  async setDoor(choice: boolean | null) {
+    const s = this.session;
+    if (!s || this.saving) return;
+    const byTimes = doorIsOpen({ ...s, doorManual: null });
+    const open = choice === null || choice === byTimes ? null : choice;
+    if ((s.doorManual ?? null) === open) return;
+    await this.doorChange({ open }, open === null ? 'Entry follows the times again' : open ? 'Entry opened' : 'Entry closed: nobody else is let in');
+  }
+
+  async setShowPlaces(show: boolean) {
+    await this.doorChange({ showPlacesLeft: show }, show ? 'Places left shown on the map' : 'Places left hidden on the map');
+  }
+
+  private async doorChange(change: { open?: boolean | null; showPlacesLeft?: boolean }, done: string) {
+    const s = this.session;
+    if (!s) return;
+    this.saving = true;
+    try {
+      await this.workshops.setDoor(s._id, change);
+      this.saving = false;
+      this.notify.openSucessSnackBar(done);
+      this.changed.emit(s._id);
+    } catch (err: any) {
+      this.saving = false;
+      this.notify.openErrorSnackBar(err?.error?.message || 'Could not change the door');
     }
   }
 

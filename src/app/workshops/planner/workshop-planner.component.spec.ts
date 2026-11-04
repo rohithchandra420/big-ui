@@ -93,6 +93,20 @@ describe('WorkshopPlannerComponent', () => {
     expect(component.panelPrefill!.day).toBe(component.day);
   }));
 
+  it('phones: tapping an empty slot opens New session there, one hour long', fakeAsync(() => {
+    start();
+    component.tapSlot('v1', '14:30');
+    expect(component.panelOpen).toBeTrue();
+    expect(component.panelSession).toBeNull();
+    expect(component.panelPrefill).toEqual(jasmine.objectContaining({ venue: 'v1', day: component.day, start: '14:30', end: '15:30' }));
+    component.closePanel();
+    component.tapSlot('v1', '23:30');   // never past the end of the day
+    expect(component.panelPrefill!.end).toBe('23:55');
+    component.closePanel();
+    component.tapSlot('v1', 'bad');
+    expect(component.panelOpen).toBeFalse();
+  }));
+
   it('points to Setup when the event has no venues yet', fakeAsync(() => {
     service.getSchedule.and.callFake(() => Promise.resolve(schedule({ venues: [], sessions: [] })));
     start();
@@ -106,19 +120,63 @@ describe('WorkshopPlannerComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('has no dates yet');
   }));
 
-  it('shows what is running now, and opens it on tap', fakeAsync(() => {
-    service.getLive.and.callFake(() => Promise.resolve({ now: '', live: [{
-      session: 's1', start: at('2027-01-16', '10:00'), end: at('2027-01-16', '11:00'),
-      workshop: { _id: 'w1', title: 'Hand Drumming', category: null },
-      venue: { _id: 'v1', name: 'Bamboo Dome', capacity: 40, area: null }, attended: 40, placesLeft: 0
-    }] }));
+  describe('the Now row: now → later today', () => {
+    const M = 60000;
+    const iso = (m: number) => new Date(Date.now() + m * M).toISOString();
+    const base = schedule().sessions[0];
+    const s = (id: string, title: string, from: number, to: number, extra: any = {}) =>
+      ({ ...base, _id: id, workshop: { ...base.workshop, title }, start: iso(from), end: iso(to), ...extra });
+    const today = (sessions: any[]) => schedule({ event: { _id: 'e1', name: 'BiG 7.0', startDate: null, endDate: null }, sessions });
+
+    it('running first, then the rest of today in order; ended and other days left out', fakeAsync(() => {
+      service.getSchedule.and.callFake(() => Promise.resolve(today([
+        s('later', 'Clay', 120, 180),
+        s('now', 'Hand Drumming', -30, 30, { counts: { pre: 5, wait: 0, walkin: 0, attended: 10 } }),
+        s('done', 'Early Yoga', -120, -60),
+        s('soon', 'Songwriting', 45, 105)
+      ])));
+      service.getLive.and.callFake(() => Promise.resolve({ now: '', live: [{
+        session: 'now', start: iso(-30), end: iso(30), workshop: { _id: 'w1', title: 'Hand Drumming', category: null },
+        venue: { _id: 'v1', name: 'Bamboo Dome', capacity: 40, area: null }, attended: 40, placesLeft: 0
+      }] }));
+      start();
+      expect(component.nowRow.map(c => c.id)).toEqual(['now', 'soon', 'later']);
+      const cards = Array.from(fixture.nativeElement.querySelectorAll('.wp-now-card')) as HTMLElement[];
+      expect(cards[0].classList).toContain('running');
+      expect(cards[0].textContent).toContain('40/40 in');         // the live figure wins
+      expect(cards[1].textContent).toContain('Reg open');          // same words as the Venue Map
+      expect(cards[1].querySelector('.vm-live')!.classList).toContain('pulse');
+      cards[1].click();
+      expect(component.panelSession!._id).toBe('soon');
+    }));
+
+    it('stays shown when nothing is left today', fakeAsync(() => {
+      service.getSchedule.and.callFake(() => Promise.resolve(today([s('done', 'Early Yoga', -120, -60)])));
+      start();
+      expect(fixture.nativeElement.querySelector('.wp-now').textContent).toContain('Nothing else today');
+    }));
+  });
+
+  it('the current-time line falls in the cell that holds now', () => {
+    const now = new Date(2027, 0, 16, 10, 15);
+    expect(component.nowIn('2027-01-16T10:00:00', '2027-01-16T10:30:00', now)).toBe(50);
+    expect(component.nowIn('2027-01-16T10:30:00', '2027-01-16T11:00:00', now)).toBeNull();
+    expect(component.nowIn('2027-01-15T10:00:00', '2027-01-15T10:30:00', now)).toBeNull();
+  });
+
+  it('dragging to a new time moves registration and the cut-off with it', fakeAsync(() => {
+    const timed = schedule();
+    timed.sessions[0] = { ...timed.sessions[0], regOpensAt: at('2027-01-16', '09:00'), regClosesAt: at('2027-01-16', '09:30'), cutoffAt: at('2027-01-16', '09:45') };
+    service.getSchedule.and.callFake(() => Promise.resolve(timed));
+    service.updateSession.and.returnValue(Promise.resolve({ session: timed.sessions[0], warnings: [] }));
     start();
-    const card = fixture.nativeElement.querySelector('.wp-now-card') as HTMLElement;
-    expect(card.textContent).toContain('Hand Drumming');
-    expect(card.textContent).toContain('40/40');
-    expect(card.textContent).toContain('Full');
-    card.click();
-    expect(component.day).toBe('2027-01-16');
-    expect(component.panelSession!._id).toBe('s1');
+    component.setDay('2027-01-16');
+    const d = (t: string) => ({ toString: () => t }) as any;
+    (component as any).moved('s1', d('11:00'), d('12:00'), null);
+    flush();
+    expect(service.updateSession).toHaveBeenCalledWith('s1', {
+      start: at('2027-01-16', '11:00'), end: at('2027-01-16', '12:00'),
+      regOpensAt: at('2027-01-16', '10:00'), regClosesAt: at('2027-01-16', '10:30'), cutoffAt: at('2027-01-16', '10:45')
+    });
   }));
 });

@@ -26,7 +26,7 @@ const lists = (extra: Partial<SessionLists> = {}): SessionLists => ({
     regOpensAt: null, regClosesAt: null, regManual: null, cutoffAt: null, preRegLimit: 1, facilitatorsOverride: [], status: 'scheduled'
   } as any,
   entries: [entry('e1', 'pre', 'Asha Rao'), entry('e2', 'wait', 'Ben Ito')],
-  counts, registrationOpen: true, ...extra
+  counts, registrationOpen: true, doorOpen: true, afterCutoff: false, ...extra
 });
 
 describe('SessionListsComponent', () => {
@@ -69,6 +69,33 @@ describe('SessionListsComponent', () => {
     expect(component.pre.map(e => e.pass!.name)).toEqual(['Asha Rao']);
     expect(component.wait.map(e => e.pass!.name)).toEqual(['Ben Ito']);
     expect(el().textContent).toContain('Pre-registration open');
+  }));
+
+  it('door closed by staff: says so in red, and scan, search and Let in are off', fakeAsync(() => {
+    const later = (m: number) => new Date(Date.now() + m * 60000).toISOString();
+    service.getLists.and.callFake(() => Promise.resolve(lists({
+      doorOpen: false,
+      session: { ...lists().session, start: later(-30), end: later(30), doorManual: false, doorManualAt: later(-5) } as any
+    })));
+    start();
+    component.setTab('door');
+    fixture.detectChanges();
+    expect(component.doorClosed).toBeTrue();
+    const note = el().querySelector('.sl-note')!;
+    expect(note.classList).toContain('shut');
+    expect(note.textContent).toContain('Entry closed by staff at');
+    expect((el().querySelector('.sl-scan') as HTMLButtonElement).disabled).toBeTrue();
+    expect(el().textContent).toContain('Entry closed');
+  }));
+
+  it('a door that closed meanwhile: the server refuses, and the page reloads to say so', fakeAsync(() => {
+    start();
+    component.setTab('door');
+    service.door.and.returnValue(Promise.reject({ status: 409, error: { message: 'The door is closed by staff', door: { open: false, byHand: true } } }));
+    component.act({ passId: 'pe1' });
+    flushMicrotasks();
+    expect(component.outcome).toEqual(jasmine.objectContaining({ title: 'Entry closed', detail: 'Entry was closed by staff: nobody else is let in.' }));
+    expect(service.getLists).toHaveBeenCalledTimes(2);
   }));
 
   it('a scanned band is added to the list (List tab), with the Found sound', fakeAsync(() => {

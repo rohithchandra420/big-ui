@@ -45,7 +45,8 @@ export interface VenueLocation {
 /** GET /map/status: live statuses by map item id (today: the Mess Hall area). */
 export interface MapStatus {
   areas: Record<string, { kind: string; open: boolean; label: string }>;
-  locations: Record<string, unknown>;
+  /** Today: the Box Office pin (open / closed + note). */
+  locations: Record<string, { kind: string; open: boolean; label: string }>;
 }
 
 export interface LocationList {

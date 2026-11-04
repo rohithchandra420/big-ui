@@ -1,0 +1,31 @@
+<!-- The Box Office's status on the Venue Map. Hidden for viewers when there's no Box Office pin yet. -->
+<div class="bos" *ngIf="status && (status.pin || status.canChange)" [class.open]="status.pin && status.open">
+  <ng-container *ngIf="status.pin; else noPin">
+    <div class="bos-state">
+      <span class="bos-dot" aria-hidden="true"></span>
+      <div class="bos-text">
+        <b>Box Office {{ status.open ? 'open' : 'closed' }}<ng-container *ngIf="status.note"> · {{ status.note }}</ng-container></b>
+        <span>Shown on the Venue Map{{ status.at ? ' · set by ' + (status.by || 'staff') + ' at ' + time(status.at) : '' }}</span>
+      </div>
+    </div>
+    <div class="bos-edit" *ngIf="status.canChange">
+      <input type="text" class="bos-note" maxlength="80" [(ngModel)]="note" placeholder="Note, e.g. Queue ~10 min"
+             aria-label="Note shown on the map" [disabled]="saving">
+      <div class="bos-seg" role="group" aria-label="Box Office status">
+        <button type="button" [class.on]="status.open" [attr.aria-pressed]="status.open" [disabled]="saving || (status.open && !noteDirty)"
+                (click)="set(true)">{{ status.open && noteDirty ? 'Save note' : 'Open' }}</button>
+        <button type="button" [class.on]="!status.open" [attr.aria-pressed]="!status.open" [disabled]="saving || (!status.open && !noteDirty)"
+                (click)="set(false)">{{ !status.open && noteDirty ? 'Save note' : 'Closed' }}</button>
+      </div>
+    </div>
+  </ng-container>
+  <ng-template #noPin>
+    <div class="bos-state">
+      <span class="bos-dot" aria-hidden="true"></span>
+      <div class="bos-text">
+        <b>No Box Office pin on the Venue Map yet</b>
+        <span>Add one (type "Box Office") to show the Box Office as open or closed. <a routerLink="/venue-map">Open the Venue Map</a></span>
+      </div>
+    </div>
+  </ng-template>
+</div>

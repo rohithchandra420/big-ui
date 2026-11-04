@@ -72,6 +72,7 @@ import { AppOptionComponent } from './shared/app-select/app-option.component';
 import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.component';
 import { UserAvatarComponent } from './shared/user-avatar/user-avatar.component';
 import { BandAlertComponent } from './shared/band-alert/band-alert.component';
+import { BoxOfficeStatusComponent } from './box-office/box-office-status/box-office-status.component';
 import { RichTextEditorComponent } from './shared/rich-text-editor/rich-text-editor.component';
 import { TicketEmailDialogComponent } from './box-office/email/ticket-email-dialog/ticket-email-dialog.component';
 import { CustomEmailDialogComponent } from './box-office/email/custom-email-dialog/custom-email-dialog.component';
@@ -143,6 +144,7 @@ LOAD_WASM().subscribe()
     ConfirmDialogComponent,
     UserAvatarComponent,
     BandAlertComponent,
+    BoxOfficeStatusComponent,
     RichTextEditorComponent,
     TicketEmailDialogComponent,
     CustomEmailDialogComponent,
