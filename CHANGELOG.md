@@ -13,6 +13,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.34.0] - 2026-11-05
+
+### Added
+- **Public festival page (first part):** a new, separate app for participants at `/live`, with no sign-in. It shows the festival's name, a countdown before the event, the festival days with today highlighted during it, and a thank-you after it. Schedule, map, news and "My plan" tabs are in place and say "coming soon" for now. It is installable as its own app ("BiG Festival"), refreshes every 30 seconds while on screen, opens offline with the last information it had, and has a "resting" screen when it is switched off.
+- **Admin › Public Page** (Directors, Admins, Developers): switch the public page on or off, pick the event it shows, and how many days before and after the event it can be seen. It is off until someone switches it on.
+
+### Changed
+- The staff app's offline support now leaves the `/live` address to the public page.
+
+### Development
+- The public page is a second app in this workspace (`projects/public`): `npm run start:public` (port 4201), `npm run build:public`, `npm run test:public`. Production builds to `docs/live/`.
+
+### Notes
+- 946/946 staff unit tests, 21/21 public page unit tests.
+
+---
+
 ## [1.33.0] - 2026-11-04
 
 ### Changed

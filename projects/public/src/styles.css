@@ -1,0 +1,33 @@
+/* Public participant app — design tokens from mocks/mock-public-home-v2.html. */
+:root {
+  --leaf: #1E4638; --leaf-2: #2f6b52; --moss: #e9f1e4; --paper: #fbf7ef;
+  --ink: #1b2620; --ink-2: #4a5a51; --muted: #7d8a82; --line: #e6e0d3; --card: #fff;
+  --bloom: #e2467b; --marigold: #f4a623; --sky: #3b8fd6; --lilac: #8a5cd1; --coral: #ef6a4c;
+  --danger: #d92d20; --danger-ink: #b42318;
+  --shadow: 0 6px 20px rgba(30, 70, 56, .10);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 88px;
+}
+@media (min-width: 900px) { body { padding-bottom: 24px; } }
+button { font: inherit; cursor: pointer; color: inherit; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+
+.ms {
+  font-family: 'Material Symbols Rounded'; font-weight: normal; font-style: normal;
+  font-size: 22px; line-height: 1; display: inline-block; vertical-align: middle;
+  font-variation-settings: 'FILL' 0; -webkit-font-feature-settings: 'liga'; font-feature-settings: 'liga';
+}
+.ms.fill { font-variation-settings: 'FILL' 1; }
+
+.logo {
+  width: 42px; height: 42px; border-radius: 13px; background: #fff; color: var(--leaf);
+  display: grid; place-items: center; font-weight: 800; font-size: 15px; letter-spacing: -.5px; flex-shrink: 0;
+}
+.logo.big { width: 72px; height: 72px; border-radius: 22px; font-size: 24px; background: var(--leaf); color: #fff; }

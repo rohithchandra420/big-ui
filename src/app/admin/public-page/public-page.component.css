@@ -1,0 +1,35 @@
+.pp-page { max-width: 760px; margin: 0 auto; padding: 16px; }
+.pp-loading { display: flex; justify-content: center; padding: 40px 0; }
+.pp-card { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+
+.pp-status { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: #f4f4f2; border: 1px solid #e5e5e0; }
+.pp-status.on { background: #ecf7f0; border-color: #bfe3cc; }
+.pp-dot { width: 12px; height: 12px; border-radius: 50%; background: #9ca3af; flex-shrink: 0; }
+.pp-status.on .pp-dot { background: #16a34a; box-shadow: 0 0 0 4px rgba(22, 163, 74, .18); }
+.pp-status-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pp-status-txt b { font-size: 14px; color: #1a1a1a; overflow-wrap: anywhere; }
+.pp-status-txt small { font-size: 12px; color: #666; }
+.pp-open { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--color-primary); text-decoration: none; white-space: nowrap; }
+.pp-open mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+.pp-warn { display: flex; gap: 8px; align-items: flex-start; margin: 0; }
+.pp-warn mat-icon { flex-shrink: 0; font-size: 20px; width: 20px; height: 20px; }
+
+.pp-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pp-lbl { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+.pp-seg { display: inline-flex; border: 1px solid #d6d6d0; border-radius: 10px; overflow: hidden; }
+.pp-seg button { border: 0; background: #fff; color: #444; padding: 7px 18px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; }
+.pp-seg button + button { border-left: 1px solid #d6d6d0; }
+.pp-seg button.on { background: var(--color-primary); color: #fff; }
+.pp-seg button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+
+.field { margin-bottom: 0; }
+.pp-hint { display: block; font-size: 12px; color: #666; }
+.pp-err { color: #b42318; }
+.pp-actions { display: flex; justify-content: flex-end; }
+.pp-actions .btn-cta { padding: 8px 22px; font-size: 13px; }
+
+@media (max-width: 600px) {
+  .pp-status { flex-wrap: wrap; }
+  .pp-actions .btn-cta { width: 100%; }
+}
