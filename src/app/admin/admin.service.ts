@@ -95,4 +95,31 @@ export class AdminService {
     reactivateUser(userId: string) {
         return this.http.patch<any>(this.url + '/reactivateUser/' + userId, {});
     }
+
+    // Admin › Public Page (PUBLIC_HOME_CONTEXT.md, PH1)
+    getPublicPage() {
+        return this.http.get<PublicPageSettings>(this.url + '/admin/public-page');
+    }
+
+    savePublicPage(data: PublicPageSave) {
+        return this.http.put<PublicPageSettings>(this.url + '/admin/public-page', data);
+    }
+}
+
+export interface PublicPageSettings {
+  enabled: boolean;
+  event: { _id: string; name: string; active: boolean } | null;
+  showBeforeDays: number;
+  showAfterDays: number;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  /** Active events with dates — the only ones that can be picked. */
+  events: { _id: string; name: string; startDate: string; endDate: string }[];
+}
+
+export interface PublicPageSave {
+  enabled: boolean;
+  event: string | null;
+  showBeforeDays: number;
+  showAfterDays: number;
 }

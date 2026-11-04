@@ -250,6 +250,15 @@
           <span class="nav-dot"></span>
           Announcements
         </a>
+
+        <a class="nav-item"
+           routerLink="/admin/public-page"
+           routerLinkActive="active"
+           (click)="onNavClick()"
+           *ngIf="canSeeManageEvents">
+          <span class="nav-dot"></span>
+          Public Page
+        </a>
       </div>
     </ng-container>
 
