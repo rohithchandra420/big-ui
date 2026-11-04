@@ -1,7 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { AppComponent } from './app.component';
-import { PublicApiService, PublicEventAnswer } from './core/public-api.service';
+import { PublicApiService, PublicEventAnswer, PublicSession } from './core/public-api.service';
+
+export const session = (over: Partial<PublicSession> = {}): PublicSession => ({
+  id: 's1', title: 'Hand Drumming', category: { name: 'Music', colour: '#7c3aed', icon: 'music_note' }, venue: 'Bamboo Dome',
+  start: '2026-12-11T05:30:00Z', end: '2026-12-11T06:30:00Z', facilitators: ['Ira Monsoon'], description: 'Rhythm for everyone',
+  ageLimit: '8+', language: 'English', bringYourOwn: '', itemsRequired: '', state: 'open', stateAt: null, full: false, placesLeft: 12,
+  ...over
+});
 
 const during: PublicEventAnswer = {
   off: false, name: 'BiG 7.0', startDate: '2026-12-10', endDate: '2026-12-12', today: '2026-12-11',
@@ -22,8 +29,9 @@ describe('AppComponent (public shell)', () => {
 
   beforeEach(async () => {
     history.replaceState(null, '', location.pathname);
-    apiSpy = jasmine.createSpyObj('PublicApiService', ['event']);
+    apiSpy = jasmine.createSpyObj('PublicApiService', ['event', 'sessions']);
     apiSpy.event.and.returnValue(of({ data: during, at: Date.now(), offline: false }));
+    apiSpy.sessions.and.returnValue(of({ data: { off: false, sessions: [] }, at: Date.now(), offline: false }));
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [{ provide: PublicApiService, useValue: apiSpy }]
@@ -91,6 +99,27 @@ describe('AppComponent (public shell)', () => {
     expect(text()).toContain('News and updates from the organisers');
     component.go('home');
     expect(component.view).toBe('home');
+  });
+
+  it('a failing schedule does not hide the page', () => {
+    apiSpy.sessions.and.returnValue(throwError(() => new Error('500')));
+    create();
+    expect(text()).toContain('Day 2 is');
+    expect(component.sessions).toEqual([]);
+  });
+
+  it('opens and closes a session\'s details', () => {
+    const now = Date.now();
+    const s = session({ start: new Date(now - 600000).toISOString(), end: new Date(now + 3000000).toISOString() });
+    apiSpy.sessions.and.returnValue(of({ data: { off: false, sessions: [s] }, at: now, offline: false }));
+    create();
+    (fixture.nativeElement.querySelector('.live-card') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sheet h3').textContent).toContain('Hand Drumming');
+    expect(text()).toContain('With Ira Monsoon');
+    (fixture.nativeElement.querySelector('.sheet-x') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sheet')).toBeNull();
   });
 
   it('unknown #hash opens Home', () => {

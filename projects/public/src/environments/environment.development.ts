@@ -1,5 +1,5 @@
 export const environment = {
     // Local dev: `ng serve big-public` (port 4201) proxies /api to big-api.
     URL: '/api',
-    version: '1.34.0'
+    version: '1.35.0'
 };

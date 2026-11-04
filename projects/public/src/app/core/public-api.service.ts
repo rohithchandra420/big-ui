@@ -20,6 +20,32 @@ export interface PublicEvent {
 }
 export type PublicEventAnswer = PublicEvent | { off: true };
 
+/** A workshop session's public status (big-api utils/publicSessionState.js). */
+export type SessionState = 'cancelled' | 'ended' | 'closed' | 'soon' | 'reg' | 'regclosed' | 'list' | 'open' | 'full';
+
+export interface PublicSession {
+  id: string;
+  title: string;
+  category: { name: string; colour: string; icon: string } | null;
+  venue: string;
+  start: string;
+  end: string;
+  facilitators: string[];
+  description: string;
+  ageLimit: string;
+  language: string;
+  bringYourOwn: string;
+  itemsRequired: string;
+  state: SessionState;
+  /** The time that goes with the state (e.g. when registration opens). */
+  stateAt: string | null;
+  /** Registration: the list is full, the venue keeps a waitlist. */
+  full: boolean;
+  /** Only while everyone can walk in, and only when staff show it. */
+  placesLeft: number | null;
+}
+export type PublicSessionsAnswer = { off: false; sessions: PublicSession[] } | { off: true };
+
 export interface Loaded<T> {
   data: T;
   /** When the server answered (ms). */
@@ -36,6 +62,10 @@ export class PublicApiService {
 
   event(): Observable<Loaded<PublicEventAnswer>> {
     return this.get<PublicEventAnswer>('event');
+  }
+
+  sessions(): Observable<Loaded<PublicSessionsAnswer>> {
+    return this.get<PublicSessionsAnswer>('sessions');
   }
 
   private get<T>(name: string): Observable<Loaded<T>> {
