@@ -6,9 +6,14 @@
       <div class="page-ph-sub">{{ when }}</div>
     </div>
   </div>
-  <span class="reg-chip" *ngIf="data" [class.on]="data.registrationOpen">
-    <span class="dot"></span>Pre-registration {{ data.registrationOpen ? 'open' : 'closed' }}
-  </span>
+  <div class="chips" *ngIf="data">
+    <span class="reg-chip" [class.on]="data.registrationOpen">
+      <span class="dot"></span>Pre-registration {{ data.registrationOpen ? 'open' + (s?.regManual === true ? '' : ' · closes ' + time(regCloses)) : 'closed' }}
+    </span>
+    <span class="reg-chip" [class.on]="data.doorOpen" [class.shut]="s?.doorManual === false">
+      <span class="dot"></span>Entry {{ data.doorOpen ? 'open' : 'closed' }}
+    </span>
+  </div>
 </div>
 
 <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
@@ -36,21 +41,22 @@
   <div class="warn-banner" *ngIf="tab === 'list' && !d.registrationOpen">
     Pre-registration is closed for this session, so nobody can be added to the list. Open it from the session in the Planner.
   </div>
-  <div class="sl-note" *ngIf="tab === 'door' && s?.cutoffAt">
-    <mat-icon>schedule</mat-icon>
-    Cut-off {{ time(s!.cutoffAt) }}{{ cutoffPassed ? ' has passed: the waitlist and walk-ins can go in.' : ': until then, only the list goes in.' }}
+  <div class="sl-note" *ngIf="tab === 'door'" [class.shut]="doorClosed">
+    <mat-icon>{{ doorClosed ? 'door_front' : 'door_open' }}</mat-icon>
+    {{ doorNote }}
   </div>
 
   <!-- Find a person: scan or search -->
   <div class="sl-find">
-    <button type="button" class="btn-cta sl-scan" (click)="scan()" [disabled]="busy || (tab === 'list' && !d.registrationOpen)">
+    <button type="button" class="btn-cta sl-scan" (click)="scan()"
+            [disabled]="busy || (tab === 'list' && !d.registrationOpen) || (tab === 'door' && doorClosed)">
       <mat-icon>qr_code_scanner</mat-icon>Scan wrist band
     </button>
     <div class="sl-search">
       <label class="search-field">
         <mat-icon>search</mat-icon>
         <input type="text" [ngModel]="search" (ngModelChange)="onSearch($event)" placeholder="Or search name, email, phone or order number"
-               aria-label="Search people" [disabled]="tab === 'list' && !d.registrationOpen">
+               aria-label="Search people" [disabled]="(tab === 'list' && !d.registrationOpen) || (tab === 'door' && doorClosed)">
       </label>
       <div class="sl-results" *ngIf="results.length || (searched && !searching)">
         <button type="button" class="sl-result" *ngFor="let p of results; trackBy: trackId" (click)="pick(p)" [disabled]="busy || !p.isAdmitted">
@@ -77,7 +83,7 @@
         <button type="button" class="btn-danger" *ngIf="o.flag" (click)="continueFlagged()" [disabled]="busy">
           Checked: continue with {{ o.flag.band.owner?.name || 'the owner' }}
         </button>
-        <button type="button" class="btn-cta" *ngIf="o.letIn" (click)="letIn(o.letIn!)" [disabled]="busy">{{ o.letInLabel }}</button>
+        <button type="button" class="btn-cta" *ngIf="o.letIn" (click)="letIn(o.letIn!)" [disabled]="busy || doorClosed">{{ o.letInLabel }}</button>
       </div>
     </div>
   </div>
@@ -100,7 +106,7 @@
                   <ng-template #waiting><span class="muted">{{ grp.key === 'pre' ? 'Not here yet' : 'Waiting' }}</span></ng-template>
                 </td>
                 <td class="acts">
-                  <button type="button" class="pill-btn primary" *ngIf="!e.attendedAt && grp.key !== 'pre'" (click)="letIn(e)" [disabled]="busy">Let in</button>
+                  <button type="button" class="pill-btn primary" *ngIf="!e.attendedAt && grp.key !== 'pre'" (click)="letIn(e)" [disabled]="busy || doorClosed">Let in</button>
                   <button type="button" class="pill-btn" *ngIf="!e.attendedAt" (click)="remove(e)" [disabled]="busy">Remove</button>
                 </td>
               </tr>

@@ -95,3 +95,8 @@
   .sl-out-ic { font-size: 32px; width: 32px; height: 32px; }
   .sl-out-acts > button { flex: 1 1 0; min-width: 0; }
 }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.reg-chip.shut { border-color: #dc2626; color: #b91c1c; background: #fef2f2; }
+.reg-chip.shut .dot { background: #dc2626; }
+.sl-note.shut { color: #b91c1c; font-weight: 600; }
+.sl-note.shut mat-icon { color: #dc2626; }

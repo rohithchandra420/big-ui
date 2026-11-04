@@ -63,6 +63,10 @@ export class WorkshopService {
   setRegistration(id: string, open: boolean | null): Promise<{ session: WorkshopSession }> {
     return firstValueFrom(this.http.patch<{ session: WorkshopSession }>(`${this.url}/sessions/${id}/registration`, { open }));
   }
+  /** The door: open: true / false = by hand (closed = nobody is let in); null = follow the times. Also "show places left". */
+  setDoor(id: string, change: { open?: boolean | null; showPlacesLeft?: boolean }): Promise<{ session: WorkshopSession }> {
+    return firstValueFrom(this.http.patch<{ session: WorkshopSession }>(`${this.url}/sessions/${id}/door`, change));
+  }
 
   // ── Lists and the door (release 3) ───────────────────────
 

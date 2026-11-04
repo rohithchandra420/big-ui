@@ -8,7 +8,7 @@ import { NotificationService } from '../core/notification.service';
 import { ConfirmationService } from '../shared/confirm-dialog/confirmation.service';
 import { WorkshopService } from '../workshops/workshop.service';
 import { WorkshopSchedule, WorkshopSession } from '../workshops/workshops.model';
-import { localTime, regState } from '../workshops/planner.utils';
+import { MapStatus as WorkshopMapStatus, localTime, mapStatusOf } from '../workshops/planner.utils';
 import { EventItem } from '../models/event.model';
 import { LocationService, VenueArea, VenueLocation } from './location.service';
 import {
@@ -129,8 +129,12 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
    * the timeline shown when the area is selected.
    */
   private workshopSchedule: WorkshopSchedule | null = null;
-  /** The session running now in each Workshop area (by area id). */
-  liveByArea = new Map<string, { attended: number; capacity: number; placesLeft: number }>();
+  /**
+   * Per Workshop area (by area id): the ONE status shown on its badge and tooltip
+   * (2026-11-04) — the session at the top of its pipeline today: the one running
+   * now, otherwise the next one (registration, door for the list, open to all…).
+   */
+  workshopStatus = new Map<string, WorkshopMapStatus>();
   /** Timeline of the selected Workshop area: on now, upcoming, then past. Stored for the *ngFor. */
   timeline: TimelineItem[] = [];
   /** The selected area is a Workshop area with at least one workshop venue on it. */
@@ -140,6 +144,13 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private liveTimer?: ReturnType<typeof setInterval>;
   /** Live statuses from GET /map/status (Hospitality H3: the Mess Hall), by area id. */
   statusByArea = new Map<string, { kind: string; open: boolean; label: string }>();
+  /** Live statuses of pins from GET /map/status (the Box Office), by location id. */
+  statusByLocation = new Map<string, { kind: string; open: boolean; label: string }>();
+  /**
+   * A touch screen: hover tooltips close straight after a tap there, so the
+   * same one-line info opens as a small popup on tap instead (2026-11-04).
+   */
+  private readonly touch = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
   /** Per area: its size, for polygons. */
   areaSize = new Map<string, string>();
 
@@ -206,7 +217,10 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subs.add(this.eventService.activeEvent.subscribe(ev => {
       const changed = ev?._id !== this.event?._id;
       this.event = ev;
-      if (changed) { this.closePanels(); this.fittedFor = ''; this.workshopSchedule = null; this.liveByArea = new Map(); this.statusByArea = new Map(); }
+      if (changed) {
+        this.closePanels(); this.fittedFor = ''; this.workshopSchedule = null;
+        this.workshopStatus = new Map(); this.statusByArea = new Map(); this.statusByLocation = new Map();
+      }
       this.load();
       this.loadWorkshops();
       this.loadStatus();
@@ -272,13 +286,20 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private pin(type: string, isSel = false, draft = false): Leaflet.DivIcon {
+  private pin(type: string, isSel = false, draft = false, status?: { open: boolean }): Leaflet.DivIcon {
     const t = typeInfo(type);
     return this.L!.divIcon({
-      className: 'vm-pin-wrap', iconSize: [34, 34], iconAnchor: [17, 34], tooltipAnchor: [0, -30],
+      className: 'vm-pin-wrap', iconSize: [34, 34], iconAnchor: [17, 34], tooltipAnchor: [0, -30], popupAnchor: [0, -30],
       html: `<div class="vm-pin${isSel ? ' sel' : ''}${draft ? ' draft' : ''}" style="background:${t.color}">` +
-            `<span class="material-symbols-rounded">${draft ? 'add_location' : t.icon}</span></div>`
+            `<span class="material-symbols-rounded">${draft ? 'add_location' : t.icon}</span>` +
+            (status ? `<i class="vm-status${status.open ? ' open' : ''}"></i>` : '') + '</div>'
     });
+  }
+
+  /** The one-line info of a pin or area: a hover tooltip, or on touch screens a popup opened by a tap. */
+  private bindInfo(layer: Leaflet.Layer, html: string, sticky = false): void {
+    if (this.touch) layer.bindPopup(html, { closeButton: false, autoPan: true, className: 'vm-info-pop', offset: [0, sticky ? 0 : 4] });
+    else layer.bindTooltip(html, { direction: 'top', sticky });
   }
 
   private drawMarkers(): void {
@@ -287,12 +308,14 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.markers.forEach(m => m.remove());
     this.markers = this.visible.map(loc => {
       const editingThis = this.form?._id === loc._id;
+      const st = this.statusByLocation.get(loc._id);
       const m = L.marker([loc.lat, loc.lng], {
-        icon: this.pin(loc.type, this.selected?._id === loc._id || editingThis),
+        icon: this.pin(loc.type, this.selected?._id === loc._id || editingThis, false, st),
         draggable: loc.canEdit && !this.drawing, title: loc.name, keyboard: true
       });
       const outside = this.locInfo.get(loc._id)?.outside ? '<br><i>Outside the festival boundary</i>' : '';
-      m.bindTooltip(`<b>${escapeHtml(loc.name)}</b><br>${typeInfo(loc.type).label}${outside}`, { direction: 'top' });
+      // One status line: the pin's live status (Box Office), otherwise its type.
+      this.bindInfo(m, `<b>${escapeHtml(loc.name)}</b><br>${st ? escapeHtml(st.label) : typeInfo(loc.type).label}${outside}`);
       m.on('click', () => this.zone.run(() => this.select(loc)));
       m.on('dragend', () => this.zone.run(() => { const p = m.getLatLng(); this.onDragEnd(loc, p.lat, p.lng); }));
       return m.addTo(this.map!);
@@ -318,8 +341,7 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
           : { color: info.color, weight, dashArray: a.kind === 'emergency' ? '8 6' : undefined };
       const layer = a.shape === 'polygon' ? L.polygon(a.points, style) : L.polyline(a.points, style);
       (layer as any).pm?.setOptions?.({ allowEditing: false });
-      const st = this.statusByArea.get(a._id);
-      layer.bindTooltip(`<b>${escapeHtml(a.name)}</b><br>${info.label}${st ? '<br>' + escapeHtml(st.label) : ''}`, { sticky: true });
+      this.bindInfo(layer, this.areaInfoHtml(a), true);
       layer.on('click', (e: any) => { L.DomEvent.stopPropagation(e); this.zone.run(() => this.selectArea(a)); });
       layer.addTo(this.map);
       this.areaLayers.set(a._id, layer);
@@ -339,8 +361,34 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
       }),
       title: a.name, keyboard: false, zIndexOffset: -500   // below location pins
     });
+    this.bindInfo(m, this.areaInfoHtml(a));
     m.on('click', () => this.zone.run(() => this.selectArea(a)));
     return m.addTo(this.map!);
+  }
+
+  /**
+   * An area's tooltip / popup, 2–3 short lines: its name, then ONE status — a
+   * Workshop area's top session (the same pulsing badge + its title, then the
+   * status), the Mess Hall's status, or else its kind.
+   */
+  private areaInfoHtml(a: VenueArea): string {
+    const name = `<b>${escapeHtml(a.name)}</b>`;
+    const w = this.workshopStatus.get(a._id);
+    if (w && !this.statusByArea.has(a._id)) {
+      const title = w.line.slice(0, w.line.length - w.text.length - 2);   // line = "<title>: <text>"
+      // A dot in the state's colour, pulsing until the session ends.
+      const dot = `<i class="vm-dot k-${w.kind}${w.kind === 'ended' || w.kind === 'cancelled' ? '' : ' pulse'}"></i>`;
+      return `<div class="vm-tip">${name}<div class="vm-tip-row">${dot}<span>${escapeHtml(title)}</span></div>` +
+        `<div class="vm-tip-sub">${escapeHtml(w.text)}</div></div>`;
+    }
+    const line = this.statusByArea.get(a._id)?.label ??
+      (a.kind === 'workshop_area' && this.areaHasSessions(a) ? 'No session running' : areaInfo(a.kind).label);
+    return `${name}<br>${escapeHtml(line)}`;
+  }
+
+  private areaHasSessions(a: VenueArea): boolean {
+    const sc = this.workshopSchedule;
+    return !!sc && sc.venues.some(v => v.area === a._id);
   }
 
   private placeDraft(lat: number, lng: number): void {
@@ -384,41 +432,46 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!document.hidden) { this.loadWorkshops(); this.loadStatus(); }
   }
 
-  /** GET /map/status — redraws the area badges only when a status changed. Quietly keeps the last one on failure. */
+  /** GET /map/status — redraws the badges / pins only when a status changed. Quietly keeps the last one on failure. */
   async loadStatus(): Promise<void> {
     if (!this.event || document.hidden) return;
     try {
       const res = await this.locationService.status(this.event._id);
-      const next = new Map(Object.entries(res.areas || {}));
-      const same = next.size === this.statusByArea.size &&
-        [...next].every(([id, s]) => { const o = this.statusByArea.get(id); return !!o && o.open === s.open && o.label === s.label; });
-      if (same) return;
-      this.statusByArea = next;
-      if (this.map) this.drawAreas();
+      const areas = new Map(Object.entries(res.areas || {}));
+      const locations = new Map(Object.entries(res.locations || {}));
+      const areasChanged = !sameStatuses(areas, this.statusByArea);
+      const pinsChanged = !sameStatuses(locations, this.statusByLocation);
+      this.statusByArea = areas;
+      this.statusByLocation = locations;
+      if (this.map && areasChanged) this.drawAreas();
+      if (this.map && pinsChanged) this.drawMarkers();
     } catch { /* keep the last status */ }
   }
 
-  /** Recompute the live counts and the selected area's timeline. */
+  /**
+   * Each Workshop area's one status: of today's scheduled sessions in its
+   * venues that haven't ended, the one running now, otherwise the next to start.
+   * Then the selected area's timeline.
+   */
   private refreshWorkshops(): void {
     const sc = this.workshopSchedule;
-    const now = Date.now();
-    const live = new Map<string, { attended: number; capacity: number; placesLeft: number }>();
+    const now = new Date();
+    const today = now.toDateString();
+    const top = new Map<string, WorkshopSession>();
     if (sc) {
       const areaOf = new Map(sc.venues.map(v => [v._id, v.area || null]));
       for (const s of sc.sessions) {
         const area = areaOf.get(s.venue?._id);
-        if (!area || s.status !== 'scheduled' || !this.isNow(s, now)) continue;
-        const capacity = s.venue?.capacity || 0, attended = s.counts?.attended || 0;
-        live.set(area, { attended, capacity, placesLeft: Math.max(0, capacity - attended) });
+        if (!area || s.status !== 'scheduled' || new Date(s.end) <= now) continue;
+        // Upcoming: today only. Running now: always (it may have started before midnight).
+        if (new Date(s.start) > now && new Date(s.start).toDateString() !== today) continue;
+        const cur = top.get(area);
+        if (!cur || new Date(s.start) < new Date(cur.start)) top.set(area, s);
       }
     }
-    this.liveByArea = live;
+    this.workshopStatus = new Map([...top].map(([area, s]) => [area, mapStatusOf(s, now)]));
     this.buildTimeline();
     if (this.map) this.drawAreas();
-  }
-
-  private isNow(s: WorkshopSession, now = Date.now()): boolean {
-    return new Date(s.start).getTime() <= now && now < new Date(s.end).getTime();
   }
 
   /** The selected Workshop area's sessions: on now, then upcoming (soonest first), then past (latest first). */
@@ -443,21 +496,10 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private timelineItem(s: WorkshopSession, now: number): TimelineItem {
     const start = new Date(s.start), end = new Date(s.end);
     const when: TimelineItem['when'] = end.getTime() <= now ? 'past' : start.getTime() <= now ? 'now' : 'next';
-    const c = s.counts || { pre: 0, wait: 0, walkin: 0, attended: 0 };
-    const capacity = s.venue?.capacity || 0;
-    const left = Math.max(0, capacity - c.attended);
-    let numbers: string;
-    if (s.status === 'cancelled') {
-      numbers = 'Cancelled';
-    } else if (when === 'now') {
-      numbers = `${c.attended}/${capacity} in · ${left ? left + ' place' + (left === 1 ? '' : 's') + ' left' : 'full'}`;
-    } else if (when === 'next') {
-      const st = regState(s);
-      numbers = `${c.pre}/${s.preRegLimit || capacity} on the list${c.wait ? ' + ' + c.wait + ' waiting' : ''} · `
-        + (st === 'open' ? 'registration open' : st === 'soon' ? 'registration opens ' + localTime(new Date(s.regOpensAt!)) : 'registration closed');
-    } else {
-      numbers = `${c.attended} attended`;
-    }
+    // The same status line as the map's badge and tooltip (registration, door, numbers).
+    const st = mapStatusOf(s, new Date(now));
+    const numbers = s.status === 'cancelled' ? 'Cancelled' : when === 'past' ? `${s.counts?.attended || 0} attended`
+      : st.text.charAt(0).toUpperCase() + st.text.slice(1);
     return {
       session: s, when, numbers,
       day: start.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }),
@@ -466,13 +508,16 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     };
   }
 
-  /** '28/40' on an area's badge while a session runs in its venue. */
+  /**
+   * Under an area's icon: the Mess Hall's open / closed dot, or a Workshop
+   * area's one status ('12/30' pulsing while registration is open, 'Waitlist 5',
+   * '9/30 in', red 'Closed' when staff closed the door…).
+   */
   private liveBadge(a: VenueArea): string {
     const st = this.statusByArea.get(a._id);
     if (st) return `<i class="vm-status${st.open ? ' open' : ''}"></i>`;
-    const l = this.liveByArea.get(a._id);
-    if (!l) return '';
-    return `<span class="vm-live${l.placesLeft ? '' : ' full'}">${l.attended}/${l.capacity}</span>`;
+    const w = this.workshopStatus.get(a._id);
+    return w ? statusBadge(w) : '';
   }
 
   // ── folding the side sections ──────────────────────────────────────
@@ -966,4 +1011,17 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+}
+
+/** A Workshop area's status badge: pulses from registration open to the end. `inline` = inside a line of text. */
+function statusBadge(w: WorkshopMapStatus, inline = false): string {
+  if (!w.badge) return '';
+  return `<span class="vm-live k-${w.kind}${w.live ? ' pulse' : ''}${inline ? ' inline' : ''}">${escapeHtml(w.badge)}</span>`;
+}
+
+type LiveStatus = { open: boolean; label: string };
+
+/** Two status maps (from GET /map/status) say the same thing. */
+function sameStatuses(a: Map<string, LiveStatus>, b: Map<string, LiveStatus>): boolean {
+  return a.size === b.size && [...a].every(([id, s]) => { const o = b.get(id); return !!o && o.open === s.open && o.label === s.label; });
 }

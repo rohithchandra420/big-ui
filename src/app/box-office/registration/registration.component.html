@@ -19,6 +19,8 @@
   </div>
 </div>
 
+<app-box-office-status></app-box-office-status>
+
 <app-spot-registration *ngIf="showSpotRegistration"
                        (registered)="onSpotRegistrationRegistered($event)"
                        (cancelled)="onSpotRegistrationCancelled()">

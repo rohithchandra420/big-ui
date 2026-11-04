@@ -7,7 +7,26 @@ import { NotificationService } from '../../core/notification.service';
 import { EventItem } from '../../models/event.model';
 import { WorkshopService } from '../workshop.service';
 import { LiveSession, WorkshopCategory, WorkshopSchedule, WorkshopSession } from '../workshops.model';
-import { PlannerDay, esc, eventDays, localDate, localIso, localTime, overlapsOf, regState, toInstant } from '../planner.utils';
+import {
+  MapStatus, PlannerDay, effectiveRegCloses, esc, eventDays, localDate, localIso, localTime, mapStatusOf, overlapsOf, regState, toInstant
+} from '../planner.utils';
+
+/** A card in the Now row: running now, or later today. */
+export interface NowCard {
+  id: string;
+  title: string;
+  colour: string;
+  venue: string;
+  start: string;
+  end: string;
+  running: boolean;
+  /** The same one status as the Venue Map. */
+  status: MapStatus;
+  attended: number;
+  capacity: number;
+  /** Share of the capacity in use, for the meter (capped at 100). */
+  fill: number;
+}
 import { SessionPrefill } from './session-panel/session-panel.component';
 
 /**
@@ -47,6 +66,9 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
   /** Sessions running now (W8): attended against capacity. Refreshed every 30 s and on returning to the tab. */
   live: LiveSession[] = [];
   private liveTimer?: ReturnType<typeof setInterval>;
+  private minuteTimer?: ReturnType<typeof setInterval>;
+  /** Now → upcoming today (the row above the calendar). */
+  nowRow: NowCard[] = [];
 
   private dp?: DP.Calendar;
   private DayPilot?: typeof DP;
@@ -82,11 +104,13 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
       }
     }));
     this.liveTimer = setInterval(() => this.loadLive(), 30000);
+    this.minuteTimer = setInterval(() => this.tick(), 60000);
   }
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();
     if (this.liveTimer) clearInterval(this.liveTimer);
+    if (this.minuteTimer) clearInterval(this.minuteTimer);
     this.dp?.dispose();
   }
 
@@ -125,10 +149,62 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
       onTimeRangeSelected: args => run(() => {
         dp.clearSelection();
         this.openNew({ venue: String(args.resource), day: this.day, start: this.hhmm(args.start), end: this.hhmm(args.end) });
-      })
+      }),
+      // Phones: each empty cell carries its venue + time, so a plain tap can add a session (see listenForTaps).
+      // + the current-time line (DayPilot Lite has none): drawn inside the cell that holds "now", in every venue.
+      onBeforeCellRender: args => {
+        let html = this.touch ? `<i class="wp-cell" data-r="${esc(String(args.cell.resource))}" data-s="${this.hhmm(args.cell.start)}"></i>` : '';
+        const at = this.nowIn(args.cell.start.toString(), args.cell.end.toString());
+        if (at !== null) html += `<i class="wp-now-line" style="top:${at}%"></i>`;
+        if (html) args.cell.properties.html = html;
+      }
     });
     dp.init();
     this.dp = dp;
+    if (this.touch) this.listenForTaps();
+  }
+
+  /**
+   * Where "now" falls in a calendar cell ('YYYY-MM-DDTHH:mm:ss' local start / end):
+   * a percentage from the cell's top, or null when now isn't in it.
+   */
+  nowIn(cellStart: string, cellEnd: string, now = new Date()): number | null {
+    const n = localIso(now);
+    if (n < cellStart || n >= cellEnd) return null;
+    const ms = (iso: string) => new Date(iso).getTime();   // parsed as local time
+    return Math.round((now.getTime() - ms(cellStart)) / (ms(cellEnd) - ms(cellStart)) * 1000) / 10;
+  }
+
+  /** A touch screen (DayPilot only selects time there after a tap-and-hold, which fights with scrolling). */
+  private readonly touch = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
+
+  /**
+   * Phones: a short tap (no scroll) on an empty slot opens New session there,
+   * one hour long. Desktop keeps drag-to-select.
+   */
+  private listenForTaps(): void {
+    const el = this.dpEl.nativeElement;
+    let t0 = 0, x0 = 0, y0 = 0;
+    el.addEventListener('touchstart', e => {
+      const p = e.touches[0];
+      t0 = Date.now(); x0 = p.clientX; y0 = p.clientY;
+    }, { passive: true });
+    el.addEventListener('touchend', e => {
+      const p = e.changedTouches[0];
+      if (Date.now() - t0 > 400 || Math.abs(p.clientX - x0) > 10 || Math.abs(p.clientY - y0) > 10) return;
+      const cell = (e.target as HTMLElement | null)?.closest?.('.wp-cell') as HTMLElement | null;
+      if (!cell || !this.canManage) return;
+      this.zone.run(() => this.tapSlot(cell.dataset['r'] || '', cell.dataset['s'] || ''));
+    }, { passive: true });
+  }
+
+  /** New session at a tapped slot: that venue and time, one hour long (editable in the form). */
+  tapSlot(venue: string, start: string): void {
+    if (!venue || !/^\d\d:\d\d$/.test(start)) return;
+    const [h, m] = start.split(':').map(Number);
+    const endMin = Math.min(23 * 60 + 55, h * 60 + m + 60);
+    const end = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+    this.openNew({ venue, day: this.day, start, end });
   }
 
   /** A session's card on the calendar: title, time, who runs it, registration and overlap. */
@@ -144,7 +220,9 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
       `<div class="wp-ev"><div class="wp-t">${esc(s.workshop?.title || '')}</div>` +
       `<div class="wp-m">${localTime(new Date(s.start))}–${localTime(new Date(s.end))}${who ? ' · ' + esc(who) : ''}</div>` +
       `<div class="wp-chips">` + (s.counts ? `<span class="wp-chip">${s.counts.pre}/${s.preRegLimit || s.venue?.capacity}${s.counts.wait ? ' +' + s.counts.wait : ''}</span>` : '') +
-      `<span class="wp-chip ${st}">${st === 'open' ? 'Reg open' : st === 'soon' ? 'Opens ' + localTime(new Date(s.regOpensAt!)) : 'Reg closed'}</span>` +
+      `<span class="wp-chip ${st}">${st === 'open' ? (s.regManual === true ? 'Reg open' : 'Reg open till ' + localTime(effectiveRegCloses(s)))
+        : st === 'soon' ? 'Opens ' + localTime(new Date(s.regOpensAt!)) : 'Reg closed'}</span>` +
+      (s.doorManual === false ? '<span class="wp-chip shut">Entry closed</span>' : '') +
       (clash ? '<span class="wp-chip warn">Overlap</span>' : '') + '</div></div>';
   }
 
@@ -174,26 +252,59 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
     if (!this.event || document.hidden) return;
     try {
       this.live = (await this.workshopService.getLive(this.event._id)).live;
+      this.buildNowRow();
     } catch { /* keep the last figures; the next refresh tries again */ }
   }
 
   @HostListener('document:visibilitychange')
   onVisible(): void {
-    if (!document.hidden) this.loadLive();
+    if (!document.hidden) { this.loadLive(); this.tick(); }
   }
 
-  /** Share of the venue's capacity in use, for the meter (capped at 100). */
-  fill(l: LiveSession): number {
-    return l.venue.capacity ? Math.min(100, Math.round(l.attended / l.venue.capacity * 100)) : 0;
+  /**
+   * Once a minute while the page is visible: the schedule again (fresh list
+   * numbers and statuses for the Now row) and the calendar's current-time line.
+   */
+  tick(): void {
+    if (!this.event || document.hidden) return;
+    this.load();
+  }
+
+  /**
+   * The Now row (user, 2026-11-04): always shown — sessions running now, then
+   * the rest of today's in start order, scrolling sideways. Stored for the *ngFor.
+   */
+  private buildNowRow(): void {
+    const sc = this.schedule;
+    const now = new Date();
+    const today = localDate(now);
+    if (!sc) { this.nowRow = []; return; }
+    const liveById = new Map(this.live.map(l => [l.session, l]));
+    this.nowRow = sc.sessions
+      .filter(s => s.status === 'scheduled' && new Date(s.end) > now &&
+        (new Date(s.start) <= now || localDate(new Date(s.start)) === today))
+      .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+      .map(s => {
+        const l = liveById.get(s._id);
+        // The live call is fresher (every 30 s) for how many are in.
+        const counted = l ? { ...s, counts: { ...(s.counts || { pre: 0, wait: 0, walkin: 0 }), attended: l.attended } } as WorkshopSession : s;
+        const st = mapStatusOf(counted, now);
+        const capacity = s.venue?.capacity || 0, attended = counted.counts?.attended || 0;
+        return {
+          id: s._id, title: s.workshop?.title || 'Session', colour: s.workshop?.category?.colour || '#475569',
+          venue: s.venue?.name || '', start: s.start, end: s.end, running: new Date(s.start) <= now,
+          status: st, attended, capacity, fill: capacity ? Math.min(100, Math.round(attended / capacity * 100)) : 0
+        };
+      });
   }
 
   time(iso: string): string { return localTime(new Date(iso)); }
 
-  /** Tap a live session: show its day and open it. */
-  openLive(l: LiveSession): void {
-    const d = localDate(new Date(l.start));
+  /** Tap a card in the Now row: show its day and open it. */
+  openCard(c: NowCard): void {
+    const d = localDate(new Date(c.start));
     if (d !== this.day && this.days.some(x => x.date === d)) { this.day = d; this.render(); }
-    this.openSession(l.session);
+    this.openSession(c.id);
   }
 
   // ── data ───────────────────────────────────────────────────
@@ -216,6 +327,7 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
         this.panelSession = sc.sessions.find(s => s._id === this.panelSession!._id) || null;
       }
       this.render();
+      this.buildNowRow();
     } catch {
       this.loadError = 'Could not load the schedule.';
     } finally {
@@ -253,6 +365,14 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
   private async moved(id: string, start: DP.Date, end: DP.Date, resource: DP.ResourceId | null): Promise<void> {
     const data: any = { start: toInstant(this.day, this.hhmm(start)), end: toInstant(this.day, this.hhmm(end)) };
     if (resource) data.venue = String(resource);
+    // Moved to another time: registration and cut-off move with it, so their order stays valid.
+    const old = this.schedule?.sessions.find(s => s._id === id);
+    const delta = old ? new Date(data.start).getTime() - new Date(old.start).getTime() : 0;
+    if (old && delta) {
+      for (const k of ['regOpensAt', 'regClosesAt', 'cutoffAt'] as const) {
+        if (old[k]) data[k] = new Date(new Date(old[k]!).getTime() + delta).toISOString();
+      }
+    }
     try {
       const res = await this.workshopService.updateSession(id, data);
       const msg = res.warnings?.length ? `Moved. ${res.warnings.join('. ')}.` : 'Moved';
@@ -300,6 +420,6 @@ export class WorkshopPlannerComponent implements AfterViewInit, OnDestroy {
   }
 
   trackDay(_: number, d: PlannerDay) { return d.date; }
-  trackLive(_: number, l: LiveSession) { return l.session; }
+  trackCard(_: number, c: NowCard) { return c.id; }
   trackId(_: number, x: { _id: string }) { return x._id; }
 }

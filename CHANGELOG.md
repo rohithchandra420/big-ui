@@ -13,6 +13,35 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.33.0] - 2026-11-04
+
+### Changed
+- **Workshop times in a clear order:** registration opens → registration closes → cut-off → start. The cut-off is now always **before** the start; left empty it is 15 minutes before the start, and registration then closes at the cut-off. The session form explains this and checks it before saving.
+- **Registration switch shows the real state:** its buttons are now **Open** / **Closed** and light up whatever is true right now, whether that comes from the times or from staff (before, "Follow times" stayed lit while registration was already open by the times). "Following the times" or "Set by hand · Back to times" is written underneath, and the closing time is shown while it's open.
+- **The door opens when registration closes:** people on the list go in from then; from the cut-off, the waitlist and walk-ins too. Before registration closes, the door refuses everyone.
+- **Registration closing time shown everywhere:** on the Planner's session cards ("Reg open till 10:45"), in the session panel, on the session's lists page and on the Venue Map.
+- **A new session comes with its times filled in:** registration opens 1 hour before the start, closes 30 minutes before, cut-off 15 minutes before (all can be changed).
+- **Moving a session moves its times:** changing the start in the form moves the end, registration and cut-off by the same amount; dragging a session on the Planner moves registration and the cut-off with it.
+- **The Planner's Now row is always there:** sessions running now, then the rest of today in order, scrolling sideways, with the same status words as the Venue Map (and "Nothing else today" when that's it).
+
+### Added
+- **Entry open / closed by hand.** Staff can close a session's entry at any time (nobody else is let in, scanning and Let in are switched off, shown in red) and open it again, or hand it back to the times — from the session panel in the Planner.
+- **Show places left on the map:** a switch per session, for sessions whose entry closes once they start.
+- **Venue Map — one status per Workshop area:** the session running now, otherwise the next one today: **Reg opens 10:00**, then **12/30** (or **Waitlist 5**) while registration is open, **9/30 in** while entry is open for the list, **24/30 in** with "Session starts at 10:00" after the cut-off, **Open** once it has started, and a red **Entry closed** when staff closed entry ("Entry closed at 11:20 · 24 inside"). The badge pulses from registration open to the end. The tooltip is 3 short lines in one format for every state: the area; a dot in the state's colour (pulsing until the session ends) with the session; then "State · numbers · time" — e.g. "Reg opens at 10:00 · 0/30 · closes 10:45", "Reg open · 12/30 · closes 10:45", "Admitting list · 9/12 in · walk-ins from 11:00", "Admitting all · 24/30 in · starts 11:15", "Open · 24/30 in · 6 places left", "Entry closed · 24 inside · since 11:20".
+- **Planner — current-time line** across every venue on today's calendar, moving every minute.
+- **Venue Map — Box Office pin:** a new pin type, one per event, with an open / closed dot and a note (e.g. "Queue ~10 min"). The Box Office Team Lead and Directors, Admins and Developers set it from the top of **Box Office › Registration**; everyone sees it on the map.
+
+### Fixed
+- **Map info on phones:** tapping a pin, an area or its badge now shows its info in a small popup (hover tooltips closed straight after a tap).
+- **Adding a session on a phone:** tap an empty slot in the Planner to add a session there (one hour, change it in the form). Dragging to select time still works with a mouse.
+
+### Notes
+- "Gate / Box Office" pins are now called "Gate"; the Box Office has its own pin type.
+- The Planner refreshes its schedule once a minute while it's open (for the Now row and the time line).
+- 939/939 unit tests.
+
+---
+
 ## [1.32.0] - 2026-11-03
 
 ### Added

@@ -72,11 +72,18 @@
 
 .alert { margin-bottom: 1rem; }
 
-/* Now: sessions running right now */
+/* Now → upcoming today: the label stays put, the cards scroll / swipe sideways */
 .wp-now {
-  display: flex; align-items: stretch; gap: 8px; overflow-x: auto; padding: 10px 12px;
+  display: flex; align-items: stretch; gap: 8px; padding: 10px 12px;
   border-bottom: 1px solid var(--border-subtle); background: #f6faf7;
 }
+.wp-now-track { display: flex; gap: 8px; overflow-x: auto; min-width: 0; flex: 1 1 auto; scroll-snap-type: x proximity; padding-bottom: 2px; }
+.wp-now-track .wp-now-card { scroll-snap-align: start; }
+.wp-now-card.running { border-color: #86efac; }
+.wp-now-when { font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em; }
+.wp-now-card.running .wp-now-when { color: #15803d; }
+.wp-now-n { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.wp-now-empty { align-self: center; font-size: 12px; color: var(--text-muted); }
 .wp-now-lbl {
   display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
   font-size: 12px; font-weight: 700; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.04em;

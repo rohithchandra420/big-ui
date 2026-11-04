@@ -1,20 +1,22 @@
 // Venue Map helpers with no Angular or Leaflet in them, so they're easy to test.
 
-export type LocationType = 'water' | 'toilets' | 'stage' | 'gate' | 'entry' | 'field' | 'other';
+export type LocationType = 'water' | 'toilets' | 'stage' | 'gate' | 'entry' | 'box_office' | 'field' | 'other';
 
 export interface LocationTypeInfo { value: LocationType; label: string; icon: string; color: string; }
 
 /**
  * The fixed list of location types (user decision 2026-11-01); same values as the server.
  * No workshop / medical pins (user, 2026-11-02): draw a Workshop area or Medical camp instead.
- * The Mess Hall is an area (Hospitality H3), not a pin.
+ * The Mess Hall is an area (Hospitality H3), not a pin. The Box Office is a pin, one per event,
+ * with its own open / closed status (2026-11-04).
  */
 export const LOCATION_TYPES: LocationTypeInfo[] = [
   { value: 'water',    label: 'Water station',     icon: 'water_drop',       color: '#0284c7' },
   { value: 'toilets',  label: 'Toilets',           icon: 'wc',               color: '#64748b' },
   { value: 'stage',    label: 'Stage',             icon: 'theater_comedy',   color: '#d97706' },
-  { value: 'gate',     label: 'Gate / Box Office', icon: 'door_front',       color: '#1E4638' },
+  { value: 'gate',     label: 'Gate',              icon: 'door_front',       color: '#1E4638' },
   { value: 'entry',    label: 'Entry point',       icon: 'login',            color: '#16a34a' },
+  { value: 'box_office', label: 'Box Office',      icon: 'confirmation_number', color: '#7c3aed' },
   { value: 'field',    label: 'Tent field',        icon: 'camping',          color: '#386e5b' },
   { value: 'other',    label: 'Other',             icon: 'location_on',      color: '#475569' }
 ];
@@ -37,7 +39,8 @@ export function guessType(name: string): LocationType {
   if (/toilet|wc|washroom|restroom|loo/.test(n)) return 'toilets';
   if (/stage|amphi/.test(n)) return 'stage';
   if (/entry|entrance/.test(n)) return 'entry';
-  if (/gate|box office/.test(n)) return 'gate';
+  if (/box office|ticket counter/.test(n)) return 'box_office';
+  if (/gate/.test(n)) return 'gate';
   if (/tent|camp|field/.test(n)) return 'field';
   return 'other';
 }

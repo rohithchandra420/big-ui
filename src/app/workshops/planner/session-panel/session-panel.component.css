@@ -68,3 +68,15 @@
   .kv { grid-template-columns: 1fr; gap: 2px 0; }
   .kv dd { margin-bottom: 8px; }
 }
+
+/* Door (2026-11-04): red when closed by staff; "Back to times" links; places-left switch */
+.reg.door.shut { border-color: #dc2626; background: #fef2f2; }
+.reg.door.shut .reg-dot { background: #dc2626; box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15); }
+.link-btn { background: none; border: 0; padding: 0; font: inherit; font-size: 12px; color: var(--color-primary); text-decoration: underline; cursor: pointer; }
+.link-btn:disabled { cursor: wait; }
+.places-switch { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); cursor: pointer; margin: 10px 0 0; }
+.places-switch .sw { position: relative; width: 30px; height: 18px; border-radius: 999px; background: #cbd5e1; flex: 0 0 auto; transition: background .15s; }
+.places-switch .sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.places-switch input:checked + .sw { background: var(--color-primary); }
+.places-switch input:checked + .sw::after { transform: translateX(12px); }
+.places-switch input:focus-visible + .sw { outline: 2px solid var(--color-primary); outline-offset: 2px; }
