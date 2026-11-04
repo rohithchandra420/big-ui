@@ -1,9 +1,12 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { Subscription, catchError, forkJoin, of } from 'rxjs';
 import { I18nService, TPipe, WordKey } from './core/i18n';
-import { PublicApiService, PublicEvent } from './core/public-api.service';
+import { Loaded, PublicApiService, PublicEvent, PublicSession, PublicSessionsAnswer } from './core/public-api.service';
 import { countdown, dayLabel, dayStart, timeLabel } from './core/festival-time';
+import { HomeViewComponent } from './views/home-view.component';
+import { ScheduleViewComponent } from './views/schedule-view.component';
+import { SessionSheetComponent } from './ui/session-bits';
 
 // Public participant page shell (PUBLIC_HOME_CONTEXT.md, PH1; design:
 // mocks/mock-public-home-v2.html). Views switch by #hash — never by path,
@@ -27,7 +30,7 @@ export const REFRESH_MS = 30000;
 @Component({
   selector: 'pub-root',
   standalone: true,
-  imports: [NgIf, NgFor, TPipe],
+  imports: [NgIf, NgFor, TPipe, HomeViewComponent, ScheduleViewComponent, SessionSheetComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
@@ -36,6 +39,9 @@ export class AppComponent implements OnInit, OnDestroy {
   view: View = 'home';
 
   event: PublicEvent | null = null;
+  sessions: PublicSession[] = [];
+  /** The session whose details are open. */
+  selected: PublicSession | null = null;
   off = false;
   /** Nothing saved and the server can't be reached. */
   unreachable = false;
@@ -62,18 +68,29 @@ export class AppComponent implements OnInit, OnDestroy {
 
   load(): void {
     this.sub?.unsubscribe();
-    this.sub = this.api.event().subscribe({
-      next: ({ data, at, offline }) => {
+    // The schedule failing (with nothing saved) must not hide the whole page.
+    const sessions$ = this.api.sessions().pipe(
+      catchError(() => of<Loaded<PublicSessionsAnswer>>({ data: { off: false, sessions: this.sessions }, at: this.loadedAt || Date.now(), offline: true })));
+    this.sub = forkJoin([this.api.event(), sessions$]).subscribe({
+      next: ([ev, ss]) => {
         this.unreachable = false;
-        this.offline = offline;
-        this.loadedAt = at;
+        this.offline = ev.offline || ss.offline;
+        // Offline: show the oldest saved time among the parts that came from the phone.
+        const saved = [ev, ss].filter(x => x.offline).map(x => x.at);
+        this.loadedAt = saved.length ? Math.min(...saved) : Math.max(ev.at, ss.at);
         this.now = Date.now();
-        this.off = data.off;
-        this.event = data.off ? null : data as PublicEvent;
+        this.off = ev.data.off;
+        this.event = ev.data.off ? null : ev.data as PublicEvent;
+        this.sessions = 'sessions' in ss.data ? ss.data.sessions : [];
+        // Keep an open details sheet showing the fresh copy of its session.
+        if (this.selected) this.selected = this.sessions.find(s => s.id === this.selected!.id) || null;
       },
       error: () => this.unreachable = true,
     });
   }
+
+  openSession(s: PublicSession): void { this.selected = s; }
+  closeSession(): void { this.selected = null; }
 
   /** Back on screen after a while (phone unlocked, tab switched back): refresh now. */
   @HostListener('document:visibilitychange')

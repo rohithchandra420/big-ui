@@ -13,6 +13,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.35.0] - 2026-11-05
+
+### Added
+- **Public festival page — what's on:** Home now shows **Live now** (workshops running right now) and **Up next** (the rest of today), with category filters. Before the festival it shows the first day as a preview.
+- **Schedule tab:** pick a festival day and a category to see the whole day; finished sessions are greyed and cancelled ones marked.
+- **Session details:** tap a session to see who leads it, the description, age, language and what to bring.
+- Each session shows its status in plain words (registration open at the venue, entry opens at…, walk in, full, entry closed…) and how many places are left once everyone can walk in, when staff show that number.
+
+### Notes
+- 36/36 public page unit tests. Staff app unchanged.
+
+---
+
 ## [1.34.0] - 2026-11-05
 
 ### Added

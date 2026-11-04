@@ -55,7 +55,12 @@
   </header>
 
   <main class="wrap">
-    <section class="soon">
+    <pub-home-view *ngIf="view === 'home'" [event]="ev" [sessions]="sessions" [now]="now"
+                   (open)="openSession($event)" (schedule)="go('schedule')"></pub-home-view>
+    <pub-schedule-view *ngIf="view === 'schedule'" [event]="ev" [sessions]="sessions" [now]="now"
+                       (open)="openSession($event)"></pub-schedule-view>
+
+    <section class="soon" *ngIf="view !== 'home' && view !== 'schedule'">
       <span class="ms soon-ic">{{ viewIcon }}</span>
       <h2>{{ 'soon.title' | t }}</h2>
       <p>{{ soonText | t }}</p>
@@ -66,6 +71,8 @@
       <span *ngIf="i18n.languages.length < 2"><span class="ms">language</span>{{ 'foot.lang' | t }}</span>
     </footer>
   </main>
+
+  <pub-session-sheet *ngIf="selected" [session]="selected" (close)="closeSession()"></pub-session-sheet>
 
   <nav class="bottom" aria-label="Sections">
     <button type="button" *ngFor="let v of views; trackBy: trackView" [class.on]="view === v.key" (click)="go(v.key)">
