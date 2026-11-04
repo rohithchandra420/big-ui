@@ -81,7 +81,13 @@ export interface WorkshopSession {
   regClosesAt: string | null;
   /** null = follow the times; true / false = opened / closed by hand at the door */
   regManual: boolean | null;
+  /** null = 15 minutes before the start. Always before the start. */
   cutoffAt: string | null;
+  /** null = follow the times (open from registration close to the end); true / false = by hand */
+  doorManual?: boolean | null;
+  doorManualAt?: string | null;
+  /** Venue Map: show "places left" while it runs. */
+  showPlacesLeft?: boolean;
   preRegLimit: number | null;
   facilitatorsOverride: string[];
   status: 'scheduled' | 'cancelled';
@@ -161,6 +167,8 @@ export interface SessionLists {
   entries: WorkshopEntry[];
   counts: EntryCounts;
   registrationOpen: boolean;
+  doorOpen: boolean;
+  afterCutoff: boolean;
 }
 
 /** How staff point at a person: a scanned band, or a pass picked from search. */

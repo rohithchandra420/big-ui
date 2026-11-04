@@ -17,19 +17,46 @@
 <ng-container *ngIf="mode === 'view' && session">
   <div class="panel-body">
     <!-- Registration: state + the switch for the Workshop team -->
+    <!-- The buttons light up the ACTUAL state, whether it comes from the times or from staff. -->
     <div class="reg" [class.open]="state === 'open'">
       <div class="reg-head">
         <span class="reg-dot"></span>
         <div class="reg-text">
           <b>Pre-registration {{ state === 'open' ? 'open' : state === 'soon' ? 'opens at ' + time(session.regOpensAt) : 'closed' }}</b>
-          <span>{{ session.regManual === null ? 'Following the times' : 'Set by hand at the door' }}</span>
+          <span *ngIf="state === 'open' && session.regManual === null">Closes at {{ time(regCloses) }}</span>
+          <span *ngIf="session.regManual === null; else regByHand">Following the times</span>
+          <ng-template #regByHand>
+            <span>Set by hand<ng-container *ngIf="canRun"> · <button type="button" class="link-btn" [disabled]="saving" (click)="setRegistration(null)">Back to times</button></ng-container></span>
+          </ng-template>
         </div>
       </div>
       <div class="seg" role="group" aria-label="Pre-registration" *ngIf="canRun">
-        <button type="button" [class.on]="session.regManual === null" [disabled]="saving" (click)="setRegistration(null)">Follow times</button>
-        <button type="button" [class.on]="session.regManual === true" [disabled]="saving" (click)="setRegistration(true)">Open now</button>
-        <button type="button" [class.on]="session.regManual === false" [disabled]="saving" (click)="setRegistration(false)">Close now</button>
+        <button type="button" [class.on]="state === 'open'" [attr.aria-pressed]="state === 'open'" [disabled]="saving" (click)="setRegistration(true)">Open</button>
+        <button type="button" [class.on]="state === 'closed'" [attr.aria-pressed]="state === 'closed'" [disabled]="saving" (click)="setRegistration(false)">Closed</button>
       </div>
+    </div>
+
+    <!-- The door: nobody is let in while it's closed. -->
+    <div class="reg door" [class.open]="doorOpen" [class.shut]="session.doorManual === false">
+      <div class="reg-head">
+        <span class="reg-dot"></span>
+        <div class="reg-text">
+          <b>{{ doorTitle }}</b>
+          <span *ngIf="session.doorManual === null; else doorByHand">Following the times</span>
+          <ng-template #doorByHand>
+            <span>Set by hand{{ session.doorManualAt ? ' at ' + time(session.doorManualAt) : '' }}<ng-container *ngIf="canRun"> · <button type="button" class="link-btn" [disabled]="saving" (click)="setDoor(null)">Back to times</button></ng-container></span>
+          </ng-template>
+        </div>
+      </div>
+      <div class="seg" role="group" aria-label="Entry" *ngIf="canRun">
+        <button type="button" [class.on]="doorOpen" [attr.aria-pressed]="doorOpen" [disabled]="saving" (click)="setDoor(true)">Entry open</button>
+        <button type="button" [class.on]="!doorOpen" [attr.aria-pressed]="!doorOpen" [disabled]="saving" (click)="setDoor(false)">Entry closed</button>
+      </div>
+      <label class="places-switch" *ngIf="canRun">
+        <input type="checkbox" class="sr-only" [checked]="session.showPlacesLeft !== false" [disabled]="saving" (change)="setShowPlaces($any($event.target).checked)">
+        <span class="sw" aria-hidden="true"></span>
+        <span>Show places left on the map</span>
+      </label>
     </div>
 
     <!-- Lists (release 3) -->
@@ -51,11 +78,10 @@
         <div class="muted" *ngIf="session.facilitatorsOverride?.length">Substitute for this session; usually {{ session.workshop?.facilitators?.join(', ') || 'none set' }}</div>
       </dd>
       <dt>Registration</dt>
-      <dd>{{ session.regOpensAt ? time(session.regOpensAt) : 'Open from now' }} → {{ time(session.regClosesAt || session.start) }}</dd>
+      <dd>{{ session.regOpensAt ? time(session.regOpensAt) : 'Open from now' }} → {{ time(regCloses) }} <span class="muted">— then the door opens for the list</span></dd>
       <dt>Cut-off</dt>
       <dd>
-        <ng-container *ngIf="session.cutoffAt; else noCut">{{ time(session.cutoffAt) }} <span class="muted">— then the waitlist and walk-ins go in</span></ng-container>
-        <ng-template #noCut><span class="muted">None</span></ng-template>
+        {{ time(cutoff) }}<span class="muted">{{ session.cutoffAt ? '' : ' (15 min before the start)' }} — then the waitlist and walk-ins go in</span>
       </dd>
       <dt>List limit</dt><dd>{{ session.preRegLimit || session.venue?.capacity }} <span class="muted">(soft{{ session.preRegLimit ? '' : ', the venue capacity' }})</span></dd>
     </dl>
@@ -108,7 +134,10 @@
         <input type="date" formControlName="day">
       </div>
       <div class="form-two-col">
-        <div class="field"><label>Start *</label><input type="time" step="300" formControlName="start"></div>
+        <div class="field">
+          <label>Start *</label><input type="time" step="300" formControlName="start" (change)="onStartChange()">
+          <span class="field-hint">Moving it moves the end, registration and cut-off too</span>
+        </div>
         <div class="field"><label>End *</label><input type="time" step="300" formControlName="end"></div>
       </div>
       <div class="form-two-col">
@@ -118,13 +147,13 @@
         </div>
         <div class="field">
           <label>Registration closes</label><input type="time" step="300" formControlName="regCloses">
-          <span class="field-hint">Empty: at the start</span>
+          <span class="field-hint">Empty: at the cut-off. The door opens then.</span>
         </div>
       </div>
       <div class="form-two-col">
         <div class="field">
           <label>Cut-off</label><input type="time" step="300" formControlName="cutoff">
-          <span class="field-hint">After it, people on the list who haven't come lose their place</span>
+          <span class="field-hint">Before the start. Empty: 15 min before. After it, people on the list who haven't come lose their place.</span>
         </div>
         <div class="field">
           <label>List limit</label><input type="number" min="1" max="10000" formControlName="limit" placeholder="Venue capacity">

@@ -48,11 +48,30 @@ export interface BandHistoryEntry {
     retiredBy?: { name: string } | null;
 }
 
+/** The Box Office's status: `pin` null = no Box Office pin on the Venue Map yet. */
+export interface BoxOfficeStatus {
+    pin: { _id: string; name: string } | null;
+    open: boolean;
+    note: string;
+    at: string | null;
+    by: string | null;
+    canChange: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class BoxOfficeService {
     url = environment.URL;
 
     constructor(private http: HttpClient, private authService: AuthService) { }
+
+    // ── Box Office open / closed on the Venue Map (2026-11-04): lives on the event's
+    //    one Box Office pin. Changing it: the Box Office TL and DEV/DIR/ADMIN. ──
+    getStatus(eventId: string) {
+        return this.http.get<BoxOfficeStatus>(this.url + "/box-office/status", { params: new HttpParams().set('event', eventId) });
+    }
+    setStatus(eventId: string, open: boolean, note: string) {
+        return this.http.put<BoxOfficeStatus>(this.url + "/box-office/status", { event: eventId, open, note });
+    }
 
     // ── Spot Registration — hits the Box Office duplicate (/box-office/createTicket),
     //    which allows omitting order_id/transaction_id so the backend auto-assigns them. ──

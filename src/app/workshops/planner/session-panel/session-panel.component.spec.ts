@@ -19,7 +19,7 @@ const drums: WorkshopSession = {
   workshop: { _id: 'w1', title: 'Hand Drumming', category: music, facilitators: ['Ravi Kannan'] },
   venue: { _id: 'v1', name: 'Bamboo Dome', capacity: 40 },
   start: at('10:00'), end: at('11:30'), regOpensAt: null, regClosesAt: null, regManual: null,
-  cutoffAt: at('10:10'), preRegLimit: null, facilitatorsOverride: [], status: 'scheduled'
+  cutoffAt: at('09:40'), preRegLimit: null, facilitatorsOverride: [], status: 'scheduled'
 };
 const schedule = (extra: Partial<WorkshopSchedule> = {}): WorkshopSchedule => ({
   event: { _id: 'e1', name: 'BiG 7.0', startDate: null, endDate: null },
@@ -37,7 +37,7 @@ describe('SessionPanelComponent', () => {
   let confirm: jasmine.SpyObj<ConfirmationService>;
 
   beforeEach(async () => {
-    service = jasmine.createSpyObj('WorkshopService', ['addSession', 'updateSession', 'deleteSession', 'setRegistration']);
+    service = jasmine.createSpyObj('WorkshopService', ['addSession', 'updateSession', 'deleteSession', 'setRegistration', 'setDoor']);
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
     await TestBed.configureTestingModule({
@@ -70,8 +70,63 @@ describe('SessionPanelComponent', () => {
     expect(el().querySelector('.panel-title')!.textContent).toContain('Hand Drumming');
     expect(el().textContent).toContain('Bamboo Dome');
     expect(el().textContent).toContain('Ravi Kannan');
-    expect(el().textContent).toContain('10:10');
+    expect(el().textContent).toContain('09:40');
     expect(actions()).toEqual(['Close', 'Delete', 'edit Edit']);
+  });
+
+  it('lights up "Open" when registration is open by the times (not "Follow times")', () => {
+    // 2027: registration opens straight away and closes at the 09:40 cut-off, so it's open now.
+    open(drums);
+    const on = Array.from(el().querySelectorAll('.reg:not(.door) .seg button.on')).map(b => b.textContent!.trim());
+    expect(on).toEqual(['Open']);
+    expect(el().querySelector('.reg:not(.door) .reg-text')!.textContent).toContain('Following the times');
+    expect(el().querySelector('.reg:not(.door) .reg-text')!.textContent).toContain('Closes at 09:40');
+  });
+
+  it('no cut-off set: it is 15 minutes before the start, and registration closes then', () => {
+    open({ ...drums, cutoffAt: null });
+    expect(component.time(component.cutoff)).toBe('09:45');
+    expect(component.time(component.regCloses)).toBe('09:45');
+    expect(el().textContent).toContain('(15 min before the start)');
+  });
+
+  it('the door: closed until registration closes; staff close it by hand (red, nobody let in)', fakeAsync(() => {
+    open(drums);
+    expect(component.doorOpen).toBeFalse();
+    expect(component.doorTitle).toBe('Entry closed: opens at 09:40');
+    const doorOn = () => Array.from(el().querySelectorAll('.reg.door .seg button.on')).map(b => b.textContent!.trim());
+    expect(doorOn()).toEqual(['Entry closed']);
+
+    // Closing a door that's already closed by the times: nothing to send.
+    service.setDoor.and.returnValue(Promise.resolve({ session: drums }));
+    component.setDoor(false);
+    expect(service.setDoor).not.toHaveBeenCalled();
+    component.setDoor(true);
+    flushMicrotasks();
+    expect(service.setDoor).toHaveBeenCalledWith('s1', { open: true });
+
+    open({ ...drums, doorManual: false, doorManualAt: at('09:00') });
+    expect(component.doorTitle).toBe('Entry closed by staff: nobody else is let in');
+    expect(el().querySelector('.reg.door')!.classList).toContain('shut');
+  }));
+
+  it('"Show places left on the map" switch', fakeAsync(() => {
+    service.setDoor.and.returnValue(Promise.resolve({ session: drums }));
+    open(drums);
+    component.setShowPlaces(false);
+    flushMicrotasks();
+    expect(service.setDoor).toHaveBeenCalledWith('s1', { showPlacesLeft: false });
+  }));
+
+  it('checks the order of the times: registration close ≤ cut-off < start', () => {
+    const v = (x: any) => component.problem({ start: '10:00', end: '11:00', regOpens: '', regCloses: '', cutoff: '', ...x });
+    expect(v({ cutoff: '10:05' })).toBe('The cut-off must be before the start');
+    expect(v({ cutoff: '10:00' })).toBe('The cut-off must be before the start');
+    expect(v({ cutoff: '09:40', regCloses: '09:50' })).toBe('Registration must close by the cut-off');
+    expect(v({ regCloses: '09:50' })).toContain('15 minutes before the start');
+    expect(v({ regOpens: '09:50' })).toBe('Registration must close after it opens');
+    expect(v({ regOpens: '09:00', regCloses: '09:30', cutoff: '09:45' })).toBeNull();
+    expect(v({ regCloses: '09:45' })).toBeNull();
   });
 
   it('a Workshop volunteer gets the registration switch but no Edit / Delete', () => {
@@ -85,16 +140,22 @@ describe('SessionPanelComponent', () => {
     expect(el().querySelector('.seg')).toBeNull();
   });
 
-  it('the switch opens registration by hand, and can hand it back to the times', fakeAsync(() => {
+  it('the switch closes registration by hand; picking what the times say goes back to them', fakeAsync(() => {
     const changed = spyOn(component.changed, 'emit');
     service.setRegistration.and.returnValue(Promise.resolve({ session: drums }));
-    open(drums);
-    component.setRegistration(true);
+    open(drums);   // open by the times
+    component.setRegistration(true); // already open by the times: nothing to do
+    component.setRegistration(null);
+    expect(service.setRegistration).not.toHaveBeenCalled();
+    component.setRegistration(false);
     flushMicrotasks();
-    expect(service.setRegistration).toHaveBeenCalledWith('s1', true);
+    expect(service.setRegistration).toHaveBeenCalledWith('s1', false);
     expect(changed).toHaveBeenCalledWith('s1');
-    component.setRegistration(null); // already following the times: nothing to do
-    expect(service.setRegistration).toHaveBeenCalledTimes(1);
+
+    open({ ...drums, regManual: false });
+    component.setRegistration(true);  // the times say open: hand it back to them
+    flushMicrotasks();
+    expect(service.setRegistration).toHaveBeenCalledWith('s1', null);
   }));
 
   it('a substitute is shown instead of the usual facilitator', () => {
@@ -107,6 +168,21 @@ describe('SessionPanelComponent', () => {
     open(null, schedule(), { venue: 'v2', day: DAY, start: '14:00', end: '15:30' });
     expect(component.mode).toBe('create');
     expect(component.form.getRawValue()).toEqual(jasmine.objectContaining({ venue: 'v2', day: DAY, start: '14:00', end: '15:30' }));
+  });
+
+  it('a new session gets default times: registration 1 h before, closes 30 min before, cut-off 15 min before', () => {
+    open(null, schedule(), { venue: 'v2', day: DAY, start: '14:00', end: '15:30' });
+    expect(component.form.getRawValue()).toEqual(jasmine.objectContaining({ regOpens: '13:00', regCloses: '13:30', cutoff: '13:45' }));
+  });
+
+  it('moving the start moves the end, registration and cut-off by the same amount (empty ones stay empty)', () => {
+    open({ ...drums, regOpensAt: at('09:00'), regClosesAt: null });   // start 10:00, end 11:30, cut-off 09:40
+    component.edit();
+    component.form.controls.start.setValue('11:00');
+    component.onStartChange();
+    expect(component.form.getRawValue()).toEqual(jasmine.objectContaining({
+      start: '11:00', end: '12:30', regOpens: '10:00', regCloses: '', cutoff: '10:40'
+    }));
   });
 
   it('warns before saving: overlap in the venue, same workshop that day, limit over capacity', () => {
@@ -122,12 +198,12 @@ describe('SessionPanelComponent', () => {
   it('adds a session with its times as instants and the substitutes as a list', fakeAsync(() => {
     service.addSession.and.returnValue(Promise.resolve({ session: { ...drums, _id: 's9' }, warnings: [] }));
     open(null, schedule(), { venue: 'v2', day: DAY, start: '14:00', end: '15:00' });
-    component.form.patchValue({ workshop: 'w2', regOpens: '12:00', cutoff: '14:10', substitutes: 'Mira Joshi,  Ann Lee ,' });
+    component.form.patchValue({ workshop: 'w2', regOpens: '12:00', cutoff: '13:50', substitutes: 'Mira Joshi,  Ann Lee ,' });
     component.save();
     flushMicrotasks();
     expect(service.addSession).toHaveBeenCalledWith('e1', {
       workshop: 'w2', venue: 'v2', start: at('14:00'), end: at('15:00'),
-      regOpensAt: at('12:00'), regClosesAt: null, cutoffAt: at('14:10'),
+      regOpensAt: at('12:00'), regClosesAt: at('13:30'), cutoffAt: at('13:50'),
       preRegLimit: null, facilitatorsOverride: ['Mira Joshi', 'Ann Lee']
     });
     expect(component.mode).toBe('view');

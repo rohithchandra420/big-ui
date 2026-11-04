@@ -475,8 +475,8 @@ describe('VenueMapComponent', () => {
       ]);
       const items = Array.from(el().querySelectorAll('.vm-tl-item')) as HTMLElement[];
       expect(items[0].textContent).toContain('Now');
-      expect(items[0].textContent).toContain('28/40 in · 12 places left');
-      expect(items[1].textContent).toContain('12/12 on the list + 3 waiting');
+      expect(items[0].textContent).toContain('Open · 28/40 in · 12 places left');
+      expect(items[1].textContent).toContain('Waitlist · 3 waiting · closes');
       expect(items[3].classList).toContain('past');
       expect(items[3].textContent).toContain('28 attended');
     }));
@@ -489,11 +489,34 @@ describe('VenueMapComponent', () => {
       expect(el().querySelector('.vm-tl')).toBeNull();
     }));
 
-    it('the area badge carries the live count; nothing when nothing runs', fakeAsync(() => {
+    it('the area badge and info carry ONE status: the session running now', fakeAsync(() => {
       setup({ areas: [area('w1')], sessions, venues: [venue] }); settle();
-      expect(component.liveByArea.get('w1')).toEqual({ attended: 28, capacity: 40, placesLeft: 12 });
-      expect((component as any).liveBadge(component.areas[0])).toContain('28/40');
+      expect(component.workshopStatus.get('w1')).toEqual(jasmine.objectContaining({ kind: 'all', badge: '28/40 in' }));
+      expect((component as any).liveBadge(component.areas[0])).toContain('k-all');
+      expect((component as any).areaInfoHtml(component.areas[0])).toContain('<i class="vm-dot k-all pulse"></i><span>Hand Drumming</span>');
       expect((component as any).liveBadge(area('x9'))).toBe('');
+    }));
+
+    it('nothing running: the next session today, e.g. registration open (pulsing badge)', fakeAsync(() => {
+      const soon = s('soon', 'Songwriting', 0.5 * H, 1.5 * H, { counts: { pre: 3, wait: 0, walkin: 0, attended: 0 }, preRegLimit: 10 });
+      setup({ areas: [area('w1')], sessions: [soon], venues: [venue] }); settle();
+      const st = component.workshopStatus.get('w1')!;
+      // No registration close and no cut-off: registration closes 15 min before the start, so it's open now.
+      expect(st.kind).toBe('reg');
+      expect(st.badge).toBe('3/10');
+      expect((component as any).liveBadge(component.areas[0])).toContain('k-reg');
+    }));
+
+    it('a door closed by staff shows red, with how many are in; hiding places left drops them', fakeAsync(() => {
+      const closed = s('now', 'Hand Drumming', -0.5 * H, 0.5 * H, { doorManual: false, doorManualAt: iso(-60000) });
+      setup({ areas: [area('w1')], sessions: [closed], venues: [venue] }); settle();
+      expect(component.workshopStatus.get('w1')!.kind).toBe('closed');
+      expect(component.workshopStatus.get('w1')!.line).toContain('Entry closed · 28 inside · since');
+      expect(component.workshopStatus.get('w1')!.line).toContain('28 inside');
+
+      TestBed.resetTestingModule();
+      setup({ areas: [area('w1')], sessions: [s('now', 'Hand Drumming', -0.5 * H, 0.5 * H, { showPlacesLeft: false })], venues: [venue] }); settle();
+      expect(component.workshopStatus.get('w1')!.text).toBe('Open · 28/40 in');
     }));
 
     it('Locations and Areas & lines fold away with their arrow buttons', fakeAsync(() => {

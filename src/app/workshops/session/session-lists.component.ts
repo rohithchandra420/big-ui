@@ -8,7 +8,7 @@ import { BandLookup } from '../../box-office/box-office.service';
 import { BoxOfficeQrscannerPopupComponent, QrScannerData } from '../../box-office/registration/qrscanner-popup/qrscanner-popup.component';
 import { WorkshopService } from '../workshop.service';
 import { DoorAnswer, EntryPass, PersonRef, SessionLists, WorkshopEntry } from '../workshops.model';
-import { localTime } from '../planner.utils';
+import { effectiveCutoff, effectiveRegCloses, localTime } from '../planner.utils';
 
 type Tab = 'list' | 'door';
 type Action = 'add' | 'door';
@@ -111,10 +111,26 @@ export class SessionListsComponent implements OnInit, OnDestroy {
     return `${d} · ${localTime(new Date(s.start))}–${localTime(new Date(s.end))} · ${s.venue?.name}`;
   }
   get cutoffPassed(): boolean {
-    return !!this.s?.cutoffAt && new Date() >= new Date(this.s.cutoffAt);
+    return !!this.s && new Date() >= effectiveCutoff(this.s);
+  }
+  /** Registration close / cut-off as in force (defaults filled in). */
+  get regCloses(): Date | null { return this.s ? effectiveRegCloses(this.s) : null; }
+  get cutoff(): Date | null { return this.s ? effectiveCutoff(this.s) : null; }
+  /** Nobody is let in while the door is closed (the server refuses too). */
+  get doorClosed(): boolean { return !!this.data && !this.data.doorOpen; }
+
+  /** The Door tab's line: who can go in right now. */
+  get doorNote(): string {
+    const s = this.s;
+    if (!s || !this.data) return '';
+    if (s.doorManual === false) return `Entry closed by staff${s.doorManualAt ? ' at ' + this.time(s.doorManualAt) : ''}: nobody else is let in. Open it from the session in the Planner.`;
+    if (new Date() >= new Date(s.end)) return 'The session has ended: entry is closed.';
+    if (this.doorClosed) return `Entry opens at ${this.time(this.regCloses)}, when registration closes.`;
+    return this.cutoffPassed ? `Cut-off ${this.time(this.cutoff)} has passed: everyone can go in, the waitlist and walk-ins too.`
+      : `Entry open for the list. Cut-off ${this.time(this.cutoff)}: then the waitlist and walk-ins go in.`;
   }
 
-  time(iso: string | null): string { return iso ? localTime(new Date(iso)) : ''; }
+  time(iso: string | Date | null | undefined): string { return iso ? localTime(new Date(iso)) : ''; }
 
   setTab(t: Tab) {
     this.tab = t;
@@ -232,6 +248,7 @@ export class SessionListsComponent implements OnInit, OnDestroy {
       await this.load();
     } catch (err: any) {
       this.notify.openErrorSnackBar(err?.error?.message || 'Could not let them in');
+      if (err?.error?.door) await this.load();
     } finally {
       this.busy = false;
     }
@@ -275,6 +292,14 @@ export class SessionListsComponent implements OnInit, OnDestroy {
       this.gate.notFound();
       const band: BandLookup = { state: 'replaced', code: '', owner: body.owner, currentCode: body.currentCode, reason: body.reason } as BandLookup;
       this.outcome = { tone: 'bad', icon: 'gpp_maybe', title: 'Replaced band', detail: body.message, flag: { band, ref, action } };
+      return;
+    }
+    if (err?.status === 409 && body.door) {
+      // The door closed (or isn't open yet) since the page loaded: refresh so the page says so.
+      this.gate.notFound();
+      this.outcome = { tone: 'bad', icon: 'door_front', title: 'Entry closed',
+        detail: body.door.byHand ? 'Entry was closed by staff: nobody else is let in.' : body.message };
+      this.load();
       return;
     }
     if (!err?.status || err.status >= 500) {
