@@ -1,6 +1,7 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { MatDialog } from '@angular/material/dialog';
+import { BulkUsersComponent } from './bulk-users/bulk-users.component';
 import { Subscription } from 'rxjs';
 
 import { AdminService, UserDeleteCheck } from '../admin.service';
@@ -431,6 +432,13 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     this.activeUser = null;
     this.panelMode = 'create';
     this.panelOpen = true;
+  }
+
+  /** Bulk Add users from a spreadsheet (v1.42.0). Reloads the list when anyone was added. */
+  openBulk() {
+    if (!this.canCreateUsers) return;
+    this.dialog.open(BulkUsersComponent, { width: '920px', maxWidth: '95vw', disableClose: true })
+      .afterClosed().subscribe(added => { if (added) this.loadUsers(); });
   }
 
   startEdit() {

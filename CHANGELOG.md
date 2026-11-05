@@ -13,6 +13,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.42.0] - 2026-11-07
+
+### Added
+- **Admin › Users › Bulk Add** (Developers, Directors, Admins): add many staff users at once from an Excel file. **Download template** gives the columns (name, email, password, role, home department; optional food preference, gender, date of joining) plus a "How to fill" sheet. Drop the file (pick the sheet when there are several): every row is checked first and shown as **Ready**, **Problem** (with the reason) or **Duplicate** (the email is already a user, deactivated ones included, or appears earlier in the file). **Add N users** adds only the ready rows; the rest are skipped. The result can be downloaded (without passwords). Up to 500 rows per file. Each new user gets read access to their home department; the date of joining stays empty when not given. Only a Developer can add Developers. A reminder asks to delete the file afterwards, since it holds passwords.
+
+---
+
 ## [1.41.0] - 2026-11-07
 
 ### Added

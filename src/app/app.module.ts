@@ -40,6 +40,7 @@ import { UtcToLocalTimePipe } from './pipes/utc-to-local-time.pipe';
 import { AdminMenuComponent } from './admin/admin-menu/admin-menu.component';
 import { UserRegisteryComponent } from './admin/user-registery/user-registery.component';
 import { UserFormComponent } from './admin/user-registery/user-form/user-form.component';
+import { BulkUsersComponent } from './admin/user-registery/bulk-users/bulk-users.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 
@@ -120,6 +121,7 @@ LOAD_WASM().subscribe()
     AdminMenuComponent,
     UserRegisteryComponent,
     UserFormComponent,
+    BulkUsersComponent,
     HasPermissionDirective,
     TooltipDirective,
     ProfileComponent,

@@ -20,6 +20,37 @@ export interface DeptDetail {
   volunteers: { _id: string; name: string; avatarVersion?: number; departments: any[] }[];
 }
 
+/** One spreadsheet row for Bulk Add users. `row` = its row number in the sheet. */
+export interface BulkUserRow {
+  row: number;
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  home_department: string;
+  food_preference?: string;
+  gender?: string;
+  date_of_joining?: string;
+}
+
+export type BulkUserStatus = 'ready' | 'created' | 'problem' | 'duplicate';
+
+/** What the server sends back per row — never the password. */
+export interface BulkUserResult {
+  row: number;
+  name: string;
+  email: string;
+  role: string;
+  home_department: string;
+  status: BulkUserStatus;
+  reason?: string;
+}
+
+export interface BulkUsersResponse {
+  results: BulkUserResult[];
+  counts: { [status in BulkUserStatus]?: number };
+}
+
 export interface UserDeleteCheck {
   action: 'delete' | 'deactivate';
   hasHistory: boolean;
@@ -64,6 +95,11 @@ export class AdminService {
 
     createUser(userDetails: any) {
         return this.http.post<any>(this.url + "/createUser", userDetails);
+    }
+
+    /** Bulk Add users (v1.42.0). dryRun only checks the rows (the preview). */
+    bulkUsers(rows: BulkUserRow[], dryRun: boolean) {
+        return this.http.post<BulkUsersResponse>(this.url + '/admin/users/bulk', { rows, dryRun });
     }
 
     /** includeInactive is only honoured server-side for DEV/DIR — it's how the
