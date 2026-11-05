@@ -70,6 +70,17 @@
       <ng-template #noDepts><span class="ann-hint">No departments yet.</span></ng-template>
     </div>
 
+    <!-- Staff list (R2): limit the audience to the sidebar event's staff -->
+    <div class="ann-group" *ngIf="staffEvent">
+      <div class="ann-chips">
+        <label class="ann-chip toggle-chip" [class.on]="onlyEventStaff">
+          <input class="sr-only" type="checkbox" [checked]="onlyEventStaff" (change)="onlyEventStaff = $any($event.target).checked">
+          <mat-icon aria-hidden="true">{{ onlyEventStaff ? 'check' : 'add' }}</mat-icon>Only {{ staffEvent.name }} staff
+        </label>
+      </div>
+      <span class="ann-hint" *ngIf="!onlyEventStaff">Off: everyone in the roles / departments above, whatever event they work.</span>
+    </div>
+
     <!-- Public page (PH3): anyone on the internet can read it -->
     <label class="ann-public" [class.on]="publicPost">
       <input class="sr-only" type="checkbox" [checked]="publicPost" (change)="setPublic($any($event.target).checked)">

@@ -13,6 +13,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.44.0] - 2026-11-07
+
+### Changed
+- **Counts and lists follow the event's staff list** (the event picked in the sidebar):
+  - **My Department** — marking, history, calendar and the All-departments reporting views show only the event's staff (the header says so); attendance can only be marked for them. Recorded attendance is unchanged. Switching the sidebar event reloads the page.
+  - **Admin › Departments** — cards and the department panel count the event's staff, with "Not on <event>" / "N more members … not on <event>'s staff list".
+  - **Hospitality** — expected plates, Today, the kitchen count, "not marked", bed counts and the Stay search cover only the event's staff; reminders, Notify TLs and the Mess Hall messages go only to them.
+  - **Serving desk** — someone not on the event's staff list gets a red **"Not on the staff list — no meal"** card (scan or search).
+  - **Announcements** — new **"Only <event> staff"** chip, on by default; the audience line and the Sent list say so. Off = everyone in the roles / departments, like before.
+
+---
+
 ## [1.43.0] - 2026-11-07
 
 ### Added

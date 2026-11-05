@@ -21,6 +21,7 @@ import {
   SlotState
 } from '../core/department.service';
 import { ConfirmationService } from '../shared/confirm-dialog/confirmation.service';
+import { EventService } from '../core/event.service';
 
 type ViewMode = 'mark' | 'history' | 'matrix';
 type AllViewMode = 'summary' | 'matrix' | 'users';
@@ -94,18 +95,31 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
     private departmentService: DepartmentService,
     private authService: AuthService,
     private notificationService: NotificationService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private eventService: EventService
   ) {}
+
+  /** Staff list (R2): lists and marks cover only the sidebar event's staff. */
+  get staffEvent() { return this.eventService.currentActiveEvent; }
+  private eventSub?: Subscription;
+  private eventId: string | null = null;
 
   ngOnInit() {
     this.userSub = this.authService.user.subscribe(user => {
       this.userRole = user?.role || '';
     });
     this.loadDepartments();
+    // Reload the current view when the sidebar event changes (not on the first value).
+    this.eventSub = this.eventService.activeEvent.subscribe(ev => {
+      const id = ev?._id || '';
+      if (this.eventId !== null && id !== this.eventId && this.selectedDeptId) this.onDeptChange();
+      this.eventId = id;
+    });
   }
 
   ngOnDestroy() {
     this.userSub?.unsubscribe();
+    this.eventSub?.unsubscribe();
   }
 
   loadDepartments() {

@@ -9,6 +9,8 @@ export interface DeptSummary {
   description: string;
   tls: { _id: string; name: string; avatarVersion?: number }[];
   volunteerCount: number;
+  /** Members not on the event asked for (staff list R2). */
+  notOnEvent?: number;
 }
 
 export interface DeptDetail {
@@ -18,6 +20,7 @@ export interface DeptDetail {
   description: string;
   tls: { _id: string; name: string; avatarVersion?: number }[];
   volunteers: { _id: string; name: string; avatarVersion?: number; departments: any[] }[];
+  notOnEvent?: number;
 }
 
 /** One spreadsheet row for Bulk Add users. `row` = its row number in the sheet. */
@@ -78,12 +81,13 @@ export class AdminService {
         return this.http.get<{ _id: string; name: string }[]>(this.url + '/admin/departments');
     }
 
-    getDepartmentsSummary() {
-        return this.http.get<DeptSummary[]>(this.url + '/admin/departments/summary');
+    /** eventId (staff list R2): count only that event's staff; the rest come back as notOnEvent. */
+    getDepartmentsSummary(eventId = '') {
+        return this.http.get<DeptSummary[]>(this.url + '/admin/departments/summary', { params: eventId ? { event: eventId } : {} });
     }
 
-    getDepartmentDetail(id: string) {
-        return this.http.get<DeptDetail>(this.url + '/admin/departments/' + id);
+    getDepartmentDetail(id: string, eventId = '') {
+        return this.http.get<DeptDetail>(this.url + '/admin/departments/' + id, { params: eventId ? { event: eventId } : {} });
     }
 
     createDepartment(data: { name: string; key?: string; description: string }) {

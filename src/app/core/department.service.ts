@@ -1,6 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { environment } from "src/environments/environment.development";
+import { EventService } from './event.service';
 
 export interface MyDept {
   _id: string;
@@ -195,18 +196,24 @@ export interface UsersMatrix {
 export class DepartmentService {
 
   url = environment.URL;
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private eventService: EventService) {}
+
+  /** Staff list (R2): every My Department call carries the sidebar event, so lists and marks cover only its staff. */
+  private withEvent(params: { [key: string]: string } = {}): { [key: string]: string } {
+    const id = this.eventService.currentActiveEvent?._id;
+    return id ? { ...params, event: id } : params;
+  }
 
   getMyDepartments() {
     return this.http.get<MyDept[]>(this.url + '/department/mine');
   }
 
   getDepartmentDetail(id: string) {
-    return this.http.get<DeptInfo>(this.url + '/department/' + id);
+    return this.http.get<DeptInfo>(this.url + '/department/' + id, { params: this.withEvent() });
   }
 
   getAttendance(id: string, date: string) {
-    return this.http.get<AttendanceGrid>(this.url + '/department/' + id + '/attendance', { params: { date } });
+    return this.http.get<AttendanceGrid>(this.url + '/department/' + id + '/attendance', { params: this.withEvent({ date }) });
   }
 
   markAttendance(
@@ -215,15 +222,15 @@ export class DepartmentService {
     entries: { userId: string; morning: boolean; afternoon: boolean; night: boolean }[],
     overrides: { userId: string; slot: string }[] = []
   ) {
-    return this.http.post<MarkAttendanceResponse>(this.url + '/department/' + id + '/attendance', { date, entries, overrides });
+    return this.http.post<MarkAttendanceResponse>(this.url + '/department/' + id + '/attendance', { date, entries, overrides, ...this.withEvent() });
   }
 
   getAttendanceReport(id: string, from: string, to: string) {
-    return this.http.get<AttendanceReport>(this.url + '/department/' + id + '/attendance/report', { params: { from, to } });
+    return this.http.get<AttendanceReport>(this.url + '/department/' + id + '/attendance/report', { params: this.withEvent({ from, to }) });
   }
 
   getSummary(date: string) {
-    return this.http.get<DeptSummaryResponse>(this.url + '/department/summary', { params: { date } });
+    return this.http.get<DeptSummaryResponse>(this.url + '/department/summary', { params: this.withEvent({ date }) });
   }
 
   getMyAttendance(from?: string, to?: string) {
@@ -237,20 +244,20 @@ export class DepartmentService {
     const params: { [key: string]: string } = {};
     if (from) params['from'] = from;
     if (to) params['to'] = to;
-    return this.http.get<AttendanceMatrix>(this.url + '/department/' + id + '/attendance/matrix', { params });
+    return this.http.get<AttendanceMatrix>(this.url + '/department/' + id + '/attendance/matrix', { params: this.withEvent(params) });
   }
 
   getSummaryMatrix(from?: string, to?: string) {
     const params: { [key: string]: string } = {};
     if (from) params['from'] = from;
     if (to) params['to'] = to;
-    return this.http.get<DeptSummaryMatrix>(this.url + '/department/summary/matrix', { params });
+    return this.http.get<DeptSummaryMatrix>(this.url + '/department/summary/matrix', { params: this.withEvent(params) });
   }
 
   getUsersMatrix(from?: string, to?: string) {
     const params: { [key: string]: string } = {};
     if (from) params['from'] = from;
     if (to) params['to'] = to;
-    return this.http.get<UsersMatrix>(this.url + '/department/summary/users-matrix', { params });
+    return this.http.get<UsersMatrix>(this.url + '/department/summary/users-matrix', { params: this.withEvent(params) });
   }
 }

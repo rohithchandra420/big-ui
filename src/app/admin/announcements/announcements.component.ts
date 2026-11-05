@@ -5,6 +5,7 @@ import { NotificationService } from '../../core/notification.service';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
 import { AdminService } from '../admin.service';
 import { AuthService } from '../../core/auth.service';
+import { EventService } from '../../core/event.service';
 
 export const TITLE_MAX = 60;
 export const MESSAGE_MAX = 240;
@@ -97,8 +98,9 @@ export class AnnouncementsComponent implements OnInit {
     private admin: AdminService,
     private notifications: NotificationService,
     private confirm: ConfirmationService,
-    private auth: AuthService
-  ) { }
+    private auth: AuthService,
+    private events: EventService
+  ){ }
 
   ngOnInit(): void {
     this.isDev = this.auth.currentUser?.role === 'DEV';
@@ -250,14 +252,25 @@ export class AnnouncementsComponent implements OnInit {
     if (!this.hasAudience) return 'Pick at least one role, department or the public page';
     if (!this.hasStaffAudience) return 'the public page only (no staff)';
     const names = this.departmentOptions.filter(d => this.departments.has(d._id)).map(d => d.name);
-    const staff = this.audienceText(this.orderedRoles(this.roles), names);
+    const staff = this.audienceText(this.orderedRoles(this.roles), names) + this.staffNote(this.sendStaffEventName);
     return this.publicPost ? `${staff} and the public page` : staff;
+  }
+
+  // ── Staff list (R2): "Only <event> staff", on by default ──
+  onlyEventStaff = true;
+  get staffEvent() { return this.events.currentActiveEvent; }
+  /** The event the next send is limited to, or '' (BiG-wide). */
+  private get sendStaffEventName(): string {
+    return this.onlyEventStaff && this.staffEvent ? this.staffEvent.name : '';
+  }
+  private staffNote(eventName: string): string {
+    return eventName ? ` (${eventName} staff only)` : '';
   }
 
   historyAudience(a: Announcement): string {
     const staffless = !(a.roles || []).length && !(a.departments || []).length;
     if (staffless) return a.public ? 'the public page only' : 'nobody';
-    const staff = this.audienceText(a.roles || [], (a.departments || []).map(d => d.name));
+    const staff = this.audienceText(a.roles || [], (a.departments || []).map(d => d.name)) + this.staffNote(a.staffEvent?.name || '');
     return a.public ? `${staff} and the public page` : staff;
   }
 
@@ -280,7 +293,7 @@ export class AnnouncementsComponent implements OnInit {
     const parts: string[] = [];
     if (this.hasStaffAudience) {
       const names = this.departmentOptions.filter(d => this.departments.has(d._id)).map(d => d.name);
-      parts.push(`goes to ${this.audienceText(roles, names)} on every phone with BiG notifications on — that can't be recalled`);
+      parts.push(`goes to ${this.audienceText(roles, names)}${this.staffNote(this.sendStaffEventName)} on every phone with BiG notifications on — that can't be recalled`);
     }
     if (this.publicPost) parts.push('appears on the public festival page, where anyone on the internet can read it (you can remove it from there later)');
     const ok = await firstValueFrom(this.confirm.confirm({
@@ -296,6 +309,7 @@ export class AnnouncementsComponent implements OnInit {
       const sent = await this.push.sendAnnouncement({
         type: this.type, title: this.title.trim(), message: this.message.trim(),
         roles, departments: [...this.departments], public: this.publicPost,
+        staffEvent: this.onlyEventStaff && this.staffEvent ? this.staffEvent._id : null,
         ...(this.publicPost ? { publicAlert: this.publicAlert, publicSession: this.publicAlert === 'session' ? this.publicSession : null } : {})
       });
       this.reportSent(sent);
@@ -377,6 +391,7 @@ export class AnnouncementsComponent implements OnInit {
     this.publicPost = false;
     this.publicAlert = 'none';
     this.publicSession = '';
+    this.onlyEventStaff = true;
   }
 
   private reportSent(sent: Announcement): void {

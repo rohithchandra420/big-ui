@@ -60,6 +60,9 @@
         </div>
         <ng-template #noVols><p class="empty-text">No volunteers assigned</p></ng-template>
       </section>
+      <p class="empty-text" *ngIf="detail.notOnEvent">
+        {{ detail.notOnEvent }} more {{ detail.notOnEvent === 1 ? 'member is' : 'members are' }} in this department but not on {{ eventName || 'this event' }}'s staff list.
+      </p>
     </ng-container>
   </div>
 
