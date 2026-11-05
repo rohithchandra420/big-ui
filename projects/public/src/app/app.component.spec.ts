@@ -29,9 +29,11 @@ describe('AppComponent (public shell)', () => {
 
   beforeEach(async () => {
     history.replaceState(null, '', location.pathname);
-    apiSpy = jasmine.createSpyObj('PublicApiService', ['event', 'sessions']);
+    apiSpy = jasmine.createSpyObj('PublicApiService', ['event', 'sessions', 'news', 'map']);
     apiSpy.event.and.returnValue(of({ data: during, at: Date.now(), offline: false }));
     apiSpy.sessions.and.returnValue(of({ data: { off: false, sessions: [] }, at: Date.now(), offline: false }));
+    apiSpy.news.and.returnValue(of({ data: { off: false, news: [] }, at: Date.now(), offline: false }));
+    apiSpy.map.and.returnValue(of({ data: { off: false, pins: [], areas: [] }, at: Date.now(), offline: false }));
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [{ provide: PublicApiService, useValue: apiSpy }]
@@ -96,9 +98,27 @@ describe('AppComponent (public shell)', () => {
     component.go('news');
     fixture.detectChanges();
     expect(location.hash).toBe('#news');
-    expect(text()).toContain('News and updates from the organisers');
+    expect(text()).toContain('No news yet');
     component.go('home');
     expect(component.view).toBe('home');
+  });
+
+  it('shows the news ticker on Home and the feed on the News tab', () => {
+    const at = new Date(Date.now() - 600000).toISOString();
+    apiSpy.news.and.returnValue(of({ data: { off: false, news: [{ id: 'n1', type: 'urgent', title: 'Storm warning', message: 'Move to the Dome', at }] }, at: Date.now(), offline: false }));
+    create();
+    expect(fixture.nativeElement.querySelector('.ticker').textContent).toContain('Storm warning');
+    (fixture.nativeElement.querySelector('.ticker') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(component.view).toBe('news');
+    expect(fixture.nativeElement.querySelector('.post').textContent).toContain('Move to the Dome');
+  });
+
+  it('failing news does not hide the page', () => {
+    apiSpy.news.and.returnValue(throwError(() => new Error('500')));
+    create();
+    expect(text()).toContain('Day 2 is');
+    expect(component.news).toEqual([]);
   });
 
   it('a failing schedule does not hide the page', () => {

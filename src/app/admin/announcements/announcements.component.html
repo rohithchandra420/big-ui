@@ -16,8 +16,10 @@
     <div class="ann-group">
       <div class="ann-group-hd"><span class="ann-group-lbl">Type</span></div>
       <div class="ann-types" role="radiogroup" aria-label="Type">
-        <label class="ann-type choice-tile" *ngFor="let t of typeOptions" [ngClass]="'t-' + t.value" [class.selected]="type === t.value">
-          <input class="sr-only" type="radio" name="ann-type" [value]="t.value" [checked]="type === t.value" (change)="type = t.value">
+        <label class="ann-type choice-tile" *ngFor="let t of typeOptions" [ngClass]="'t-' + t.value" [class.selected]="type === t.value"
+               [class.ann-off]="publicPost && !isPublicType(t.value)" [title]="publicPost && !isPublicType(t.value) ? 'Not for the public page' : ''">
+          <input class="sr-only" type="radio" name="ann-type" [value]="t.value" [checked]="type === t.value"
+                 [disabled]="publicPost && !isPublicType(t.value)" (change)="setType(t.value)">
           <mat-icon class="choice-tile-check ms-fill" aria-hidden="true">check_circle</mat-icon>
           <span class="choice-tile-ic"><mat-icon class="ms-fill">{{ t.icon }}</mat-icon></span>
           <span class="choice-tile-name">{{ t.label }}</span>
@@ -68,13 +70,24 @@
       <ng-template #noDepts><span class="ann-hint">No departments yet.</span></ng-template>
     </div>
 
+    <!-- Public page (PH3): anyone on the internet can read it -->
+    <label class="ann-public" [class.on]="publicPost">
+      <input class="sr-only" type="checkbox" [checked]="publicPost" (change)="setPublic($any($event.target).checked)">
+      <span class="ann-public-ic"><mat-icon class="ms-fill" aria-hidden="true">public</mat-icon></span>
+      <span class="ann-public-txt">
+        <b>Public page</b>
+        <small>Also show it on the festival page for participants. Anyone on the internet can read it.</small>
+      </span>
+      <mat-icon class="ann-public-check ms-fill" aria-hidden="true">{{ publicPost ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+    </label>
+
     <div class="ann-audience" [class.empty]="!hasAudience">
       <mat-icon aria-hidden="true">group</mat-icon>
       <span><span class="ann-audience-lbl">Goes to:</span> {{ audiencePreview }}</span>
     </div>
 
     <div class="warn-banner ann-warn">
-      Shows on locked phones — don't include personal or sensitive details.
+      {{ publicPost ? 'Public: anyone on the internet can read it' : 'Shows on locked phones' }} — don't include personal or sensitive details.
     </div>
 
     <div class="ann-preview" aria-label="Preview">
@@ -136,6 +149,8 @@
         <span class="ann-item-ic"><mat-icon class="ms-fill">{{ typeIcon(a.type) }}</mat-icon></span>
         <span class="ann-badge" [title]="typeLabel(a.type)">{{ typeBadge(a.type) }}</span>
         <span class="ann-badge resent" *ngIf="a.resentFrom"><mat-icon aria-hidden="true">replay</mat-icon>Resent</span>
+        <span class="ann-badge ann-pub" *ngIf="isLivePublic(a)"><mat-icon aria-hidden="true">public</mat-icon>Public</span>
+        <span class="ann-badge ann-pub-off" *ngIf="a.public && a.publicRemovedAt"><mat-icon aria-hidden="true">public_off</mat-icon>Removed</span>
       </div>
       <div class="ann-item-body">
         <div class="ann-item-hd">
@@ -146,6 +161,7 @@
         <div class="ann-item-meta">
           To {{ historyAudience(a) }} · by {{ a.sentBy?.name || 'someone' }} ·
           {{ a.delivered }} device{{ a.delivered === 1 ? '' : 's' }}
+          <ng-container *ngIf="a.public && a.publicRemovedAt"> · removed from the public page by {{ a.publicRemovedBy?.name || 'someone' }}, {{ a.publicRemovedAt | date:'d MMM, h:mm a' }}</ng-container>
         </div>
         <div class="ann-item-actions">
           <button type="button" class="ann-action pill-btn" (click)="copyToForm(a)">
@@ -153,6 +169,9 @@
           </button>
           <button type="button" class="ann-action pill-btn primary" (click)="sendAgain(a)" *ngIf="canResend(a)" [disabled]="resendingId === a._id">
             <mat-icon aria-hidden="true">replay</mat-icon>{{ resendingId === a._id ? 'Sending…' : 'Send again' }}
+          </button>
+          <button type="button" class="ann-action pill-btn" (click)="removeFromPublic(a)" *ngIf="isLivePublic(a)" [disabled]="removingId === a._id">
+            <mat-icon aria-hidden="true">public_off</mat-icon>{{ removingId === a._id ? 'Removing…' : 'Remove from public page' }}
           </button>
         </div>
       </div>

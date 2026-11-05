@@ -115,11 +115,27 @@ export interface PublicPageSettings {
   updatedBy: string | null;
   /** Active events with dates — the only ones that can be picked. */
   events: { _id: string; name: string; startDate: string; endDate: string }[];
+  /** PH4a: the first contact is the main line. */
+  emergency: PublicEmergency;
+  helpTiles: PublicHelpTile[];
+  /** The icons a help tile may use. */
+  helpIcons: string[];
+  /** PH4b: SOS to staff (off by default) and who gets it besides DEV/DIR/ADMIN. */
+  sosEnabled: boolean;
+  sosDepartments: string[];
+  departments: { _id: string; name: string }[];
 }
+
+export interface PublicEmergency { contacts: { label: string; phone: string }[]; note: string; }
+export interface PublicHelpTile { icon: string; title: string; text: string; }
 
 export interface PublicPageSave {
   enabled: boolean;
   event: string | null;
   showBeforeDays: number;
   showAfterDays: number;
+  emergency?: PublicEmergency;
+  helpTiles?: PublicHelpTile[];
+  sosEnabled?: boolean;
+  sosDepartments?: string[];
 }

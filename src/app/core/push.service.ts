@@ -25,6 +25,8 @@ export interface AnnouncementInput {
   message: string;
   roles: string[];
   departments: string[];   // department ids (home department)
+  /** Also show it on the public festival page (PH3). */
+  public?: boolean;
 }
 
 export interface Announcement {
@@ -40,6 +42,11 @@ export interface Announcement {
   devices: number;
   delivered: number;
   createdAt: string;
+  /** On the public festival page (PH3) — and when / by whom it was taken down. */
+  public?: boolean;
+  publicEvent?: { _id: string; name: string } | null;
+  publicRemovedAt?: string | null;
+  publicRemovedBy?: { _id: string; name: string } | null;
 }
 
 /**
@@ -141,6 +148,11 @@ export class PushService {
 
   sendAnnouncement(body: AnnouncementInput) {
     return firstValueFrom(this.http.post<Announcement>(this.url + '/push/announcements', body));
+  }
+
+  /** "Remove from public page": takes a public post off the public page at once. */
+  unpublishAnnouncement(id: string) {
+    return firstValueFrom(this.http.post<Announcement>(this.url + `/push/announcements/${id}/unpublish`, {}));
   }
 
   /** "Send again": same content and audience, as a new announcement. */

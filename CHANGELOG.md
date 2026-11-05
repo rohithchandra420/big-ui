@@ -13,6 +13,44 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.39.0] - 2026-11-07
+
+### Added
+- **SOS page** (sidebar, with a red count of open alerts) for Directors, Admins, Developers and the chosen departments: each help request with the time, a small map, directions, "outside the venue" when it is, the participant's message and call-back phone, and **Mark handled** with a note. Refreshes every 15 seconds; tapping the alert opens it.
+- **Admin › Public Page:** an SOS On / Off switch (off by default) and which departments get SOS alerts.
+- **Public festival page — Send SOS to the festival team** in the Emergency sheet (only when switched on): a "Send SOS?" step with the location found, an optional message and call-back phone, then "Help is on the way". Calling and sharing by SMS / WhatsApp stay available.
+- Billboard: SOS notes in red.
+
+### Notes
+- 968/968 staff unit tests, 63/63 public page unit tests.
+
+---
+
+## [1.38.0] - 2026-11-07
+
+### Added
+- **Public festival page — Map tab:** a street map of the festival with its public places and areas (no-go zones in red), a legend, "Show my location", and a tap for the name, the Box Office's open / closed status and walking directions. The map loads only when the tab is opened.
+- **Find your way** on Home: the nearest water, first aid, toilets and Box Office, with walking minutes once the phone shares its location; each opens the map there.
+- **Need a hand?** help tiles on Home, written by staff.
+- **Emergency button** during the festival: call the festival emergency line and other contacts, share your location by SMS or WhatsApp, find the nearest first aid, or call 112. The location is only sent through your own phone's messages.
+- **Admin › Public Page:** new Emergency (up to 3 contacts, the first is the main line, plus a note) and Help tiles (up to 4, with an icon) sections.
+
+### Notes
+- 961/961 staff unit tests, 56/56 public page unit tests.
+
+---
+
+## [1.37.0] - 2026-11-07
+
+### Added
+- **Announcements › Public page:** a new audience tile to also post on the public festival page (for General, Urgent, Schedule and Weather posts), with or without staff. The confirmation says where it goes; the sent history shows a Public badge, a **Remove from public page** button and a Removed badge.
+- **Public festival page — news:** a rotating news strip on Home (the last 24 hours, urgent posts first for 6 hours) and the **News** tab with every post, newest first, urgent ones in red. Works offline with the last news it had.
+
+### Notes
+- 957/957 staff unit tests, 43/43 public page unit tests.
+
+---
+
 ## [1.36.0] - 2026-11-06
 
 ### Added

@@ -81,6 +81,7 @@ import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
 import { NotificationSettingsComponent } from './profile/notification-settings/notification-settings.component';
 import { AnnouncementsComponent } from './admin/announcements/announcements.component';
 import { PublicPageComponent } from './admin/public-page/public-page.component';
+import { SosComponent } from './sos/sos.component';
 import { UatResetComponent } from './admin/uat-reset/uat-reset.component'; // UAT-RESET: remove before Production
 import { VenueMapComponent } from './venue-map/venue-map.component';
 import { WorkshopSetupComponent } from './workshops/setup/workshop-setup.component';
@@ -157,6 +158,7 @@ LOAD_WASM().subscribe()
     NotificationSettingsComponent,
     AnnouncementsComponent,
     PublicPageComponent,
+    SosComponent,
     UatResetComponent, // UAT-RESET: remove before Production
     BillboardComponent,
     VenueMapComponent,
