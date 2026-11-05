@@ -20,6 +20,9 @@ export type DeptPanelMode = 'view' | 'edit' | 'create';
 })
 export class DepartmentDetailComponent implements OnChanges {
   @Input() deptId: string | null = null;
+  /** Staff list (R2): members shown for this event (the sidebar's); others counted as notOnEvent. */
+  @Input() eventId = '';
+  @Input() eventName = '';
   /** Emitted when the panel should close. */
   @Output() closed = new EventEmitter<void>();
   /** Emitted after a create / save, so the list can refresh. */
@@ -69,7 +72,7 @@ export class DepartmentDetailComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['deptId']) this.reset();
+    if (changes['deptId'] || (changes['eventId'] && !changes['eventId'].firstChange && this.mode === 'view')) this.reset();
   }
 
   /** Start over for the current deptId: view an existing department, or a blank Create form. */
@@ -95,7 +98,7 @@ export class DepartmentDetailComponent implements OnChanges {
   // Fetch full department detail (TLs + volunteers with their dept info)
   loadDetail(id: string) {
     this.loading = true;
-    this.adminService.getDepartmentDetail(id).subscribe({
+    this.adminService.getDepartmentDetail(id, this.eventId).subscribe({
       next: (d) => { if (id === this.deptId) this.detail = d; this.loading = false; },
       error: () => { this.notificationService.openErrorSnackBar('Error loading department'); this.loading = false; }
     });

@@ -97,6 +97,17 @@
             <div class="hd-body hx-muted" *ngIf="done">Recorded — ready for the next person.</div>
           </div>
 
+          <!-- Staff list (R2): not on this event's staff list — refused -->
+          <div class="hd-result duplicate" *ngIf="notStaff" role="alert">
+            <div class="hd-band">
+              <mat-icon class="ms-fill">block</mat-icon>
+              Not on the staff list — no meal
+              <span class="grow"></span>
+              <button type="button" class="hd-x" aria-label="Next person" (click)="clear()"><mat-icon>close</mat-icon></button>
+            </div>
+            <div class="hd-who"><div>{{ notStaff }}. An Admin can add them on Admin › Users.</div></div>
+          </div>
+
           <!-- Result (staff) -->
           <div class="hd-result" *ngIf="staffOutcome as r" [ngClass]="done ? 'done' : r.result">
             <div class="hd-band">

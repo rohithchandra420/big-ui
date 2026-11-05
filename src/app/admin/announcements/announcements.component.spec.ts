@@ -1,7 +1,8 @@
+import { EventService } from '../../core/event.service';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { AnnouncementsComponent } from './announcements.component';
 import { PushService } from '../../core/push.service';
 import { NotificationService } from '../../core/notification.service';
@@ -42,6 +43,7 @@ describe('AnnouncementsComponent', () => {
       imports: [FormsModule, MatIconModule],
       declarations: [AnnouncementsComponent, AppSelectComponent, AppOptionComponent],
       providers: [
+        { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }), currentActiveEvent: { _id: 'e1', name: 'BiG 7.0' } } },
         { provide: PushService, useValue: push },
         { provide: AdminService, useValue: { getDepartments: () => of(depts) } },
         { provide: AuthService, useValue: auth },
@@ -91,7 +93,7 @@ describe('AnnouncementsComponent', () => {
   it('tiles and chips have no visible radio buttons or checkboxes, but keep them for keyboards', () => {
     fixture.detectChanges();
     const inputs = Array.from(el().querySelectorAll<HTMLInputElement>('.ann-type input, .ann-chip input'));
-    expect(inputs.length).toBe(6 + 4 + 2);   // 6 types, 4 roles (no Developers), 2 departments
+    expect(inputs.length).toBe(6 + 4 + 2 + 1);   // 6 types, 4 roles (no Developers), 2 departments, "Only BiG 7.0 staff"
     expect(inputs.every(i => i.classList.contains('sr-only'))).toBeTrue();
   });
 
@@ -177,8 +179,10 @@ describe('AnnouncementsComponent', () => {
   it('describes the audience before sending', () => {
     expect(component.audiencePreview).toBe('Pick at least one role, department or the public page');
     component.toggleDepartment('d-bo', true);
-    expect(component.audiencePreview).toBe('Everyone in Box Office');
+    expect(component.audiencePreview).toBe('Everyone in Box Office (BiG 7.0 staff only)');
     component.toggleRole('VOL', true); component.toggleRole('TL', true);
+    expect(component.audiencePreview).toBe('Team Leads, Volunteers in Box Office (BiG 7.0 staff only)');
+    component.onlyEventStaff = false;   // staff list R2: off = BiG-wide
     expect(component.audiencePreview).toBe('Team Leads, Volunteers in Box Office');
   });
 
@@ -190,7 +194,7 @@ describe('AnnouncementsComponent', () => {
     component.send(); tick();
     expect(confirm.confirm).toHaveBeenCalled();
     expect(push.sendAnnouncement).toHaveBeenCalledWith({
-      type: 'schedule', title: 'Gates open', message: 'At 3 pm now', roles: ['TL', 'VOL'], departments: ['d-ops'], public: false
+      type: 'schedule', title: 'Gates open', message: 'At 3 pm now', roles: ['TL', 'VOL'], departments: ['d-ops'], public: false, staffEvent: 'e1'
     });
     expect(snack.openSucessSnackBar).toHaveBeenCalledWith('Sent to 5 devices');
     expect(component.type).toBe('general');
@@ -249,7 +253,7 @@ describe('AnnouncementsComponent', () => {
       component.title = 'Gates open'; component.message = 'At 2 pm';
       component.toggleRole('VOL', true);
       component.setPublic(true);
-      expect(component.audiencePreview).toBe('Volunteers and the public page');
+      expect(component.audiencePreview).toBe('Volunteers (BiG 7.0 staff only) and the public page');
       await component.send();
       expect(push.sendAnnouncement).toHaveBeenCalledWith(jasmine.objectContaining({ public: true, roles: ['VOL'] }));
       expect(confirm.confirm.calls.mostRecent().args[0].message).toContain('anyone on the internet can read it');

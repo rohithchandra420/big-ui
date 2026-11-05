@@ -1,9 +1,10 @@
+import { EventService } from '../../core/event.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 import { DepartmentsComponent } from './departments.component';
 import { AdminService, DeptSummary, DeptDetail } from '../admin.service';
 import { NotificationService } from '../../core/notification.service';
@@ -40,6 +41,7 @@ describe('DepartmentsComponent', () => {
       declarations: [DepartmentsComponent],
       imports: [RouterTestingModule],
       providers: [
+        { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }), currentActiveEvent: { _id: 'e1', name: 'BiG 7.0' } } },
         { provide: AdminService, useValue: adminServiceSpy },
         { provide: NotificationService, useValue: notificationSpy },
         { provide: MatDialog, useValue: dialogSpy }

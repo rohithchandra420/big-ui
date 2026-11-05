@@ -62,7 +62,7 @@ describe('DepartmentDetailComponent', () => {
 
   it('loads the department and shows its details first (view mode)', () => {
     expect(component.mode).toBe('view');
-    expect(adminServiceSpy.getDepartmentDetail).toHaveBeenCalledWith('d1');
+    expect(adminServiceSpy.getDepartmentDetail).toHaveBeenCalledWith('d1', '');
     expect(component.detail).toEqual(mockDetail);
   });
 

@@ -187,6 +187,7 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     this.done = '';
     this.reason = '';
     this.otherReason = '';
+    this.notStaff = '';
     try {
       this.outcome = await this.hospitality.scan(this.event._id, who);
       if (this.outcome.result === 'guest') this.prepareGuest(this.outcome);
@@ -194,6 +195,12 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
       await this.load();
     } catch (err: any) {
       this.outcome = null;
+      // Staff list (R2): someone not on the event's staff is refused — a clear card, not an error.
+      if (err?.error?.state === 'not_staff') {
+        this.notStaff = err.error.message;
+        this.gate.notFound();
+        return;
+      }
       if (err?.status === 404 || err?.status === 409) this.gate.notFound(); else this.gate.error();
       this.notify.openErrorSnackBar(err?.error?.message || 'Could not check this person.');
     } finally {
@@ -217,8 +224,12 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Staff list (R2): "<name> is not on the staff list for <event>" — the desk refuses them. */
+  notStaff = '';
+
   clear() {
     this.outcome = null;
+    this.notStaff = '';
     this.done = '';
     this.bandReasonOpen = false;
     this.bandReason = '';

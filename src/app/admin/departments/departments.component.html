@@ -47,6 +47,10 @@
           <span class="meta-label">Volunteers</span>
           <span class="meta-value">{{ dept.volunteerCount }}</span>
         </div>
+        <div class="meta-row" *ngIf="dept.notOnEvent">
+          <span class="meta-label">Not on {{ staffEvent?.name }}</span>
+          <span class="meta-value">{{ dept.notOnEvent }}</span>
+        </div>
       </div>
 
       <div class="dept-card-actions">
@@ -67,5 +71,6 @@
 
 <div class="panel" [class.open]="panelOpen" role="dialog" aria-label="Department" [attr.aria-hidden]="!panelOpen">
   <app-department-detail *ngIf="panelOpen" [deptId]="panelDeptId"
+    [eventId]="staffEvent?._id || ''" [eventName]="staffEvent?.name || ''"
     (closed)="closePanel()" (changed)="onDeptChanged($event)"></app-department-detail>
 </div>
