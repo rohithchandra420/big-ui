@@ -37,6 +37,8 @@ export class UserFormComponent implements OnInit {
   /** DEV/DIR/ADMIN: every department. TL: only their own. */
   @Input() departments: { _id: string; name: string; key?: string }[] = [];
   @Input() isTopLevel = false;
+  /** Staff list: a new user is also put on this event (the one picked in the sidebar). */
+  @Input() eventId = '';
 
   /** Emits the created/updated user as returned by the backend. */
   @Output() saved = new EventEmitter<any>();
@@ -167,7 +169,8 @@ export class UserFormComponent implements OnInit {
       permissions: this.buildPermissions(),
       dateOfJoining: raw.dateOfJoining,
       foodPreference: raw.foodPreference,
-      ...(raw.gender ? { gender: raw.gender } : {})
+      ...(raw.gender ? { gender: raw.gender } : {}),
+      ...(this.eventId ? { eventId: this.eventId } : {})
     };
 
     this.saving = true;

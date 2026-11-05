@@ -3,6 +3,7 @@ import { MatDialogRef } from '@angular/material/dialog';
 
 import { AdminService, BulkUserResult, BulkUserRow, BulkUsersResponse, BulkUserStatus } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
+import { EventService } from '../../../core/event.service';
 
 /** Columns of the template, in order. The first five are required. */
 export const BULK_USER_COLUMNS = [
@@ -77,12 +78,17 @@ export class BulkUsersComponent {
   counts: BulkUsersResponse['counts'] = {};
   error = '';
   added = 0;
+  /** Staff list: also put the new users on the sidebar event (on by default). */
+  addToEvent = true;
 
   constructor(
     private dialogRef: MatDialogRef<BulkUsersComponent>,
     private adminService: AdminService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private eventService: EventService
   ) { }
+
+  get event() { return this.eventService.currentActiveEvent; }
 
   get readyCount(): number { return this.counts.ready || 0; }
   get busy(): boolean { return this.phase === 'checking' || this.phase === 'adding'; }
@@ -186,7 +192,8 @@ export class BulkUsersComponent {
   add(): void {
     if (this.phase !== 'preview' || !this.readyCount) return;
     this.phase = 'adding';
-    this.adminService.bulkUsers(this.rows, false).subscribe({
+    const eventId = this.addToEvent && this.event ? this.event._id : '';
+    this.adminService.bulkUsers(this.rows, false, eventId).subscribe({
       next: (res) => {
         this.results = res.results;
         this.counts = res.counts;

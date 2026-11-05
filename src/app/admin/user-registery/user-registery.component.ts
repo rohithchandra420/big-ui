@@ -16,6 +16,8 @@ import { StaffBandInfo, StaffBandService } from '../../core/staff-band.service';
 
 type UserStatFilter = 'admins' | 'leads' | 'volunteers' | 'noDept' | null;
 export type UserStatusFilter = 'active' | 'deactivated' | 'all';
+/** Staff list filter for the event picked in the sidebar (STAFF_LIST_CONTEXT.md). */
+export type StaffFilter = '' | 'on' | 'off';
 type PanelMode = 'view' | 'edit' | 'create';
 
 const TOP_LEVEL_ROLES = ['DEV', 'DIR', 'ADMIN'];
@@ -56,6 +58,15 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
   searchTerm = '';
   roleFilter = '';
   deptFilter = '';
+  /** Opens on "On <event>" (user, 2026-11-07). */
+  staffFilter: StaffFilter = 'on';
+
+  /** Staff list: ids picked with the row check boxes (DEV/DIR/ADMIN). */
+  selectedIds = new Set<string>();
+  staffBusy = false;
+  private eventSub?: Subscription;
+  /** The event the loaded `onEvent` flags belong to. */
+  private staffEventId = '';
 
   pageIndex = 0;
   pageSize = 20;
@@ -121,19 +132,37 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
       }
       if (this.canViewPage) this.loadUsers();
     });
+    // Staff list: reload the flags when the sidebar event changes.
+    this.eventSub = this.eventService.activeEvent.subscribe(ev => {
+      const id = ev?._id || '';
+      if (id === this.staffEventId) return;
+      this.selectedIds.clear();
+      this.staffFilter = 'on';
+      // Reload even when the first list hasn't arrived yet — loadUsers() drops a
+      // reply that belongs to an older event (bug fix: Add/Remove went missing
+      // when the page opened before the sidebar event had loaded).
+      if (this.isTopLevel && this.canViewPage) this.loadUsers();
+    });
   }
 
   ngOnDestroy() {
     this.userSub?.unsubscribe();
+    this.eventSub?.unsubscribe();
   }
 
   // ── Data loading ─────────────────────────────────────────
 
   loadUsers() {
     this.loading = true;
-    this.adminService.getAllUsers(this.canSeeDeactivated).subscribe({
+    const eventId = this.isTopLevel ? (this.eventService.currentActiveEvent?._id || '') : '';
+    this.adminService.getAllUsers(this.canSeeDeactivated, eventId).subscribe({
       next: res => {
+        // A reply for an event that is no longer the picked one: a newer request is on its way.
+        if (this.isTopLevel && eventId !== (this.eventService.currentActiveEvent?._id || '')) return;
         this.users = res || [];
+        this.staffEventId = eventId;
+        const ids = new Set(this.users.map(u => u._id));
+        this.selectedIds.forEach(id => { if (!ids.has(id)) this.selectedIds.delete(id); });
         this.rebuildFilterOptions();
         this.loading = false;
         // Keep the open panel pointed at the fresh copy of the same user
@@ -328,6 +357,10 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     if (this.deptFilter) {
       result = result.filter(u => this.homeDeptId(u) === this.deptFilter);
     }
+    if (this.staffFilter && this.showStaff) {
+      const want = this.staffFilter === 'on';
+      result = result.filter(u => !!u.onEvent === want);
+    }
 
     const term = this.searchTerm.trim().toLowerCase();
     if (term) {
@@ -346,7 +379,7 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
   }
 
   get hasFilters(): boolean {
-    return !!(this.activeFilter || this.searchTerm.trim() || this.roleFilter || this.deptFilter)
+    return !!(this.activeFilter || this.searchTerm.trim() || this.roleFilter || this.deptFilter || (this.showStaff && this.staffFilter !== 'on'))
       || this.statusFilter !== 'active';
   }
 
@@ -371,7 +404,150 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     this.searchTerm = '';
     this.roleFilter = '';
     this.deptFilter = '';
+    this.staffFilter = 'on';
     this.pageIndex = 0;
+  }
+
+  // ── Staff list (STAFF_LIST_CONTEXT.md) ───────────────────
+
+  /** The event picked in the sidebar, when its staff flags are loaded. */
+  get staffEvent() {
+    const ev = this.eventService.currentActiveEvent;
+    return ev && ev._id === this.staffEventId ? ev : null;
+  }
+
+  /** Staff list controls: DEV/DIR/ADMIN with an event picked. */
+  get showStaff(): boolean {
+    return this.isTopLevel && !!this.staffEvent;
+  }
+
+  get staffCount(): number {
+    return this.activeUsers.filter(u => u.onEvent).length;
+  }
+
+  /** DEV/DIR/ADMIN are always staff, deactivated people can't be picked. */
+  canPickForStaff(u: any): boolean {
+    return this.isActive(u) && !TOP_LEVEL_ROLES.includes(this.roleName(u));
+  }
+
+  isAlwaysStaff(u: any): boolean {
+    return TOP_LEVEL_ROLES.includes(this.roleName(u));
+  }
+
+  togglePick(u: any, event?: Event) {
+    event?.stopPropagation();
+    if (!this.canPickForStaff(u)) return;
+    if (this.selectedIds.has(u._id)) this.selectedIds.delete(u._id);
+    else this.selectedIds.add(u._id);
+  }
+
+  /** Every pickable person in the current filter (all pages). */
+  get pickableFiltered(): any[] {
+    return this.filteredUsers.filter(u => this.canPickForStaff(u));
+  }
+
+  /** Some (not necessarily all) of the current filter are ticked — header shows a dash. */
+  get somePicked(): boolean {
+    return this.pickableFiltered.some(u => this.selectedIds.has(u._id));
+  }
+
+  get allPicked(): boolean {
+    const list = this.pickableFiltered;
+    return list.length > 0 && list.every(u => this.selectedIds.has(u._id));
+  }
+
+  togglePickAll() {
+    const list = this.pickableFiltered;
+    if (this.allPicked) list.forEach(u => this.selectedIds.delete(u._id));
+    else list.forEach(u => this.selectedIds.add(u._id));
+  }
+
+  clearPicks() {
+    this.selectedIds.clear();
+  }
+
+  /** Adds (or removes) people on the sidebar event's staff list. */
+  changeStaff(add: boolean, ids: string[] = [...this.selectedIds]) {
+    const ev = this.staffEvent;
+    if (!ev || !ids.length || this.staffBusy) return;
+    this.staffBusy = true;
+    const done = (n: number) => {
+      this.staffBusy = false;
+      const who = n === 1 ? '1 person' : n + ' people';
+      this.notificationService.openSucessSnackBar(add ? `${who} added to ${ev.name}` : `${who} removed from ${ev.name}`);
+      ids.forEach(id => this.selectedIds.delete(id));
+      this.loadUsers();
+    };
+    const fail = () => {
+      this.staffBusy = false;
+      this.notificationService.openErrorSnackBar('The staff list could not be changed. Try again.');
+    };
+    if (add) this.adminService.addEventStaff(ev._id, ids).subscribe({ next: r => done(r.added), error: fail });
+    else this.adminService.removeEventStaff(ev._id, ids).subscribe({ next: r => done(r.removed), error: fail });
+  }
+
+  /**
+   * Bulk delete (v1.43.0): asks the server what would happen (deleted when no
+   * history, deactivated when there is, or refused with a reason), shows that
+   * in one confirm, then removes them.
+   */
+  deleteSelected() {
+    const ids = [...this.selectedIds];
+    if (!ids.length || this.staffBusy || !this.isTopLevel) return;
+    this.staffBusy = true;
+    this.adminService.bulkDeleteUsers(ids, true).subscribe({
+      next: (preview) => {
+        this.staffBusy = false;
+        const del = preview.counts['delete'] || 0;
+        const deact = preview.counts['deactivate'] || 0;
+        const refused = preview.results.filter(r => r.result === 'refused');
+        if (!del && !deact) {
+          this.notificationService.openErrorSnackBar('None of the selected people can be removed.');
+          return;
+        }
+        this.confirmationService.confirm({
+          title: 'Remove ' + this.people(del + deact),
+          message: this.bulkDeleteMessage(del, deact, refused),
+          confirmText: 'Remove',
+          danger: true
+        }).subscribe(ok => { if (ok) this.runBulkDelete(ids); });
+      },
+      error: () => {
+        this.staffBusy = false;
+        this.notificationService.openErrorSnackBar('Could not check the selected people. Try again.');
+      }
+    });
+  }
+
+  private people(n: number): string { return n === 1 ? '1 person' : n + ' people'; }
+
+  bulkDeleteMessage(del: number, deact: number, refused: { name: string; reason?: string }[]): string {
+    const parts: string[] = [];
+    if (del) parts.push(`${this.people(del)} will be deleted permanently (no attendance or event records). This can't be undone.`);
+    if (deact) parts.push(`${this.people(deact)} ${deact === 1 ? 'has' : 'have'} records, so ${deact === 1 ? 'is' : 'are'} deactivated instead: they can't sign in, their records are kept, and a DEV or DIR can reactivate them.`);
+    if (refused.length) parts.push(`${this.people(refused.length)} can't be removed and will be skipped: ` +
+      refused.map(r => `${r.name || 'unknown'} (${r.reason})`).join(', ') + '.');
+    return parts.join(' ');
+  }
+
+  private runBulkDelete(ids: string[]) {
+    this.staffBusy = true;
+    this.adminService.bulkDeleteUsers(ids, false).subscribe({
+      next: (res) => {
+        this.staffBusy = false;
+        const del = res.counts['deleted'] || 0, deact = res.counts['deactivated'] || 0, skipped = res.counts['refused'] || 0;
+        const bits = [del ? del + ' deleted' : '', deact ? deact + ' deactivated' : '', skipped ? skipped + ' skipped' : ''].filter(Boolean);
+        this.notificationService.openSucessSnackBar(bits.join(', ') || 'Nothing removed');
+        this.selectedIds.clear();
+        if (this.activeUser && ids.includes(this.activeUser._id)) this.panelOpen = false;
+        this.loadUsers();
+      },
+      error: () => {
+        this.staffBusy = false;
+        this.notificationService.openErrorSnackBar('Removing failed. The list was reloaded to show who was removed.');
+        this.loadUsers();
+      }
+    });
   }
 
   onPageChange(event: PageEvent) {

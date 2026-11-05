@@ -104,6 +104,16 @@ describe('UserFormComponent', () => {
       expect(savedSpy).toHaveBeenCalledWith(created);
     });
 
+    it('puts the new user on the sidebar event when one is given (staff list)', () => {
+      adminSpy.createUser.and.returnValue(of({ _id: 'new3', name: 'X' }));
+      fillCreateForm();
+      component.submit();
+      expect(adminSpy.createUser.calls.mostRecent().args[0].eventId).toBeUndefined();
+      component.eventId = 'e1';
+      component.submit();
+      expect(adminSpy.createUser.calls.mostRecent().args[0].eventId).toBe('e1');
+    });
+
     it('sends Non-veg when picked', () => {
       adminSpy.createUser.and.returnValue(of({ _id: 'new2', name: 'X' }));
       fillCreateForm();

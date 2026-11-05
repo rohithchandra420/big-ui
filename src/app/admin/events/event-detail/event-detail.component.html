@@ -29,6 +29,10 @@
         <button type="button" class="btn-sm-outline" (click)="openVenueMap()">
           {{ hasBoundary ? 'View on Venue Map' : 'Draw on Venue Map' }}</button>
       </p>
+      <p class="event-desc muted venue-line" *ngIf="staffCount !== null">
+        Staff: {{ staffCount }} {{ staffCount === 1 ? 'person' : 'people' }} (incl. Developers, Directors and Admins)
+        <button type="button" class="btn-sm-outline" (click)="openStaff()">Manage on Users page</button>
+      </p>
       <p class="event-dates" *ngIf="detail.startDate || detail.endDate">
         {{ detail.startDate | date:'mediumDate' }} – {{ detail.endDate | date:'mediumDate' }}
       </p>

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 
 import { UserRegisteryComponent } from './user-registery.component';
 import { AdminService, UserDeleteCheck } from '../admin.service';
@@ -73,12 +73,20 @@ describe('UserRegisteryComponent', () => {
   const setup = async (actor: any) => {
     userSubject = new BehaviorSubject<any>(actor);
     adminSpy = jasmine.createSpyObj('AdminService', [
-      'getAllUsers', 'getRoles', 'getDepartments', 'checkDeleteUser', 'deleteUser', 'reactivateUser'
+      'getAllUsers', 'getRoles', 'getDepartments', 'checkDeleteUser', 'deleteUser', 'reactivateUser',
+      'addEventStaff', 'removeEventStaff', 'bulkDeleteUsers'
     ]);
     // Mirror the backend: deactivated users only come back when asked for
     // Fresh copies each call, so a test mutating a user can't leak into the next
-    adminSpy.getAllUsers.and.callFake((includeInactive = false) =>
-      of(JSON.parse(JSON.stringify(includeInactive ? mockUsers : mockUsers.filter(u => u.isActive !== false)))));
+    adminSpy.getAllUsers.and.callFake((includeInactive = false, eventId = '') => {
+      const list = JSON.parse(JSON.stringify(includeInactive ? mockUsers : mockUsers.filter(u => u.isActive !== false)));
+      // Staff list: with an event, the backend marks who is on it (top roles always; vol1 listed).
+      if (eventId) list.forEach((u: any) => { u.onEvent = ['DEV', 'DIR', 'ADMIN'].includes(u.role.name) || u._id === 'vol1'; });
+      return of(list);
+    });
+    adminSpy.addEventStaff.and.returnValue(of({ added: 2 }));
+    adminSpy.removeEventStaff.and.returnValue(of({ removed: 1 }));
+    const activeEvent = new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' });
     adminSpy.getRoles.and.returnValue(of([]));
     adminSpy.getDepartments.and.returnValue(of([ops, box]));
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
@@ -98,7 +106,7 @@ describe('UserRegisteryComponent', () => {
         { provide: ConfirmationService, useValue: confirmSpy },
         { provide: MatDialog, useValue: { openDialogs: [] } },
         { provide: AvatarService, useValue: avatarSpy },
-        { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
+        { provide: EventService, useValue: { activeEvent, get currentActiveEvent() { return activeEvent.value; } } },
         { provide: StaffBandService, useValue: bandSpy },
       ],
       schemas: [NO_ERRORS_SCHEMA]
@@ -116,12 +124,12 @@ describe('UserRegisteryComponent', () => {
   describe('loading', () => {
     it('asks for deactivated users only as DEV/DIR', async () => {
       await setup(devActor);
-      expect(adminSpy.getAllUsers).toHaveBeenCalledWith(true);
+      expect(adminSpy.getAllUsers).toHaveBeenCalledWith(true, 'e1');
     });
 
     it('does not ask for deactivated users as ADMIN', async () => {
       await setup(adminActor);
-      expect(adminSpy.getAllUsers).toHaveBeenCalledWith(false);
+      expect(adminSpy.getAllUsers).toHaveBeenCalledWith(false, 'e1');
       expect(component.deactivatedUsers.length).toBe(0);
     });
 
@@ -133,7 +141,8 @@ describe('UserRegisteryComponent', () => {
   });
 
   describe('summary counts and filters', () => {
-    beforeEach(async () => await setup(devActor));
+    // These test the other filters, so they look at everyone, not just the event's staff.
+    beforeEach(async () => { await setup(devActor); component.staffFilter = ''; });
 
     it('counts only active users in the role cards', () => {
       expect(component.adminsCount).toBe(2);
@@ -188,6 +197,7 @@ describe('UserRegisteryComponent', () => {
       expect(component.filteredUsers.map(u => u._id)).toEqual(['vol1']);
 
       component.clearFilters();
+      component.staffFilter = ''; // Clear goes back to "On <event>"
       component.roleFilter = 'TL';
       component.searchTerm = 'box';
       expect(component.filteredUsers.map(u => u._id)).toEqual(['tl2']);
@@ -442,6 +452,145 @@ describe('UserRegisteryComponent', () => {
 
       expect(adminSpy.reactivateUser).toHaveBeenCalledWith('gone');
       expect(adminSpy.getAllUsers).toHaveBeenCalled();
+    });
+  });
+
+  // ── Staff list (STAFF_LIST_CONTEXT.md) ─────────────────
+  describe('event staff list', () => {
+    const adminActor = { _id: 'adm1', name: 'Admin One', role: 'ADMIN', departments: [] };
+    const el = () => fixture.nativeElement as HTMLElement;
+
+    it('asks for the sidebar event and shows who is on it', async () => {
+      await setup(adminActor);
+      expect(adminSpy.getAllUsers.calls.mostRecent().args[1]).toBe('e1');
+      expect(component.showStaff).toBeTrue();
+      expect(component.staffCount).toBe(3); // DEV, ADMIN always + vol1
+      fixture.detectChanges();
+      expect(el().textContent).toContain('3 on BiG 7.0');
+    });
+
+    it('filters by on / not on the event', async () => {
+      await setup(adminActor);
+      expect(component.staffFilter).toBe('on'); // the default
+      expect(component.hasFilters).toBeFalse();
+      component.staffFilter = 'off';
+      expect(component.filteredUsers.map(u => u._id).sort()).toEqual(['tl1', 'tl2', 'vol2', 'vol3']);
+      component.staffFilter = 'on';
+      expect(component.filteredUsers.map(u => u._id).sort()).toEqual(['adm1', 'dev1', 'vol1']);
+      component.staffFilter = '';
+      expect(component.hasFilters).toBeTrue();
+      component.clearFilters();
+      expect(component.staffFilter).toBe('on');
+    });
+
+    it('only TL / VOL can be picked; pick all takes the whole filtered list', async () => {
+      await setup(adminActor);
+      component.staffFilter = '';
+      const dev = component.users.find(u => u._id === 'dev1');
+      component.togglePick(dev);
+      expect(component.selectedIds.size).toBe(0);
+      component.togglePickAll();
+      expect([...component.selectedIds].sort()).toEqual(['tl1', 'tl2', 'vol1', 'vol2', 'vol3']);
+      expect(component.allPicked).toBeTrue();
+      component.togglePickAll();
+      expect(component.selectedIds.size).toBe(0);
+    });
+
+    it('adds the picked people to the event, then reloads', async () => {
+      await setup(adminActor);
+      component.togglePick(component.users.find(u => u._id === 'tl1'));
+      component.togglePick(component.users.find(u => u._id === 'vol2'));
+      const calls = adminSpy.getAllUsers.calls.count();
+      component.changeStaff(true);
+      expect(adminSpy.addEventStaff).toHaveBeenCalledWith('e1', ['tl1', 'vol2']);
+      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('2 people added to BiG 7.0');
+      expect(component.selectedIds.size).toBe(0);
+      expect(adminSpy.getAllUsers.calls.count()).toBe(calls + 1);
+    });
+
+    it('removes one person from the side panel', async () => {
+      await setup(adminActor);
+      component.changeStaff(false, ['vol1']);
+      expect(adminSpy.removeEventStaff).toHaveBeenCalledWith('e1', ['vol1']);
+      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('1 person removed from BiG 7.0');
+    });
+
+    it('says so when the change fails', async () => {
+      await setup(adminActor);
+      adminSpy.addEventStaff.and.returnValue(throwError(() => ({ status: 500 })));
+      component.changeStaff(true, ['tl1']);
+      expect(notificationSpy.openErrorSnackBar).toHaveBeenCalled();
+      expect(component.staffBusy).toBeFalse();
+    });
+
+    it('bulk delete: previews, confirms with the counts, then removes and reloads', async () => {
+      await setup(adminActor);
+      adminSpy.bulkDeleteUsers.and.returnValues(
+        of({ results: [
+          { _id: 'tl1', name: 'Lead Ops', result: 'delete' },
+          { _id: 'vol2', name: 'Vol Box', result: 'deactivate' },
+          { _id: 'vol3', name: 'Vol Nowhere', result: 'refused', reason: 'User is already deactivated' }
+        ], counts: { delete: 1, deactivate: 1, refused: 1 } } as any),
+        of({ results: [], counts: { deleted: 1, deactivated: 1, refused: 1 } } as any)
+      );
+      confirmSpy.confirm.and.returnValue(of(true));
+      ['tl1', 'vol2', 'vol3'].forEach(id => component.togglePick(component.users.find(u => u._id === id)));
+      const calls = adminSpy.getAllUsers.calls.count();
+
+      component.deleteSelected();
+
+      expect(adminSpy.bulkDeleteUsers.calls.first().args).toEqual([['tl1', 'vol2', 'vol3'], true]);
+      const dialog = confirmSpy.confirm.calls.mostRecent().args[0];
+      expect(dialog.title).toBe('Remove 2 people');
+      expect(dialog.danger).toBeTrue();
+      expect(dialog.message).toContain('1 person will be deleted permanently');
+      expect(dialog.message).toContain('1 person has records, so is deactivated instead');
+      expect(dialog.message).toContain('Vol Nowhere (User is already deactivated)');
+      expect(adminSpy.bulkDeleteUsers.calls.mostRecent().args).toEqual([['tl1', 'vol2', 'vol3'], false]);
+      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('1 deleted, 1 deactivated, 1 skipped');
+      expect(component.selectedIds.size).toBe(0);
+      expect(adminSpy.getAllUsers.calls.count()).toBe(calls + 1);
+    });
+
+    it('bulk delete: nothing happens when the confirm is cancelled', async () => {
+      await setup(adminActor);
+      adminSpy.bulkDeleteUsers.and.returnValue(of({ results: [{ _id: 'tl1', name: 'Lead Ops', result: 'delete' }], counts: { delete: 1 } } as any));
+      confirmSpy.confirm.and.returnValue(of(false));
+      component.togglePick(component.users.find(u => u._id === 'tl1'));
+      component.deleteSelected();
+      expect(adminSpy.bulkDeleteUsers).toHaveBeenCalledTimes(1);
+    });
+
+    it('bulk delete: says so when nobody can be removed', async () => {
+      await setup(adminActor);
+      adminSpy.bulkDeleteUsers.and.returnValue(of({ results: [{ _id: 'tl1', name: 'Lead Ops', result: 'refused', reason: 'x' }], counts: { refused: 1 } } as any));
+      component.togglePick(component.users.find(u => u._id === 'tl1'));
+      component.deleteSelected();
+      expect(confirmSpy.confirm).not.toHaveBeenCalled();
+      expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('None of the selected people can be removed.');
+    });
+
+    it('loads the staff flags when the sidebar event arrives after the page opened (race fix)', async () => {
+      const replies: { [ev: string]: Subject<any[]> } = {};
+      await setup(adminActor);
+      const events = TestBed.inject(EventService) as any;
+      adminSpy.getAllUsers.and.callFake((_inactive = false, ev = '') => (replies[ev] = new Subject<any[]>()));
+
+      // Page (re)opens with no event yet, then the event arrives before the first list does.
+      events.activeEvent.next(null);
+      component.loadUsers();
+      events.activeEvent.next({ _id: 'e2', name: 'BiG 8.0' });
+
+      replies['e2'].next(JSON.parse(JSON.stringify(mockUsers)).map((u: any) => ({ ...u, onEvent: false })));
+      replies[''].next(JSON.parse(JSON.stringify(mockUsers)));   // the old, event-less reply arrives last
+      expect(component.showStaff).toBeTrue();
+      expect(component.staffEvent?.name).toBe('BiG 8.0');
+    });
+
+    it('has no staff controls for a TL', async () => {
+      await setup({ _id: 'tl1', name: 'Lead Ops', role: 'TL', departments: [{ department: ops }] });
+      expect(adminSpy.getAllUsers.calls.mostRecent().args[1]).toBe('');
+      expect(component.showStaff).toBeFalse();
     });
   });
 });
