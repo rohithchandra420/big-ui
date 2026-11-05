@@ -1551,6 +1551,10 @@ select:focus {
 /* Sidebar: open SOS count in red (PH4b) */
 .nav-count.sos-nav-count { background: #dc2626; color: #fff; }
 
+/* ── Shared department keys (user form + department panel) ── */
+.key-tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 999px; background: #e8f1ec; color: var(--color-primary); font: 600 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; vertical-align: 1px; }
+.key-note { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-muted); }
+
 /* ── Users page: event staff list (STAFF_LIST_CONTEXT.md) ── */
 .staff-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; background: #e8f1ec; border-bottom: 1px solid var(--border-default); }
 .staff-bar-n { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px 4px 10px; border: 1px solid var(--color-primary); border-radius: 999px; background: #fff; color: var(--color-primary); font: 600 12px/1 inherit; cursor: pointer; }

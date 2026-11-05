@@ -313,9 +313,9 @@ describe('UserRegisteryComponent', () => {
       expect(component.panelMode).toBe('view');
     });
 
-    it('lists department access with real department names', () => {
+    it('lists access by key (department names kept for the tooltip)', () => {
       const rows = component.permissionRows(component.users.find(u => u._id === 'vol1'));
-      expect(rows).toEqual([{ dept: 'Operations', level: 'write' }]);
+      expect(rows).toEqual([{ key: 'operations', dept: 'Operations', level: 'write' }]);
     });
   });
 

@@ -92,7 +92,30 @@ export class DepartmentDetailComponent implements OnChanges {
       this.editedTls = [];
       this.editedVolunteers = [];
       if (!this.usersLoaded) this.loadAllUsers();
+      this.loadExistingKeys();
     }
+  }
+
+  // ── Shared department keys (2026-11-06) ──
+  /** Every department's name + key, for the Create form's key suggestions. */
+  private existingDepts: { name: string; key: string }[] = [];
+  existingKeys: string[] = [];
+
+  private loadExistingKeys() {
+    this.adminService.getDepartments().subscribe({
+      next: (depts) => {
+        this.existingDepts = depts.map(d => ({ name: d.name, key: this.authService.deptKeyOf(d) }));
+        this.existingKeys = [...new Set(this.existingDepts.map(d => d.key).filter(Boolean))].sort();
+      },
+      error: () => { this.existingDepts = []; this.existingKeys = []; }
+    });
+  }
+
+  /** "Music Stage A" when the typed key is already used — the new department gets the same access. */
+  get sharedWith(): string {
+    const key = (this.editForm.get('key')?.value || '').trim().toLowerCase();
+    if (!key || this.mode !== 'create') return '';
+    return this.existingDepts.filter(d => d.key === key).map(d => d.name).join(', ');
   }
 
   // Fetch full department detail (TLs + volunteers with their dept info)

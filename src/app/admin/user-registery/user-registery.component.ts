@@ -238,21 +238,23 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
   /** "box-office:write" → { dept: 'Box Office', level: 'write' }, for the
    *  panel's Department Access list. Uses the real department name where we
    *  have it, else prettifies the key. */
-  permissionRows(u: any): { dept: string; level: string }[] {
+  permissionRows(u: any): { key: string; dept: string; level: string }[] {
     return (u?.permissions || []).map((perm: string) => {
       const [key, level] = perm.split(':');
       const home = u?.departments?.[0]?.department;
-      const known = this.departments.find(d => this.authService.deptKeyOf(d) === key)
-        || (home && typeof home !== 'string' && this.authService.deptKeyOf(home) === key ? home : null);
-      const dept = known?.name || key.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      return { dept, level };
+      // Shared keys: every department with this key ("Music Stage A, Music Stage B").
+      const names = this.departments.filter(d => this.authService.deptKeyOf(d) === key).map(d => d.name);
+      if (!names.length && home && typeof home !== 'string' && this.authService.deptKeyOf(home) === key) names.push(home.name);
+      const dept = names.length ? names.sort((a, b) => a.localeCompare(b)).join(', ')
+        : key.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      return { key, dept, level };   // the panel shows the key; dept names are its tooltip
     });
   }
 
   /** permissionRows() builds fresh objects every change-detection pass —
    *  without this, *ngFor would see "new" items each time and rebuild the rows. */
-  trackPerm(_: number, p: { dept: string; level: string }): string {
-    return p.dept + ':' + p.level;
+  trackPerm(_: number, p: { key: string; level: string }): string {
+    return p.key + ':' + p.level;
   }
 
   canEditUser(u: any): boolean {

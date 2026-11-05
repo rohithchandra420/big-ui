@@ -306,7 +306,7 @@
         <div class="section-lbl">Department Access</div>
         <div class="detail-list" *ngIf="permissionRows(activeUser).length; else noPerms">
           <div class="detail-row" *ngFor="let p of permissionRows(activeUser); trackBy: trackPerm">
-            <span class="detail-l">{{ p.dept }}</span>
+            <span class="detail-l"><span class="key-tag" [title]="p.dept">{{ p.key }}</span></span>
             <span class="detail-v">
               <span class="access-pill" [ngClass]="'lvl-' + p.level">{{ p.level | titlecase }}</span>
             </span>

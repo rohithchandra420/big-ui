@@ -13,6 +13,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.45.0] - 2026-11-06
+
+### Changed
+- **Access is given by department key.** Several departments can now share a key — e.g. *Music Stage A* and *Music Stage B* both with key `music` — and get the same access.
+  - **User form**: one access row per key (just the key — hover it for the departments that use it), with None / Read / Write / Manage. A grant on a key covers every department with that key, including ones added later.
+  - **Create Department**: the key field suggests the keys already in use; picking one shows "Shared with: … — same access". Reusing a key is no longer refused.
+  - **Users side panel**: access rows show the key (hover for its departments).
+  - A Team Lead's automatic Manage applies to their department's key, so it covers every department sharing it. Attendance in My Department stays per department.
+
+---
+
 ## [1.44.0] - 2026-11-07
 
 ### Changed
