@@ -148,7 +148,12 @@
             "assets": [
               "projects/public/src/favicon.ico",
               "projects/public/src/assets",
-              "projects/public/src/manifest.webmanifest"
+              "projects/public/src/manifest.webmanifest",
+              {
+                "glob": "leaflet.css",
+                "input": "node_modules/leaflet/dist/",
+                "output": "./assets/leaflet/"
+              }
             ],
             "styles": [
               "projects/public/src/styles.css"

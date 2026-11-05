@@ -29,6 +29,32 @@
 .pp-actions { display: flex; justify-content: flex-end; }
 .pp-actions .btn-cta { padding: 8px 22px; font-size: 13px; }
 
+/* PH4a: Emergency + Help tiles */
+.pp-sec { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid #ecece8; }
+.pp-sec-hd { display: flex; gap: 10px; align-items: flex-start; }
+.pp-sec-hd b { display: block; font-size: 14px; color: #1a1a1a; }
+.pp-sec-hd small { font-size: 12px; color: #666; }
+.pp-sec-ic { color: var(--color-primary); flex-shrink: 0; }
+.pp-sec-ic.red { color: #dc2626; }
+.pp-row-edit { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pp-in { flex: 1 1 160px; min-width: 0; font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #1a1a1a; box-sizing: border-box; }
+textarea.pp-in { width: 100%; resize: vertical; }
+.pp-phone { flex: 0 1 170px; }
+.pp-main { font-size: 11px; font-weight: 700; color: #fff; background: #dc2626; border-radius: 999px; padding: 3px 9px; }
+.pp-mini { font: inherit; font-size: 11px; font-weight: 600; border: 1px solid #ddd; background: #fff; color: #444; border-radius: 999px; padding: 3px 9px; cursor: pointer; }
+.pp-x { border: 0; background: transparent; color: #888; cursor: pointer; display: grid; place-items: center; padding: 4px; }
+.pp-add { align-self: flex-start; display: inline-flex; gap: 4px; align-items: center; font: inherit; font-size: 13px; font-weight: 600; color: var(--color-primary); background: none; border: 1px dashed #c8c8c2; border-radius: 10px; padding: 6px 12px; cursor: pointer; }
+.pp-add mat-icon, .pp-x mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.pp-tile { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid #ecece8; border-radius: 12px; background: #fafaf8; }
+.pp-icons { display: flex; flex-wrap: wrap; gap: 6px; }
+.pp-icons button { width: 34px; height: 34px; border-radius: 10px; border: 1px solid #ddd; background: #fff; color: #555; display: grid; place-items: center; cursor: pointer; }
+.pp-icons button.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.pp-icons mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.pp-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pp-icon-pick { width: 84px; flex: 0 0 84px; }
+.pp-opt-ic { font-size: 20px; width: 20px; height: 20px; vertical-align: middle; }
+.pp-page { display: flex; flex-direction: column; gap: 16px; }
+
 @media (max-width: 600px) {
   .pp-status { flex-wrap: wrap; }
   .pp-actions .btn-cta { width: 100%; }

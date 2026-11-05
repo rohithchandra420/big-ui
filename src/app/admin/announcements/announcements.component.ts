@@ -8,6 +8,8 @@ import { AuthService } from '../../core/auth.service';
 
 export const TITLE_MAX = 60;
 export const MESSAGE_MAX = 240;
+/** Types that may also go on the public page (same list as the server). */
+export const PUBLIC_TYPES: AnnouncementType[] = ['general', 'urgent', 'schedule', 'weather'];
 
 export interface TypeOption {
   value: AnnouncementType;
@@ -65,7 +67,15 @@ export class AnnouncementsComponent implements OnInit {
   message = '';
   roles = new Set<string>();
   departments = new Set<string>();
+  /** Also post it on the public festival page (PH3). */
+  publicPost = false;
   sending = false;
+  removingId: string | null = null;
+  /** PH5: also alert participants' phones — none / all / phones that starred one session. */
+  publicAlert: 'none' | 'all' | 'session' = 'none';
+  publicSession = '';
+  /** The public event's sessions, for the picker (stored list). */
+  publicSessions: { id: string; label: string }[] = [];
 
   /** Stored list (stable identities for *ngFor). */
   departmentOptions: { _id: string; name: string }[] = [];
@@ -161,6 +171,39 @@ export class AnnouncementsComponent implements OnInit {
     this.departments = this.allDepartmentsSelected ? new Set() : new Set(this.departmentOptions.map(d => d._id));
   }
 
+  isPublicType(type: AnnouncementType): boolean {
+    return PUBLIC_TYPES.includes(type);
+  }
+
+  /** Task / Reminder can't go public: picking the public page moves them to General. */
+  setPublic(on: boolean): void {
+    this.publicPost = on;
+    if (on && !this.isPublicType(this.type)) this.type = 'general';
+    if (on && !this.publicSessions.length) this.loadPublicSessions();
+  }
+
+  /** The public event's sessions (from the public page's own list). */
+  private loadPublicSessions(): void {
+    this.push.publicSessions().then(list => {
+      this.publicSessions = list.map(s => ({
+        id: s.id,
+        label: `${s.title} · ${new Date(s.start).toLocaleString('en-IN', { weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' })} · ${s.venue}`
+      }));
+    }).catch(() => this.publicSessions = []);
+  }
+
+  trackByOptId(_: number, o: { id: string }): string { return o.id; }
+
+  /** A "phones that starred a session" alert needs the session. */
+  get publicAlertOk(): boolean {
+    return !this.publicPost || this.publicAlert !== 'session' || !!this.publicSession;
+  }
+
+  setType(type: AnnouncementType): void {
+    if (this.publicPost && !this.isPublicType(type)) return;
+    this.type = type;
+  }
+
   typeIcon(type: AnnouncementType): string {
     return this.typeOptions.find(t => t.value === type)?.icon ?? 'campaign';
   }
@@ -169,13 +212,17 @@ export class AnnouncementsComponent implements OnInit {
     return this.typeOptions.find(t => t.value === this.type) ?? this.typeOptions[0];
   }
 
-  get hasAudience(): boolean {
+  get hasStaffAudience(): boolean {
     return this.roles.size > 0 || this.departments.size > 0;
+  }
+
+  get hasAudience(): boolean {
+    return this.hasStaffAudience || this.publicPost;
   }
 
   get canSend(): boolean {
     const t = this.title.trim(), m = this.message.trim();
-    return !this.sending && !!t && !!m && t.length <= TITLE_MAX && m.length <= MESSAGE_MAX && this.hasAudience;
+    return !this.sending && !!t && !!m && t.length <= TITLE_MAX && m.length <= MESSAGE_MAX && this.hasAudience && this.publicAlertOk;
   }
 
   /** Roles in the fixed (server) order. */
@@ -200,13 +247,18 @@ export class AnnouncementsComponent implements OnInit {
   }
 
   get audiencePreview(): string {
-    if (!this.hasAudience) return 'Pick at least one role or department';
+    if (!this.hasAudience) return 'Pick at least one role, department or the public page';
+    if (!this.hasStaffAudience) return 'the public page only (no staff)';
     const names = this.departmentOptions.filter(d => this.departments.has(d._id)).map(d => d.name);
-    return this.audienceText(this.orderedRoles(this.roles), names);
+    const staff = this.audienceText(this.orderedRoles(this.roles), names);
+    return this.publicPost ? `${staff} and the public page` : staff;
   }
 
   historyAudience(a: Announcement): string {
-    return this.audienceText(a.roles || [], (a.departments || []).map(d => d.name));
+    const staffless = !(a.roles || []).length && !(a.departments || []).length;
+    if (staffless) return a.public ? 'the public page only' : 'nobody';
+    const staff = this.audienceText(a.roles || [], (a.departments || []).map(d => d.name));
+    return a.public ? `${staff} and the public page` : staff;
   }
 
   trackById(_: number, item: { _id: string }): string {
@@ -224,11 +276,18 @@ export class AnnouncementsComponent implements OnInit {
   async send(): Promise<void> {
     if (!this.canSend) return;
     const roles = this.orderedRoles(this.roles);
+    const label = `"${this.typeOption.prefix}${this.title.trim()}"`;
+    const parts: string[] = [];
+    if (this.hasStaffAudience) {
+      const names = this.departmentOptions.filter(d => this.departments.has(d._id)).map(d => d.name);
+      parts.push(`goes to ${this.audienceText(roles, names)} on every phone with BiG notifications on — that can't be recalled`);
+    }
+    if (this.publicPost) parts.push('appears on the public festival page, where anyone on the internet can read it (you can remove it from there later)');
     const ok = await firstValueFrom(this.confirm.confirm({
       title: this.type === 'urgent' ? 'Send an URGENT announcement?' : 'Send announcement?',
-      message: `"${this.typeOption.prefix}${this.title.trim()}" goes to ${this.audiencePreview} on every phone with BiG notifications on. It can't be recalled.`,
+      message: `${label} ${parts.join(', and ')}.`,
       confirmText: 'Send',
-      danger: this.type === 'urgent'
+      danger: this.type === 'urgent' || this.publicPost
     }));
     if (!ok) return;
 
@@ -236,7 +295,8 @@ export class AnnouncementsComponent implements OnInit {
     try {
       const sent = await this.push.sendAnnouncement({
         type: this.type, title: this.title.trim(), message: this.message.trim(),
-        roles, departments: [...this.departments]
+        roles, departments: [...this.departments], public: this.publicPost,
+        ...(this.publicPost ? { publicAlert: this.publicAlert, publicSession: this.publicAlert === 'session' ? this.publicSession : null } : {})
       });
       this.reportSent(sent);
       this.resetForm();
@@ -270,8 +330,35 @@ export class AnnouncementsComponent implements OnInit {
     }
   }
 
+  /** On the public page right now (public and not taken down). */
+  isLivePublic(a: Announcement): boolean {
+    return !!a.public && !a.publicRemovedAt;
+  }
+
+  async removeFromPublic(a: Announcement): Promise<void> {
+    const ok = await firstValueFrom(this.confirm.confirm({
+      title: 'Remove from the public page?',
+      message: `"${a.title}" disappears from the public festival page within seconds. It stays here in the history${(a.roles || []).length || (a.departments || []).length ? ' and on staff Billboards' : ''}.`,
+      confirmText: 'Remove',
+      danger: true
+    }));
+    if (!ok) return;
+    this.removingId = a._id;
+    try {
+      const updated = await this.push.unpublishAnnouncement(a._id);
+      this.history = this.history.map(h => h._id === updated._id ? updated : h);
+      this.applyFilters();
+      this.notifications.openSucessSnackBar('Removed from the public page');
+    } catch (err: any) {
+      this.notifications.openErrorSnackBar(this.errorText(err, 'Could not remove it from the public page'));
+    } finally {
+      this.removingId = null;
+    }
+  }
+
   /** Fills the form with a past announcement so it can be changed before sending. */
   copyToForm(a: Announcement): void {
+    this.publicPost = !!a.public;
     this.type = a.type || 'general';
     this.title = a.title;
     this.message = a.message;
@@ -287,9 +374,17 @@ export class AnnouncementsComponent implements OnInit {
     this.message = '';
     this.roles = new Set();
     this.departments = new Set();
+    this.publicPost = false;
+    this.publicAlert = 'none';
+    this.publicSession = '';
   }
 
   private reportSent(sent: Announcement): void {
+    const staffless = !(sent.roles || []).length && !(sent.departments || []).length;
+    if (staffless) {
+      this.notifications.openSucessSnackBar('Posted on the public page');
+      return;
+    }
     this.notifications.openSucessSnackBar(
       sent.delivered ? `Sent to ${sent.delivered} device${sent.delivered === 1 ? '' : 's'}` : 'Sent — but nobody in that audience has notifications on yet');
   }

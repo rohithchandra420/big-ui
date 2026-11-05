@@ -1,0 +1,46 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">SOS</div>
+    <div class="page-ph-sub">Help requests from the public festival page</div>
+  </div>
+  <span class="sos-count" *ngIf="open">{{ open }} open</span>
+</div>
+
+<div class="sos-page">
+  <div class="warn-banner" *ngIf="error">{{ error }}</div>
+  <p class="sos-hint">Anyone on the public page can send one, so treat it like a phone call: check before acting. Locations and phone numbers are deleted automatically 30 days after the event.</p>
+
+  <div class="sos-layout">
+    <div class="sos-map card" [class.empty]="!open && !selectedId">
+      <div #mapEl class="sos-map-el"></div>
+      <div class="sos-map-msg" *ngIf="!open && !selectedId">No open SOS. Open ones show here on the map.</div>
+    </div>
+
+    <div class="sos-list">
+      <p class="sos-empty" *ngIf="!loading && !items.length">No SOS for this event.</p>
+      <div class="card sos-item" *ngFor="let s of items; trackBy: trackById"
+           [class.open]="s.status === 'open'" [class.sel]="s._id === selectedId" (click)="select(s)">
+        <div class="sos-hd">
+          <span class="sos-badge" [class.open]="s.status === 'open'">
+            <mat-icon class="ms-fill">{{ s.status === 'open' ? 'sos' : 'check_circle' }}</mat-icon>{{ s.status === 'open' ? 'Open' : 'Handled' }}
+          </span>
+          <span class="sos-when">{{ s.createdAt | date:'d MMM, h:mm a' }} · {{ minutesAgo(s) < 1 ? 'just now' : minutesAgo(s) + ' min ago' }}</span>
+        </div>
+        <div class="sos-flag" *ngIf="s.outsideVenue"><mat-icon>wrong_location</mat-icon>Outside the venue</div>
+        <p class="sos-msg" *ngIf="s.message">"{{ s.message }}"</p>
+        <div class="sos-meta">
+          <span>Location accurate to {{ s.accuracy ? s.accuracy + ' m' : 'unknown' }}</span>
+          <a class="pill-btn" [href]="directions(s)" target="_blank" rel="noopener" (click)="$event.stopPropagation()"><mat-icon>directions</mat-icon>Directions</a>
+          <a class="pill-btn primary" *ngIf="s.phone" [href]="tel(s.phone)" (click)="$event.stopPropagation()"><mat-icon>call</mat-icon>Call {{ s.phone }}</a>
+        </div>
+        <div class="sos-handle" *ngIf="s.status === 'open'" (click)="$event.stopPropagation()">
+          <input type="text" maxlength="200" [(ngModel)]="notes[s._id]" placeholder="Note (optional), e.g. Medical team reached them" aria-label="Note">
+          <button type="button" class="btn-cta" [disabled]="handlingId === s._id" (click)="markHandled(s)">{{ handlingId === s._id ? 'Saving…' : 'Mark handled' }}</button>
+        </div>
+        <div class="sos-done" *ngIf="s.status === 'handled'">
+          Handled by {{ s.handledBy || 'someone' }}, {{ s.handledAt | date:'d MMM, h:mm a' }}<ng-container *ngIf="s.handledNote"> · {{ s.handledNote }}</ng-container>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

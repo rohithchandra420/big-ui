@@ -24,7 +24,8 @@ export class BillboardComponent implements OnInit, OnDestroy {
     reminder: { icon: 'notifications_active', label: 'Reminder' },
     task:     { icon: 'task_alt',             label: 'Task' },
     email:    { icon: 'mark_email_read',      label: 'Emails sent' },
-    meal:     { icon: 'restaurant',           label: 'Meals' }
+    meal:     { icon: 'restaurant',           label: 'Meals' },
+    sos:      { icon: 'sos',                  label: 'SOS' }
   };
   private readonly ROLE_LABELS: Record<string, string> = {
     DEV: 'Developers', DIR: 'Directors', ADMIN: 'Admins', TL: 'Team Leads', VOL: 'Volunteers'
@@ -127,6 +128,7 @@ export class BillboardComponent implements OnInit, OnDestroy {
   /** "Team Leads, Volunteers in Operations"; "Only you" for BiG's own private
    *  notes ("Emails sent", Hospitality's Remind-TL tasks — no roles or departments). */
   audience(n: BillboardNote): string {
+    if (n.type === 'sos') return 'The SOS team';
     if (n.type === 'email' || (!n.roles.length && !n.departments.length && n.type !== 'meal')) return 'Only you';
     const who = n.roles.length ? n.roles.map(r => this.ROLE_LABELS[r] ?? r).join(', ') : 'Everyone';
     return n.departments.length ? `${who} in ${n.departments.join(', ')}` : who;

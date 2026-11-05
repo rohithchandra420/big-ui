@@ -1517,3 +1517,24 @@ select:focus {
 .hy-search { flex: 1 1 240px; max-width: 420px; height: 40px; box-sizing: border-box; }
 .hy-bar app-select { width: 170px; }
 .hy-scroll { max-height: min(62vh, 560px); overflow-y: auto; }
+
+/* Announcements › "Public page" audience (public page PH3). Global because the
+   page's own stylesheet is already near its size limit. */
+.ann-public { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1.5px solid #d6d6d0; border-radius: 14px; background: #fff; cursor: pointer; color: #1a1a1a; }
+.ann-public:focus-within { box-shadow: 0 0 0 3px rgba(30, 70, 56, 0.15); }
+.ann-public.on { border-color: #e2467b; background: #fdf0f5; }
+.ann-public-ic { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: #f3f3ef; color: #4a5a51; flex-shrink: 0; }
+.ann-public.on .ann-public-ic { background: #e2467b; color: #fff; }
+.ann-public-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ann-public-txt b { font-size: 14px; color: #1a1a1a; }
+.ann-public-txt small { font-size: 12px; color: #555; }
+.ann-public-check { color: #b5b5ae; flex-shrink: 0; }
+.ann-public.on .ann-public-check { color: #e2467b; }
+.ann-type.ann-off { opacity: .4; cursor: not-allowed; }
+.ann-badge.ann-pub { background: #fdf0f5; color: #b0245a; }
+.ann-badge.ann-pub-off { background: #f0f0ee; color: #666; }
+
+.ann-session { display: block; margin-top: 8px; max-width: 520px; }
+
+/* Sidebar: open SOS count in red (PH4b) */
+.nav-count.sos-nav-count { background: #dc2626; color: #fff; }

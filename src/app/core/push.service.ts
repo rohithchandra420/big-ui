@@ -25,6 +25,11 @@ export interface AnnouncementInput {
   message: string;
   roles: string[];
   departments: string[];   // department ids (home department)
+  /** Also show it on the public festival page (PH3). */
+  public?: boolean;
+  /** PH5: also alert participants' phones. */
+  publicAlert?: 'none' | 'all' | 'session';
+  publicSession?: string | null;
 }
 
 export interface Announcement {
@@ -40,6 +45,14 @@ export interface Announcement {
   devices: number;
   delivered: number;
   createdAt: string;
+  /** On the public festival page (PH3) — and when / by whom it was taken down. */
+  public?: boolean;
+  publicEvent?: { _id: string; name: string } | null;
+  publicRemovedAt?: string | null;
+  publicRemovedBy?: { _id: string; name: string } | null;
+  publicAlert?: 'none' | 'all' | 'session';
+  publicSession?: { _id: string; workshop?: { title: string } } | null;
+  publicDelivered?: number;
 }
 
 /**
@@ -141,6 +154,17 @@ export class PushService {
 
   sendAnnouncement(body: AnnouncementInput) {
     return firstValueFrom(this.http.post<Announcement>(this.url + '/push/announcements', body));
+  }
+
+  /** PH5: the public event's sessions (from the public API), for "phones that starred a session". */
+  async publicSessions(): Promise<{ id: string; title: string; start: string; venue: string }[]> {
+    const r = await firstValueFrom(this.http.get<any>(this.url + '/public/sessions', { withCredentials: false }));
+    return r?.off ? [] : (r.sessions || []).filter((s: any) => s.state !== 'cancelled' && s.state !== 'ended');
+  }
+
+  /** "Remove from public page": takes a public post off the public page at once. */
+  unpublishAnnouncement(id: string) {
+    return firstValueFrom(this.http.post<Announcement>(this.url + `/push/announcements/${id}/unpublish`, {}));
   }
 
   /** "Send again": same content and audience, as a new announcement. */

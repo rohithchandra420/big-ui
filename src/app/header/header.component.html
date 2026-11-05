@@ -35,6 +35,16 @@
       </a>
 
       <a class="nav-item"
+         routerLink="/sos"
+         routerLinkActive="active"
+         (click)="onNavClick()"
+         *ngIf="canSeeSos">
+        <span class="nav-dot"></span>
+        SOS
+        <span class="nav-count sos-nav-count" *ngIf="openSos" [attr.aria-label]="openSos + ' open SOS'">{{ openSos }}</span>
+      </a>
+
+      <a class="nav-item"
          routerLink="/venue-map"
          routerLinkActive="active"
          (click)="onNavClick()"

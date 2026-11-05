@@ -24,6 +24,8 @@ import { EventDetailComponent } from "../admin/events/event-detail/event-detail.
 import { EmailReportComponent } from "../admin/email-report/email-report.component";
 import { AnnouncementsComponent } from "../admin/announcements/announcements.component";
 import { PublicPageComponent } from "../admin/public-page/public-page.component";
+import { SosComponent } from "../sos/sos.component";
+import { SosGuard } from "./sos.guard";
 import { UatResetComponent } from "../admin/uat-reset/uat-reset.component"; // UAT-RESET: remove before Production
 import { BillboardComponent } from "../billboard/billboard.component";
 import { VenueMapComponent } from "../venue-map/venue-map.component";
@@ -88,6 +90,7 @@ const appRoutes: Routes = [
     { path: 'dashboard', redirectTo: '',  pathMatch: 'full'},
     { path: 'profile', canActivate:[AuthGuard] ,component: ProfileComponent },
     { path: 'billboard', canActivate: [AuthGuard], component: BillboardComponent },
+    { path: 'sos', canActivate: [AuthGuard, SosGuard], component: SosComponent },
     { path: 'venue-map', canActivate: [AuthGuard], component: VenueMapComponent },
     // Workshops planner — everyone signed in (changes are checked per action, server-side too).
     { path: 'hospitality', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityTodayComponent },

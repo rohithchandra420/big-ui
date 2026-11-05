@@ -60,10 +60,102 @@
     <small class="pp-hint pp-err" *ngIf="!daysValid">Days: a whole number from 0 to {{ maxDays }}.</small>
     <small class="pp-hint">Before the festival it shows a countdown; after it, a thank-you. Outside these days the page says it's resting.</small>
 
+    <!-- PH4a: Emergency -->
+    <div class="pp-sec">
+      <div class="pp-sec-hd">
+        <mat-icon class="ms-fill pp-sec-ic red">sos</mat-icon>
+        <div><b>Emergency</b><small>Shown on the Emergency button. The first contact is the main line: "Call" and "Share my location" use it. 112 is always shown.</small></div>
+      </div>
+      <div class="pp-row-edit" *ngFor="let c of contacts; let i = index; trackBy: trackIndex">
+        <span class="pp-main" *ngIf="i === 0">Main</span>
+        <button type="button" class="pp-mini" *ngIf="i > 0" (click)="makeMain(i)" title="Make this the main line">Make main</button>
+        <input class="pp-in" type="text" maxlength="40" [(ngModel)]="c.label" placeholder="e.g. Festival emergency line" aria-label="Contact name">
+        <input class="pp-in pp-phone" type="tel" maxlength="20" [(ngModel)]="c.phone" placeholder="+91 98765 43210" aria-label="Phone">
+        <button type="button" class="pp-x" (click)="removeContact(i)" aria-label="Remove contact"><mat-icon>close</mat-icon></button>
+      </div>
+      <button type="button" class="pp-add" *ngIf="contacts.length < maxContacts" (click)="addContact()"><mat-icon>add</mat-icon>Add contact</button>
+      <div class="field">
+        <label for="pp-note">Note (optional)</label>
+        <input id="pp-note" type="text" maxlength="200" [(ngModel)]="note" placeholder="e.g. Stay where you are if you can. Our team will come to you.">
+      </div>
+    </div>
+
+    <!-- PH4b: SOS to staff -->
+    <div class="pp-sec">
+      <div class="pp-sec-hd">
+        <mat-icon class="ms-fill pp-sec-ic red">emergency_share</mat-icon>
+        <div><b>SOS to the festival team</b><small>Lets participants send their location to the team from the Emergency button. Alerts go to Directors, Admins, Developers and the departments below. Off = no SOS option on the public page.</small></div>
+      </div>
+      <div class="pp-row">
+        <div class="pp-seg" role="group" aria-label="SOS">
+          <button type="button" [class.on]="sosEnabled" [attr.aria-pressed]="sosEnabled" (click)="sosEnabled = true">On</button>
+          <button type="button" [class.on]="!sosEnabled" [attr.aria-pressed]="!sosEnabled" (click)="sosEnabled = false">Off</button>
+        </div>
+      </div>
+      <div class="pp-chips" *ngIf="departments.length">
+        <span class="pp-lbl">SOS alerts also go to</span>
+        <label class="toggle-chip" *ngFor="let d of departments; trackBy: trackEvent" [class.on]="sosDepartments.has(d._id)">
+          <input class="sr-only" type="checkbox" [checked]="sosDepartments.has(d._id)" (change)="toggleSosDept(d._id)">
+          <mat-icon aria-hidden="true">{{ sosDepartments.has(d._id) ? 'check' : 'add' }}</mat-icon>{{ d.name }}
+        </label>
+      </div>
+      <small class="pp-hint pp-err" *ngIf="sosEnabled && !sosDepartments.size">Only Directors, Admins and Developers will get SOS alerts. Pick e.g. Medical or Security too.</small>
+    </div>
+
+    <!-- PH4a: Help tiles -->
+    <div class="pp-sec">
+      <div class="pp-sec-hd">
+        <mat-icon class="ms-fill pp-sec-ic">support_agent</mat-icon>
+        <div><b>Help tiles</b><small>Up to {{ maxTiles }} tiles under "Need a hand?" on the public page (e.g. Helpdesk, Lost &amp; Found, FAQs).</small></div>
+      </div>
+      <div class="pp-tile" *ngFor="let t of tiles; let i = index; trackBy: trackIndex">
+        <div class="pp-icons" role="radiogroup" aria-label="Icon">
+          <button type="button" *ngFor="let ic of helpIcons; trackBy: trackIcon" [class.on]="t.icon === ic" (click)="t.icon = ic"
+                  [attr.aria-pressed]="t.icon === ic" [attr.aria-label]="ic"><mat-icon>{{ ic }}</mat-icon></button>
+        </div>
+        <div class="pp-row-edit">
+          <input class="pp-in" type="text" maxlength="30" [(ngModel)]="t.title" placeholder="Title, e.g. Lost & Found" aria-label="Tile title">
+          <button type="button" class="pp-x" (click)="removeTile(i)" aria-label="Remove tile"><mat-icon>close</mat-icon></button>
+        </div>
+        <textarea class="pp-in" rows="2" maxlength="300" [(ngModel)]="t.text" placeholder="Shown when tapped, e.g. At the Helpdesk near Gate 1, open 24 h" aria-label="Tile text"></textarea>
+      </div>
+      <button type="button" class="pp-add" *ngIf="tiles.length < maxTiles" (click)="addTile()"><mat-icon>add</mat-icon>Add help tile</button>
+    </div>
+
+    <!-- PH6: Through the years -->
+    <div class="pp-sec">
+      <div class="pp-sec-hd">
+        <mat-icon class="ms-fill pp-sec-ic">insights</mat-icon>
+        <div><b>Through the years</b><small>Up to 10 editions, each with up to 4 numbers (e.g. 2,000 participants). Shown on the public page with a switcher.</small></div>
+      </div>
+      <div class="pp-tile" *ngFor="let e of stats; let i = index; trackBy: trackIndex">
+        <div class="pp-row-edit">
+          <input class="pp-in" type="text" maxlength="30" [(ngModel)]="e.edition" placeholder="Edition, e.g. BiG 2026" aria-label="Edition">
+          <button type="button" class="pp-x" (click)="removeEdition(i)" aria-label="Remove edition"><mat-icon>close</mat-icon></button>
+        </div>
+        <div class="pp-row-edit" *ngFor="let it of e.items; let j = index; trackBy: trackIndex">
+          <app-select class="pp-icon-pick" [(ngModel)]="it.icon" aria-label="Icon">
+            <app-option *ngFor="let ic of statIcons; trackBy: trackIcon" [value]="ic"><mat-icon class="pp-opt-ic">{{ ic }}</mat-icon></app-option>
+          </app-select>
+          <input class="pp-in pp-phone" type="text" maxlength="12" [(ngModel)]="it.value" placeholder="2,000" aria-label="Number">
+          <input class="pp-in" type="text" maxlength="30" [(ngModel)]="it.label" placeholder="participants" aria-label="Label">
+          <button type="button" class="pp-x" (click)="removeStat(e, j)" aria-label="Remove number"><mat-icon>close</mat-icon></button>
+        </div>
+        <button type="button" class="pp-add" *ngIf="e.items.length < 4" (click)="addStat(e)"><mat-icon>add</mat-icon>Add number</button>
+      </div>
+      <button type="button" class="pp-add" *ngIf="stats.length < 10" (click)="addEdition()"><mat-icon>add</mat-icon>Add edition</button>
+    </div>
+
+    <small class="pp-hint pp-err" *ngIf="infoProblem">{{ infoProblem }}</small>
     <div class="warn-banner" *ngIf="saveError">{{ saveError }}</div>
 
     <div class="pp-actions">
       <button type="button" class="btn-cta" [disabled]="!canSave" (click)="save()">{{ saving ? 'Saving…' : 'Save' }}</button>
     </div>
+  </div>
+
+  <!-- PH6: Photos (saved straight away, separate from the Save button above) -->
+  <div class="card pp-card" *ngIf="!loading && !loadError && saved?.event">
+    <app-public-photos [eventId]="saved?.event?._id || null"></app-public-photos>
   </div>
 </div>

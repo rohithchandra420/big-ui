@@ -2,7 +2,17 @@ import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { Subscription, catchError, forkJoin, of } from 'rxjs';
 import { I18nService, TPipe, WordKey } from './core/i18n';
-import { Loaded, PublicApiService, PublicEvent, PublicSession, PublicSessionsAnswer } from './core/public-api.service';
+import { Loaded, PublicApiService, PublicEdition, PublicEvent, PublicHighlightsAnswer, PublicMapAnswer, PublicMapArea, PublicMapPin, PublicNews, PublicNewsAnswer, PublicPhoto, PublicSession, PublicSessionsAnswer } from './core/public-api.service';
+import { HighlightsComponent } from './views/highlights-view.component';
+import { MapViewComponent } from './views/map-view.component';
+import { FindWayComponent } from './ui/find-way.component';
+import { EmergencyComponent } from './ui/emergency.component';
+import { PlanViewComponent } from './views/plan-view.component';
+import { AlertsCardComponent } from './ui/alerts-card.component';
+import { PlanService } from './core/plan.service';
+import { AlertsService } from './core/alerts.service';
+import { NewsTickerComponent } from './ui/news-ticker.component';
+import { NewsViewComponent } from './views/news-view.component';
 import { countdown, dayLabel, dayStart, timeLabel } from './core/festival-time';
 import { HomeViewComponent } from './views/home-view.component';
 import { ScheduleViewComponent } from './views/schedule-view.component';
@@ -30,7 +40,8 @@ export const REFRESH_MS = 30000;
 @Component({
   selector: 'pub-root',
   standalone: true,
-  imports: [NgIf, NgFor, TPipe, HomeViewComponent, ScheduleViewComponent, SessionSheetComponent],
+  imports: [NgIf, NgFor, TPipe, HomeViewComponent, ScheduleViewComponent, SessionSheetComponent, NewsTickerComponent, NewsViewComponent,
+            MapViewComponent, FindWayComponent, EmergencyComponent, PlanViewComponent, AlertsCardComponent, HighlightsComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
@@ -40,6 +51,17 @@ export class AppComponent implements OnInit, OnDestroy {
 
   event: PublicEvent | null = null;
   sessions: PublicSession[] = [];
+  news: PublicNews[] = [];
+  pins: PublicMapPin[] = [];
+  areas: PublicMapArea[] = [];
+  private mapKey = '';
+  photos: PublicPhoto[] = [];
+  stats: PublicEdition[] = [];
+  private hlKey = '';
+  /** The place the Map tab opens on (from a shortcut / the Emergency sheet). */
+  mapFocus: string | null = null;
+  /** The staff help tile whose text is open. */
+  helpOpen: { icon: string; title: string; text: string } | null = null;
   /** The session whose details are open. */
   selected: PublicSession | null = null;
   off = false;
@@ -50,19 +72,28 @@ export class AppComponent implements OnInit, OnDestroy {
   now = Date.now();
 
   private sub?: Subscription;
+  private sub2?: Subscription;
   private timers: ReturnType<typeof setInterval>[] = [];
 
-  constructor(private api: PublicApiService, public i18n: I18nService) {}
+  /** PH5: the one-time alerts offer after the first star. */
+  offerAlerts = false;
+
+  constructor(private api: PublicApiService, public i18n: I18nService, private plan: PlanService, private alerts: AlertsService) {}
+
+  get planCount(): number { return this.plan.count; }
 
   ngOnInit(): void {
     this.view = this.viewFromHash();
     this.load();
+    this.alerts.init();
+    this.sub2 = this.alerts.offer$.subscribe(() => this.offerAlerts = true);
     this.timers.push(setInterval(() => { if (this.visible()) this.load(); }, REFRESH_MS));
     this.timers.push(setInterval(() => this.now = Date.now(), 5000));
   }
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+    this.sub2?.unsubscribe();
     this.timers.forEach(t => clearInterval(t));
   }
 
@@ -71,13 +102,34 @@ export class AppComponent implements OnInit, OnDestroy {
     // The schedule failing (with nothing saved) must not hide the whole page.
     const sessions$ = this.api.sessions().pipe(
       catchError(() => of<Loaded<PublicSessionsAnswer>>({ data: { off: false, sessions: this.sessions }, at: this.loadedAt || Date.now(), offline: true })));
-    this.sub = forkJoin([this.api.event(), sessions$]).subscribe({
-      next: ([ev, ss]) => {
+    // Same for the news (PH3).
+    const news$ = this.api.news().pipe(
+      catchError(() => of<Loaded<PublicNewsAnswer>>({ data: { off: false, news: this.news }, at: this.loadedAt || Date.now(), offline: true })));
+    // …and the map (PH4a).
+    const map$ = this.api.map().pipe(
+      catchError(() => of<Loaded<PublicMapAnswer>>({ data: { off: false, pins: this.pins, areas: this.areas }, at: this.loadedAt || Date.now(), offline: true })));
+    // …and the highlights (PH6).
+    const hl$ = this.api.highlights().pipe(
+      catchError(() => of<Loaded<PublicHighlightsAnswer>>({ data: { off: false, photos: this.photos, stats: this.stats }, at: this.loadedAt || Date.now(), offline: true })));
+    this.sub = forkJoin([this.api.event(), sessions$, news$, map$, hl$]).subscribe({
+      next: ([ev, ss, nw, mp, hl]) => {
         this.unreachable = false;
-        this.offline = ev.offline || ss.offline;
+        this.offline = ev.offline || ss.offline || nw.offline || mp.offline || hl.offline;
         // Offline: show the oldest saved time among the parts that came from the phone.
-        const saved = [ev, ss].filter(x => x.offline).map(x => x.at);
-        this.loadedAt = saved.length ? Math.min(...saved) : Math.max(ev.at, ss.at);
+        const saved = [ev, ss, nw, mp, hl].filter(x => x.offline).map(x => x.at);
+        this.loadedAt = saved.length ? Math.min(...saved) : Math.max(ev.at, ss.at, nw.at, mp.at, hl.at);
+        if ('photos' in hl.data && JSON.stringify(hl.data) !== this.hlKey) {
+          this.hlKey = JSON.stringify(hl.data);
+          this.photos = hl.data.photos;
+          this.stats = hl.data.stats;
+        }
+        this.news = 'news' in nw.data ? nw.data.news : [];
+        // Keep the same arrays when nothing changed, so the map isn't redrawn every 30 s.
+        if ('pins' in mp.data && JSON.stringify(mp.data) !== this.mapKey) {
+          this.mapKey = JSON.stringify(mp.data);
+          this.pins = mp.data.pins;
+          this.areas = mp.data.areas;
+        }
         this.now = Date.now();
         this.off = ev.data.off;
         this.event = ev.data.off ? null : ev.data as PublicEvent;
@@ -92,6 +144,17 @@ export class AppComponent implements OnInit, OnDestroy {
   openSession(s: PublicSession): void { this.selected = s; }
   closeSession(): void { this.selected = null; }
 
+  /** Open the Map tab, optionally on one place (PH4a). */
+  openMap(placeId: string | null): void {
+    this.go('map');
+    this.mapFocus = placeId;
+  }
+
+  openHelp(h: { icon: string; title: string; text: string }): void { this.helpOpen = h; }
+
+  get contacts() { return this.event?.emergency?.contacts || []; }
+  get help() { return this.event?.help || []; }
+
   /** Back on screen after a while (phone unlocked, tab switched back): refresh now. */
   @HostListener('document:visibilitychange')
   onVisible(): void {
@@ -105,6 +168,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   go(view: View): void {
+    this.mapFocus = null;   // a tab opens the plain map; openMap() sets a place after this
     location.hash = view === 'home' ? '' : view;
     this.view = view;
   }

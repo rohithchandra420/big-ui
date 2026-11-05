@@ -31,7 +31,8 @@ describe('AnnouncementsComponent', () => {
       listAnnouncements: jasmine.createSpy('listAnnouncements').and.resolveTo([past]),
       sendAnnouncement: jasmine.createSpy('sendAnnouncement').and.callFake((b: any) =>
         Promise.resolve({ ...past, _id: 'a2', ...b, departments: depts.filter(d => b.departments.includes(d._id)), delivered: 5 })),
-      resendAnnouncement: jasmine.createSpy('resendAnnouncement').and.resolveTo({ ...past, _id: 'a3', resentFrom: 'a1', delivered: 1 })
+      resendAnnouncement: jasmine.createSpy('resendAnnouncement').and.resolveTo({ ...past, _id: 'a3', resentFrom: 'a1', delivered: 1 }),
+      publicSessions: jasmine.createSpy('publicSessions').and.resolveTo([])
     };
     auth = { currentUser: { role: 'DIR' } };
     confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
@@ -174,7 +175,7 @@ describe('AnnouncementsComponent', () => {
   });
 
   it('describes the audience before sending', () => {
-    expect(component.audiencePreview).toBe('Pick at least one role or department');
+    expect(component.audiencePreview).toBe('Pick at least one role, department or the public page');
     component.toggleDepartment('d-bo', true);
     expect(component.audiencePreview).toBe('Everyone in Box Office');
     component.toggleRole('VOL', true); component.toggleRole('TL', true);
@@ -189,7 +190,7 @@ describe('AnnouncementsComponent', () => {
     component.send(); tick();
     expect(confirm.confirm).toHaveBeenCalled();
     expect(push.sendAnnouncement).toHaveBeenCalledWith({
-      type: 'schedule', title: 'Gates open', message: 'At 3 pm now', roles: ['TL', 'VOL'], departments: ['d-ops']
+      type: 'schedule', title: 'Gates open', message: 'At 3 pm now', roles: ['TL', 'VOL'], departments: ['d-ops'], public: false
     });
     expect(snack.openSucessSnackBar).toHaveBeenCalledWith('Sent to 5 devices');
     expect(component.type).toBe('general');
@@ -228,6 +229,78 @@ describe('AnnouncementsComponent', () => {
     expect(component.message).toBe('Earlier');
     expect([...component.roles]).toEqual(['VOL']);
     expect([...component.departments]).toEqual(['d-bo']);
+  });
+
+  describe('public page (PH3)', () => {
+    it('can be the only audience; Task / Reminder are not allowed then', () => {
+      component.title = 'Gates open'; component.message = 'At 2 pm';
+      component.type = 'task';
+      component.setPublic(true);
+      expect(component.type).toBe('general');
+      expect(component.canSend).toBeTrue();
+      expect(component.audiencePreview).toBe('the public page only (no staff)');
+      component.setType('reminder');
+      expect(component.type).toBe('general');
+      component.setType('weather');
+      expect(component.type).toBe('weather');
+    });
+
+    it('public + staff in one send', async () => {
+      component.title = 'Gates open'; component.message = 'At 2 pm';
+      component.toggleRole('VOL', true);
+      component.setPublic(true);
+      expect(component.audiencePreview).toBe('Volunteers and the public page');
+      await component.send();
+      expect(push.sendAnnouncement).toHaveBeenCalledWith(jasmine.objectContaining({ public: true, roles: ['VOL'] }));
+      expect(confirm.confirm.calls.mostRecent().args[0].message).toContain('anyone on the internet can read it');
+      expect(component.publicPost).toBeFalse();   // form reset
+    });
+
+    it('a public-only send says "Posted on the public page"', async () => {
+      push.sendAnnouncement.and.resolveTo({ ...past, _id: 'a9', roles: [], departments: [], public: true, delivered: 0 });
+      component.title = 'Gates open'; component.message = 'At 2 pm';
+      component.setPublic(true);
+      await component.send();
+      expect(snack.openSucessSnackBar).toHaveBeenCalledWith('Posted on the public page');
+    });
+
+    it('history: Public badge and Remove from public page; Removed afterwards', async () => {
+      const pub = { ...past, _id: 'p1', public: true, publicRemovedAt: null };
+      component.history = [pub];
+      component.applyFilters();
+      fixture.detectChanges();
+      expect(el().textContent).toContain('Public');
+      expect(component.historyAudience(pub)).toBe('Volunteers in Box Office and the public page');
+
+      push.unpublishAnnouncement = jasmine.createSpy('unpublishAnnouncement').and.resolveTo(
+        { ...pub, publicRemovedAt: '2026-11-06T10:00:00Z', publicRemovedBy: { _id: 'u2', name: 'Asha' } });
+      await component.removeFromPublic(pub);
+      fixture.detectChanges();
+      expect(push.unpublishAnnouncement).toHaveBeenCalledWith('p1');
+      expect(component.isLivePublic(component.history[0])).toBeFalse();
+      expect(el().textContent).toContain('Removed');
+      expect(el().textContent).toContain('removed from the public page by Asha');
+    });
+
+    it('PH5: can also alert phones; "starred a session" needs the session', async () => {
+      push.publicSessions = jasmine.createSpy('publicSessions').and.resolveTo([{ id: 's1', title: 'Drumming', start: '2026-12-11T05:30:00Z', venue: 'Dome' }]);
+      component.title = 'Drumming moved'; component.message = 'To the Meadow';
+      component.setPublic(true);
+      await fixture.whenStable();
+      expect(component.publicSessions.length).toBe(1);
+      component.publicAlert = 'session';
+      expect(component.canSend).toBeFalse();
+      component.publicSession = 's1';
+      expect(component.canSend).toBeTrue();
+      await component.send();
+      expect(push.sendAnnouncement).toHaveBeenCalledWith(jasmine.objectContaining({ public: true, publicAlert: 'session', publicSession: 's1' }));
+      expect(component.publicAlert).toBe('none');
+    });
+
+    it('Copy to form keeps the public choice', () => {
+      component.copyToForm({ ...past, public: true, type: 'general' });
+      expect(component.publicPost).toBeTrue();
+    });
   });
 
   it('shows the type marker in the lock-screen preview', () => {

@@ -1,3 +1,4 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SimpleChange } from '@angular/core';
 import { HomeViewComponent } from './home-view.component';
@@ -32,7 +33,7 @@ describe('HomeViewComponent', () => {
     c.ngOnChanges();
     fixture.detectChanges();
   };
-  beforeEach(() => TestBed.configureTestingModule({ imports: [HomeViewComponent] }));
+  beforeEach(() => TestBed.configureTestingModule({ imports: [HomeViewComponent], providers: [provideHttpClient()] }));
 
   it('during: live now + the rest of today', () => {
     render(ev());
@@ -67,7 +68,7 @@ describe('ScheduleViewComponent', () => {
   let fixture: ComponentFixture<ScheduleViewComponent>;
   let c: ScheduleViewComponent;
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [ScheduleViewComponent] });
+    TestBed.configureTestingModule({ imports: [ScheduleViewComponent], providers: [provideHttpClient()] });
     fixture = TestBed.createComponent(ScheduleViewComponent);
     c = fixture.componentInstance;
     c.event = ev(); c.sessions = SESSIONS; c.now = NOW;

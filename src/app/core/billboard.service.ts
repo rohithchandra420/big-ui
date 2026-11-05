@@ -6,7 +6,7 @@ import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
 /** The announcement types plus BiG's own private "Emails sent" note. */
-export type BillboardNoteType = 'general' | 'urgent' | 'schedule' | 'weather' | 'reminder' | 'task' | 'email' | 'meal';
+export type BillboardNoteType = 'general' | 'urgent' | 'schedule' | 'weather' | 'reminder' | 'task' | 'email' | 'meal' | 'sos';
 
 export interface BillboardNote {
   _id: string;
