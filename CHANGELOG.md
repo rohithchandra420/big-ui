@@ -13,6 +13,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.36.0] - 2026-11-06
+
+### Added
+- **UAT Reset (temporary, testing only):** a Developer-only page under Admin to clear one event's test data, so the testing team can reuse the same wrist bands: wrist bands (and admission), workshop activity, Venue Map pins and areas, Hospitality activity, and staff attendance marked on the event's days, each as its own choice with counts shown first and the event name typed to confirm. It only appears when the server has it switched on, and it will be removed before Production.
+
+### Notes
+- 952/952 staff unit tests.
+
+---
+
 ## [1.35.0] - 2026-11-05
 
 ### Added
