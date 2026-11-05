@@ -33,10 +33,13 @@ describe('DepartmentDetailComponent', () => {
 
   beforeEach(async () => {
     adminServiceSpy = jasmine.createSpyObj('AdminService', [
-      'getDepartmentDetail', 'getAllUsers', 'updateDepartment', 'createDepartment'
+      'getDepartmentDetail', 'getAllUsers', 'updateDepartment', 'createDepartment', 'getDepartments'
     ]);
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
 
+    adminServiceSpy.getDepartments.and.returnValue(of([
+      { _id: 'd-m1', name: 'Music Stage A', key: 'music' }, { _id: 'd-x', name: 'Operations', key: 'operations' }
+    ] as any));
     adminServiceSpy.getDepartmentDetail.and.returnValue(of(mockDetail));
     adminServiceSpy.getAllUsers.and.returnValue(of(allUsers));
 
@@ -48,7 +51,10 @@ describe('DepartmentDetailComponent', () => {
       providers: [
         { provide: AdminService, useValue: adminServiceSpy },
         { provide: NotificationService, useValue: notificationSpy },
-        { provide: AuthService, useValue: { deptNameToKey: (n: string) => (n || '').toLowerCase().replace(/\s+/g, '-') } }
+        { provide: AuthService, useValue: {
+          deptNameToKey: (n: string) => (n || '').toLowerCase().replace(/\s+/g, '-'),
+          deptKeyOf: (d: any) => d?.key || (d?.name || '').toLowerCase().replace(/\s+/g, '-')
+        } }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -100,6 +106,16 @@ describe('DepartmentDetailComponent', () => {
       component.deptId = null;
       component.reset();
       fixture.detectChanges();
+    });
+
+    it('suggests existing keys and says when the key is shared (shared keys)', () => {
+      expect(component.existingKeys).toEqual(['music', 'operations']);
+      component.editForm.get('key')!.setValue('music');
+      expect(component.sharedWith).toBe('Music Stage A');
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Shared with: Music Stage A — same access');
+      component.editForm.get('key')!.setValue('brand-new');
+      expect(component.sharedWith).toBe('');
     });
 
     it('starts blank, with a Key field that follows the name until edited', () => {
