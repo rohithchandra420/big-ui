@@ -11,6 +11,7 @@ import { NotificationService } from '../../../core/notification.service';
 import { EventDetail } from '../../../models/event.model';
 import { ConfirmationService } from '../../../shared/confirm-dialog/confirmation.service';
 import { LocationService } from '../../../venue-map/location.service';
+import { AdminService } from '../../admin.service';
 
 const mockDetail: EventDetail = {
   _id: 'evt1', name: 'BiG 6.0', description: 'Main festival', status: 'draft',
@@ -50,6 +51,7 @@ describe('EventDetailComponent', () => {
         { provide: NotificationService, useValue: notificationSpy },
         { provide: ConfirmationService, useValue: confirmationServiceSpy },
         { provide: LocationService, useValue: locationSpy },
+        { provide: AdminService, useValue: { getEventStaff: () => of({ userIds: [], count: 4 }) } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'evt1' } } } },
       ],
       schemas: [NO_ERRORS_SCHEMA]

@@ -68,20 +68,20 @@
     </div>
   </div>
 
-  <div class="section-lbl">Department Access</div>
+  <div class="section-lbl">Access <span class="key-note">(by department key — departments sharing a key get the same access)</span></div>
   <div class="dept-access-table">
-    <div *ngFor="let dept of departments" class="dept-row">
-      <span class="dept-name">{{ dept.name }}</span>
+    <div *ngFor="let k of accessKeys; trackBy: trackKey" class="dept-row">
+      <span class="dept-name"><span class="key-tag" [title]="k.names">{{ k.key }}</span></span>
       <div class="chip-group">
         <button
           *ngFor="let level of permLevels"
           type="button"
           class="access-chip"
-          [class.chip-read]="level === 'read' && deptSelections[dept._id] === level"
-          [class.chip-write]="level === 'write' && deptSelections[dept._id] === level"
-          [class.chip-manage]="level === 'manage' && deptSelections[dept._id] === level"
-          [class.chip-inactive]="deptSelections[dept._id] !== level"
-          (click)="setDeptLevel(dept._id, level)">
+          [class.chip-read]="level === 'read' && keySelections[k.key] === level"
+          [class.chip-write]="level === 'write' && keySelections[k.key] === level"
+          [class.chip-manage]="level === 'manage' && keySelections[k.key] === level"
+          [class.chip-inactive]="keySelections[k.key] !== level"
+          (click)="setKeyLevel(k.key, level)">
           {{ level | titlecase }}
         </button>
       </div>

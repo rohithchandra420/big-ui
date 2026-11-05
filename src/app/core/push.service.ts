@@ -30,6 +30,8 @@ export interface AnnouncementInput {
   /** PH5: also alert participants' phones. */
   publicAlert?: 'none' | 'all' | 'session';
   publicSession?: string | null;
+  /** Staff list (R2): only this event's staff (DEV/DIR/ADMIN always kept); null = BiG-wide. */
+  staffEvent?: string | null;
 }
 
 export interface Announcement {
@@ -48,6 +50,7 @@ export interface Announcement {
   /** On the public festival page (PH3) — and when / by whom it was taken down. */
   public?: boolean;
   publicEvent?: { _id: string; name: string } | null;
+  staffEvent?: { _id: string; name: string } | null;
   publicRemovedAt?: string | null;
   publicRemovedBy?: { _id: string; name: string } | null;
   publicAlert?: 'none' | 'all' | 'session';

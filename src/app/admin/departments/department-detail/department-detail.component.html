@@ -60,6 +60,9 @@
         </div>
         <ng-template #noVols><p class="empty-text">No volunteers assigned</p></ng-template>
       </section>
+      <p class="empty-text" *ngIf="detail.notOnEvent">
+        {{ detail.notOnEvent }} more {{ detail.notOnEvent === 1 ? 'member is' : 'members are' }} in this department but not on {{ eventName || 'this event' }}'s staff list.
+      </p>
     </ng-container>
   </div>
 
@@ -83,8 +86,14 @@
 
       <div class="field" *ngIf="mode === 'create'">
         <label>Key *</label>
-        <input type="text" formControlName="key" placeholder="e.g. finance" (input)="onKeyInput()">
-        <span class="field-hint">Used for access. It can't be changed later; the name can.</span>
+        <input type="text" formControlName="key" placeholder="e.g. finance" list="dept-key-list" (input)="onKeyInput()">
+        <datalist id="dept-key-list">
+          <option *ngFor="let k of existingKeys" [value]="k"></option>
+        </datalist>
+        <span class="field-hint">Used for access. It can't be changed later; the name can. Pick an existing key to give this department the same access as another.</span>
+        <span class="field-hint key-shared" *ngIf="sharedWith">
+          <span class="key-tag">{{ editForm.get('key')?.value }}</span>Shared with: {{ sharedWith }} — same access
+        </span>
         <span class="field-error" *ngIf="editForm.get('key')?.touched && editForm.get('key')?.invalid">
           Lowercase letters, numbers and dashes only
         </span>

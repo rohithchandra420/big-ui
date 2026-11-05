@@ -157,6 +157,22 @@ describe('HospitalityDeskComponent', () => {
     discardPeriodicTasks();
   }));
 
+  it('someone not on the event\'s staff list gets a red "no meal" card (staff list R2), cleared by the next person', fakeAsync(() => {
+    start();
+    service.scan.and.returnValue(Promise.reject({ status: 403, error: { message: 'Ravi Off is not on the staff list for BiG 7.0', state: 'not_staff' } }));
+    component.check({ user: 'u9' });
+    flushMicrotasks();
+    fixture.detectChanges();
+    expect(gate.notFound).toHaveBeenCalled();
+    expect(notify.openErrorSnackBar).not.toHaveBeenCalled();
+    const card = fixture.nativeElement.querySelector('.hd-result.duplicate') as HTMLElement;
+    expect(card.textContent).toContain('Not on the staff list — no meal');
+    expect(card.textContent).toContain('Ravi Off is not on the staff list for BiG 7.0');
+    component.clear();
+    expect(component.notStaff).toBe('');
+    discardPeriodicTasks();
+  }));
+
   const guestOut = (left: { veg: number; nonVeg: number }) => ({
     result: 'guest' as const, guest: { _id: 'g1', name: 'Sound crew', note: 'Echo Rentals' },
     pass: { _id: 'p1', label: 'One Day · 12 Nov', vegPlates: 3, nonVegPlates: 2 },

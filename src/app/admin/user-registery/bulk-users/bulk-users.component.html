@@ -1,0 +1,79 @@
+<h2 mat-dialog-title>Bulk Add Users</h2>
+
+<mat-dialog-content>
+  <div class="bk-intro">
+    <p>One user per row, up to {{ maxRows }} per file. Required:
+      <span class="mono">name</span>, <span class="mono">email</span>, <span class="mono">password</span>,
+      <span class="mono">role</span> and <span class="mono">home_department</span> (for VOL and TL).
+      Optional: <span class="mono">food_preference</span>, <span class="mono">gender</span>,
+      <span class="mono">date_of_joining</span>. Each user gets read access to their home department.</p>
+    <button type="button" class="pill-btn" (click)="downloadTemplate()"><mat-icon>download</mat-icon>Download template</button>
+  </div>
+
+  <div class="bk-drop" *ngIf="phase !== 'done'" [class.on]="dragOver" [class.off]="busy"
+       (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)"
+       (click)="!busy && fileInput.click()">
+    <input #fileInput type="file" accept=".xlsx" hidden (change)="onFileInputChange($event)">
+    <mat-icon>upload_file</mat-icon>
+    <span *ngIf="!fileName">Drop an .xlsx file here, or tap to pick one</span>
+    <span *ngIf="fileName"><strong>{{ fileName }}</strong> — tap or drop to use another file</span>
+  </div>
+
+  <div class="field bk-sheet" *ngIf="sheetNames.length > 1 && phase !== 'done'">
+    <label>Sheet</label>
+    <app-select [ngModel]="selectedSheetName" (valueChange)="selectSheet($event)">
+      <app-option *ngFor="let n of sheetNames; trackBy: trackName" [value]="n">{{ n }}</app-option>
+    </app-select>
+  </div>
+
+  <div class="alert ad bk-gap" *ngIf="error">{{ error }}</div>
+  <div class="bk-wait" *ngIf="phase === 'checking'">Checking the rows…</div>
+  <div class="bk-wait" *ngIf="phase === 'adding'">Adding users… this can take a minute for a big file.</div>
+
+  <ng-container *ngIf="results.length && phase !== 'checking'">
+    <div class="bk-counts">
+      <span class="badge bg" *ngIf="counts.created">{{ counts.created }} added</span>
+      <span class="badge bb" *ngIf="counts.ready">{{ counts.ready }} ready</span>
+      <span class="badge ba" *ngIf="counts.duplicate">{{ counts.duplicate }} duplicate{{ counts.duplicate === 1 ? '' : 's' }} — skipped</span>
+      <span class="badge br" *ngIf="counts.problem">{{ counts.problem }} with problems — skipped</span>
+    </div>
+
+    <div class="bk-table">
+      <table>
+        <thead>
+          <tr><th>Row</th><th>Name</th><th>Email</th><th>Role</th><th>Department</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of results; trackBy: trackRow">
+            <td class="mono">{{ r.row }}</td>
+            <td>{{ r.name || '—' }}</td>
+            <td class="bk-email">{{ r.email || '—' }}</td>
+            <td>{{ r.role || '—' }}</td>
+            <td>{{ r.home_department || '—' }}</td>
+            <td>
+              <span class="badge" [ngClass]="statusBadge(r.status)">{{ statusLabel(r.status) }}</span>
+              <div class="bk-reason" *ngIf="r.reason">{{ r.reason }}</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <label class="bk-event" *ngIf="event && phase !== 'done'">
+    <input type="checkbox" [(ngModel)]="addToEvent" [disabled]="phase === 'adding'">
+    Also add them to <strong>{{ event.name }}</strong>'s staff list
+  </label>
+
+  <div class="alert aw bk-gap">
+    <strong>The file holds passwords.</strong> Delete it once the users are added, and don't share it on chat or email.
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button type="button" class="btn-ghost" *ngIf="phase === 'done'" (click)="downloadResult()">Download result</button>
+  <button type="button" class="btn-ghost" (click)="close()" [disabled]="phase === 'adding'">{{ phase === 'done' ? 'Done' : 'Cancel' }}</button>
+  <button type="button" class="btn-cta" *ngIf="phase !== 'done'" (click)="add()" [disabled]="phase !== 'preview' || !readyCount">
+    {{ phase === 'adding' ? 'Adding…' : 'Add ' + readyCount + ' user' + (readyCount === 1 ? '' : 's') }}
+  </button>
+</mat-dialog-actions>

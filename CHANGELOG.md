@@ -13,6 +13,62 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.45.0] - 2026-11-06
+
+### Changed
+- **Access is given by department key.** Several departments can now share a key — e.g. *Music Stage A* and *Music Stage B* both with key `music` — and get the same access.
+  - **User form**: one access row per key (just the key — hover it for the departments that use it), with None / Read / Write / Manage. A grant on a key covers every department with that key, including ones added later.
+  - **Create Department**: the key field suggests the keys already in use; picking one shows "Shared with: … — same access". Reusing a key is no longer refused.
+  - **Users side panel**: access rows show the key (hover for its departments).
+  - A Team Lead's automatic Manage applies to their department's key, so it covers every department sharing it. Attendance in My Department stays per department.
+
+---
+
+## [1.44.0] - 2026-11-07
+
+### Changed
+- **Counts and lists follow the event's staff list** (the event picked in the sidebar):
+  - **My Department** — marking, history, calendar and the All-departments reporting views show only the event's staff (the header says so); attendance can only be marked for them. Recorded attendance is unchanged. Switching the sidebar event reloads the page.
+  - **Admin › Departments** — cards and the department panel count the event's staff, with "Not on <event>" / "N more members … not on <event>'s staff list".
+  - **Hospitality** — expected plates, Today, the kitchen count, "not marked", bed counts and the Stay search cover only the event's staff; reminders, Notify TLs and the Mess Hall messages go only to them.
+  - **Serving desk** — someone not on the event's staff list gets a red **"Not on the staff list — no meal"** card (scan or search).
+  - **Announcements** — new **"Only <event> staff"** chip, on by default; the audience line and the Sent list say so. Off = everyone in the roles / departments, like before.
+
+---
+
+## [1.43.0] - 2026-11-07
+
+### Added
+- **Staff list per event.** Each event now has its own staff list: who works that event. People keep one account, one role and one department across all events. Developers, Directors and Admins are always on every event.
+  - **Admin › Users** (Developers, Directors, Admins), for the event picked in the sidebar: a filter (Everyone / On the event / Not on it), a column showing each person's status, check boxes with **Add to event** / **Remove from event** (select all takes the whole filtered list), and an Add / Remove button in the side panel. The page header shows how many people are on the event.
+  - The list opens on **On <event>**; Clear goes back to it.
+  - **+ New User** also puts the new person on the event picked in the sidebar.
+  - **Bulk Add**: "Also add them to <event>'s staff list", on by default.
+- **Bulk delete on Admin › Users** (Developers, Directors, Admins): tick Team Leads / Volunteers and press **Delete**. One confirm shows what will happen — deleted for good when they have no records, deactivated when they do (Developers / Directors can reactivate them), and who is skipped and why. Same rules as deleting one person.
+  - **Admin › Events** detail: how many people work the event, with a link to manage them on the Users page.
+
+### Changed
+- **Team Leads and Volunteers only see events they are on.** The sidebar event picker lists only those, and their event pages (Box Office, Venue Map, Workshops, Hospitality) open only for those events. Someone on no current event sees: "You're not on the staff list of any current event. Ask an Admin to add you." Their profile and the Billboard still work. ⚠️ Nobody is on any staff list yet — add people before Team Leads and Volunteers use the app.
+
+---
+
+## [1.42.0] - 2026-11-07
+
+### Added
+- **Admin › Users › Bulk Add** (Developers, Directors, Admins): add many staff users at once from an Excel file. **Download template** gives the columns (name, email, password, role, home department; optional food preference, gender, date of joining) plus a "How to fill" sheet. Drop the file (pick the sheet when there are several): every row is checked first and shown as **Ready**, **Problem** (with the reason) or **Duplicate** (the email is already a user, deactivated ones included, or appears earlier in the file). **Add N users** adds only the ready rows; the rest are skipped. The result can be downloaded (without passwords). Up to 500 rows per file. Each new user gets read access to their home department; the date of joining stays empty when not given. Only a Developer can add Developers. A reminder asks to delete the file afterwards, since it holds passwords.
+
+---
+
+## [1.41.0] - 2026-11-07
+
+### Added
+- **Venue Map: pins are locked.** Every time the map opens, pins can't be dragged, so scrolling on a phone no longer moves them by accident. A lock button next to Street / Satellite (for people who may edit) unlocks moving; a pin being edited in its form can still be moved. Areas still move only in their own Edit.
+
+### Notes
+- 978/978 staff unit tests.
+
+---
+
 ## [1.40.0] - 2026-11-07
 
 ### Added

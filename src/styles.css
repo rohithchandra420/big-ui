@@ -424,6 +424,11 @@ select:focus {
   transition: background 0.1s;
 }
 .btn-ghost:hover { background: var(--border-subtle); }
+.btn-ghost:has(mat-icon) { display: inline-flex; align-items: center; gap: 6px; }
+.btn-ghost mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+/* Several buttons on the right of a page header (e.g. Users: Bulk Add + New User). */
+.ph-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 
 /* ── Secondary button (wireframe tinted .btn.p pattern, BIG6_DESIGN_CONTEXT §13) ── */
 /* Tinted ghost button — coloured background tint with matching border/text, not
@@ -1536,5 +1541,40 @@ select:focus {
 
 .ann-session { display: block; margin-top: 8px; max-width: 520px; }
 
+/* Venue Map: pin lock (map-lock). Global: the map's own CSS is near its limit. */
+.vm-lock { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border: 1px solid #f4a623; border-radius: 50%; background: #fff1d6; cursor: pointer; flex-shrink: 0; transition: background .15s, border-color .15s; }
+.vm-lock mat-icon { font-size: 20px; width: 20px; height: 20px; color: #b45309; }
+.vm-lock.on { border-color: var(--color-primary); background: #e8f1ec; }
+.vm-lock.on mat-icon { color: var(--color-primary); }
+.vm-lock:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(30, 70, 56, 0.2); }
+
 /* Sidebar: open SOS count in red (PH4b) */
 .nav-count.sos-nav-count { background: #dc2626; color: #fff; }
+
+/* ── Shared department keys (user form + department panel) ── */
+.key-tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 999px; background: #e8f1ec; color: var(--color-primary); font: 600 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; vertical-align: 1px; }
+.key-note { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-muted); }
+
+/* ── Users page: event staff list (STAFF_LIST_CONTEXT.md) ── */
+.staff-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; background: #e8f1ec; border-bottom: 1px solid var(--border-default); }
+.staff-bar-n { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px 4px 10px; border: 1px solid var(--color-primary); border-radius: 999px; background: #fff; color: var(--color-primary); font: 600 12px/1 inherit; cursor: pointer; }
+.staff-bar-n mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.staff-bar-n:hover { background: #d6e8de; }
+.staff-bar .staff-bar-del { margin-left: auto; color: #b91c1c; border-color: #fecaca; }
+.staff-bar .staff-bar-del mat-icon { color: #b91c1c; }
+.tbl .pick-col { width: 36px; padding-right: 0; }
+
+/* Users page row check boxes (custom look: rounded, brand green, white tick / dash). */
+.pick-box { appearance: none; -webkit-appearance: none; position: relative; width: 18px; height: 18px; margin: 0; border: 1.5px solid #b8c2bc; border-radius: 5px; background: #fff; cursor: pointer; vertical-align: middle; transition: background .12s, border-color .12s, box-shadow .12s; }
+.pick-box:hover { border-color: var(--color-primary); }
+.pick-box:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(30, 70, 56, 0.2); }
+.pick-box:checked, .pick-box:indeterminate { background: var(--color-primary); border-color: var(--color-primary); }
+.pick-box:checked::after { content: ''; position: absolute; left: 5px; top: 1.5px; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.pick-box:indeterminate::after { content: ''; position: absolute; left: 3.5px; top: 7px; width: 8px; height: 2px; border-radius: 1px; background: #fff; }
+.pick-box:disabled { opacity: .4; cursor: default; }
+.staff-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 4px 0 14px; padding: 10px 12px; border: 1px solid var(--border-default); border-radius: 10px; background: var(--surface-input); }
+.staff-row .section-lbl { margin: 0 0 2px; }
+.staff-row-v { font-size: 13px; color: var(--text-primary); }
+.no-event-notice { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 16px; padding: 12px 14px; border: 1px solid #fde68a; border-radius: 10px; background: #fef3c7; color: #92400e; font-size: 13px; line-height: 1.5; }
+.no-event-notice mat-icon { flex-shrink: 0; color: #b45309; }
+.no-event-notice strong { display: block; color: #78350f; }

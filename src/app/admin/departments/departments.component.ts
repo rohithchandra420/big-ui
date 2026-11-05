@@ -1,16 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { AdminService, DeptSummary } from '../admin.service';
 import { NotificationService } from '../../core/notification.service';
 import { DepartmentDeleteDialogComponent } from './department-delete-dialog/department-delete-dialog.component';
+import { EventService } from '../../core/event.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-departments',
   templateUrl: './departments.component.html',
   styleUrls: ['./departments.component.css']
 })
-export class DepartmentsComponent implements OnInit {
+export class DepartmentsComponent implements OnInit, OnDestroy {
   departments: DeptSummary[] = [];
   loading = false;
   deletingId: string | null = null;
@@ -24,11 +26,17 @@ export class DepartmentsComponent implements OnInit {
     private notificationService: NotificationService,
     private router: Router,
     private route: ActivatedRoute,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private eventService: EventService
   ) {}
 
+  /** Staff list (R2): members are counted for the sidebar event. */
+  get staffEvent() { return this.eventService.currentActiveEvent; }
+  private eventSub?: Subscription;
+
   ngOnInit() {
-    this.loadDepartments();
+    // Loads now and again whenever the sidebar event changes.
+    this.eventSub = this.eventService.activeEvent.subscribe(() => this.loadDepartments());
     // /admin/departments/:id opens the list with that department's panel open.
     this.route.paramMap.subscribe(p => {
       const id = p.get('id');
@@ -36,9 +44,13 @@ export class DepartmentsComponent implements OnInit {
     });
   }
 
+  ngOnDestroy() {
+    this.eventSub?.unsubscribe();
+  }
+
   loadDepartments() {
     this.loading = true;
-    this.adminService.getDepartmentsSummary().subscribe({
+    this.adminService.getDepartmentsSummary(this.staffEvent?._id || '').subscribe({
       next: (depts) => { this.departments = depts; this.loading = false; },
       error: () => { this.notificationService.openErrorSnackBar('Error loading departments'); this.loading = false; }
     });

@@ -1,8 +1,8 @@
 <div class="page-ph">
   <div>
     <div class="page-ph-title">My Department</div>
-    <div class="page-ph-sub" *ngIf="deptInfo && !isAllView">{{ deptInfo.name }}</div>
-    <div class="page-ph-sub" *ngIf="isAllView">All departments — reporting view</div>
+    <div class="page-ph-sub" *ngIf="deptInfo && !isAllView">{{ deptInfo.name }}<ng-container *ngIf="staffEvent"> · {{ staffEvent.name }} staff</ng-container></div>
+    <div class="page-ph-sub" *ngIf="isAllView">All departments — reporting view<ng-container *ngIf="staffEvent"> · {{ staffEvent.name }} staff</ng-container></div>
   </div>
 </div>
 

@@ -74,8 +74,8 @@ describe('UserFormComponent', () => {
     }));
 
     it('defaults General to read access', () => {
-      expect(component.deptSelections['d-gen']).toBe('read');
-      expect(component.deptSelections['d-box']).toBe('none');
+      expect(component.keySelections['general']).toBe('read');
+      expect(component.keySelections['box-office']).toBe('none');
     });
 
     it('is invalid until the passwords match', () => {
@@ -93,15 +93,25 @@ describe('UserFormComponent', () => {
       adminSpy.createUser.and.returnValue(of(created));
       const savedSpy = spyOn(component.saved, 'emit');
       fillCreateForm();
-      component.setDeptLevel('d-box', 'manage');
+      component.setKeyLevel('box-office', 'manage');
 
       component.submit();
 
       const payload = adminSpy.createUser.calls.mostRecent().args[0];
       expect(payload.departmentIds).toEqual(['d-box']);
-      expect(payload.permissions).toEqual(['general:read', 'box-office:manage']);
+      expect(payload.permissions).toEqual(jasmine.arrayWithExactContents(['general:read', 'box-office:manage']));
       expect(payload.foodPreference).toBe('veg');   // Veg unless changed
       expect(savedSpy).toHaveBeenCalledWith(created);
+    });
+
+    it('puts the new user on the sidebar event when one is given (staff list)', () => {
+      adminSpy.createUser.and.returnValue(of({ _id: 'new3', name: 'X' }));
+      fillCreateForm();
+      component.submit();
+      expect(adminSpy.createUser.calls.mostRecent().args[0].eventId).toBeUndefined();
+      component.eventId = 'e1';
+      component.submit();
+      expect(adminSpy.createUser.calls.mostRecent().args[0].eventId).toBe('e1');
     });
 
     it('sends Non-veg when picked', () => {
@@ -112,9 +122,24 @@ describe('UserFormComponent', () => {
       expect(adminSpy.createUser.calls.mostRecent().args[0].foodPreference).toBe('non-veg');
     });
 
+    it('shows one access row per key; departments sharing a key are one row (shared keys)', () => {
+      const music1 = { _id: 'd-m1', name: 'Music Stage B', key: 'music' };
+      const music2 = { _id: 'd-m2', name: 'Music Stage A', key: 'music' };
+      component.departments = [general, box, music1, music2];
+      component.ngOnChanges({ departments: { previousValue: [], currentValue: component.departments, firstChange: false, isFirstChange: () => false } } as any);
+      expect(component.accessKeys).toEqual([
+        { key: 'box-office', names: 'Box Office' },
+        { key: 'general', names: 'General' },
+        { key: 'music', names: 'Music Stage A, Music Stage B' }
+      ]);
+      expect(component.keySelections['general']).toBe('read');   // kept
+      component.setKeyLevel('music', 'write');
+      expect(component.buildPermissions()).toEqual(jasmine.arrayWithExactContents(['general:read', 'music:write']));
+    });
+
     it('clicking the active chip level clears it', () => {
-      component.setDeptLevel('d-gen', 'read');
-      expect(component.deptSelections['d-gen']).toBe('none');
+      component.setKeyLevel('general', 'read');
+      expect(component.keySelections['general']).toBe('none');
     });
 
     it('reports a failed create and does not emit', () => {
@@ -142,8 +167,8 @@ describe('UserFormComponent', () => {
       expect(component.form.controls.userName.value).toBe('Vol Box');
       expect(component.form.controls.homeDepartment.value).toBe('d-box');
       expect(component.form.controls.dateOfJoining.value).toBe('2026-03-15');
-      expect(component.deptSelections['d-box']).toBe('write');
-      expect(component.deptSelections['d-gen']).toBe('read');
+      expect(component.keySelections['box-office']).toBe('write');
+      expect(component.keySelections['general']).toBe('read');
     });
 
     it('does not require the password fields', () => {

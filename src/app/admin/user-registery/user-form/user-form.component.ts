@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { AbstractControl, FormControl, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 
 import { AdminService } from '../../admin.service';
@@ -28,7 +28,7 @@ const passwordsMatch = (group: AbstractControl): ValidationErrors | null => {
   templateUrl: './user-form.component.html',
   styleUrls: ['./user-form.component.css']
 })
-export class UserFormComponent implements OnInit {
+export class UserFormComponent implements OnInit, OnChanges {
 
   @Input() mode: UserFormMode = 'create';
   /** The user being edited (edit mode only). */
@@ -37,6 +37,8 @@ export class UserFormComponent implements OnInit {
   /** DEV/DIR/ADMIN: every department. TL: only their own. */
   @Input() departments: { _id: string; name: string; key?: string }[] = [];
   @Input() isTopLevel = false;
+  /** Staff list: a new user is also put on this event (the one picked in the sidebar). */
+  @Input() eventId = '';
 
   /** Emits the created/updated user as returned by the backend. */
   @Output() saved = new EventEmitter<any>();
@@ -44,7 +46,13 @@ export class UserFormComponent implements OnInit {
 
   readonly permLevels: PermLevel[] = ['read', 'write', 'manage'];
   readonly genders = ['Male', 'Female', 'Prefer not to say'];
-  deptSelections: { [deptId: string]: PermLevel } = {};
+  /**
+   * Shared department keys (2026-11-06): access is granted per department KEY,
+   * so departments sharing a key ("music": Music Stage A, Music Stage B) are
+   * one row with one level. Stored list (stable identities for *ngFor).
+   */
+  accessKeys: { key: string; names: string }[] = [];
+  keySelections: { [key: string]: PermLevel } = {};
   saving = false;
 
   form = new FormGroup({
@@ -92,8 +100,39 @@ export class UserFormComponent implements OnInit {
     return r.name;
   }
 
+  trackKey(_: number, k: { key: string }): string {
+    return k.key;
+  }
+
+  /** The department list can arrive after the form opens: rebuild the rows, keeping picks. */
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['departments'] && !changes['departments'].firstChange) {
+      const kept = { ...this.keySelections };
+      this.buildAccessKeys();
+      Object.keys(kept).forEach(k => { if (k in this.keySelections) this.keySelections[k] = kept[k]; });
+      if (this.isEdit && this.user) this.populateFromUser();
+      const general = this.departments.find(d => d.name.toLowerCase() === 'general');
+      const gKey = general ? this.authService.deptKeyOf(general) : '';
+      if (!this.isEdit && gKey && !(gKey in kept)) this.keySelections[gKey] = 'read';
+    }
+  }
+
+  /** One row per key, with the names of the departments that share it. */
+  private buildAccessKeys() {
+    const byKey = new Map<string, string[]>();
+    this.departments.forEach(d => {
+      const key = this.authService.deptKeyOf(d);
+      if (!key) return;
+      if (!byKey.has(key)) byKey.set(key, []);
+      byKey.get(key)!.push(d.name);
+    });
+    this.accessKeys = [...byKey].map(([key, names]) => ({ key, names: names.sort((a, b) => a.localeCompare(b)).join(', ') }))
+      .sort((a, b) => a.key.localeCompare(b.key));
+    this.accessKeys.forEach(k => { this.keySelections[k.key] = 'none'; });
+  }
+
   ngOnInit() {
-    this.departments.forEach(d => { this.deptSelections[d._id] = 'none'; });
+    this.buildAccessKeys();
 
     if (this.isEdit) {
       this.form.controls.password.disable();
@@ -101,7 +140,7 @@ export class UserFormComponent implements OnInit {
       this.populateFromUser();
     } else {
       const general = this.departments.find(d => d.name.toLowerCase() === 'general');
-      if (general) this.deptSelections[general._id] = 'read';
+      if (general) this.keySelections[this.authService.deptKeyOf(general)] = 'read';
     }
 
     if (!this.isTopLevel) {
@@ -127,28 +166,22 @@ export class UserFormComponent implements OnInit {
     });
 
     (u.permissions || []).forEach((perm: string) => {
-      const [module, action] = perm.split(':');
-      const dept = this.departments.find(d => this.authService.deptKeyOf(d) === module);
-      if (dept && this.permLevels.includes(action as PermLevel)) {
-        this.deptSelections[dept._id] = action as PermLevel;
+      const [key, action] = perm.split(':');
+      if (key in this.keySelections && this.permLevels.includes(action as PermLevel)) {
+        this.keySelections[key] = action as PermLevel;
       }
     });
   }
 
-  setDeptLevel(deptId: string, level: PermLevel) {
-    // Clicking the active level deselects the department
-    this.deptSelections[deptId] = this.deptSelections[deptId] === level ? 'none' : level;
+  setKeyLevel(key: string, level: PermLevel) {
+    // Clicking the active level clears the key
+    this.keySelections[key] = this.keySelections[key] === level ? 'none' : level;
   }
 
   buildPermissions(): string[] {
-    const permissions: string[] = [];
-    Object.entries(this.deptSelections).forEach(([deptId, level]) => {
-      if (level !== 'none') {
-        const dept = this.departments.find(d => d._id === deptId);
-        if (dept) permissions.push(`${this.authService.deptKeyOf(dept)}:${level}`);
-      }
-    });
-    return permissions;
+    return Object.entries(this.keySelections)
+      .filter(([, level]) => level !== 'none')
+      .map(([key, level]) => `${key}:${level}`);
   }
 
   submit() {
@@ -167,7 +200,8 @@ export class UserFormComponent implements OnInit {
       permissions: this.buildPermissions(),
       dateOfJoining: raw.dateOfJoining,
       foodPreference: raw.foodPreference,
-      ...(raw.gender ? { gender: raw.gender } : {})
+      ...(raw.gender ? { gender: raw.gender } : {}),
+      ...(this.eventId ? { eventId: this.eventId } : {})
     };
 
     this.saving = true;

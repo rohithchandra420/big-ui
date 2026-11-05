@@ -20,6 +20,9 @@ export type DeptPanelMode = 'view' | 'edit' | 'create';
 })
 export class DepartmentDetailComponent implements OnChanges {
   @Input() deptId: string | null = null;
+  /** Staff list (R2): members shown for this event (the sidebar's); others counted as notOnEvent. */
+  @Input() eventId = '';
+  @Input() eventName = '';
   /** Emitted when the panel should close. */
   @Output() closed = new EventEmitter<void>();
   /** Emitted after a create / save, so the list can refresh. */
@@ -69,7 +72,7 @@ export class DepartmentDetailComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['deptId']) this.reset();
+    if (changes['deptId'] || (changes['eventId'] && !changes['eventId'].firstChange && this.mode === 'view')) this.reset();
   }
 
   /** Start over for the current deptId: view an existing department, or a blank Create form. */
@@ -89,13 +92,36 @@ export class DepartmentDetailComponent implements OnChanges {
       this.editedTls = [];
       this.editedVolunteers = [];
       if (!this.usersLoaded) this.loadAllUsers();
+      this.loadExistingKeys();
     }
+  }
+
+  // ── Shared department keys (2026-11-06) ──
+  /** Every department's name + key, for the Create form's key suggestions. */
+  private existingDepts: { name: string; key: string }[] = [];
+  existingKeys: string[] = [];
+
+  private loadExistingKeys() {
+    this.adminService.getDepartments().subscribe({
+      next: (depts) => {
+        this.existingDepts = depts.map(d => ({ name: d.name, key: this.authService.deptKeyOf(d) }));
+        this.existingKeys = [...new Set(this.existingDepts.map(d => d.key).filter(Boolean))].sort();
+      },
+      error: () => { this.existingDepts = []; this.existingKeys = []; }
+    });
+  }
+
+  /** "Music Stage A" when the typed key is already used — the new department gets the same access. */
+  get sharedWith(): string {
+    const key = (this.editForm.get('key')?.value || '').trim().toLowerCase();
+    if (!key || this.mode !== 'create') return '';
+    return this.existingDepts.filter(d => d.key === key).map(d => d.name).join(', ');
   }
 
   // Fetch full department detail (TLs + volunteers with their dept info)
   loadDetail(id: string) {
     this.loading = true;
-    this.adminService.getDepartmentDetail(id).subscribe({
+    this.adminService.getDepartmentDetail(id, this.eventId).subscribe({
       next: (d) => { if (id === this.deptId) this.detail = d; this.loading = false; },
       error: () => { this.notificationService.openErrorSnackBar('Error loading department'); this.loading = false; }
     });
