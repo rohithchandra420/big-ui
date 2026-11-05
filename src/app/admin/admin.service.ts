@@ -51,6 +51,11 @@ export interface BulkUsersResponse {
   counts: { [status in BulkUserStatus]?: number };
 }
 
+export interface BulkDeleteResponse {
+  results: { _id: string; name: string; result: 'delete' | 'deactivate' | 'deleted' | 'deactivated' | 'refused'; reason?: string }[];
+  counts: { [result: string]: number };
+}
+
 export interface UserDeleteCheck {
   action: 'delete' | 'deactivate';
   hasHistory: boolean;
@@ -98,16 +103,38 @@ export class AdminService {
     }
 
     /** Bulk Add users (v1.42.0). dryRun only checks the rows (the preview). */
-    bulkUsers(rows: BulkUserRow[], dryRun: boolean) {
-        return this.http.post<BulkUsersResponse>(this.url + '/admin/users/bulk', { rows, dryRun });
+    bulkUsers(rows: BulkUserRow[], dryRun: boolean, eventId = '') {
+        // eventId: also put the new users on that event's staff list.
+        return this.http.post<BulkUsersResponse>(this.url + '/admin/users/bulk', { rows, dryRun, ...(eventId ? { event: eventId } : {}) });
     }
 
     /** includeInactive is only honoured server-side for DEV/DIR — it's how the
      *  Users page shows deactivated users to them. Every other caller wants
      *  live users only, so it defaults to false. */
-    getAllUsers(includeInactive = false) {
-        const query = includeInactive ? '?includeInactive=true' : '';
-        return this.http.get<any[]>(this.url + '/getAllUsers' + query);
+    getAllUsers(includeInactive = false, eventId = '') {
+        const params: string[] = [];
+        if (includeInactive) params.push('includeInactive=true');
+        // Staff list: DEV/DIR/ADMIN get `onEvent` per user for this event.
+        if (eventId) params.push('event=' + encodeURIComponent(eventId));
+        return this.http.get<any[]>(this.url + '/getAllUsers' + (params.length ? '?' + params.join('&') : ''));
+    }
+
+    /** Bulk delete (v1.43.0): deleted when no history, deactivated when there is; dryRun only reports. */
+    bulkDeleteUsers(userIds: string[], dryRun: boolean) {
+        return this.http.post<BulkDeleteResponse>(this.url + '/users/bulk-delete', { userIds, dryRun });
+    }
+
+    // ── Event staff list (STAFF_LIST_CONTEXT.md) ──
+    getEventStaff(eventId: string) {
+        return this.http.get<{ userIds: string[]; count: number }>(this.url + '/admin/events/' + eventId + '/staff');
+    }
+
+    addEventStaff(eventId: string, userIds: string[]) {
+        return this.http.post<{ added: number }>(this.url + '/admin/events/' + eventId + '/staff', { userIds });
+    }
+
+    removeEventStaff(eventId: string, userIds: string[]) {
+        return this.http.delete<{ removed: number }>(this.url + '/admin/events/' + eventId + '/staff', { body: { userIds } });
     }
 
     updateUser(updatedUser: any) {

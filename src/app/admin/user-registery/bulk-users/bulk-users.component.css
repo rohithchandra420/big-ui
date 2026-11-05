@@ -15,6 +15,9 @@
 .bk-gap { margin-top: 12px; margin-bottom: 0; }
 .bk-wait { margin-top: 12px; font-size: 13px; color: var(--text-secondary); }
 
+.bk-event { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--text-primary); cursor: pointer; }
+.bk-event input { width: 16px; height: 16px; accent-color: var(--color-primary); }
+
 .bk-counts { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 8px; }
 
 .bk-table { max-height: 46vh; overflow: auto; border: 1px solid var(--border-default); border-radius: 8px; }

@@ -30,6 +30,9 @@ export class EventService {
   // Dashboard, Bookings, Ticket Registry.
   activeEvent = new BehaviorSubject<EventItem | null>(null);
 
+  /** True once the event list has been loaded for the signed-in user. */
+  eventsLoaded = new BehaviorSubject<boolean>(false);
+
   // Guards against a startup race: currentUser$ is a BehaviorSubject seeded
   // with null, so subscribing here always replays that initial null first —
   // typically before AppComponent.ngOnInit() has even called autoLogin() to
@@ -66,6 +69,7 @@ export class EventService {
     this.http.get<EventItem[]>(this.url + '/admin/events').subscribe({
       next: (events) => {
         this.events.next(events);
+        this.eventsLoaded.next(true);
 
         const storedId = localStorage.getItem(ACTIVE_EVENT_KEY);
         const stored = storedId && events.find(e => e._id === storedId);
@@ -92,6 +96,7 @@ export class EventService {
     localStorage.removeItem(ACTIVE_EVENT_KEY);
     this.activeEvent.next(null);
     this.events.next([]);
+    this.eventsLoaded.next(false);
   }
 
   getEventDetail(id: string) {

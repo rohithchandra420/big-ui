@@ -6,6 +6,7 @@ import { NotificationService } from '../../../core/notification.service';
 import { EventDetail, EventStatus, PassType, PassTypeCategory } from '../../../models/event.model';
 import { ConfirmationService } from '../../../shared/confirm-dialog/confirmation.service';
 import { LocationService } from '../../../venue-map/location.service';
+import { AdminService } from '../../admin.service';
 
 @Component({
   selector: 'app-event-detail',
@@ -56,7 +57,8 @@ export class EventDetailComponent implements OnInit {
     private eventService: EventService,
     private notificationService: NotificationService,
     private confirmationService: ConfirmationService,
-    private locationService: LocationService
+    private locationService: LocationService,
+    private adminService: AdminService
   ) {}
 
   ngOnInit() {
@@ -67,7 +69,7 @@ export class EventDetailComponent implements OnInit {
   loadDetail(id: string) {
     this.loading = true;
     this.eventService.getEventDetail(id).subscribe({
-      next: (d) => { this.detail = d; this.loading = false; this.loadBoundaryStatus(d._id); },
+      next: (d) => { this.detail = d; this.loading = false; this.loadBoundaryStatus(d._id); this.loadStaffCount(d._id); },
       error: () => { this.notificationService.openErrorSnackBar('Error loading event'); this.loading = false; }
     });
   }
@@ -83,6 +85,24 @@ export class EventDetailComponent implements OnInit {
     } catch {
       this.hasBoundary = null;
     }
+  }
+
+  // ── Staff list (STAFF_LIST_CONTEXT.md): managed on the Users page ──
+  /** Everyone who works this event, incl. DEV/DIR/ADMIN; null = not known. */
+  staffCount: number | null = null;
+
+  private loadStaffCount(eventId: string) {
+    this.adminService.getEventStaff(eventId).subscribe({
+      next: (r) => this.staffCount = r.count,
+      error: () => this.staffCount = null
+    });
+  }
+
+  /** Users page, with this event picked, where people are added / removed. */
+  openStaff() {
+    if (!this.detail) return;
+    this.eventService.setActiveEvent(this.detail);
+    this.router.navigate(['/admin/user']);
   }
 
   /** Opens the Venue Map on this event, ready to draw (or show) the festival boundary. */

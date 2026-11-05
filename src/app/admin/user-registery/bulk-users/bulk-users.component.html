@@ -60,6 +60,11 @@
     </div>
   </ng-container>
 
+  <label class="bk-event" *ngIf="event && phase !== 'done'">
+    <input type="checkbox" [(ngModel)]="addToEvent" [disabled]="phase === 'adding'">
+    Also add them to <strong>{{ event.name }}</strong>'s staff list
+  </label>
+
   <div class="alert aw bk-gap">
     <strong>The file holds passwords.</strong> Delete it once the users are added, and don't share it on chat or email.
   </div>

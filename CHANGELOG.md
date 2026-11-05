@@ -13,6 +13,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.43.0] - 2026-11-07
+
+### Added
+- **Staff list per event.** Each event now has its own staff list: who works that event. People keep one account, one role and one department across all events. Developers, Directors and Admins are always on every event.
+  - **Admin › Users** (Developers, Directors, Admins), for the event picked in the sidebar: a filter (Everyone / On the event / Not on it), a column showing each person's status, check boxes with **Add to event** / **Remove from event** (select all takes the whole filtered list), and an Add / Remove button in the side panel. The page header shows how many people are on the event.
+  - The list opens on **On <event>**; Clear goes back to it.
+  - **+ New User** also puts the new person on the event picked in the sidebar.
+  - **Bulk Add**: "Also add them to <event>'s staff list", on by default.
+- **Bulk delete on Admin › Users** (Developers, Directors, Admins): tick Team Leads / Volunteers and press **Delete**. One confirm shows what will happen — deleted for good when they have no records, deactivated when they do (Developers / Directors can reactivate them), and who is skipped and why. Same rules as deleting one person.
+  - **Admin › Events** detail: how many people work the event, with a link to manage them on the Users page.
+
+### Changed
+- **Team Leads and Volunteers only see events they are on.** The sidebar event picker lists only those, and their event pages (Box Office, Venue Map, Workshops, Hospitality) open only for those events. Someone on no current event sees: "You're not on the staff list of any current event. Ask an Admin to add you." Their profile and the Billboard still work. ⚠️ Nobody is on any staff list yet — add people before Team Leads and Volunteers use the app.
+
+---
+
 ## [1.42.0] - 2026-11-07
 
 ### Added

@@ -7,6 +7,7 @@ import { of, throwError } from 'rxjs';
 import { BulkUsersComponent, cellText, headerKey, toBulkRows } from './bulk-users.component';
 import { AdminService, BulkUsersResponse } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
+import { EventService } from '../../../core/event.service';
 import { AppSelectComponent } from '../../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../../shared/app-select/app-option.component';
 
@@ -61,6 +62,7 @@ describe('BulkUsersComponent', () => {
       providers: [
         { provide: AdminService, useValue: admin },
         { provide: MatDialogRef, useValue: dialogRef },
+        { provide: EventService, useValue: { currentActiveEvent: { _id: 'ev1', name: 'BiG 7.0' } } },
         { provide: NotificationService, useValue: jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']) }
       ]
     }).compileComponents();
@@ -101,6 +103,7 @@ describe('BulkUsersComponent', () => {
     check([row(2), row(3)]);
     component.add();
     expect(admin.bulkUsers.calls.mostRecent().args[1]).toBeFalse();
+    expect(admin.bulkUsers.calls.mostRecent().args[2]).toBe('ev1');
     expect(component.phase).toBe('done');
     expect(component.added).toBe(1);
     component.close();
@@ -120,6 +123,14 @@ describe('BulkUsersComponent', () => {
     check([row(3)]);
     component.add();
     expect(admin.bulkUsers).toHaveBeenCalledTimes(1);
+  });
+
+  it('can skip adding them to the event', () => {
+    admin.bulkUsers.and.returnValues(of(preview), of({ results: [], counts: { created: 0 } }));
+    check([row(2)]);
+    component.addToEvent = false;
+    component.add();
+    expect(admin.bulkUsers.calls.mostRecent().args[2]).toBe('');
   });
 
   it('closes with false when nobody was added', () => {

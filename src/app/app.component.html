@@ -22,6 +22,13 @@
 
     <!-- Page content — padded only for authenticated pages -->
     <div [class.page-padded]="isAuthenticated">
+      <div class="no-event-notice" *ngIf="noEventNotice" role="status">
+        <mat-icon>event_busy</mat-icon>
+        <div>
+          <strong>You're not on the staff list of any current event.</strong>
+          Ask an Admin to add you. Your profile and the Billboard still work.
+        </div>
+      </div>
       <router-outlet></router-outlet>
     </div>
 

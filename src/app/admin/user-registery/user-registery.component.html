@@ -2,7 +2,7 @@
 <div class="page-ph">
   <div>
     <div class="page-ph-title">Users</div>
-    <div class="page-ph-sub">{{ activeUsers.length }} user{{ activeUsers.length === 1 ? '' : 's' }}</div>
+    <div class="page-ph-sub">{{ activeUsers.length }} user{{ activeUsers.length === 1 ? '' : 's' }}<ng-container *ngIf="showStaff"> · {{ staffCount }} on {{ staffEvent?.name }}</ng-container></div>
   </div>
   <div class="ph-actions" *ngIf="canCreateUsers">
     <button class="btn-ghost" (click)="openBulk()"><mat-icon>group_add</mat-icon>Bulk Add</button>
@@ -70,6 +70,12 @@
             <app-option *ngFor="let d of deptFilterOptions; trackBy: trackDeptOption" [value]="d._id">{{ d.name }}</app-option>
           </app-select>
 
+          <app-select class="filter-select" *ngIf="showStaff" [(ngModel)]="staffFilter" (ngModelChange)="onFilterChange()">
+            <app-option value="">Everyone</app-option>
+            <app-option value="on">On {{ staffEvent?.name }}</app-option>
+            <app-option value="off">Not on {{ staffEvent?.name }}</app-option>
+          </app-select>
+
           <app-select class="filter-select" *ngIf="canSeeDeactivated"
                       [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
             <app-option value="active">Active</app-option>
@@ -81,16 +87,33 @@
         </div>
       </div>
 
+      <!-- Staff list actions for the picked rows -->
+      <div class="staff-bar" *ngIf="isTopLevel && selectedIds.size">
+        <button type="button" class="staff-bar-n" (click)="clearPicks()" title="Untick everyone (including people outside this filter)">
+          {{ selectedIds.size }} selected<mat-icon>close</mat-icon></button>
+        <button type="button" class="pill-btn" *ngIf="showStaff" [disabled]="staffBusy" (click)="changeStaff(true)">
+          <mat-icon>person_add</mat-icon>Add to {{ staffEvent?.name }}</button>
+        <button type="button" class="pill-btn" *ngIf="showStaff" [disabled]="staffBusy" (click)="changeStaff(false)">
+          <mat-icon>person_remove</mat-icon>Remove from {{ staffEvent?.name }}</button>
+        <button type="button" class="pill-btn staff-bar-del" [disabled]="staffBusy" (click)="deleteSelected()">
+          <mat-icon>delete</mat-icon>Delete</button>
+      </div>
+
       <div class="tbl-scroll users-tbl-scroll">
         <table class="tbl">
           <thead>
             <tr>
+              <th class="pick-col" *ngIf="isTopLevel">
+                <input type="checkbox" class="pick-box" [checked]="allPicked" [indeterminate]="somePicked && !allPicked" (change)="togglePickAll()"
+                       [disabled]="!pickableFiltered.length" aria-label="Select everyone in this list">
+              </th>
               <th>Name</th>
               <th>Email</th>
               <th>Role</th>
               <th>Department</th>
               <th>Access</th>
               <th>Joined</th>
+              <th *ngIf="showStaff">{{ staffEvent?.name }}</th>
             </tr>
           </thead>
           <tbody>
@@ -98,6 +121,10 @@
                 [class.selected]="panelOpen && activeUser?._id === u._id"
                 [class.inactive-row]="!isActive(u)"
                 (click)="openUser(u)">
+              <td class="pick-col" *ngIf="isTopLevel" (click)="$event.stopPropagation()">
+                <input type="checkbox" class="pick-box" *ngIf="canPickForStaff(u)" [checked]="selectedIds.has(u._id)"
+                       (change)="togglePick(u)" [attr.aria-label]="'Select ' + u.name">
+              </td>
               <td>
                 <div class="name-cell">
                   <app-user-avatar [userId]="u._id" [name]="u.name" [version]="u.avatarVersion"
@@ -111,9 +138,12 @@
               <td>{{ homeDeptName(u) || '—' }}</td>
               <td>{{ getAccessLabel(u) }}</td>
               <td>{{ u.dateOfJoining ? (u.dateOfJoining | date:'mediumDate') : '—' }}</td>
+              <td *ngIf="showStaff">
+                <span class="badge" [ngClass]="u.onEvent ? 'bg' : 'bx'">{{ isAlwaysStaff(u) ? 'Always' : (u.onEvent ? 'On staff' : 'Not on') }}</span>
+              </td>
             </tr>
             <tr *ngIf="!loading && pagedUsers.length === 0">
-              <td colspan="6" class="empty-row">No users found.</td>
+              <td [attr.colspan]="6 + (isTopLevel ? 1 : 0) + (showStaff ? 1 : 0)" class="empty-row">No users found.</td>
             </tr>
           </tbody>
         </table>
@@ -150,6 +180,7 @@
     </div>
     <div class="panel-body">
       <app-user-form mode="create"
+                     [eventId]="staffEvent?._id || ''"
                      [roles]="roles"
                      [departments]="departments"
                      [isTopLevel]="isTopLevel"
@@ -215,6 +246,20 @@
             <div class="pay-l">Access</div>
             <div class="pay-v pay-v-sm">{{ getAccessLabel(activeUser) }}</div>
           </div>
+        </div>
+
+        <!-- Staff list for the event picked in the sidebar -->
+        <div class="staff-row" *ngIf="showStaff && isActive(activeUser)">
+          <div>
+            <div class="section-lbl">{{ staffEvent?.name }} staff</div>
+            <div class="staff-row-v" *ngIf="isAlwaysStaff(activeUser)">Always — {{ roleName(activeUser) }} works every event</div>
+            <div class="staff-row-v" *ngIf="!isAlwaysStaff(activeUser) && activeUser.onEvent">On the staff list</div>
+            <div class="staff-row-v" *ngIf="!isAlwaysStaff(activeUser) && !activeUser.onEvent">Not on the staff list — can’t open this event</div>
+          </div>
+          <button type="button" class="pill-btn" *ngIf="!isAlwaysStaff(activeUser)" [disabled]="staffBusy"
+                  (click)="changeStaff(!activeUser.onEvent, [activeUser._id])">
+            <mat-icon>{{ activeUser.onEvent ? 'person_remove' : 'person_add' }}</mat-icon>{{ activeUser.onEvent ? 'Remove' : 'Add' }}
+          </button>
         </div>
 
         <div class="section-lbl">Details</div>
