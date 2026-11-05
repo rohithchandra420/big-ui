@@ -13,6 +13,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.41.0] - 2026-11-07
+
+### Added
+- **Venue Map: pins are locked.** Every time the map opens, pins can't be dragged, so scrolling on a phone no longer moves them by accident. A lock button next to Street / Satellite (for people who may edit) unlocks moving; a pin being edited in its form can still be moved. Areas still move only in their own Edit.
+
+### Notes
+- 978/978 staff unit tests.
+
+---
+
 ## [1.40.0] - 2026-11-07
 
 ### Added

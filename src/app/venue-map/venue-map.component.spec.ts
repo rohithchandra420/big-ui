@@ -104,6 +104,36 @@ describe('VenueMapComponent', () => {
     expect(el().querySelectorAll('.vm-item').length).toBe(1);
   }));
 
+  describe('pin lock (map-lock)', () => {
+    it('opens locked: no pin can be dragged; unlocking allows only editable pins', fakeAsync(() => {
+      setup(); settle();
+      const [editable, readOnly] = component.locations;
+      expect(component.locked).toBeTrue();
+      const sw = () => el().querySelector('.vm-lock') as HTMLElement;
+      expect(sw().classList).toContain('on');
+      expect(component.canDragPin(editable)).toBeFalse();
+      sw().click(); fixture.detectChanges();
+      expect(component.locked).toBeFalse();
+      expect(sw().classList).not.toContain('on');
+      expect(component.canDragPin(editable)).toBeTrue();
+      expect(component.canDragPin(readOnly)).toBeFalse();
+      component.toggleLock();
+      expect(component.canDragPin(editable)).toBeFalse();
+    }));
+
+    it('the pin being edited can still be moved while locked', fakeAsync(() => {
+      setup(); settle();
+      const pin = component.locations[0];
+      (component as any).form = { _id: pin._id, lat: pin.lat, lng: pin.lng };
+      expect(component.canDragPin(pin)).toBeTrue();
+    }));
+
+    it('no lock button for someone who can\'t move anything', fakeAsync(() => {
+      setup({ role: 'VOL', canAdd: false, canImport: false, canDraw: false, canDrawBoundary: false, locations: [loc('a', { canEdit: false })] }); settle();
+      expect(el().querySelector('.vm-lock')).toBeNull();
+    }));
+  });
+
   it('loads the departments once for adding, without the ALL pseudo-entry', fakeAsync(() => {
     setup(); settle();
     expect(component.departments.map(d => d._id)).toEqual(['d-ops', 'd-food']);
