@@ -2,7 +2,10 @@ import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { Subscription, catchError, forkJoin, of } from 'rxjs';
 import { I18nService, TPipe, WordKey } from './core/i18n';
-import { Loaded, PublicApiService, PublicEvent, PublicNews, PublicNewsAnswer, PublicSession, PublicSessionsAnswer } from './core/public-api.service';
+import { Loaded, PublicApiService, PublicEvent, PublicMapAnswer, PublicMapArea, PublicMapPin, PublicNews, PublicNewsAnswer, PublicSession, PublicSessionsAnswer } from './core/public-api.service';
+import { MapViewComponent } from './views/map-view.component';
+import { FindWayComponent } from './ui/find-way.component';
+import { EmergencyComponent } from './ui/emergency.component';
 import { NewsTickerComponent } from './ui/news-ticker.component';
 import { NewsViewComponent } from './views/news-view.component';
 import { countdown, dayLabel, dayStart, timeLabel } from './core/festival-time';
@@ -32,7 +35,8 @@ export const REFRESH_MS = 30000;
 @Component({
   selector: 'pub-root',
   standalone: true,
-  imports: [NgIf, NgFor, TPipe, HomeViewComponent, ScheduleViewComponent, SessionSheetComponent, NewsTickerComponent, NewsViewComponent],
+  imports: [NgIf, NgFor, TPipe, HomeViewComponent, ScheduleViewComponent, SessionSheetComponent, NewsTickerComponent, NewsViewComponent,
+            MapViewComponent, FindWayComponent, EmergencyComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
@@ -43,6 +47,13 @@ export class AppComponent implements OnInit, OnDestroy {
   event: PublicEvent | null = null;
   sessions: PublicSession[] = [];
   news: PublicNews[] = [];
+  pins: PublicMapPin[] = [];
+  areas: PublicMapArea[] = [];
+  private mapKey = '';
+  /** The place the Map tab opens on (from a shortcut / the Emergency sheet). */
+  mapFocus: string | null = null;
+  /** The staff help tile whose text is open. */
+  helpOpen: { icon: string; title: string; text: string } | null = null;
   /** The session whose details are open. */
   selected: PublicSession | null = null;
   off = false;
@@ -77,14 +88,23 @@ export class AppComponent implements OnInit, OnDestroy {
     // Same for the news (PH3).
     const news$ = this.api.news().pipe(
       catchError(() => of<Loaded<PublicNewsAnswer>>({ data: { off: false, news: this.news }, at: this.loadedAt || Date.now(), offline: true })));
-    this.sub = forkJoin([this.api.event(), sessions$, news$]).subscribe({
-      next: ([ev, ss, nw]) => {
+    // …and the map (PH4a).
+    const map$ = this.api.map().pipe(
+      catchError(() => of<Loaded<PublicMapAnswer>>({ data: { off: false, pins: this.pins, areas: this.areas }, at: this.loadedAt || Date.now(), offline: true })));
+    this.sub = forkJoin([this.api.event(), sessions$, news$, map$]).subscribe({
+      next: ([ev, ss, nw, mp]) => {
         this.unreachable = false;
-        this.offline = ev.offline || ss.offline || nw.offline;
+        this.offline = ev.offline || ss.offline || nw.offline || mp.offline;
         // Offline: show the oldest saved time among the parts that came from the phone.
-        const saved = [ev, ss, nw].filter(x => x.offline).map(x => x.at);
-        this.loadedAt = saved.length ? Math.min(...saved) : Math.max(ev.at, ss.at, nw.at);
+        const saved = [ev, ss, nw, mp].filter(x => x.offline).map(x => x.at);
+        this.loadedAt = saved.length ? Math.min(...saved) : Math.max(ev.at, ss.at, nw.at, mp.at);
         this.news = 'news' in nw.data ? nw.data.news : [];
+        // Keep the same arrays when nothing changed, so the map isn't redrawn every 30 s.
+        if ('pins' in mp.data && JSON.stringify(mp.data) !== this.mapKey) {
+          this.mapKey = JSON.stringify(mp.data);
+          this.pins = mp.data.pins;
+          this.areas = mp.data.areas;
+        }
         this.now = Date.now();
         this.off = ev.data.off;
         this.event = ev.data.off ? null : ev.data as PublicEvent;
@@ -99,6 +119,17 @@ export class AppComponent implements OnInit, OnDestroy {
   openSession(s: PublicSession): void { this.selected = s; }
   closeSession(): void { this.selected = null; }
 
+  /** Open the Map tab, optionally on one place (PH4a). */
+  openMap(placeId: string | null): void {
+    this.go('map');
+    this.mapFocus = placeId;
+  }
+
+  openHelp(h: { icon: string; title: string; text: string }): void { this.helpOpen = h; }
+
+  get contacts() { return this.event?.emergency?.contacts || []; }
+  get help() { return this.event?.help || []; }
+
   /** Back on screen after a while (phone unlocked, tab switched back): refresh now. */
   @HostListener('document:visibilitychange')
   onVisible(): void {
@@ -112,6 +143,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   go(view: View): void {
+    this.mapFocus = null;   // a tab opens the plain map; openMap() sets a place after this
     location.hash = view === 'home' ? '' : view;
     this.view = view;
   }

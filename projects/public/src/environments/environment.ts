@@ -3,5 +3,5 @@ export const environment = {
     // and never sends the login cookie.
     URL: 'https://api.rchomeproject.in',
     // Kept in sync manually with CHANGELOG.md's latest version.
-    version: '1.37.0'
+    version: '1.38.0'
 };

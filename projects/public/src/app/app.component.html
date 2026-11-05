@@ -58,12 +58,15 @@
     <pub-news-ticker *ngIf="view === 'home'" [news]="news" [now]="now" (all)="go('news')"></pub-news-ticker>
     <pub-home-view *ngIf="view === 'home'" [event]="ev" [sessions]="sessions" [now]="now"
                    (open)="openSession($event)" (schedule)="go('schedule')"></pub-home-view>
+    <pub-find-way *ngIf="view === 'home'" [pins]="pins" [areas]="areas" [help]="help"
+                  (openMap)="openMap($event)" (openHelp)="openHelp($event)"></pub-find-way>
     <pub-schedule-view *ngIf="view === 'schedule'" [event]="ev" [sessions]="sessions" [now]="now"
                        (open)="openSession($event)"></pub-schedule-view>
 
     <pub-news-view *ngIf="view === 'news'" [news]="news" [now]="now"></pub-news-view>
+    <pub-map-view *ngIf="view === 'map'" [pins]="pins" [areas]="areas" [focusId]="mapFocus" [offline]="offline"></pub-map-view>
 
-    <section class="soon" *ngIf="view !== 'home' && view !== 'schedule' && view !== 'news'">
+    <section class="soon" *ngIf="view === 'plan'">
       <span class="ms soon-ic">{{ viewIcon }}</span>
       <h2>{{ 'soon.title' | t }}</h2>
       <p>{{ soonText | t }}</p>
@@ -76,6 +79,22 @@
   </main>
 
   <pub-session-sheet *ngIf="selected" [session]="selected" (close)="closeSession()"></pub-session-sheet>
+
+  <!-- A staff help tile's text (PH4a) -->
+  <ng-container *ngIf="helpOpen as h">
+    <div class="scrim" (click)="helpOpen = null"></div>
+    <div class="sheet" role="dialog" aria-modal="true" [attr.aria-label]="h.title">
+      <div class="grab"></div>
+      <button type="button" class="sheet-x" (click)="helpOpen = null" [attr.aria-label]="'sheet.closeAll' | t"><span class="ms">close</span></button>
+      <div class="sheet-cat" style="color: var(--leaf-2)"><span class="ms">{{ h.icon }}</span>{{ 'help.title' | t }}</div>
+      <h3>{{ h.title }}</h3>
+      <p class="desc">{{ h.text }}</p>
+    </div>
+  </ng-container>
+
+  <!-- Emergency (PH4a): during the festival only -->
+  <pub-emergency *ngIf="ev.phase === 'during'" [contacts]="contacts" [note]="ev.emergency?.note || ''"
+                 [pins]="pins" [areas]="areas" (openMap)="openMap($event)"></pub-emergency>
 
   <nav class="bottom" aria-label="Sections">
     <button type="button" *ngFor="let v of views; trackBy: trackView" [class.on]="view === v.key" (click)="go(v.key)">

@@ -17,7 +17,15 @@ export interface PublicEvent {
   today: string;
   phase: Phase;
   days: string[];
+  /** PH4a — set on Admin › Public Page. The first contact is the main line. */
+  emergency?: { contacts: { label: string; phone: string }[]; note: string };
+  help?: { icon: string; title: string; text: string }[];
 }
+
+/** PH4a public map: whitelisted pins and areas only. */
+export interface PublicMapPin { id: string; name: string; type: string; lat: number; lng: number; open?: boolean; note?: string; }
+export interface PublicMapArea { id: string; name: string; kind: string; points: [number, number][]; }
+export type PublicMapAnswer = { off: false; pins: PublicMapPin[]; areas: PublicMapArea[] } | { off: true };
 export type PublicEventAnswer = PublicEvent | { off: true };
 
 /** A workshop session's public status (big-api utils/publicSessionState.js). */
@@ -80,6 +88,10 @@ export class PublicApiService {
 
   news(): Observable<Loaded<PublicNewsAnswer>> {
     return this.get<PublicNewsAnswer>('news');
+  }
+
+  map(): Observable<Loaded<PublicMapAnswer>> {
+    return this.get<PublicMapAnswer>('map');
   }
 
   private get<T>(name: string): Observable<Loaded<T>> {

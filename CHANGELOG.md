@@ -13,6 +13,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.38.0] - 2026-11-07
+
+### Added
+- **Public festival page — Map tab:** a street map of the festival with its public places and areas (no-go zones in red), a legend, "Show my location", and a tap for the name, the Box Office's open / closed status and walking directions. The map loads only when the tab is opened.
+- **Find your way** on Home: the nearest water, first aid, toilets and Box Office, with walking minutes once the phone shares its location; each opens the map there.
+- **Need a hand?** help tiles on Home, written by staff.
+- **Emergency button** during the festival: call the festival emergency line and other contacts, share your location by SMS or WhatsApp, find the nearest first aid, or call 112. The location is only sent through your own phone's messages.
+- **Admin › Public Page:** new Emergency (up to 3 contacts, the first is the main line, plus a note) and Help tiles (up to 4, with an icon) sections.
+
+### Notes
+- 961/961 staff unit tests, 56/56 public page unit tests.
+
+---
+
 ## [1.37.0] - 2026-11-07
 
 ### Added
