@@ -1,0 +1,64 @@
+<!-- UAT-RESET: remove before Production (whole folder). -->
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">UAT Reset</div>
+    <div class="page-ph-sub">Clear test data of one event · testing only, removed before Production</div>
+  </div>
+</div>
+
+<div class="ur-page">
+  <div class="warn-banner" *ngIf="available === false">
+    The UAT reset is switched off on this server.
+  </div>
+
+  <div class="card ur-card" *ngIf="available">
+    <div class="ur-danger">
+      <mat-icon class="ms-fill">warning</mat-icon>
+      <span>This permanently deletes data of the chosen event. There is no undo. Users, departments, events, pass types and bookings are never touched.</span>
+    </div>
+
+    <div class="field">
+      <label for="ur-event">Event</label>
+      <app-select id="ur-event" [ngModel]="eventId" (ngModelChange)="pickEvent($event)" placeholder="Pick an event">
+        <app-option *ngFor="let e of events; trackBy: trackEvent" [value]="e._id">{{ e.name }} · {{ e.status }}</app-option>
+      </app-select>
+    </div>
+
+    <ng-container *ngIf="eventId">
+      <div class="ur-lbl">What to clear</div>
+      <div class="ur-groups">
+        <label class="ur-group choice-tile" *ngFor="let g of groups; trackBy: trackGroup" [class.selected]="picked.has(g.key)" [class.off]="unavailable(g.key)">
+          <input type="checkbox" class="sr-only" [checked]="picked.has(g.key)" [disabled]="unavailable(g.key)" (change)="toggle(g.key)">
+          <mat-icon class="choice-tile-check ms-fill" aria-hidden="true">check_circle</mat-icon>
+          <span class="ur-ic"><mat-icon>{{ g.icon }}</mat-icon></span>
+          <span class="ur-name">{{ g.title }}</span>
+          <span class="ur-text">{{ g.text }}</span>
+          <span class="ur-count">{{ loading ? 'Counting…' : countText(g.key) }}</span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label for="ur-confirm">Type <b>{{ eventName }}</b> to confirm</label>
+        <input id="ur-confirm" type="text" autocomplete="off" [(ngModel)]="confirmText" [placeholder]="eventName">
+      </div>
+
+      <div class="warn-banner" *ngIf="error">{{ error }}</div>
+
+      <div class="ur-actions">
+        <button type="button" class="btn-danger" [disabled]="!canReset" (click)="reset()">
+          {{ resetting ? 'Resetting…' : 'Reset ' + picked.size + ' group' + (picked.size === 1 ? '' : 's') }}
+        </button>
+      </div>
+    </ng-container>
+
+    <div class="ur-done" *ngIf="done">
+      <mat-icon class="ms-fill">check_circle</mat-icon>
+      <div>
+        <b>Reset done</b>
+        <ng-container *ngFor="let g of groups; trackBy: trackGroup">
+          <span *ngIf="doneText(g.key)">{{ g.title }}: {{ doneText(g.key) }}</span>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>

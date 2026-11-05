@@ -4,6 +4,7 @@ import { EventService } from "../core/event.service";
 import { AvatarService } from "../core/avatar.service";
 import { EmailService } from "../core/email.service";
 import { BillboardService } from "../core/billboard.service";
+import { UatResetService } from "../core/uat-reset.service"; // UAT-RESET: remove before Production
 import { User } from "../core/user.model";
 import { EventItem } from "../models/event.model";
 import { Subscription, filter } from "rxjs";
@@ -31,6 +32,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     /** Admin > Email Report link: same rule as sending (DEV/DIR/ADMIN or a Box
      *  Office TL), answered by the backend via EmailService. */
     canSeeEmailReport = false;
+    canSeeUatReset = false; // UAT-RESET: remove before Production
     /** Red count on the Billboard link (BillboardService keeps it fresh). */
     unreadNotes = 0;
     readonly appVersion = environment.version;
@@ -58,7 +60,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
         private avatarService: AvatarService,
         private emailService: EmailService,
         private billboardService: BillboardService,
-        private router: Router
+        private router: Router,
+        private uatReset: UatResetService // UAT-RESET: remove before Production
     ) {}
 
     /** Main starts open; every other group starts closed. */
@@ -150,6 +153,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
                 this.userId = id;
                 this.avatarVersion = 0;
                 this.canSeeEmailReport = false;
+                this.canSeeUatReset = false; // UAT-RESET: remove before Production
                 if (id) {
                     this.avatarService.fetchVersion(id).subscribe(v => {
                         if (this.userId === id) this.avatarVersion = v;
@@ -158,6 +162,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
                     this.emailService.getConfig(true).subscribe(c => {
                         if (this.userId === id) this.canSeeEmailReport = !!c.canViewReport;
                     });
+                    // UAT-RESET: remove before Production
+                    if (user?.role === 'DEV') {
+                        this.uatReset.available().subscribe(ok => { if (this.userId === id) this.canSeeUatReset = ok; });
+                    }
                 }
             }
         });
