@@ -25,6 +25,11 @@
         <button type="button" [class.on]="layerName === 'street'" (click)="setLayer('street')">Street</button>
         <button type="button" [class.on]="layerName === 'sat'" (click)="setLayer('sat')">Satellite</button>
       </div>
+      <button type="button" class="vm-lock" *ngIf="canMovePins && event" [class.on]="locked"
+              [attr.aria-pressed]="locked" aria-label="Lock pins" (click)="toggleLock()"
+              [title]="locked ? 'Pins are locked so they can\'t be moved by accident. Tap to unlock.' : 'Pins can be dragged. Tap to lock them.'">
+        <mat-icon class="ms-fill">{{ locked ? 'lock' : 'lock_open' }}</mat-icon>
+      </button>
       <ng-container *ngIf="canAdd && event && !workshopMode">
         <button type="button" class="pill-btn" [class.primary]="adding" (click)="toggleAdding()">
           <mat-icon class="ms-fill">add_location_alt</mat-icon>{{ adding ? 'Tap the map…' : 'Add location' }}

@@ -108,6 +108,11 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
   form: LocationForm | null = null;
   areaForm: AreaForm | null = null;
   drawing: DrawMode | null = null;
+  /**
+   * Pins can't be dragged while locked (user, 2026-11-07: a pin moved by
+   * accident while scrolling on a phone). Locked every time the map opens.
+   */
+  locked = true;
   /** Points placed so far in the shape being drawn (for Undo). */
   drawPoints = 0;
   formError = '';
@@ -311,7 +316,7 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
       const st = this.statusByLocation.get(loc._id);
       const m = L.marker([loc.lat, loc.lng], {
         icon: this.pin(loc.type, this.selected?._id === loc._id || editingThis, false, st),
-        draggable: loc.canEdit && !this.drawing, title: loc.name, keyboard: true
+        draggable: this.canDragPin(loc), title: loc.name, keyboard: true
       });
       const outside = this.locInfo.get(loc._id)?.outside ? '<br><i>Outside the festival boundary</i>' : '';
       // One status line: the pin's live status (Box Office), otherwise its type.
@@ -408,6 +413,24 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private fitTo(points: LatLng[]): void {
     if (this.map && this.L && points.length) this.map.fitBounds(this.L.latLngBounds(points).pad(0.3), { maxZoom: 19 });
+  }
+
+  /** Anything on the map this person may move (shows the lock button). */
+  get canMovePins(): boolean {
+    return this.locations.some(l => l.canEdit);
+  }
+
+  /**
+   * Locked (the default) = no accidental moves while scrolling on a phone;
+   * the pin being edited in the form can still be moved.
+   */
+  canDragPin(loc: VenueLocation): boolean {
+    return loc.canEdit && !this.drawing && (!this.locked || this.form?._id === loc._id);
+  }
+
+  toggleLock(): void {
+    this.locked = !this.locked;
+    this.drawMarkers();
   }
 
   setLayer(name: 'street' | 'sat'): void {

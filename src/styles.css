@@ -1536,5 +1536,12 @@ select:focus {
 
 .ann-session { display: block; margin-top: 8px; max-width: 520px; }
 
+/* Venue Map: pin lock (map-lock). Global: the map's own CSS is near its limit. */
+.vm-lock { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border: 1px solid #f4a623; border-radius: 50%; background: #fff1d6; cursor: pointer; flex-shrink: 0; transition: background .15s, border-color .15s; }
+.vm-lock mat-icon { font-size: 20px; width: 20px; height: 20px; color: #b45309; }
+.vm-lock.on { border-color: var(--color-primary); background: #e8f1ec; }
+.vm-lock.on mat-icon { color: var(--color-primary); }
+.vm-lock:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(30, 70, 56, 0.2); }
+
 /* Sidebar: open SOS count in red (PH4b) */
 .nav-count.sos-nav-count { background: #dc2626; color: #fff; }
