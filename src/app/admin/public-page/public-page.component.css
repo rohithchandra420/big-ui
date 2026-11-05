@@ -51,6 +51,9 @@ textarea.pp-in { width: 100%; resize: vertical; }
 .pp-icons button.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
 .pp-icons mat-icon { font-size: 18px; width: 18px; height: 18px; }
 .pp-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pp-icon-pick { width: 84px; flex: 0 0 84px; }
+.pp-opt-ic { font-size: 20px; width: 20px; height: 20px; vertical-align: middle; }
+.pp-page { display: flex; flex-direction: column; gap: 16px; }
 
 @media (max-width: 600px) {
   .pp-status { flex-wrap: wrap; }

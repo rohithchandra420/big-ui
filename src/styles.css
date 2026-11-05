@@ -1534,5 +1534,7 @@ select:focus {
 .ann-badge.ann-pub { background: #fdf0f5; color: #b0245a; }
 .ann-badge.ann-pub-off { background: #f0f0ee; color: #666; }
 
+.ann-session { display: block; margin-top: 8px; max-width: 520px; }
+
 /* Sidebar: open SOS count in red (PH4b) */
 .nav-count.sos-nav-count { background: #dc2626; color: #fff; }

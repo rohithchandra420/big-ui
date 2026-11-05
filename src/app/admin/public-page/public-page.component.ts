@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { AdminService, PublicEmergency, PublicHelpTile, PublicPageSettings } from '../admin.service';
+import { AdminService, PublicEdition, PublicEmergency, PublicHelpTile, PublicPageSettings } from '../admin.service';
 
 export const MAX_CONTACTS = 3;
 export const MAX_TILES = 4;
@@ -42,6 +42,9 @@ export class PublicPageComponent implements OnInit {
   // PH4a
   readonly maxContacts = MAX_CONTACTS;
   readonly maxTiles = MAX_TILES;
+  // PH6
+  stats: PublicEdition[] = [];
+  statIcons: string[] = [];
   // PH4b
   sosEnabled = false;
   sosDepartments = new Set<string>();
@@ -79,6 +82,12 @@ export class PublicPageComponent implements OnInit {
       if (!PHONE.test(c.phone.trim())) return `"${c.label || 'Contact'}": the phone may have digits, spaces or dashes, and + at the start.`;
     }
     if (this.note.length > 200) return 'Emergency note: up to 200 characters.';
+    for (const e of this.stats) {
+      if (!e.edition.trim() || e.edition.trim().length > 30) return 'Each edition needs a name (up to 30 characters), e.g. BiG 2026.';
+      if (e.items.some(i => !i.value.trim() || i.value.trim().length > 12 || !i.label.trim() || i.label.trim().length > 30)) {
+        return `"${e.edition || 'Edition'}": each number needs a value (up to 12) and a label (up to 30).`;
+      }
+    }
     for (const t of this.tiles) {
       if (!t.title.trim() || t.title.trim().length > 30) return 'Each help tile needs a title (up to 30 characters).';
       if (t.text.length > 300) return `"${t.title}": text up to 300 characters.`;
@@ -96,6 +105,7 @@ export class PublicPageComponent implements OnInit {
       || s.showBeforeDays !== this.showBeforeDays || s.showAfterDays !== this.showAfterDays
       || JSON.stringify(this.emergencyOut()) !== JSON.stringify(s.emergency)
       || JSON.stringify(this.tilesOut()) !== JSON.stringify(s.helpTiles)
+      || JSON.stringify(this.statsOut()) !== JSON.stringify(s.stats || [])
       || this.sosEnabled !== !!s.sosEnabled
       || JSON.stringify([...this.sosDepartments].sort()) !== JSON.stringify([...(s.sosDepartments || [])].sort());
   }
@@ -108,6 +118,15 @@ export class PublicPageComponent implements OnInit {
   removeContact(i: number): void { this.contacts.splice(i, 1); }
   /** Make this contact the main line (first in the list). */
   makeMain(i: number): void { const [c] = this.contacts.splice(i, 1); this.contacts.unshift(c); }
+
+  addEdition(): void { if (this.stats.length < 10) this.stats.push({ edition: '', items: [{ value: '', label: '', icon: 'groups' }] }); }
+  removeEdition(i: number): void { this.stats.splice(i, 1); }
+  addStat(e: PublicEdition): void { if (e.items.length < 4) e.items.push({ value: '', label: '', icon: 'local_florist' }); }
+  removeStat(e: PublicEdition, i: number): void { e.items.splice(i, 1); }
+
+  private statsOut(): PublicEdition[] {
+    return this.stats.map(e => ({ edition: e.edition.trim(), items: e.items.map(i => ({ value: i.value.trim(), label: i.label.trim(), icon: i.icon })) }));
+  }
 
   toggleSosDept(id: string): void {
     this.sosDepartments.has(id) ? this.sosDepartments.delete(id) : this.sosDepartments.add(id);
@@ -129,7 +148,8 @@ export class PublicPageComponent implements OnInit {
       enabled: this.enabled, event: this.eventId,
       showBeforeDays: this.showBeforeDays, showAfterDays: this.showAfterDays,
       emergency: this.emergencyOut(), helpTiles: this.tilesOut(),
-      sosEnabled: this.sosEnabled, sosDepartments: [...this.sosDepartments]
+      sosEnabled: this.sosEnabled, sosDepartments: [...this.sosDepartments],
+      stats: this.statsOut()
     }).subscribe({
       next: s => {
         this.apply(s);
@@ -155,6 +175,8 @@ export class PublicPageComponent implements OnInit {
     this.note = s.emergency?.note || '';
     this.tiles = (s.helpTiles || []).map(t => ({ ...t }));
     this.helpIcons = s.helpIcons || [];
+    this.stats = (s.stats || []).map(e => ({ edition: e.edition, items: e.items.map(i => ({ ...i })) }));
+    this.statIcons = s.statIcons || [];
     this.sosEnabled = !!s.sosEnabled;
     this.sosDepartments = new Set(s.sosDepartments || []);
     this.departments = s.departments || [];

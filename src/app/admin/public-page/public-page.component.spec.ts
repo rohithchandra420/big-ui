@@ -14,6 +14,7 @@ const settings = (over: Partial<PublicPageSettings> = {}): PublicPageSettings =>
   events: [{ _id: 'ev1', name: 'BiG 7.0', startDate: '2026-12-10', endDate: '2026-12-12' }],
   emergency: { contacts: [], note: '' }, helpTiles: [], helpIcons: ['info', 'support_agent'],
   sosEnabled: false, sosDepartments: [], departments: [{ _id: 'd1', name: 'Medical' }],
+  stats: [], statIcons: ['groups', 'local_florist'],
   ...over
 });
 
@@ -80,7 +81,7 @@ describe('PublicPageComponent', () => {
     component.eventId = 'ev1';
     component.save();
     expect(adminSpy.savePublicPage).toHaveBeenCalledWith({ enabled: true, event: 'ev1', showBeforeDays: 14, showAfterDays: 14,
-      emergency: { contacts: [], note: '' }, helpTiles: [], sosEnabled: false, sosDepartments: [] });
+      emergency: { contacts: [], note: '' }, helpTiles: [], sosEnabled: false, sosDepartments: [], stats: [] });
     expect(notifySpy.openSucessSnackBar).toHaveBeenCalledWith('Saved · public page is on');
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('On · showing BiG 7.0');
@@ -181,6 +182,26 @@ describe('PublicPageComponent', () => {
       component.sosEnabled = true;
       fixture.detectChanges();
       expect(fixture.nativeElement.textContent).toContain('Only Directors, Admins and Developers will get SOS alerts');
+    });
+  });
+
+  describe('Through the years (PH6)', () => {
+    it('editions with up to 4 numbers each, checked and sent trimmed', () => {
+      create(settings());
+      component.addEdition();
+      expect(component.infoProblem).toContain('edition needs a name');
+      component.stats[0].edition = ' BiG 2026 ';
+      expect(component.infoProblem).toContain('each number needs a value');
+      component.stats[0].items[0] = { value: ' 2,000 ', label: ' participants ', icon: 'groups' };
+      expect(component.infoProblem).toBeNull();
+      for (let i = 0; i < 5; i++) component.addStat(component.stats[0]);
+      expect(component.stats[0].items.length).toBe(4);
+      component.stats[0].items.splice(1);
+      adminSpy.savePublicPage.and.returnValue(of(settings()));
+      component.save();
+      expect(adminSpy.savePublicPage).toHaveBeenCalledWith(jasmine.objectContaining({
+        stats: [{ edition: 'BiG 2026', items: [{ value: '2,000', label: 'participants', icon: 'groups' }] }]
+      }));
     });
   });
 });

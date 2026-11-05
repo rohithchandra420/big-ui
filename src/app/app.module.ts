@@ -82,6 +82,7 @@ import { NotificationSettingsComponent } from './profile/notification-settings/n
 import { AnnouncementsComponent } from './admin/announcements/announcements.component';
 import { PublicPageComponent } from './admin/public-page/public-page.component';
 import { SosComponent } from './sos/sos.component';
+import { PublicPhotosComponent } from './admin/public-page/public-photos/public-photos.component';
 import { UatResetComponent } from './admin/uat-reset/uat-reset.component'; // UAT-RESET: remove before Production
 import { VenueMapComponent } from './venue-map/venue-map.component';
 import { WorkshopSetupComponent } from './workshops/setup/workshop-setup.component';
@@ -159,6 +160,7 @@ LOAD_WASM().subscribe()
     AnnouncementsComponent,
     PublicPageComponent,
     SosComponent,
+    PublicPhotosComponent,
     UatResetComponent, // UAT-RESET: remove before Production
     BillboardComponent,
     VenueMapComponent,

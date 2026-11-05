@@ -81,6 +81,26 @@
       <mat-icon class="ann-public-check ms-fill" aria-hidden="true">{{ publicPost ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
     </label>
 
+    <!-- PH5: also alert participants' phones -->
+    <div class="ann-group" *ngIf="publicPost">
+      <div class="ann-group-hd"><span class="ann-group-lbl">Also alert participants' phones</span></div>
+      <div class="ann-chips" role="radiogroup" aria-label="Alert participants' phones">
+        <label class="ann-chip toggle-chip" [class.on]="publicAlert === 'none'">
+          <input class="sr-only" type="radio" name="pub-alert" [checked]="publicAlert === 'none'" (change)="publicAlert = 'none'">No alert
+        </label>
+        <label class="ann-chip toggle-chip" [class.on]="publicAlert === 'all'">
+          <input class="sr-only" type="radio" name="pub-alert" [checked]="publicAlert === 'all'" (change)="publicAlert = 'all'">Every phone with alerts on
+        </label>
+        <label class="ann-chip toggle-chip" [class.on]="publicAlert === 'session'">
+          <input class="sr-only" type="radio" name="pub-alert" [checked]="publicAlert === 'session'" (change)="publicAlert = 'session'">Phones that starred a session
+        </label>
+      </div>
+      <app-select class="ann-session" *ngIf="publicAlert === 'session'" [(ngModel)]="publicSession" placeholder="Pick the session">
+        <app-option *ngFor="let o of publicSessions; trackBy: trackByOptId" [value]="o.id">{{ o.label }}</app-option>
+      </app-select>
+      <span class="ann-hint" *ngIf="publicAlert === 'session' && !publicSessions.length">No upcoming sessions on the public page.</span>
+    </div>
+
     <div class="ann-audience" [class.empty]="!hasAudience">
       <mat-icon aria-hidden="true">group</mat-icon>
       <span><span class="ann-audience-lbl">Goes to:</span> {{ audiencePreview }}</span>
@@ -161,6 +181,7 @@
         <div class="ann-item-meta">
           To {{ historyAudience(a) }} · by {{ a.sentBy?.name || 'someone' }} ·
           {{ a.delivered }} device{{ a.delivered === 1 ? '' : 's' }}
+          <ng-container *ngIf="a.public && a.publicAlert && a.publicAlert !== 'none'"> · {{ a.publicDelivered || 0 }} participant phone{{ a.publicDelivered === 1 ? '' : 's' }} alerted<ng-container *ngIf="a.publicAlert === 'session' && a.publicSession?.workshop"> (starred {{ a.publicSession?.workshop?.title }})</ng-container></ng-container>
           <ng-container *ngIf="a.public && a.publicRemovedAt"> · removed from the public page by {{ a.publicRemovedBy?.name || 'someone' }}, {{ a.publicRemovedAt | date:'d MMM, h:mm a' }}</ng-container>
         </div>
         <div class="ann-item-actions">

@@ -122,11 +122,40 @@
       <button type="button" class="pp-add" *ngIf="tiles.length < maxTiles" (click)="addTile()"><mat-icon>add</mat-icon>Add help tile</button>
     </div>
 
+    <!-- PH6: Through the years -->
+    <div class="pp-sec">
+      <div class="pp-sec-hd">
+        <mat-icon class="ms-fill pp-sec-ic">insights</mat-icon>
+        <div><b>Through the years</b><small>Up to 10 editions, each with up to 4 numbers (e.g. 2,000 participants). Shown on the public page with a switcher.</small></div>
+      </div>
+      <div class="pp-tile" *ngFor="let e of stats; let i = index; trackBy: trackIndex">
+        <div class="pp-row-edit">
+          <input class="pp-in" type="text" maxlength="30" [(ngModel)]="e.edition" placeholder="Edition, e.g. BiG 2026" aria-label="Edition">
+          <button type="button" class="pp-x" (click)="removeEdition(i)" aria-label="Remove edition"><mat-icon>close</mat-icon></button>
+        </div>
+        <div class="pp-row-edit" *ngFor="let it of e.items; let j = index; trackBy: trackIndex">
+          <app-select class="pp-icon-pick" [(ngModel)]="it.icon" aria-label="Icon">
+            <app-option *ngFor="let ic of statIcons; trackBy: trackIcon" [value]="ic"><mat-icon class="pp-opt-ic">{{ ic }}</mat-icon></app-option>
+          </app-select>
+          <input class="pp-in pp-phone" type="text" maxlength="12" [(ngModel)]="it.value" placeholder="2,000" aria-label="Number">
+          <input class="pp-in" type="text" maxlength="30" [(ngModel)]="it.label" placeholder="participants" aria-label="Label">
+          <button type="button" class="pp-x" (click)="removeStat(e, j)" aria-label="Remove number"><mat-icon>close</mat-icon></button>
+        </div>
+        <button type="button" class="pp-add" *ngIf="e.items.length < 4" (click)="addStat(e)"><mat-icon>add</mat-icon>Add number</button>
+      </div>
+      <button type="button" class="pp-add" *ngIf="stats.length < 10" (click)="addEdition()"><mat-icon>add</mat-icon>Add edition</button>
+    </div>
+
     <small class="pp-hint pp-err" *ngIf="infoProblem">{{ infoProblem }}</small>
     <div class="warn-banner" *ngIf="saveError">{{ saveError }}</div>
 
     <div class="pp-actions">
       <button type="button" class="btn-cta" [disabled]="!canSave" (click)="save()">{{ saving ? 'Saving…' : 'Save' }}</button>
     </div>
+  </div>
+
+  <!-- PH6: Photos (saved straight away, separate from the Save button above) -->
+  <div class="card pp-card" *ngIf="!loading && !loadError && saved?.event">
+    <app-public-photos [eventId]="saved?.event?._id || null"></app-public-photos>
   </div>
 </div>

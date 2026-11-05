@@ -31,7 +31,8 @@ describe('AnnouncementsComponent', () => {
       listAnnouncements: jasmine.createSpy('listAnnouncements').and.resolveTo([past]),
       sendAnnouncement: jasmine.createSpy('sendAnnouncement').and.callFake((b: any) =>
         Promise.resolve({ ...past, _id: 'a2', ...b, departments: depts.filter(d => b.departments.includes(d._id)), delivered: 5 })),
-      resendAnnouncement: jasmine.createSpy('resendAnnouncement').and.resolveTo({ ...past, _id: 'a3', resentFrom: 'a1', delivered: 1 })
+      resendAnnouncement: jasmine.createSpy('resendAnnouncement').and.resolveTo({ ...past, _id: 'a3', resentFrom: 'a1', delivered: 1 }),
+      publicSessions: jasmine.createSpy('publicSessions').and.resolveTo([])
     };
     auth = { currentUser: { role: 'DIR' } };
     confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
@@ -279,6 +280,21 @@ describe('AnnouncementsComponent', () => {
       expect(component.isLivePublic(component.history[0])).toBeFalse();
       expect(el().textContent).toContain('Removed');
       expect(el().textContent).toContain('removed from the public page by Asha');
+    });
+
+    it('PH5: can also alert phones; "starred a session" needs the session', async () => {
+      push.publicSessions = jasmine.createSpy('publicSessions').and.resolveTo([{ id: 's1', title: 'Drumming', start: '2026-12-11T05:30:00Z', venue: 'Dome' }]);
+      component.title = 'Drumming moved'; component.message = 'To the Meadow';
+      component.setPublic(true);
+      await fixture.whenStable();
+      expect(component.publicSessions.length).toBe(1);
+      component.publicAlert = 'session';
+      expect(component.canSend).toBeFalse();
+      component.publicSession = 's1';
+      expect(component.canSend).toBeTrue();
+      await component.send();
+      expect(push.sendAnnouncement).toHaveBeenCalledWith(jasmine.objectContaining({ public: true, publicAlert: 'session', publicSession: 's1' }));
+      expect(component.publicAlert).toBe('none');
     });
 
     it('Copy to form keeps the public choice', () => {

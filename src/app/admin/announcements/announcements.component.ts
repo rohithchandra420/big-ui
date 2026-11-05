@@ -71,6 +71,11 @@ export class AnnouncementsComponent implements OnInit {
   publicPost = false;
   sending = false;
   removingId: string | null = null;
+  /** PH5: also alert participants' phones — none / all / phones that starred one session. */
+  publicAlert: 'none' | 'all' | 'session' = 'none';
+  publicSession = '';
+  /** The public event's sessions, for the picker (stored list). */
+  publicSessions: { id: string; label: string }[] = [];
 
   /** Stored list (stable identities for *ngFor). */
   departmentOptions: { _id: string; name: string }[] = [];
@@ -174,6 +179,24 @@ export class AnnouncementsComponent implements OnInit {
   setPublic(on: boolean): void {
     this.publicPost = on;
     if (on && !this.isPublicType(this.type)) this.type = 'general';
+    if (on && !this.publicSessions.length) this.loadPublicSessions();
+  }
+
+  /** The public event's sessions (from the public page's own list). */
+  private loadPublicSessions(): void {
+    this.push.publicSessions().then(list => {
+      this.publicSessions = list.map(s => ({
+        id: s.id,
+        label: `${s.title} · ${new Date(s.start).toLocaleString('en-IN', { weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' })} · ${s.venue}`
+      }));
+    }).catch(() => this.publicSessions = []);
+  }
+
+  trackByOptId(_: number, o: { id: string }): string { return o.id; }
+
+  /** A "phones that starred a session" alert needs the session. */
+  get publicAlertOk(): boolean {
+    return !this.publicPost || this.publicAlert !== 'session' || !!this.publicSession;
   }
 
   setType(type: AnnouncementType): void {
@@ -199,7 +222,7 @@ export class AnnouncementsComponent implements OnInit {
 
   get canSend(): boolean {
     const t = this.title.trim(), m = this.message.trim();
-    return !this.sending && !!t && !!m && t.length <= TITLE_MAX && m.length <= MESSAGE_MAX && this.hasAudience;
+    return !this.sending && !!t && !!m && t.length <= TITLE_MAX && m.length <= MESSAGE_MAX && this.hasAudience && this.publicAlertOk;
   }
 
   /** Roles in the fixed (server) order. */
@@ -272,7 +295,8 @@ export class AnnouncementsComponent implements OnInit {
     try {
       const sent = await this.push.sendAnnouncement({
         type: this.type, title: this.title.trim(), message: this.message.trim(),
-        roles, departments: [...this.departments], public: this.publicPost
+        roles, departments: [...this.departments], public: this.publicPost,
+        ...(this.publicPost ? { publicAlert: this.publicAlert, publicSession: this.publicAlert === 'session' ? this.publicSession : null } : {})
       });
       this.reportSent(sent);
       this.resetForm();
@@ -351,6 +375,8 @@ export class AnnouncementsComponent implements OnInit {
     this.roles = new Set();
     this.departments = new Set();
     this.publicPost = false;
+    this.publicAlert = 'none';
+    this.publicSession = '';
   }
 
   private reportSent(sent: Announcement): void {
