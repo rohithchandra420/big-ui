@@ -4,7 +4,10 @@
     <div class="page-ph-title">Users</div>
     <div class="page-ph-sub">{{ activeUsers.length }} user{{ activeUsers.length === 1 ? '' : 's' }}</div>
   </div>
-  <button class="btn-cta" *ngIf="canCreateUsers" (click)="openCreate()">+ New User</button>
+  <div class="ph-actions" *ngIf="canCreateUsers">
+    <button class="btn-ghost" (click)="openBulk()"><mat-icon>group_add</mat-icon>Bulk Add</button>
+    <button class="btn-cta" (click)="openCreate()">+ New User</button>
+  </div>
 </div>
 
 <div class="user-page">

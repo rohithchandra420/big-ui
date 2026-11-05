@@ -424,6 +424,11 @@ select:focus {
   transition: background 0.1s;
 }
 .btn-ghost:hover { background: var(--border-subtle); }
+.btn-ghost:has(mat-icon) { display: inline-flex; align-items: center; gap: 6px; }
+.btn-ghost mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+/* Several buttons on the right of a page header (e.g. Users: Bulk Add + New User). */
+.ph-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 
 /* ── Secondary button (wireframe tinted .btn.p pattern, BIG6_DESIGN_CONTEXT §13) ── */
 /* Tinted ghost button — coloured background tint with matching border/text, not
