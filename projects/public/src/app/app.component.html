@@ -93,7 +93,7 @@
   </ng-container>
 
   <!-- Emergency (PH4a): during the festival only -->
-  <pub-emergency *ngIf="ev.phase === 'during'" [contacts]="contacts" [note]="ev.emergency?.note || ''"
+  <pub-emergency *ngIf="ev.phase === 'during'" [contacts]="contacts" [note]="ev.emergency?.note || ''" [sos]="!!ev.sos"
                  [pins]="pins" [areas]="areas" (openMap)="openMap($event)"></pub-emergency>
 
   <nav class="bottom" aria-label="Sections">

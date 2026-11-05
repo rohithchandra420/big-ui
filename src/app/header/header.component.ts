@@ -5,6 +5,7 @@ import { AvatarService } from "../core/avatar.service";
 import { EmailService } from "../core/email.service";
 import { BillboardService } from "../core/billboard.service";
 import { UatResetService } from "../core/uat-reset.service"; // UAT-RESET: remove before Production
+import { SosService } from "../core/sos.service";
 import { User } from "../core/user.model";
 import { EventItem } from "../models/event.model";
 import { Subscription, filter } from "rxjs";
@@ -33,6 +34,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
      *  Office TL), answered by the backend via EmailService. */
     canSeeEmailReport = false;
     canSeeUatReset = false; // UAT-RESET: remove before Production
+    /** PH4b: the SOS page link + its count of open alerts. */
+    canSeeSos = false;
+    openSos = 0;
+    private sosTimer?: ReturnType<typeof setInterval>;
+    private sosCountSub?: Subscription;
     /** Red count on the Billboard link (BillboardService keeps it fresh). */
     unreadNotes = 0;
     readonly appVersion = environment.version;
@@ -61,8 +67,21 @@ export class HeaderComponent implements OnInit, OnDestroy {
         private emailService: EmailService,
         private billboardService: BillboardService,
         private router: Router,
-        private uatReset: UatResetService // UAT-RESET: remove before Production
+        private uatReset: UatResetService, // UAT-RESET: remove before Production
+        private sosService: SosService
     ) {}
+
+    /** The open-SOS count: refreshed every 30 s while this person can see SOS. */
+    private watchSos(): void {
+        clearInterval(this.sosTimer);
+        if (!this.canSeeSos) return;
+        const refresh = () => {
+            const eventId = this.activeEvent?._id;
+            if (eventId) this.sosService.list(eventId).subscribe({ next: r => this.sosService.open$.next(r.open), error: () => {} });
+        };
+        refresh();
+        this.sosTimer = setInterval(refresh, 30000);
+    }
 
     /** Main starts open; every other group starts closed. */
     isOpen(group: NavGroup): boolean {
@@ -154,7 +173,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
                 this.avatarVersion = 0;
                 this.canSeeEmailReport = false;
                 this.canSeeUatReset = false; // UAT-RESET: remove before Production
+                this.canSeeSos = false;
+                this.openSos = 0;
                 if (id) {
+                    this.sosService.canSee().subscribe(ok => {
+                        if (this.userId !== id) return;
+                        this.canSeeSos = ok;
+                        this.watchSos();
+                    });
                     this.avatarService.fetchVersion(id).subscribe(v => {
                         if (this.userId === id) this.avatarVersion = v;
                     });
@@ -172,6 +198,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
         this.eventsSub = this.eventService.events.subscribe(events => this.events = events);
         this.activeEventSub = this.eventService.activeEvent.subscribe(event => this.activeEvent = event);
         this.unreadSub = this.billboardService.unread$.subscribe(n => this.unreadNotes = n);
+        this.sosCountSub = this.sosService.open$.subscribe(n => this.openSos = n);
         this.openGroupOf(this.router.url);
         this.routeSub = this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
             .subscribe(e => this.openGroupOf(e.urlAfterRedirects));
@@ -187,6 +214,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
         this.eventsSub?.unsubscribe();
         this.activeEventSub?.unsubscribe();
         this.unreadSub?.unsubscribe();
+        this.sosCountSub?.unsubscribe();
+        clearInterval(this.sosTimer);
         this.routeSub?.unsubscribe();
     }
 

@@ -20,6 +20,7 @@
 /* ── Post-it ── colours per type: paper, ink, accent (pin + label), fold, pin shade */
 .t-general  { --bg: #dff0e5; --ink: #173a2e; --accent: #1E4638; --fold: #bcd0c3; --pin-d: #0f2a20; }
 .t-urgent   { --bg: #ffd9d6; --ink: #6b1414; --accent: #dc2626; --fold: #dbb6b3; --pin-d: #8a1717; }
+.t-sos      { --bg: #ffd9d6; --ink: #6b1414; --accent: #b91c1c; --fold: #dbb6b3; --pin-d: #7f1d1d; }
 .t-schedule { --bg: #dbe7ff; --ink: #1c3a7a; --accent: #2563eb; --fold: #b8c4dc; --pin-d: #173f99; }
 .t-weather  { --bg: #d6effc; --ink: #0b4a6b; --accent: #0284c7; --fold: #b3ccd9; --pin-d: #025680; }
 .t-reminder { --bg: #fff1b8; --ink: #5c4a00; --accent: #d97706; --fold: #dccd96; --pin-d: #8c4d04; }

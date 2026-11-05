@@ -1,6 +1,7 @@
 import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
-import { PublicMapArea, PublicMapPin } from '../core/public-api.service';
+import { PublicApiService, PublicMapArea, PublicMapPin } from '../core/public-api.service';
+import { timeLabel } from '../core/festival-time';
 import { I18nService, TPipe } from '../core/i18n';
 import { mapsLinkFor, nearest, placesFor } from '../core/map-data';
 import { MyLocationService } from '../core/my-location.service';
@@ -23,7 +24,7 @@ export const whatsappOf = (phone: string, text: string) => `https://wa.me/${phon
   standalone: true,
   imports: [NgIf, NgFor, TPipe],
   template: `
-    <button type="button" class="sos" (click)="open = true"><span class="ms fill">sos</span>{{ 'sos.button' | t }}</button>
+    <button type="button" class="sos" (click)="open = true; step = 'menu'"><span class="ms fill">sos</span>{{ 'sos.button' | t }}</button>
     <ng-container *ngIf="open">
       <div class="scrim" (click)="open = false"></div>
       <div class="sheet sos-sheet" role="dialog" aria-modal="true" [attr.aria-label]="'sos.title' | t">
@@ -32,7 +33,34 @@ export const whatsappOf = (phone: string, text: string) => `https://wa.me/${phon
         <h3><span class="ms fill">sos</span>{{ 'sos.title' | t }}</h3>
         <p class="sub">{{ note || ('sos.note' | t) }}</p>
 
-        <a class="sos-btn primary" *ngIf="main" [href]="tel(main.phone)">
+        <!-- PH4b: SOS to the team (only when staff switched it on) -->
+        <ng-container *ngIf="sos && step === 'confirm'">
+          <div class="sos-confirm">
+            <b>{{ 'sos.confirmTitle' | t }}</b>
+            <p>{{ 'sos.confirmText' | t }}</p>
+            <div class="sos-loc" *ngIf="finding">{{ 'sos.finding' | t }}</div>
+            <div class="sos-loc" *ngIf="here">{{ 'sos.locFound' | t: { m: here.accuracy } }}</div>
+            <div class="sos-loc warn" *ngIf="locProblem">{{ (locProblem === 'denied' ? 'map.meDenied' : 'map.meUnavailable') | t }}</div>
+            <textarea rows="2" maxlength="200" [placeholder]="'sos.msgPh' | t" [value]="sosMessage" (input)="sosMessage = $any($event.target).value"></textarea>
+            <input type="tel" maxlength="20" [placeholder]="'sos.phonePh' | t" [value]="sosPhone" (input)="sosPhone = $any($event.target).value">
+            <div class="sos-err" *ngIf="sendError">{{ sendError }}</div>
+            <div class="row">
+              <button type="button" (click)="step = 'menu'">{{ 'sos.cancel' | t }}</button>
+              <button type="button" class="send" [disabled]="!here || sending" (click)="sendSos()">{{ (sending ? 'sos.sending' : 'sos.send') | t }}</button>
+            </div>
+          </div>
+        </ng-container>
+        <div class="sos-sent" *ngIf="step === 'sent'">
+          <span class="ms fill">check_circle</span>
+          <b>{{ 'sos.sentTitle' | t }}</b>
+          <p>{{ 'sos.sentText' | t: { time: sentAt } }}</p>
+          <small *ngIf="main">{{ 'sos.alsoSend' | t }}</small>
+        </div>
+        <button type="button" class="sos-btn primary" *ngIf="sos && step === 'menu'" (click)="startSos()">
+          <span class="ms fill">emergency_share</span><div><b>{{ 'sos.team' | t }}</b><small>{{ 'sos.teamText' | t }}</small></div>
+        </button>
+
+        <a class="sos-btn" [class.primary]="!sos" *ngIf="main" [href]="tel(main.phone)">
           <span class="ms fill">call</span><div><b>{{ 'sos.callMain' | t: { label: main.label } }}</b><small>{{ main.phone }}</small></div>
         </a>
         <p class="sub" *ngIf="!main">{{ 'sos.noContacts' | t }}</p>
@@ -69,6 +97,8 @@ export class EmergencyComponent {
   @Input() note = '';
   @Input() pins: PublicMapPin[] = [];
   @Input() areas: PublicMapArea[] = [];
+  /** PH4b: staff switched SOS to the team on. */
+  @Input() sos = false;
   /** Open the map on a place (nearest first aid). */
   @Output() openMap = new EventEmitter<string>();
 
@@ -76,7 +106,48 @@ export class EmergencyComponent {
   finding = false;
   locProblem: 'denied' | 'unavailable' | null = null;
 
-  constructor(private me: MyLocationService, private i18n: I18nService) {}
+  // PH4b
+  step: 'menu' | 'confirm' | 'sent' = 'menu';
+  here: { at: [number, number]; accuracy: number } | null = null;
+  sosMessage = '';
+  sosPhone = '';
+  sending = false;
+  sendError = '';
+  sentAt = '';
+
+  constructor(private me: MyLocationService, private i18n: I18nService, private api: PublicApiService) {}
+
+  /** "Send SOS?" step: find the location first. */
+  async startSos(): Promise<void> {
+    this.step = 'confirm';
+    this.sendError = '';
+    this.locProblem = null;
+    this.finding = true;
+    const loc = await this.me.request();
+    this.finding = false;
+    this.here = loc;
+    if (!loc) this.locProblem = this.me.problem || 'unavailable';
+  }
+
+  sendSos(): void {
+    if (!this.here || this.sending) return;
+    this.sending = true;
+    this.sendError = '';
+    this.api.sendSos({
+      lat: this.here.at[0], lng: this.here.at[1], accuracy: this.here.accuracy ?? null,
+      message: this.sosMessage.trim(), phone: this.sosPhone.trim()
+    }).subscribe({
+      next: () => {
+        this.sending = false;
+        this.step = 'sent';
+        this.sentAt = timeLabel(Date.now(), this.i18n.lang);
+      },
+      error: err => {
+        this.sending = false;
+        this.sendError = err?.error?.message || this.i18n.t('sos.failed');
+      }
+    });
+  }
 
   get main(): Contact | null { return this.contacts[0] || null; }
   get others(): Contact[] { return this.contacts.slice(1); }

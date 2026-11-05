@@ -13,6 +13,7 @@ const settings = (over: Partial<PublicPageSettings> = {}): PublicPageSettings =>
   enabled: false, event: null, showBeforeDays: 14, showAfterDays: 14, updatedAt: null, updatedBy: null,
   events: [{ _id: 'ev1', name: 'BiG 7.0', startDate: '2026-12-10', endDate: '2026-12-12' }],
   emergency: { contacts: [], note: '' }, helpTiles: [], helpIcons: ['info', 'support_agent'],
+  sosEnabled: false, sosDepartments: [], departments: [{ _id: 'd1', name: 'Medical' }],
   ...over
 });
 
@@ -79,7 +80,7 @@ describe('PublicPageComponent', () => {
     component.eventId = 'ev1';
     component.save();
     expect(adminSpy.savePublicPage).toHaveBeenCalledWith({ enabled: true, event: 'ev1', showBeforeDays: 14, showAfterDays: 14,
-      emergency: { contacts: [], note: '' }, helpTiles: [] });
+      emergency: { contacts: [], note: '' }, helpTiles: [], sosEnabled: false, sosDepartments: [] });
     expect(notifySpy.openSucessSnackBar).toHaveBeenCalledWith('Saved · public page is on');
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('On · showing BiG 7.0');
@@ -159,6 +160,27 @@ describe('PublicPageComponent', () => {
         emergency: { contacts: [{ label: 'Line', phone: '112233' }], note: '' },
         helpTiles: [{ icon: 'support_agent', title: 'Helpdesk', text: 'Gate 1' }]
       }));
+    });
+  });
+
+  describe('SOS switch and departments (PH4b)', () => {
+    it('is off by default; switching on and picking departments makes it saveable and is sent', () => {
+      create(settings());
+      expect(component.sosEnabled).toBeFalse();
+      component.sosEnabled = true;
+      component.toggleSosDept('d1');
+      expect(component.dirty).toBeTrue();
+      adminSpy.savePublicPage.and.returnValue(of(settings({ sosEnabled: true, sosDepartments: ['d1'] })));
+      component.save();
+      expect(adminSpy.savePublicPage).toHaveBeenCalledWith(jasmine.objectContaining({ sosEnabled: true, sosDepartments: ['d1'] }));
+      expect(component.dirty).toBeFalse();
+    });
+
+    it('warns when on with no department picked', () => {
+      create(settings());
+      component.sosEnabled = true;
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Only Directors, Admins and Developers will get SOS alerts');
     });
   });
 });

@@ -13,6 +13,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.39.0] - 2026-11-07
+
+### Added
+- **SOS page** (sidebar, with a red count of open alerts) for Directors, Admins, Developers and the chosen departments: each help request with the time, a small map, directions, "outside the venue" when it is, the participant's message and call-back phone, and **Mark handled** with a note. Refreshes every 15 seconds; tapping the alert opens it.
+- **Admin › Public Page:** an SOS On / Off switch (off by default) and which departments get SOS alerts.
+- **Public festival page — Send SOS to the festival team** in the Emergency sheet (only when switched on): a "Send SOS?" step with the location found, an optional message and call-back phone, then "Help is on the way". Calling and sharing by SMS / WhatsApp stay available.
+- Billboard: SOS notes in red.
+
+### Notes
+- 968/968 staff unit tests, 63/63 public page unit tests.
+
+---
+
 ## [1.38.0] - 2026-11-07
 
 ### Added

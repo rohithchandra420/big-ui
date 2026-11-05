@@ -50,6 +50,7 @@ textarea.pp-in { width: 100%; resize: vertical; }
 .pp-icons button { width: 34px; height: 34px; border-radius: 10px; border: 1px solid #ddd; background: #fff; color: #555; display: grid; place-items: center; cursor: pointer; }
 .pp-icons button.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
 .pp-icons mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.pp-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
 @media (max-width: 600px) {
   .pp-status { flex-wrap: wrap; }

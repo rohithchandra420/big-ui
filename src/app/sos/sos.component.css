@@ -1,0 +1,30 @@
+.sos-page { max-width: 1300px; margin: 0 auto; padding: 16px; }
+.sos-count { background: #dc2626; color: #fff; font-weight: 700; font-size: 13px; border-radius: 999px; padding: 4px 12px; }
+.sos-hint { font-size: 12px; color: #666; margin: 0 0 12px; }
+.sos-layout { display: grid; gap: 14px; }
+@media (min-width: 980px) { .sos-layout { grid-template-columns: minmax(0, 1fr) 440px; align-items: start; } .sos-map { position: sticky; top: 16px; } }
+
+.sos-map { position: relative; height: 380px; padding: 0; overflow: hidden; border-radius: 14px; }
+.sos-map.empty { height: 160px; }
+.sos-map-el { position: absolute; inset: 0; }
+.sos-map-msg { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 16px; font-size: 13px; color: #555; background: #f7f7f5; z-index: 500; }
+
+.sos-list { display: flex; flex-direction: column; gap: 10px; }
+.sos-empty { font-size: 13px; color: #666; }
+.sos-item { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; border-left: 4px solid #d1d5db; }
+.sos-item.open { border-left-color: #dc2626; background: #fff7f7; }
+.sos-item.sel { box-shadow: 0 0 0 2px #dc2626; }
+.sos-hd { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sos-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: #ecf7f0; color: #146c43; }
+.sos-badge.open { background: #dc2626; color: #fff; }
+.sos-badge mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.sos-when { font-size: 12px; color: #555; }
+.sos-flag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #b45309; }
+.sos-flag mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.sos-msg { margin: 0; font-size: 14px; color: #1a1a1a; overflow-wrap: anywhere; }
+.sos-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: #555; }
+.sos-meta a { text-decoration: none; }
+.sos-handle { display: flex; gap: 8px; flex-wrap: wrap; }
+.sos-handle input { flex: 1 1 200px; min-width: 0; font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px; color: #1a1a1a; background: #fff; }
+.sos-handle .btn-cta { background: #dc2626; padding: 7px 16px; font-size: 13px; }
+.sos-done { font-size: 12px; color: #146c43; }

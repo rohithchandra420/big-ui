@@ -1,5 +1,6 @@
+import { of } from 'rxjs';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { PublicMapArea, PublicMapPin } from './public-api.service';
+import { PublicApiService, PublicMapArea, PublicMapPin } from './public-api.service';
 import { centreOf, metresBetween, nearest, placesFor, walkMinutes } from './map-data';
 import { MyLocationService } from './my-location.service';
 import { FindWayComponent } from '../ui/find-way.component';
@@ -103,7 +104,7 @@ describe('EmergencyComponent', () => {
   let me: MyLocationService;
   const open = () => { (fixture.nativeElement.querySelector('.sos') as HTMLButtonElement).click(); fixture.detectChanges(); };
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [EmergencyComponent] });
+    TestBed.configureTestingModule({ imports: [EmergencyComponent], providers: [{ provide: PublicApiService, useValue: { sendSos: () => of({ ok: true, id: 'x' }) } }] });
     me = TestBed.inject(MyLocationService);
     fixture = TestBed.createComponent(EmergencyComponent);
     c = fixture.componentInstance;

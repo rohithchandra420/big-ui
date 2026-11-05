@@ -80,6 +80,28 @@
       </div>
     </div>
 
+    <!-- PH4b: SOS to staff -->
+    <div class="pp-sec">
+      <div class="pp-sec-hd">
+        <mat-icon class="ms-fill pp-sec-ic red">emergency_share</mat-icon>
+        <div><b>SOS to the festival team</b><small>Lets participants send their location to the team from the Emergency button. Alerts go to Directors, Admins, Developers and the departments below. Off = no SOS option on the public page.</small></div>
+      </div>
+      <div class="pp-row">
+        <div class="pp-seg" role="group" aria-label="SOS">
+          <button type="button" [class.on]="sosEnabled" [attr.aria-pressed]="sosEnabled" (click)="sosEnabled = true">On</button>
+          <button type="button" [class.on]="!sosEnabled" [attr.aria-pressed]="!sosEnabled" (click)="sosEnabled = false">Off</button>
+        </div>
+      </div>
+      <div class="pp-chips" *ngIf="departments.length">
+        <span class="pp-lbl">SOS alerts also go to</span>
+        <label class="toggle-chip" *ngFor="let d of departments; trackBy: trackEvent" [class.on]="sosDepartments.has(d._id)">
+          <input class="sr-only" type="checkbox" [checked]="sosDepartments.has(d._id)" (change)="toggleSosDept(d._id)">
+          <mat-icon aria-hidden="true">{{ sosDepartments.has(d._id) ? 'check' : 'add' }}</mat-icon>{{ d.name }}
+        </label>
+      </div>
+      <small class="pp-hint pp-err" *ngIf="sosEnabled && !sosDepartments.size">Only Directors, Admins and Developers will get SOS alerts. Pick e.g. Medical or Security too.</small>
+    </div>
+
     <!-- PH4a: Help tiles -->
     <div class="pp-sec">
       <div class="pp-sec-hd">

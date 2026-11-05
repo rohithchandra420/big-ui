@@ -42,6 +42,11 @@ export class PublicPageComponent implements OnInit {
   // PH4a
   readonly maxContacts = MAX_CONTACTS;
   readonly maxTiles = MAX_TILES;
+  // PH4b
+  sosEnabled = false;
+  sosDepartments = new Set<string>();
+  /** Stored list for *ngFor. */
+  departments: { _id: string; name: string }[] = [];
   contacts: { label: string; phone: string }[] = [];
   note = '';
   tiles: PublicHelpTile[] = [];
@@ -90,7 +95,9 @@ export class PublicPageComponent implements OnInit {
     return !s || s.enabled !== this.enabled || (s.event?._id ?? null) !== this.eventId
       || s.showBeforeDays !== this.showBeforeDays || s.showAfterDays !== this.showAfterDays
       || JSON.stringify(this.emergencyOut()) !== JSON.stringify(s.emergency)
-      || JSON.stringify(this.tilesOut()) !== JSON.stringify(s.helpTiles);
+      || JSON.stringify(this.tilesOut()) !== JSON.stringify(s.helpTiles)
+      || this.sosEnabled !== !!s.sosEnabled
+      || JSON.stringify([...this.sosDepartments].sort()) !== JSON.stringify([...(s.sosDepartments || [])].sort());
   }
 
   trackEvent = (_: number, e: { _id: string }) => e._id;
@@ -101,6 +108,10 @@ export class PublicPageComponent implements OnInit {
   removeContact(i: number): void { this.contacts.splice(i, 1); }
   /** Make this contact the main line (first in the list). */
   makeMain(i: number): void { const [c] = this.contacts.splice(i, 1); this.contacts.unshift(c); }
+
+  toggleSosDept(id: string): void {
+    this.sosDepartments.has(id) ? this.sosDepartments.delete(id) : this.sosDepartments.add(id);
+  }
 
   addTile(): void { if (this.tiles.length < MAX_TILES) this.tiles.push({ icon: 'info', title: '', text: '' }); }
   removeTile(i: number): void { this.tiles.splice(i, 1); }
@@ -117,7 +128,8 @@ export class PublicPageComponent implements OnInit {
     this.admin.savePublicPage({
       enabled: this.enabled, event: this.eventId,
       showBeforeDays: this.showBeforeDays, showAfterDays: this.showAfterDays,
-      emergency: this.emergencyOut(), helpTiles: this.tilesOut()
+      emergency: this.emergencyOut(), helpTiles: this.tilesOut(),
+      sosEnabled: this.sosEnabled, sosDepartments: [...this.sosDepartments]
     }).subscribe({
       next: s => {
         this.apply(s);
@@ -143,6 +155,9 @@ export class PublicPageComponent implements OnInit {
     this.note = s.emergency?.note || '';
     this.tiles = (s.helpTiles || []).map(t => ({ ...t }));
     this.helpIcons = s.helpIcons || [];
+    this.sosEnabled = !!s.sosEnabled;
+    this.sosDepartments = new Set(s.sosDepartments || []);
+    this.departments = s.departments || [];
   }
 
   private emergencyOut(): PublicEmergency {

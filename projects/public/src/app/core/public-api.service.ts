@@ -20,6 +20,8 @@ export interface PublicEvent {
   /** PH4a — set on Admin › Public Page. The first contact is the main line. */
   emergency?: { contacts: { label: string; phone: string }[]; note: string };
   help?: { icon: string; title: string; text: string }[];
+  /** PH4b: staff switched SOS on. */
+  sos?: boolean;
 }
 
 /** PH4a public map: whitelisted pins and areas only. */
@@ -74,6 +76,18 @@ export interface Loaded<T> {
 
 const KEY = 'big-live:';
 
+/** A random id for this phone, kept on it — only used for the SOS limits (PH4b). */
+export function deviceId(): string {
+  let id = '';
+  try { id = localStorage.getItem(KEY + 'device') || ''; } catch { /* storage off */ }
+  if (!/^[A-Za-z0-9-]{8,64}$/.test(id)) {
+    id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto) ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+    try { localStorage.setItem(KEY + 'device', id); } catch { /* storage off: a new id each time */ }
+  }
+  return id;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PublicApiService {
   constructor(private http: HttpClient) {}
@@ -92,6 +106,11 @@ export class PublicApiService {
 
   map(): Observable<Loaded<PublicMapAnswer>> {
     return this.get<PublicMapAnswer>('map');
+  }
+
+  /** PH4b: send an SOS to the festival team (never saved or retried offline). */
+  sendSos(body: { lat: number; lng: number; accuracy: number | null; message: string; phone: string }): Observable<{ ok: true; id: string }> {
+    return this.http.post<{ ok: true; id: string }>(`${environment.URL}/public/sos`, { ...body, device: deviceId() }, { withCredentials: false });
   }
 
   private get<T>(name: string): Observable<Loaded<T>> {
