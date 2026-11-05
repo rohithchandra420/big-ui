@@ -1,0 +1,69 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Public Page</div>
+    <div class="page-ph-sub">The festival page for participants, no sign-in needed</div>
+  </div>
+</div>
+
+<div class="pp-page">
+  <div *ngIf="loading" class="pp-loading"><mat-spinner diameter="36"></mat-spinner></div>
+  <div *ngIf="loadError" class="warn-banner">{{ loadError }}</div>
+
+  <div class="card pp-card" *ngIf="!loading && !loadError">
+    <div class="pp-status" [class.on]="saved?.enabled && !savedEventInactive">
+      <span class="pp-dot" aria-hidden="true"></span>
+      <div class="pp-status-txt">
+        <b *ngIf="saved?.enabled && !savedEventInactive">On · showing {{ saved?.event?.name }}</b>
+        <b *ngIf="!saved?.enabled">Off</b>
+        <b *ngIf="saved?.enabled && savedEventInactive">Off for now · {{ saved?.event?.name }} is no longer active</b>
+        <small *ngIf="saved?.updatedBy">Last changed by {{ saved?.updatedBy }} · {{ saved?.updatedAt | date:'d MMM, HH:mm' }}</small>
+      </div>
+      <a class="pp-open" [href]="publicUrl" target="_blank" rel="noopener">
+        <mat-icon>open_in_new</mat-icon> Open page
+      </a>
+    </div>
+
+    <div class="warn-banner pp-warn">
+      <mat-icon>public</mat-icon>
+      <span>When it's on, anyone on the internet can open this page. It only ever shows festival information, never names or contact details of people.</span>
+    </div>
+
+    <div class="pp-row">
+      <span class="pp-lbl" id="pp-onoff">Public page</span>
+      <div class="pp-seg" role="group" aria-labelledby="pp-onoff">
+        <button type="button" [class.on]="enabled" [attr.aria-pressed]="enabled" (click)="setEnabled(true)">On</button>
+        <button type="button" [class.on]="!enabled" [attr.aria-pressed]="!enabled" (click)="setEnabled(false)">Off</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="pp-event">Event shown</label>
+      <app-select id="pp-event" [(ngModel)]="eventId" placeholder="Pick an event">
+        <app-option *ngFor="let e of events; trackBy: trackEvent" [value]="e._id">
+          {{ e.name }} · {{ e.startDate | date:'d MMM' }} – {{ e.endDate | date:'d MMM y' }}
+        </app-option>
+      </app-select>
+      <small class="pp-hint" *ngIf="!events.length">No active event with start and end dates yet. Set them on Admin › Events.</small>
+      <small class="pp-hint pp-err" *ngIf="enabled && !eventId && events.length">Pick an event to switch the page on.</small>
+    </div>
+
+    <div class="form-two-col">
+      <div class="field">
+        <label for="pp-before">Show from (days before the first day)</label>
+        <input id="pp-before" type="number" min="0" [max]="maxDays" step="1" [(ngModel)]="showBeforeDays">
+      </div>
+      <div class="field">
+        <label for="pp-after">Show until (days after the last day)</label>
+        <input id="pp-after" type="number" min="0" [max]="maxDays" step="1" [(ngModel)]="showAfterDays">
+      </div>
+    </div>
+    <small class="pp-hint pp-err" *ngIf="!daysValid">Days: a whole number from 0 to {{ maxDays }}.</small>
+    <small class="pp-hint">Before the festival it shows a countdown; after it, a thank-you. Outside these days the page says it's resting.</small>
+
+    <div class="warn-banner" *ngIf="saveError">{{ saveError }}</div>
+
+    <div class="pp-actions">
+      <button type="button" class="btn-cta" [disabled]="!canSave" (click)="save()">{{ saving ? 'Saving…' : 'Save' }}</button>
+    </div>
+  </div>
+</div>

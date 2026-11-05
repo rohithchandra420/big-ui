@@ -13,6 +13,46 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.36.0] - 2026-11-06
+
+### Added
+- **UAT Reset (temporary, testing only):** a Developer-only page under Admin to clear one event's test data, so the testing team can reuse the same wrist bands: wrist bands (and admission), workshop activity, Venue Map pins and areas, Hospitality activity, and staff attendance marked on the event's days, each as its own choice with counts shown first and the event name typed to confirm. It only appears when the server has it switched on, and it will be removed before Production.
+
+### Notes
+- 952/952 staff unit tests.
+
+---
+
+## [1.35.0] - 2026-11-05
+
+### Added
+- **Public festival page — what's on:** Home now shows **Live now** (workshops running right now) and **Up next** (the rest of today), with category filters. Before the festival it shows the first day as a preview.
+- **Schedule tab:** pick a festival day and a category to see the whole day; finished sessions are greyed and cancelled ones marked.
+- **Session details:** tap a session to see who leads it, the description, age, language and what to bring.
+- Each session shows its status in plain words (registration open at the venue, entry opens at…, walk in, full, entry closed…) and how many places are left once everyone can walk in, when staff show that number.
+
+### Notes
+- 36/36 public page unit tests. Staff app unchanged.
+
+---
+
+## [1.34.0] - 2026-11-05
+
+### Added
+- **Public festival page (first part):** a new, separate app for participants at `/live`, with no sign-in. It shows the festival's name, a countdown before the event, the festival days with today highlighted during it, and a thank-you after it. Schedule, map, news and "My plan" tabs are in place and say "coming soon" for now. It is installable as its own app ("BiG Festival"), refreshes every 30 seconds while on screen, opens offline with the last information it had, and has a "resting" screen when it is switched off.
+- **Admin › Public Page** (Directors, Admins, Developers): switch the public page on or off, pick the event it shows, and how many days before and after the event it can be seen. It is off until someone switches it on.
+
+### Changed
+- The staff app's offline support now leaves the `/live` address to the public page.
+
+### Development
+- The public page is a second app in this workspace (`projects/public`): `npm run start:public` (port 4201), `npm run build:public`, `npm run test:public`. Production builds to `docs/live/`.
+
+### Notes
+- 946/946 staff unit tests, 21/21 public page unit tests.
+
+---
+
 ## [1.33.0] - 2026-11-04
 
 ### Changed

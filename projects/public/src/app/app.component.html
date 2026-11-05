@@ -1,0 +1,82 @@
+<!-- Can't reach the server and nothing saved on this phone yet -->
+<div class="full" *ngIf="unreachable && !event && !off">
+  <div class="logo big">BiG</div>
+  <h1>{{ 'offline.title' | t }}</h1>
+  <p>{{ 'offline.text' | t }}</p>
+  <button class="cta" type="button" (click)="load()"><span class="ms">refresh</span>{{ 'offline.retry' | t }}</button>
+</div>
+
+<!-- Switched off / outside the before–after window -->
+<div class="full" *ngIf="off">
+  <div class="logo big">BiG</div>
+  <h1>{{ 'off.title' | t }}</h1>
+  <p>{{ 'off.text' | t }}</p>
+</div>
+
+<ng-container *ngIf="event as ev">
+  <header class="hero">
+    <svg class="petal" width="180" height="180" viewBox="0 0 100 100" aria-hidden="true">
+      <g fill="#fff"><ellipse cx="50" cy="25" rx="12" ry="24"/><ellipse cx="50" cy="75" rx="12" ry="24"/><ellipse cx="25" cy="50" rx="24" ry="12"/><ellipse cx="75" cy="50" rx="24" ry="12"/></g>
+    </svg>
+    <div class="wrap hero-in">
+      <div class="topbar">
+        <div class="logo">BiG</div>
+        <div class="brand"><b>{{ 'brand.name' | t }}</b><span>{{ 'brand.sub' | t: { event: ev.name } }}</span></div>
+        <nav class="tabs" aria-label="Sections">
+          <button type="button" *ngFor="let v of views; trackBy: trackView" [class.on]="view === v.key" (click)="go(v.key)">
+            <span class="ms">{{ v.icon }}</span>{{ v.label | t }}
+          </button>
+        </nav>
+        <div class="sp"></div>
+        <div class="fresh" [class.offline]="offline"><i></i><span>{{ freshText }}</span></div>
+      </div>
+
+      <h1 *ngIf="ev.phase === 'before'">{{ 'hero.before.title' | t }} <span class="script">{{ 'hero.before.word' | t }}</span></h1>
+      <h1 *ngIf="ev.phase === 'during'">{{ 'hero.during.title' | t: { n: dayNumber } }} <span class="script">{{ 'hero.during.word' | t }}</span></h1>
+      <h1 *ngIf="ev.phase === 'after'">{{ 'hero.after.title' | t }} <span class="script">{{ 'hero.after.word' | t }}</span></h1>
+
+      <p class="lead" *ngIf="ev.phase === 'before'">{{ 'hero.before.lead' | t: { event: ev.name, days: ev.days.length } }}</p>
+      <p class="lead" *ngIf="ev.phase === 'during'">{{ 'hero.during.lead' | t: { event: ev.name } }}</p>
+      <p class="lead" *ngIf="ev.phase === 'after'">{{ 'hero.after.lead' | t: { event: ev.name } }}</p>
+
+      <div class="countdown" *ngIf="ev.phase === 'before'">
+        <div><b>{{ countdown.days }}</b><span>{{ 'count.days' | t }}</span></div>
+        <div><b>{{ countdown.hours }}</b><span>{{ 'count.hours' | t }}</span></div>
+        <div><b>{{ countdown.mins }}</b><span>{{ 'count.mins' | t }}</span></div>
+      </div>
+
+      <div class="days" *ngIf="ev.phase !== 'before'">
+        <div class="day" *ngFor="let d of ev.days; let i = index; trackBy: trackDay"
+             [class.on]="d === ev.today" [class.past]="d < ev.today">
+          {{ 'hero.day' | t: { n: i + 1 } }}<small>{{ dayLabel(d) }}</small>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <pub-home-view *ngIf="view === 'home'" [event]="ev" [sessions]="sessions" [now]="now"
+                   (open)="openSession($event)" (schedule)="go('schedule')"></pub-home-view>
+    <pub-schedule-view *ngIf="view === 'schedule'" [event]="ev" [sessions]="sessions" [now]="now"
+                       (open)="openSession($event)"></pub-schedule-view>
+
+    <section class="soon" *ngIf="view !== 'home' && view !== 'schedule'">
+      <span class="ms soon-ic">{{ viewIcon }}</span>
+      <h2>{{ 'soon.title' | t }}</h2>
+      <p>{{ soonText | t }}</p>
+    </section>
+
+    <footer class="foot">
+      <span><span class="ms">lock</span>{{ 'foot.privacy' | t }}</span>
+      <span *ngIf="i18n.languages.length < 2"><span class="ms">language</span>{{ 'foot.lang' | t }}</span>
+    </footer>
+  </main>
+
+  <pub-session-sheet *ngIf="selected" [session]="selected" (close)="closeSession()"></pub-session-sheet>
+
+  <nav class="bottom" aria-label="Sections">
+    <button type="button" *ngFor="let v of views; trackBy: trackView" [class.on]="view === v.key" (click)="go(v.key)">
+      <span class="ms">{{ v.icon }}</span>{{ v.label | t }}
+    </button>
+  </nav>
+</ng-container>

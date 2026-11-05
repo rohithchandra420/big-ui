@@ -23,6 +23,8 @@ import { EventsComponent } from "../admin/events/events.component";
 import { EventDetailComponent } from "../admin/events/event-detail/event-detail.component";
 import { EmailReportComponent } from "../admin/email-report/email-report.component";
 import { AnnouncementsComponent } from "../admin/announcements/announcements.component";
+import { PublicPageComponent } from "../admin/public-page/public-page.component";
+import { UatResetComponent } from "../admin/uat-reset/uat-reset.component"; // UAT-RESET: remove before Production
 import { BillboardComponent } from "../billboard/billboard.component";
 import { VenueMapComponent } from "../venue-map/venue-map.component";
 import { WorkshopSetupComponent } from "../workshops/setup/workshop-setup.component";
@@ -120,7 +122,9 @@ const appRoutes: Routes = [
         { path: 'events/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventDetailComponent },
         // DEV/DIR/ADMIN only (decided by the backend via /emails/config)
         { path: 'email-report', canActivate: [EmailAccessGuard], component: EmailReportComponent },
-        { path: 'announcements', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: AnnouncementsComponent }
+        { path: 'announcements', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: AnnouncementsComponent },
+        { path: 'public-page', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: PublicPageComponent },
+        { path: 'uat-reset', canActivate: [AuthPermissionGuard], data: { roles: ['DEV'] }, component: UatResetComponent } // UAT-RESET: remove before Production
     ]},
     { path: 'error', component: ErrorPageComponent, data: {message: 'Page Under Construction'}},
     //{ path: '**', redirectTo: 'error' },

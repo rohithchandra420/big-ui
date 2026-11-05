@@ -1,0 +1,14 @@
+/* Public participant app (rchomeproject.in/live) — see PUBLIC_HOME_CONTEXT.md. */
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/public",
+    "types": []
+  },
+  "files": [
+    "src/main.ts"
+  ],
+  "include": [
+    "src/**/*.d.ts"
+  ]
+}
