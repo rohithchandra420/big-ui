@@ -46,6 +46,16 @@ export interface PublicSession {
 }
 export type PublicSessionsAnswer = { off: false; sessions: PublicSession[] } | { off: true };
 
+/** A news post from the organisers (PH3) — sent from staff Announcements. */
+export interface PublicNews {
+  id: string;
+  type: 'general' | 'urgent' | 'schedule' | 'weather';
+  title: string;
+  message: string;
+  at: string;
+}
+export type PublicNewsAnswer = { off: false; news: PublicNews[] } | { off: true };
+
 export interface Loaded<T> {
   data: T;
   /** When the server answered (ms). */
@@ -66,6 +76,10 @@ export class PublicApiService {
 
   sessions(): Observable<Loaded<PublicSessionsAnswer>> {
     return this.get<PublicSessionsAnswer>('sessions');
+  }
+
+  news(): Observable<Loaded<PublicNewsAnswer>> {
+    return this.get<PublicNewsAnswer>('news');
   }
 
   private get<T>(name: string): Observable<Loaded<T>> {

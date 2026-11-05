@@ -2,7 +2,9 @@ import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { Subscription, catchError, forkJoin, of } from 'rxjs';
 import { I18nService, TPipe, WordKey } from './core/i18n';
-import { Loaded, PublicApiService, PublicEvent, PublicSession, PublicSessionsAnswer } from './core/public-api.service';
+import { Loaded, PublicApiService, PublicEvent, PublicNews, PublicNewsAnswer, PublicSession, PublicSessionsAnswer } from './core/public-api.service';
+import { NewsTickerComponent } from './ui/news-ticker.component';
+import { NewsViewComponent } from './views/news-view.component';
 import { countdown, dayLabel, dayStart, timeLabel } from './core/festival-time';
 import { HomeViewComponent } from './views/home-view.component';
 import { ScheduleViewComponent } from './views/schedule-view.component';
@@ -30,7 +32,7 @@ export const REFRESH_MS = 30000;
 @Component({
   selector: 'pub-root',
   standalone: true,
-  imports: [NgIf, NgFor, TPipe, HomeViewComponent, ScheduleViewComponent, SessionSheetComponent],
+  imports: [NgIf, NgFor, TPipe, HomeViewComponent, ScheduleViewComponent, SessionSheetComponent, NewsTickerComponent, NewsViewComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
@@ -40,6 +42,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   event: PublicEvent | null = null;
   sessions: PublicSession[] = [];
+  news: PublicNews[] = [];
   /** The session whose details are open. */
   selected: PublicSession | null = null;
   off = false;
@@ -71,13 +74,17 @@ export class AppComponent implements OnInit, OnDestroy {
     // The schedule failing (with nothing saved) must not hide the whole page.
     const sessions$ = this.api.sessions().pipe(
       catchError(() => of<Loaded<PublicSessionsAnswer>>({ data: { off: false, sessions: this.sessions }, at: this.loadedAt || Date.now(), offline: true })));
-    this.sub = forkJoin([this.api.event(), sessions$]).subscribe({
-      next: ([ev, ss]) => {
+    // Same for the news (PH3).
+    const news$ = this.api.news().pipe(
+      catchError(() => of<Loaded<PublicNewsAnswer>>({ data: { off: false, news: this.news }, at: this.loadedAt || Date.now(), offline: true })));
+    this.sub = forkJoin([this.api.event(), sessions$, news$]).subscribe({
+      next: ([ev, ss, nw]) => {
         this.unreachable = false;
-        this.offline = ev.offline || ss.offline;
+        this.offline = ev.offline || ss.offline || nw.offline;
         // Offline: show the oldest saved time among the parts that came from the phone.
-        const saved = [ev, ss].filter(x => x.offline).map(x => x.at);
-        this.loadedAt = saved.length ? Math.min(...saved) : Math.max(ev.at, ss.at);
+        const saved = [ev, ss, nw].filter(x => x.offline).map(x => x.at);
+        this.loadedAt = saved.length ? Math.min(...saved) : Math.max(ev.at, ss.at, nw.at);
+        this.news = 'news' in nw.data ? nw.data.news : [];
         this.now = Date.now();
         this.off = ev.data.off;
         this.event = ev.data.off ? null : ev.data as PublicEvent;

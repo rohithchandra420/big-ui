@@ -101,6 +101,27 @@ pub-live-card { display: block; scroll-snap-align: start; min-width: 0; }
 .tl-soon { font-size: 11px; font-weight: 700; color: var(--bloom); text-transform: uppercase; letter-spacing: .5px; }
 .chev { color: var(--muted); }
 
+/* ---------- News ticker + feed (PH3) ---------- */
+pub-news-ticker { display: block; margin-top: -16px; position: relative; z-index: 2; }
+.ticker { width: 100%; display: flex; align-items: center; gap: 10px; background: #fff; border: 0; border-left: 5px solid var(--marigold); border-radius: 16px; box-shadow: var(--shadow); padding: 10px 12px; text-align: left; color: var(--ink); min-width: 0; animation: tick-in .35s ease-out; }
+.ticker.urgent { border-left-color: var(--danger); background: #fff5f4; }
+@keyframes tick-in { from { opacity: .4; } to { opacity: 1; } }
+.ticker-tag { flex-shrink: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #8a5a00; background: #fff1d6; padding: 4px 8px; border-radius: 8px; }
+.ticker.urgent .ticker-tag { color: #fff; background: var(--danger); }
+.ticker-msg { flex: 1; min-width: 0; font-size: 14px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ticker-more { flex-shrink: 0; display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; color: var(--leaf-2); }
+.ticker-more .ms { font-size: 18px; }
+@media (max-width: 420px) { .ticker-more { font-size: 0; } .ticker-more .ms { font-size: 20px; } }
+.feed { display: grid; gap: 10px; }
+.post { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: flex; gap: 12px; }
+.post.urgent { border-color: #f5b5ae; background: #fff5f4; }
+.post-ic { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; color: #fff; background: var(--dot); flex-shrink: 0; }
+.post-body { min-width: 0; }
+.post-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--dot); }
+.post h3 { margin: 2px 0 0; font-size: 16px; color: var(--ink); overflow-wrap: anywhere; }
+.post p { margin: 4px 0 6px; font-size: 14px; color: var(--ink-2); line-height: 1.45; overflow-wrap: anywhere; white-space: pre-line; }
+.post small { font-size: 12px; color: var(--muted); }
+
 /* ---------- Session details sheet ---------- */
 .scrim { position: fixed; inset: 0; background: rgba(15,25,20,.5); z-index: 40; }
 .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; background: #fff; color: var(--ink); border-radius: 26px 26px 0 0; padding: 18px 18px calc(22px + env(safe-area-inset-bottom)); max-width: 560px; margin: 0 auto; max-height: 88vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; animation: up .22s ease-out; }

@@ -13,6 +13,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.37.0] - 2026-11-07
+
+### Added
+- **Announcements › Public page:** a new audience tile to also post on the public festival page (for General, Urgent, Schedule and Weather posts), with or without staff. The confirmation says where it goes; the sent history shows a Public badge, a **Remove from public page** button and a Removed badge.
+- **Public festival page — news:** a rotating news strip on Home (the last 24 hours, urgent posts first for 6 hours) and the **News** tab with every post, newest first, urgent ones in red. Works offline with the last news it had.
+
+### Notes
+- 957/957 staff unit tests, 43/43 public page unit tests.
+
+---
+
 ## [1.36.0] - 2026-11-06
 
 ### Added

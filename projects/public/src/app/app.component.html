@@ -55,12 +55,15 @@
   </header>
 
   <main class="wrap">
+    <pub-news-ticker *ngIf="view === 'home'" [news]="news" [now]="now" (all)="go('news')"></pub-news-ticker>
     <pub-home-view *ngIf="view === 'home'" [event]="ev" [sessions]="sessions" [now]="now"
                    (open)="openSession($event)" (schedule)="go('schedule')"></pub-home-view>
     <pub-schedule-view *ngIf="view === 'schedule'" [event]="ev" [sessions]="sessions" [now]="now"
                        (open)="openSession($event)"></pub-schedule-view>
 
-    <section class="soon" *ngIf="view !== 'home' && view !== 'schedule'">
+    <pub-news-view *ngIf="view === 'news'" [news]="news" [now]="now"></pub-news-view>
+
+    <section class="soon" *ngIf="view !== 'home' && view !== 'schedule' && view !== 'news'">
       <span class="ms soon-ic">{{ viewIcon }}</span>
       <h2>{{ 'soon.title' | t }}</h2>
       <p>{{ soonText | t }}</p>
