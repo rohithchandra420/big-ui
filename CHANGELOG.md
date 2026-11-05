@@ -13,6 +13,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.40.0] - 2026-11-07
+
+### Added
+- **Public festival page — My plan:** a star on every session keeps it in **My plan** on the phone; a changed time, place or status is marked there.
+- **Festival alerts:** a "Get festival alerts" card on Home (and a one-time offer after the first star). With alerts on, the organisers' alerts arrive on the phone; tapping one opens News. On iPhone this works from the installed app.
+- **Highlights and "through the years"** on Home: a photo mosaic with a full-size viewer, and the numbers of each edition with a switcher.
+- **Announcements:** for a public post, "Also alert participants' phones" — no alert, every phone with alerts on, or phones that starred a chosen session; the history shows how many phones were alerted.
+- **Admin › Public Page:** Photos (add several at once; they are shrunk and re-saved in the browser first, which removes GPS and other hidden data; caption, layout, order, show / hide, delete) and Through the years.
+
+### Notes
+- 975/975 staff unit tests, 74/74 public page unit tests.
+
+---
+
 ## [1.39.0] - 2026-11-07
 
 ### Added

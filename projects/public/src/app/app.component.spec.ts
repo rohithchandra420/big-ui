@@ -1,3 +1,4 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { AppComponent } from './app.component';
@@ -29,14 +30,15 @@ describe('AppComponent (public shell)', () => {
 
   beforeEach(async () => {
     history.replaceState(null, '', location.pathname);
-    apiSpy = jasmine.createSpyObj('PublicApiService', ['event', 'sessions', 'news', 'map']);
+    apiSpy = jasmine.createSpyObj('PublicApiService', ['event', 'sessions', 'news', 'map', 'highlights']);
     apiSpy.event.and.returnValue(of({ data: during, at: Date.now(), offline: false }));
     apiSpy.sessions.and.returnValue(of({ data: { off: false, sessions: [] }, at: Date.now(), offline: false }));
     apiSpy.news.and.returnValue(of({ data: { off: false, news: [] }, at: Date.now(), offline: false }));
     apiSpy.map.and.returnValue(of({ data: { off: false, pins: [], areas: [] }, at: Date.now(), offline: false }));
+    apiSpy.highlights.and.returnValue(of({ data: { off: false, photos: [], stats: [] }, at: Date.now(), offline: false }));
     await TestBed.configureTestingModule({
       imports: [AppComponent],
-      providers: [{ provide: PublicApiService, useValue: apiSpy }]
+      providers: [provideHttpClient(), { provide: PublicApiService, useValue: apiSpy }]
     }).compileComponents();
   });
   afterEach(() => {
@@ -133,7 +135,7 @@ describe('AppComponent (public shell)', () => {
     const s = session({ start: new Date(now - 600000).toISOString(), end: new Date(now + 3000000).toISOString() });
     apiSpy.sessions.and.returnValue(of({ data: { off: false, sessions: [s] }, at: now, offline: false }));
     create();
-    (fixture.nativeElement.querySelector('.live-card') as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelector('.live-open') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.sheet h3').textContent).toContain('Hand Drumming');
     expect(text()).toContain('With Ira Monsoon');

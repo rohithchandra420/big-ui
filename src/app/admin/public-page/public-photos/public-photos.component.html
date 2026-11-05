@@ -1,0 +1,40 @@
+<div class="ph-hd">
+  <mat-icon class="ms-fill ph-ic">photo_library</mat-icon>
+  <div>
+    <b>Photos</b>
+    <small>Highlights on the public page (up to {{ max }}). Photos are shrunk and re-saved before upload, which also removes GPS and other hidden data. Changes apply at once.</small>
+  </div>
+</div>
+
+<div class="warn-banner" *ngIf="!enabled">Photo storage isn't set up on this server yet (see the Cloudflare setup guide).</div>
+
+<ng-container *ngIf="enabled && eventId">
+  <label class="ph-add" [class.busy]="uploading">
+    <input type="file" accept="image/*" multiple class="sr-only" #picker (change)="pick(picker)" [disabled]="photos.length >= max">
+    <mat-icon>add_photo_alternate</mat-icon>
+    {{ uploading ? 'Uploading ' + uploading + '…' : (photos.length >= max ? 'Limit reached' : 'Add photos') }}
+  </label>
+  <div class="warn-banner" *ngIf="error">{{ error }}</div>
+
+  <div class="ph-list">
+    <div class="ph-item" *ngFor="let p of photos; let i = index; trackBy: trackById" [class.hidden]="!p.shown">
+      <img [src]="p.thumbUrl" alt="" loading="lazy">
+      <div class="ph-body">
+        <input type="text" maxlength="80" [value]="p.caption" placeholder="Caption" (change)="save(p, { caption: $any($event.target).value })" aria-label="Caption">
+        <input type="text" maxlength="80" [value]="p.sub" placeholder="Second line (optional)" (change)="save(p, { sub: $any($event.target).value })" aria-label="Second line">
+        <div class="ph-row">
+          <span class="ph-seg" role="group" aria-label="Layout">
+            <button type="button" *ngFor="let l of layouts; trackBy: trackLayout" [class.on]="p.layout === l.value" (click)="save(p, { layout: l.value })">{{ l.label }}</button>
+          </span>
+          <button type="button" class="ph-btn" (click)="save(p, { shown: !p.shown })">
+            <mat-icon>{{ p.shown ? 'visibility' : 'visibility_off' }}</mat-icon>{{ p.shown ? 'Shown' : 'Hidden' }}
+          </button>
+          <button type="button" class="ph-btn" [disabled]="i === 0" (click)="move(i, -1)" aria-label="Move up"><mat-icon>arrow_upward</mat-icon></button>
+          <button type="button" class="ph-btn" [disabled]="i === photos.length - 1" (click)="move(i, 1)" aria-label="Move down"><mat-icon>arrow_downward</mat-icon></button>
+          <button type="button" class="ph-btn danger" (click)="remove(p)" aria-label="Delete"><mat-icon>delete</mat-icon></button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="ph-empty" *ngIf="!loading && !photos.length">No photos yet.</p>
+</ng-container>

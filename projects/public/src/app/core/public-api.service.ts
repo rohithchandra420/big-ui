@@ -28,6 +28,11 @@ export interface PublicEvent {
 export interface PublicMapPin { id: string; name: string; type: string; lat: number; lng: number; open?: boolean; note?: string; }
 export interface PublicMapArea { id: string; name: string; kind: string; points: [number, number][]; }
 export type PublicMapAnswer = { off: false; pins: PublicMapPin[]; areas: PublicMapArea[] } | { off: true };
+
+/** PH6: photos staff chose to show, and "through the years". */
+export interface PublicPhoto { id: string; url: string; thumbUrl: string; caption: string; sub: string; layout: 'normal' | 'tall' | 'wide'; }
+export interface PublicEdition { edition: string; items: { value: string; label: string; icon: string }[]; }
+export type PublicHighlightsAnswer = { off: false; photos: PublicPhoto[]; stats: PublicEdition[] } | { off: true };
 export type PublicEventAnswer = PublicEvent | { off: true };
 
 /** A workshop session's public status (big-api utils/publicSessionState.js). */
@@ -106,6 +111,10 @@ export class PublicApiService {
 
   map(): Observable<Loaded<PublicMapAnswer>> {
     return this.get<PublicMapAnswer>('map');
+  }
+
+  highlights(): Observable<Loaded<PublicHighlightsAnswer>> {
+    return this.get<PublicHighlightsAnswer>('highlights');
   }
 
   /** PH4b: send an SOS to the festival team (never saved or retried offline). */

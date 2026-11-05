@@ -104,6 +104,27 @@ export class AdminService {
     savePublicPage(data: PublicPageSave) {
         return this.http.put<PublicPageSettings>(this.url + '/admin/public-page', data);
     }
+
+    // Admin › Public Page › Photos (PH6)
+    listPublicPhotos(eventId: string) {
+        return this.http.get<{ enabled: boolean; max: number; photos: PublicPhoto[] }>(this.url + '/admin/public-photos', { params: { event: eventId } });
+    }
+
+    publicPhotoUploadUrls(eventId: string, type: string) {
+        return this.http.post<{ key: string; thumbKey: string; url: string; thumbUrl: string }>(this.url + '/admin/public-photos/upload-urls', { event: eventId, type });
+    }
+
+    savePublicPhoto(data: { event: string; key: string; thumbKey: string; caption: string }) {
+        return this.http.post<PublicPhoto>(this.url + '/admin/public-photos', data);
+    }
+
+    updatePublicPhoto(id: string, data: Partial<Pick<PublicPhoto, 'caption' | 'sub' | 'layout' | 'order' | 'shown'>>) {
+        return this.http.patch<PublicPhoto>(this.url + '/admin/public-photos/' + id, data);
+    }
+
+    deletePublicPhoto(id: string) {
+        return this.http.delete<{ ok: true }>(this.url + '/admin/public-photos/' + id);
+    }
 }
 
 export interface PublicPageSettings {
@@ -120,6 +141,9 @@ export interface PublicPageSettings {
   helpTiles: PublicHelpTile[];
   /** The icons a help tile may use. */
   helpIcons: string[];
+  /** PH6: "through the years". */
+  stats: PublicEdition[];
+  statIcons: string[];
   /** PH4b: SOS to staff (off by default) and who gets it besides DEV/DIR/ADMIN. */
   sosEnabled: boolean;
   sosDepartments: string[];
@@ -127,6 +151,12 @@ export interface PublicPageSettings {
 }
 
 export interface PublicEmergency { contacts: { label: string; phone: string }[]; note: string; }
+export interface PublicStat { value: string; label: string; icon: string; }
+export interface PublicEdition { edition: string; items: PublicStat[]; }
+export interface PublicPhoto {
+  _id: string; caption: string; sub: string; layout: 'normal' | 'tall' | 'wide'; order: number; shown: boolean;
+  url: string; thumbUrl: string; createdAt: string;
+}
 export interface PublicHelpTile { icon: string; title: string; text: string; }
 
 export interface PublicPageSave {
@@ -138,4 +168,5 @@ export interface PublicPageSave {
   helpTiles?: PublicHelpTile[];
   sosEnabled?: boolean;
   sosDepartments?: string[];
+  stats?: PublicEdition[];
 }

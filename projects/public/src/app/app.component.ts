@@ -2,10 +2,15 @@ import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { Subscription, catchError, forkJoin, of } from 'rxjs';
 import { I18nService, TPipe, WordKey } from './core/i18n';
-import { Loaded, PublicApiService, PublicEvent, PublicMapAnswer, PublicMapArea, PublicMapPin, PublicNews, PublicNewsAnswer, PublicSession, PublicSessionsAnswer } from './core/public-api.service';
+import { Loaded, PublicApiService, PublicEdition, PublicEvent, PublicHighlightsAnswer, PublicMapAnswer, PublicMapArea, PublicMapPin, PublicNews, PublicNewsAnswer, PublicPhoto, PublicSession, PublicSessionsAnswer } from './core/public-api.service';
+import { HighlightsComponent } from './views/highlights-view.component';
 import { MapViewComponent } from './views/map-view.component';
 import { FindWayComponent } from './ui/find-way.component';
 import { EmergencyComponent } from './ui/emergency.component';
+import { PlanViewComponent } from './views/plan-view.component';
+import { AlertsCardComponent } from './ui/alerts-card.component';
+import { PlanService } from './core/plan.service';
+import { AlertsService } from './core/alerts.service';
 import { NewsTickerComponent } from './ui/news-ticker.component';
 import { NewsViewComponent } from './views/news-view.component';
 import { countdown, dayLabel, dayStart, timeLabel } from './core/festival-time';
@@ -36,7 +41,7 @@ export const REFRESH_MS = 30000;
   selector: 'pub-root',
   standalone: true,
   imports: [NgIf, NgFor, TPipe, HomeViewComponent, ScheduleViewComponent, SessionSheetComponent, NewsTickerComponent, NewsViewComponent,
-            MapViewComponent, FindWayComponent, EmergencyComponent],
+            MapViewComponent, FindWayComponent, EmergencyComponent, PlanViewComponent, AlertsCardComponent, HighlightsComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
@@ -50,6 +55,9 @@ export class AppComponent implements OnInit, OnDestroy {
   pins: PublicMapPin[] = [];
   areas: PublicMapArea[] = [];
   private mapKey = '';
+  photos: PublicPhoto[] = [];
+  stats: PublicEdition[] = [];
+  private hlKey = '';
   /** The place the Map tab opens on (from a shortcut / the Emergency sheet). */
   mapFocus: string | null = null;
   /** The staff help tile whose text is open. */
@@ -64,19 +72,28 @@ export class AppComponent implements OnInit, OnDestroy {
   now = Date.now();
 
   private sub?: Subscription;
+  private sub2?: Subscription;
   private timers: ReturnType<typeof setInterval>[] = [];
 
-  constructor(private api: PublicApiService, public i18n: I18nService) {}
+  /** PH5: the one-time alerts offer after the first star. */
+  offerAlerts = false;
+
+  constructor(private api: PublicApiService, public i18n: I18nService, private plan: PlanService, private alerts: AlertsService) {}
+
+  get planCount(): number { return this.plan.count; }
 
   ngOnInit(): void {
     this.view = this.viewFromHash();
     this.load();
+    this.alerts.init();
+    this.sub2 = this.alerts.offer$.subscribe(() => this.offerAlerts = true);
     this.timers.push(setInterval(() => { if (this.visible()) this.load(); }, REFRESH_MS));
     this.timers.push(setInterval(() => this.now = Date.now(), 5000));
   }
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+    this.sub2?.unsubscribe();
     this.timers.forEach(t => clearInterval(t));
   }
 
@@ -91,13 +108,21 @@ export class AppComponent implements OnInit, OnDestroy {
     // …and the map (PH4a).
     const map$ = this.api.map().pipe(
       catchError(() => of<Loaded<PublicMapAnswer>>({ data: { off: false, pins: this.pins, areas: this.areas }, at: this.loadedAt || Date.now(), offline: true })));
-    this.sub = forkJoin([this.api.event(), sessions$, news$, map$]).subscribe({
-      next: ([ev, ss, nw, mp]) => {
+    // …and the highlights (PH6).
+    const hl$ = this.api.highlights().pipe(
+      catchError(() => of<Loaded<PublicHighlightsAnswer>>({ data: { off: false, photos: this.photos, stats: this.stats }, at: this.loadedAt || Date.now(), offline: true })));
+    this.sub = forkJoin([this.api.event(), sessions$, news$, map$, hl$]).subscribe({
+      next: ([ev, ss, nw, mp, hl]) => {
         this.unreachable = false;
-        this.offline = ev.offline || ss.offline || nw.offline || mp.offline;
+        this.offline = ev.offline || ss.offline || nw.offline || mp.offline || hl.offline;
         // Offline: show the oldest saved time among the parts that came from the phone.
-        const saved = [ev, ss, nw, mp].filter(x => x.offline).map(x => x.at);
-        this.loadedAt = saved.length ? Math.min(...saved) : Math.max(ev.at, ss.at, nw.at, mp.at);
+        const saved = [ev, ss, nw, mp, hl].filter(x => x.offline).map(x => x.at);
+        this.loadedAt = saved.length ? Math.min(...saved) : Math.max(ev.at, ss.at, nw.at, mp.at, hl.at);
+        if ('photos' in hl.data && JSON.stringify(hl.data) !== this.hlKey) {
+          this.hlKey = JSON.stringify(hl.data);
+          this.photos = hl.data.photos;
+          this.stats = hl.data.stats;
+        }
         this.news = 'news' in nw.data ? nw.data.news : [];
         // Keep the same arrays when nothing changed, so the map isn't redrawn every 30 s.
         if ('pins' in mp.data && JSON.stringify(mp.data) !== this.mapKey) {
