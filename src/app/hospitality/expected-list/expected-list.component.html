@@ -1,0 +1,48 @@
+<ng-container *ngIf="data">
+<p class="hx-muted" *ngIf="!data.meal">{{ data.next || 'No more meals today' }}</p>
+<ng-container *ngIf="data.meal && data.summary as s">
+  <div class="hx-esum">
+    <div><b>{{ s.expected }}</b><span>expected</span></div>
+    <div><b>{{ s.served }}</b><span>served</span></div>
+    <div class="yet"><b>{{ s.notYet }}</b><span>not yet</span></div>
+  </div>
+  <p class="hx-muted hx-emath">{{ s.expected }} = {{ s.marked }} marked for {{ data.meal.basis.label }}{{ data.meal.basis.previousDay ? ' (day before)' : '' }} + {{ s.always }} always counted + {{ s.guestPlates }} guest plate{{ s.guestPlates === 1 ? '' : 's' }}</p>
+  <div class="hx-etools">
+    <div class="search-field">
+      <mat-icon>search</mat-icon>
+      <input type="text" [(ngModel)]="search" (ngModelChange)="apply()" placeholder="Find a name" aria-label="Find a name in the expected list" />
+    </div>
+    <div class="hx-echips">
+      <button type="button" class="toggle-chip" *ngFor="let c of chips; trackBy: trackChip" [class.on]="filter === c.key" (click)="setFilter(c.key)">{{ c.label }} <small>{{ c.count }}</small></button>
+    </div>
+  </div>
+  <div class="hx-etable" role="table" aria-label="People expected for this meal">
+    <div class="hx-er hx-eh" role="row"><span>Name</span><span>Department</span><span>Food</span><span>Why</span><span>Status</span></div>
+    <div class="hx-eg" *ngIf="counted.length">Counted · {{ counted.length }}</div>
+    <div class="hx-er" *ngFor="let p of counted; trackBy: trackRow" [class.dim]="!p.counted">
+      <span class="hx-en"><app-user-avatar [userId]="p._id" [name]="p.name" [version]="p.avatarVersion" [size]="28"></app-user-avatar><b>{{ p.name }}</b></span>
+      <span class="hx-ed">{{ p.department || 'No department' }}</span>
+      <span class="hx-ef"><span class="food-mark" [ngClass]="p.food === 'non-veg' ? 'nonveg' : 'veg'"></span>{{ p.food === 'non-veg' ? 'Non-veg' : 'Veg' }}</span>
+      <span class="hx-ew">{{ whyLabel(p) }}</span>
+      <span class="hx-es"><span class="hx-st" [ngClass]="statusClass(p)" [title]="p.reason || ''">{{ statusLabel(p) }}</span></span>
+    </div>
+    <div class="hx-eg" *ngIf="guests.length">Guests · plates on the pass</div>
+    <div class="hx-er" *ngFor="let g of guests; trackBy: trackRow">
+      <span class="hx-en"><span class="hx-egav">{{ g.name.charAt(0) }}</span><b>{{ g.name }}</b></span>
+      <span class="hx-ed">{{ g.note || 'Guest' }}</span>
+      <span class="hx-ef">{{ g.veg }} Veg · {{ g.nonVeg }} Non-veg</span>
+      <span class="hx-ew">Meal Pass</span>
+      <span class="hx-es"><span class="hx-st" [ngClass]="g.used >= g.veg + g.nonVeg ? 'srv' : g.used ? 'flag' : 'yet'">{{ g.used }} of {{ g.veg + g.nonVeg }} used</span></span>
+    </div>
+    <div class="hx-eg" *ngIf="others.length">Not counted · {{ others.length }}</div>
+    <div class="hx-er" *ngFor="let p of others; trackBy: trackRow" [class.dim]="!p.counted">
+      <span class="hx-en"><app-user-avatar [userId]="p._id" [name]="p.name" [version]="p.avatarVersion" [size]="28"></app-user-avatar><b>{{ p.name }}</b></span>
+      <span class="hx-ed">{{ p.department || 'No department' }}</span>
+      <span class="hx-ef"><span class="food-mark" [ngClass]="p.food === 'non-veg' ? 'nonveg' : 'veg'"></span>{{ p.food === 'non-veg' ? 'Non-veg' : 'Veg' }}</span>
+      <span class="hx-ew">{{ whyLabel(p) }}</span>
+      <span class="hx-es"><span class="hx-st" [ngClass]="statusClass(p)" [title]="p.reason || ''">{{ statusLabel(p) }}</span></span>
+    </div>
+    <p class="hx-muted hx-enone" *ngIf="!counted.length && !others.length && !guests.length">Nobody matches.</p>
+  </div>
+</ng-container>
+</ng-container>

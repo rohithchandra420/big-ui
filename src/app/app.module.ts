@@ -95,6 +95,7 @@ import { WorkshopReportsComponent } from './workshops/reports/workshop-reports.c
 import { HospitalityTodayComponent } from './hospitality/today/hospitality-today.component';
 import { HospitalitySetupComponent } from './hospitality/setup/hospitality-setup.component';
 import { HospitalityDeskComponent } from './hospitality/desk/hospitality-desk.component';
+import { ExpectedListComponent } from './hospitality/expected-list/expected-list.component';
 import { HospitalityGuestsComponent } from './hospitality/guests/hospitality-guests.component';
 import { HospitalityReportComponent } from './hospitality/report/hospitality-report.component';
 import { HospitalityStayComponent } from './hospitality/stay/hospitality-stay.component';
@@ -175,6 +176,7 @@ LOAD_WASM().subscribe()
     HospitalityTodayComponent,
     HospitalitySetupComponent,
     HospitalityDeskComponent,
+    ExpectedListComponent,
     HospitalityGuestsComponent,
     HospitalityReportComponent,
     HospitalityStayComponent

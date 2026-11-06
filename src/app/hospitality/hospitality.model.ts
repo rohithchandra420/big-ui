@@ -111,6 +111,24 @@ export interface DeskState {
   flaggedToReport?: number;
 }
 
+/** Serving desk "Expected for <meal>" list (1.47.0). */
+export type ExpectedWhy = 'marked' | 'always' | 'not_marked' | 'not_expected';
+export type ExpectedStatus = 'none' | DeskDecision;
+export interface ExpectedPerson {
+  _id: string; name: string; avatarVersion: number; department: string | null; food: 'veg' | 'non-veg';
+  counted: boolean; why: ExpectedWhy; status: ExpectedStatus; at: string | null; reason?: string;
+}
+export interface ExpectedGuest { _id: string; name: string; note: string; veg: number; nonVeg: number; used: number; }
+export interface DeskExpected {
+  meal: { meal: MealKey; label: string; date: string; status: 'upcoming' | 'open' | 'closed'; start: string; end: string;
+    basis: { slot: Slot; label: string; date: string; previousDay: boolean } } | null;
+  next?: string;
+  summary?: { expected: number; served: number; notYet: number; marked: number; always: number; guestPlates: number };
+  counted?: ExpectedPerson[];
+  others?: ExpectedPerson[];
+  guests?: ExpectedGuest[];
+}
+
 export type ScanOutcome =
   | { result: 'served'; person: DeskPerson }
   | { result: 'flag'; person: DeskPerson; slot: Slot; teamLeads: string[] }

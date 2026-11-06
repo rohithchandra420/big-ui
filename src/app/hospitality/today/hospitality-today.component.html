@@ -117,6 +117,13 @@
               <button type="button" class="pill-btn hx-wa" (click)="copyWhatsapp()"><mat-icon>chat</mat-icon>Copy for WhatsApp</button>
             </div>
             <pre class="hx-wa-prev" *ngIf="whatsapp">{{ whatsapp }}</pre>
+            <button type="button" class="pill-btn ht-who" [attr.aria-expanded]="whoOpen" (click)="toggleWho()">
+              <mat-icon>{{ whoOpen ? 'expand_less' : 'checklist' }}</mat-icon><ng-container *ngIf="whoOpen">Hide who&#39;s counted</ng-container><ng-container *ngIf="!whoOpen">Who&#39;s counted ({{ s.expected.total }})</ng-container>
+            </button>
+            <div class="hx-eopen" *ngIf="whoOpen">
+              <p class="hx-muted" *ngIf="!who">Loading…</p>
+              <app-expected-list [data]="who"></app-expected-list>
+            </div>
           </div>
         </section>
 
