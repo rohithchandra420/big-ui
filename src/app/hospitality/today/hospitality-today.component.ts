@@ -5,7 +5,7 @@ import { NotificationService } from '../../core/notification.service';
 import { EventItem } from '../../models/event.model';
 import { localDate, localTime } from '../../workshops/planner.utils';
 import { HospitalityService } from '../hospitality.service';
-import { MEALS, MealDay, MealKey, MealRef, MessDay, NotMarkedRow, Slot } from '../hospitality.model';
+import { DeskExpected, MEALS, MealDay, MealKey, MealRef, MessDay, NotMarkedRow, Slot } from '../hospitality.model';
 
 /** Where a meal's count comes from, worded from the meal's own day (user wording, 2026-11-03). */
 const SOURCE_TEXT: Record<Slot, string> = {
@@ -51,6 +51,10 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
   figOpen = false;
   fig = { veg: null as number | null, nonVeg: null as number | null, kg: null as number | null, note: '' };
   alertText = '';
+  /** 1.47.0: "Who's counted" under the Kitchen count, for the selected day + meal. */
+  whoOpen = false;
+  who: DeskExpected | null = null;
+  private whoSeq = 0;
 
   private sub = new Subscription();
   private timer: any;
@@ -79,6 +83,7 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
       this.day = await this.hospitality.getDay(this.event._id, this.date || undefined);
       if (pickMeal) this.selectedKey = this.defaultMeal();
       this.apply();
+      if (this.whoOpen) this.loadWho();
     } catch {
       this.loadError = 'Could not load the mess day.';
     } finally {
@@ -120,6 +125,19 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
     this.figOpen = false;
     this.whatsapp = '';
     this.apply();
+    if (this.whoOpen) { this.who = null; this.loadWho(); }
+  }
+
+  toggleWho() {
+    this.whoOpen = !this.whoOpen;
+    if (this.whoOpen) { this.who = null; this.loadWho(); }
+  }
+
+  async loadWho() {
+    if (!this.event || !this.day?.date) return;
+    const seq = ++this.whoSeq;
+    const r = await this.hospitality.getDeskExpected(this.event._id, this.day.date, this.selectedKey).catch(() => null);
+    if (seq === this.whoSeq) this.who = r || { meal: null, next: 'Could not load the list.' };
   }
 
   trackRail = (_: number, r: RailItem) => r.meal.meal;
@@ -170,6 +188,7 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
     base.setDate(base.getDate() + n);
     const next = localDate(base);
     this.date = next === this.day?.today ? null : next;
+    this.who = null;
     this.load(true);
   }
 

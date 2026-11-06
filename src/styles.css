@@ -1616,3 +1616,45 @@ select:focus {
 .d-page .slot.done{background:#dcfce7;color:#166534}.d-page .slot.todo{background:#fef3c7;color:#92400e}
 .d-page .slot.done b{color:#166534}.d-page .slot.todo b{color:#92400e}
 @media (max-width:640px){.d-page .tl-row,.d-page .tl-axis{grid-template-columns:70px minmax(0,1fr)}}
+
+/* Serving desk — "Expected for <meal>" table (big-ui 1.47.0). Global: the desk's own stylesheet is at its 6 kB budget. */
+.hx-exp { margin-top: 16px; }
+.hx-esum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 6px; }
+.hx-esum div { background: var(--surface-body); border-radius: 10px; padding: 8px; text-align: center; }
+.hx-esum b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.hx-esum span { font-size: 11px; color: var(--text-secondary); }
+.hx-esum .yet b { color: #b45309; }
+.hx-emath { margin: 0 0 10px; font-size: 12px; }
+.hx-etools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+.hx-etools .search-field { flex: 1 1 200px; }
+.hx-echips { display: flex; gap: 6px; flex-wrap: wrap; }
+.hx-echips small { opacity: .75; margin-left: 2px; }
+.hx-etable { display: grid; }
+.hx-er { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) 90px minmax(0, 1.2fr) 150px; gap: 10px; align-items: center; padding: 7px 4px; border-bottom: 1px solid var(--border-subtle); font-size: 13px; color: var(--text-primary); }
+.hx-er > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hx-er.dim .hx-en b { color: var(--text-secondary); font-weight: 600; }
+.hx-eh { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); border-bottom-color: var(--border-default); }
+.hx-en { display: flex; align-items: center; gap: 8px; }
+.hx-en b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hx-ed, .hx-ew { color: var(--text-secondary); font-size: 12px; }
+.hx-ef { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); }
+.hx-es { text-align: right; }
+.hx-st { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.hx-st.yet { background: var(--surface-body); color: var(--text-secondary); }
+.hx-st.srv { background: #dcfce7; color: #166534; }
+.hx-st.flag { background: #fef3c7; color: #92400e; }
+.hx-st.no { background: #fee2e2; color: #991b1b; }
+.hx-eg { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-primary); padding: 12px 4px 4px; }
+.hx-enone { padding: 10px 4px; }
+@media (max-width: 700px) {
+  .hx-eh { display: none; }
+  .hx-er { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n s" "d d"; row-gap: 2px; }
+  .hx-en { grid-area: n; } .hx-es { grid-area: s; }
+  .hx-ed { grid-area: d; padding-left: 36px; white-space: normal; }
+  .hx-ef, .hx-ew { display: none; }
+}
+.hx-egav { width: 28px; height: 28px; border-radius: 50%; background: #f3effe; color: #7c3aed; display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
+.hx-epick { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.hx-epick input[type=date] { border: 1px solid var(--border-default); border-radius: 8px; padding: 4px 8px; font: inherit; color: var(--text-primary); background: var(--surface-card); }
+.hx-eopen { margin-top: 12px; border-top: 1px solid var(--border-default); padding-top: 12px; }
+.ht-who { margin-top: 10px; }

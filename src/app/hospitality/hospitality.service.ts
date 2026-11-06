@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { DeskDecision, DeskGuestHit, DeskPerson, DeskState, Guest, GuestOutcome, GuestPass, FiguresInput, MealDay, MealRef, MessDay, MessReport, MessSetup, MessSetupInput, PassCard, PassInput, ScanOutcome, ServedRow, StayItem, StayOverview, StayPerson, StayTypeItem, UnitInput, Gender } from './hospitality.model';
+import { DeskDecision, DeskExpected, DeskGuestHit, MealKey, DeskPerson, DeskState, Guest, GuestOutcome, GuestPass, FiguresInput, MealDay, MealRef, MessDay, MessReport, MessSetup, MessSetupInput, PassCard, PassInput, ScanOutcome, ServedRow, StayItem, StayOverview, StayPerson, StayTypeItem, UnitInput, Gender } from './hospitality.model';
 
 /** Hospitality (H1): the mess plan, the day's meals, kitchen count and alerts. */
 @Injectable({ providedIn: 'root' })
@@ -45,6 +45,12 @@ export class HospitalityService {
   // ── Serving desk (H2) ──
   getDesk(eventId: string): Promise<DeskState> {
     return firstValueFrom(this.http.get<DeskState>(this.url + '/desk', { params: { event: eventId } }));
+  }
+  /** Who is behind a meal's expected number: the desk's meal (open, else next today), or a picked day + meal. */
+  getDeskExpected(eventId: string, date?: string, meal?: MealKey): Promise<DeskExpected> {
+    const params: Record<string, string> = { event: eventId };
+    if (meal) { params['meal'] = meal; if (date) params['date'] = date; }
+    return firstValueFrom(this.http.get<DeskExpected>(this.url + '/desk/expected', { params }));
   }
   /** Staff by name / email, and guests with a pass valid for the open meal. */
   searchStaff(eventId: string, q: string): Promise<{ people: DeskPerson[]; guests: DeskGuestHit[] }> {
