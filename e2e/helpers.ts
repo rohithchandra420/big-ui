@@ -59,7 +59,8 @@ export async function login(page: Page, email = USERS.director, opts: { fresh?: 
   await page.locator('input[name="username"]').fill(email);
   await page.locator('input[name="password"]').fill(PASSWORD);
   await page.locator('.btn-login').click();
-  await expect(page).not.toHaveURL(/\/login$/);
+  // The first sign-in on a freshly started stack can take well over 5 s.
+  await expect(page).not.toHaveURL(/\/login$/, { timeout: 30_000 });
 
   if (!opts.fresh) {
     const cookies = await page.context().cookies();

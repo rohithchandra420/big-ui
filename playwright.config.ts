@@ -83,5 +83,13 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 240_000,
     },
+    // PUBLIC_SHOTS=1: also the public participant page (big-public) on 4301,
+    // for its screenshots. Off by default so the normal runs stay as they were.
+    ...(process.env.PUBLIC_SHOTS ? [{
+      command: 'npx ng serve big-public --port 4301 --proxy-config e2e/proxy.e2e.json',
+      port: 4301,
+      reuseExistingServer: false,
+      timeout: 240_000,
+    }] : []),
   ],
 });

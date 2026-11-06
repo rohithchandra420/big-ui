@@ -42,6 +42,23 @@ async function shot(page: Page, name: string, clipAbove?: string) {
   console.log('saved', name);
 }
 
+/** A small Bulk Add file (invented people) for the bulk-add screenshot. */
+function bulkAddSample(): Buffer {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const XLSX = require('xlsx');
+  const rows = [
+    ['name', 'email', 'password', 'role', 'home_department', 'food_preference', 'gender', 'date_of_joining'],
+    ['Diya Raman', 'diya@example.com', 'Strong@2026', 'VOL', 'Operations', 'veg', 'Female', ''],
+    ['Kabir Sethi', 'kabir@example.com', 'Strong@2026', 'VOL', 'Hospitality', 'non-veg', 'Male', ''],
+    ['Anu Varghese', 'anu@example.com', 'Strong@2026', 'TL', 'Box Office', 'veg', 'Female', ''],
+    ['Neel Gupta', 'neel@example.com', 'weak', 'VOL', 'Operations', 'veg', 'Male', ''],
+    ['Tom Mathew', 'tom@example.com', 'Strong@2026', 'VOL', 'Operations', 'non-veg', 'Male', ''],
+  ];
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(rows), 'Users');
+  return XLSX.write(book, { type: 'buffer', bookType: 'xlsx' });
+}
+
 const settle = async (page: Page, ms = 800) => { await page.waitForLoadState('networkidle'); await page.waitForTimeout(ms); };
 const clickFirstRow = async (page: Page) => { await page.locator('table tbody tr').first().locator('td').nth(1).click(); await settle(page, 1200); };
 
@@ -150,9 +167,38 @@ test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
     ['departments-panel', '/admin/departments', async p => {
       await p.locator('.dept-card').first().click(); await settle(p, 1000);
     }],
+
+    // ── Dry-run guide (2026-11-06): Hospitality, SOS, staff list, Bulk Add ──
+    ['hospitality-today', '/hospitality', p => settle(p, 1500)],
+    ['hospitality-desk', '/hospitality/desk', p => settle(p, 1500)],
+    ['hospitality-guests', '/hospitality/guests'],
+    ['hospitality-report', '/hospitality/report', p => settle(p, 1500)],
+    ['hospitality-stay', '/hospitality/stay', p => settle(p, 1500)],
+    ['hospitality-setup', '/hospitality/setup'],
+    ['sos', '/sos', p => settle(p, 4000)],   // longer: the map tiles come from the internet
+    // Users with two Volunteers ticked: the selection bar (Add to / Remove from event, Delete).
+    ['users-staff', '/admin/user', async p => {
+      const boxes = p.locator('table tbody .pick-box');
+      for (const i of [0, 1]) await boxes.nth(i).click({ force: true });
+      await p.waitForTimeout(600);
+    }],
+    // Bulk Add with a small sample file loaded: Ready rows, a weak password (Problem)
+    // and an email that already exists (Duplicate). Checked only — never added.
+    ['bulk-add', '/admin/user', async p => {
+      await p.locator('button', { hasText: 'Bulk Add' }).first().click(); await settle(p, 1000);
+      await p.locator('mat-dialog-container input[type=file]').setInputFiles({
+        name: 'new-volunteers.xlsx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        buffer: bulkAddSample(),
+      });
+      await settle(p, 2000);
+    }],
+    ['public-page', '/admin/public-page', p => settle(p, 1500)],
   ];
 
-  for (const [size, opts] of Object.entries(SIZES)) {
+  // SIZES=phone (or desktop) limits the run to one size.
+  const sizes = Object.entries(SIZES).filter(([s]) => !process.env.SIZES || process.env.SIZES.split(',').includes(s));
+  for (const [size, opts] of sizes) {
     const context = await browser.newContext({ ...opts, baseURL: 'http://localhost:4300', colorScheme: 'light' });
     const page = await context.newPage();
 
@@ -178,16 +224,37 @@ test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
     ];
     // Phone: the menu with the red unread count on the Billboard link.
     if (size === 'phone') BILLBOARD.push(['billboard-menu', async p => { await p.locator('.hamburger-btn').click(); await p.waitForTimeout(700); }]);
-    if (ONLY && !BILLBOARD.some(([n]) => ONLY.includes(n))) continue;
-    const vctx = await browser.newContext({ ...opts, baseURL: 'http://localhost:4300', colorScheme: 'light' });
-    const vpage = await vctx.newPage();
-    await login(vpage, USERS.volunteer);
-    for (const [name, prepare] of BILLBOARD) {
-      if (ONLY && !ONLY.includes(name)) continue;
-      await vpage.goto('/billboard'); await settle(vpage, 1200);
-      await prepare(vpage);
-      await shot(vpage, `${name}-${size}`);
+    // (Skipped when ONLY names none of them — without skipping the public page below.)
+    if (!ONLY || BILLBOARD.some(([n]) => ONLY.includes(n))) {
+      const vctx = await browser.newContext({ ...opts, baseURL: 'http://localhost:4300', colorScheme: 'light' });
+      const vpage = await vctx.newPage();
+      await login(vpage, USERS.volunteer);
+      for (const [name, prepare] of BILLBOARD) {
+        if (ONLY && !ONLY.includes(name)) continue;
+        await vpage.goto('/billboard'); await settle(vpage, 1200);
+        await prepare(vpage);
+        await shot(vpage, `${name}-${size}`);
+      }
+      await vctx.close();
     }
-    await vctx.close();
+
+    // The public participant page (no sign-in), served on 4301 when PUBLIC_SHOTS=1.
+    if (process.env.PUBLIC_SHOTS) {
+      const PUBLIC: [string, (p: Page) => Promise<void>][] = [
+        ['public-home', async p => { await settle(p, 2000); }],
+        ['public-emergency', async p => {
+          await settle(p, 2000);
+          await p.locator('button', { hasText: /emergency/i }).first().click(); await p.waitForTimeout(900);
+        }],
+      ];
+      const pctx = await browser.newContext({ ...opts, baseURL: 'http://localhost:4301', colorScheme: 'light' });
+      const ppage = await pctx.newPage();
+      for (const [name, prepare] of PUBLIC) {
+        if (ONLY && !ONLY.includes(name)) continue;
+        await ppage.goto('/'); await prepare(ppage);
+        await shot(ppage, `${name}-${size}`);
+      }
+      await pctx.close();
+    }
   }
 });
