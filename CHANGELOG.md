@@ -13,6 +13,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.45.1] - 2026-11-06
+
+### Changed
+- **Site publishing:** the site is now published by its own deployment workflow, which uploads the release build exactly as built. GitHub's built-in publishing run got stuck and blocked the 1.45.0 release from going live. No change inside the app.
+
+---
+
 ## [1.45.0] - 2026-11-06
 
 ### Changed
