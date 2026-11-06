@@ -9,7 +9,7 @@ import { BoxOfficeQrscannerPopupComponent, QrScannerData } from '../../box-offic
 import { localTime } from '../../workshops/planner.utils';
 import { HospitalityService } from '../hospitality.service';
 import { StaffBandService } from '../../core/staff-band.service';
-import { DeskDecision, DeskGuestHit, DeskPerson, DeskState, GuestOutcome, ScanOutcome, SLOT_LABELS } from '../hospitality.model';
+import { DeskDecision, DeskExpected, DeskGuestHit, DeskPerson, DeskState, GuestOutcome, MealKey, MEALS, ScanOutcome, SLOT_LABELS } from '../hospitality.model';
 
 const REFRESH_MS = 30 * 1000;
 const REASONS = ['Arrived late', 'TL confirmed by phone', 'Off-site duty', 'New joiner'];
@@ -54,6 +54,12 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
   /** H5: Replace band needs a reason first. */
   bandReasonOpen = false;
   bandReason = '';
+  /** "Expected for <meal>" list (1.47.0). */
+  expected: DeskExpected | null = null;
+  expDate = '';
+  expMeal: MealKey | null = null;
+  readonly expMeals = MEALS.map(m => ({ key: m.key, label: m.label }));
+  private expSeq = 0;
   readonly reasons = REASONS;
   readonly decisionLabels = DECISION_LABELS;
 
@@ -88,7 +94,8 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     this.loading = !this.desk;
     this.loadError = '';
     try {
-      this.desk = await this.hospitality.getDesk(this.event._id);
+      const [desk] = await Promise.all([this.hospitality.getDesk(this.event._id), this.loadExpected()]);
+      this.desk = desk;
     } catch (err: any) {
       this.loadError = err?.error?.message || 'Could not load the serving desk.';
     } finally {
@@ -97,6 +104,22 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
   }
 
   time(iso: string): string { return localTime(new Date(iso)); }
+
+  // ── Expected list (1.47.0) ─────────────────────────────────
+  /** A picked day + meal; null = the desk's own meal (open, else next today). */
+  get expPicked(): boolean { return !!this.expMeal; }
+  pickExpected() {
+    if (!this.expMeal) this.expMeal = this.desk?.open?.meal || 'lunch';
+    this.loadExpected();
+  }
+  resetExpected() { this.expMeal = null; this.expDate = ''; this.loadExpected(); }
+  async loadExpected() {
+    if (!this.event) return;
+    const seq = ++this.expSeq;
+    const r = await this.hospitality.getDeskExpected(this.event._id, this.expMeal ? (this.expDate || undefined) : undefined, this.expMeal || undefined).catch(() => null);
+    if (seq === this.expSeq) this.expected = r;
+  }
+  trackMealChip = (_: number, m: { key: string }) => m.key;
   trackPerson = (_: number, p: DeskPerson) => p._id;
   trackLog = (_: number, r: { _id: string }) => r._id;
 

@@ -13,6 +13,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.47.0] - 2026-11-06
+
+### Added
+- **Serving desk: Expected for <meal>.** A table under the scan area listing everyone behind the expected number, so Hospitality can cross-check it: staff marked for the meal's slot, people always counted, guest Meal Passes (plates used), and — greyed, not counted — staff on the event without a mark or served anyway. Shows expected / served / not yet, how the number adds up, a name search and filters (All, Not yet, Served, Not marked, Guests). Refreshes with the desk; a day picker and meal chips show any other meal (Now goes back). On phones each row folds to name, status and department.
+- **Hospitality › Today: Who's counted.** The Kitchen count card has a Who's counted (N) button that opens the same list for the day and meal selected there — tomorrow included.
+
+---
+
 ## [1.46.0] - 2026-11-06
 
 ### Changed

@@ -36,7 +36,8 @@ describe('HospitalityTodayComponent', () => {
   let notify: jasmine.SpyObj<NotificationService>;
 
   beforeEach(async () => {
-    service = jasmine.createSpyObj('HospitalityService', ['getDay', 'sendCount', 'close', 'reopen', 'remindTls', 'sendAlert', 'setMealTime', 'resetMealTime']);
+    service = jasmine.createSpyObj('HospitalityService', ['getDay', 'sendCount', 'close', 'reopen', 'remindTls', 'sendAlert', 'setMealTime', 'resetMealTime', 'getDeskExpected']);
+    service.getDeskExpected.and.returnValue(Promise.resolve({ meal: null, next: 'x' }));
     service.getDay.and.callFake(() => Promise.resolve(day()));
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     await TestBed.configureTestingModule({
@@ -77,6 +78,20 @@ describe('HospitalityTodayComponent', () => {
     fixture.detectChanges();
     expect(component.rail).toBe(rail);
     expect(component.notMarked).toBe(rows);
+    discardPeriodicTasks();
+  }));
+
+  it('Who\'s counted opens the list for the selected day and meal, and follows the meal', fakeAsync(() => {
+    start();
+    expect(text()).toContain("Who's counted (200)");
+    expect(service.getDeskExpected).not.toHaveBeenCalled();
+    component.toggleWho(); flushMicrotasks(); fixture.detectChanges();
+    expect(service.getDeskExpected).toHaveBeenCalledWith('e1', '2026-11-12', 'lunch');
+    expect(fixture.nativeElement.querySelector('app-expected-list')).toBeTruthy();
+    component.select('dinner'); flushMicrotasks();
+    expect(service.getDeskExpected).toHaveBeenCalledWith('e1', '2026-11-12', 'dinner');
+    component.toggleWho(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-expected-list')).toBeNull();
     discardPeriodicTasks();
   }));
 

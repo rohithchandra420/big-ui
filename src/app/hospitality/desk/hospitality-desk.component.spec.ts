@@ -9,7 +9,7 @@ import { NotificationService } from '../../core/notification.service';
 import { GateFeedbackService } from '../../core/gate-feedback.service';
 import { StaffBandService } from '../../core/staff-band.service';
 import { HospitalityService } from '../hospitality.service';
-import { DeskPerson, DeskState } from '../hospitality.model';
+import { DeskExpected, DeskPerson, DeskState } from '../hospitality.model';
 
 const at = (h: number, m = 0) => new Date(2026, 10, 12, h, m).toISOString();
 const person: DeskPerson = { _id: 'u1', name: 'Kavya Iyer', role: 'VOL', department: { _id: 'd1', name: 'Stage Crew' }, foodPreference: 'veg', avatarVersion: 0 };
@@ -29,8 +29,9 @@ describe('HospitalityDeskComponent', () => {
   let dialog: jasmine.SpyObj<MatDialog>;
 
   beforeEach(async () => {
-    service = jasmine.createSpyObj('HospitalityService', ['getDesk', 'searchStaff', 'scan', 'decide', 'notifyFlaggedTls', 'close', 'servePass', 'walkIn']);
+    service = jasmine.createSpyObj('HospitalityService', ['getDesk', 'searchStaff', 'scan', 'decide', 'notifyFlaggedTls', 'close', 'servePass', 'walkIn', 'getDeskExpected']);
     service.getDesk.and.callFake(() => Promise.resolve(open()));
+    service.getDeskExpected.and.returnValue(Promise.resolve({ meal: null, next: 'Closed for today' }));
     gate = jasmine.createSpyObj('GateFeedbackService', ['unlock', 'found', 'notFound', 'error']);
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     dialog = jasmine.createSpyObj('MatDialog', ['open']);
@@ -53,6 +54,48 @@ describe('HospitalityDeskComponent', () => {
 
   const start = () => { fixture.detectChanges(); flushMicrotasks(); fixture.detectChanges(); };
   const text = () => fixture.nativeElement.textContent as string;
+
+  describe('Expected list (1.47.0)', () => {
+    const exp = (): DeskExpected => ({
+      meal: { meal: 'lunch', label: 'Lunch', date: '2026-11-12', status: 'open', start: at(12, 30), end: at(15),
+        basis: { slot: 'morning', label: 'Morning', date: '2026-11-12', previousDay: false } },
+      summary: { expected: 1, served: 0, notYet: 1, marked: 1, always: 0, guestPlates: 0 }, counted: [], others: [], guests: []
+    });
+
+    it('loads the desk meal with the desk, and shows the card', fakeAsync(() => {
+      service.getDeskExpected.and.returnValue(Promise.resolve(exp()));
+      start();
+      expect(service.getDeskExpected).toHaveBeenCalledWith('e1', undefined, undefined);
+      expect(text()).toContain('Expected for Lunch');
+      expect(fixture.nativeElement.querySelector('app-expected-list')).toBeTruthy();
+      discardPeriodicTasks();
+    }));
+
+    it('picks a day and meal, and Now goes back to the desk meal', fakeAsync(() => {
+      service.getDeskExpected.and.returnValue(Promise.resolve(exp()));
+      start();
+      component.expDate = '2026-11-13';
+      component.expMeal = 'dinner';
+      component.pickExpected(); flushMicrotasks();
+      expect(service.getDeskExpected).toHaveBeenCalledWith('e1', '2026-11-13', 'dinner');
+      component.expMeal = null;
+      component.expDate = '2026-11-14';
+      component.pickExpected(); flushMicrotasks();
+      expect(service.getDeskExpected).toHaveBeenCalledWith('e1', '2026-11-14', 'lunch');
+      component.resetExpected(); flushMicrotasks();
+      expect(service.getDeskExpected.calls.mostRecent().args).toEqual(['e1', undefined, undefined]);
+      expect(component.expPicked).toBeFalse();
+      discardPeriodicTasks();
+    }));
+
+    it('the desk still works when the list fails', fakeAsync(() => {
+      service.getDeskExpected.and.returnValue(Promise.reject(new Error('offline')));
+      start();
+      expect(text()).toContain('Lunch is open');
+      expect(fixture.nativeElement.querySelector('.hx-exp')).toBeNull();
+      discardPeriodicTasks();
+    }));
+  });
 
   it('shows the open meal, plates served and the log', fakeAsync(() => {
     start();
