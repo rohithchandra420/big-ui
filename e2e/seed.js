@@ -23,6 +23,7 @@ const seedPermissions = require(API + "/src/seeds/permissions.seed");
 const seedRoles = require(API + "/src/seeds/roles.seed");
 const seedDepartments = require(API + "/src/seeds/departments.seed");
 const { seedWorkshops } = require("./seed-workshops");
+const { seedHospitality } = require("./seed-hospitality");
 
 const PW = "Demo@12345";
 const day = (iso) => { const d = new Date(iso); d.setUTCHours(0, 0, 0, 0); return d; };
@@ -228,10 +229,13 @@ async function seed() {
   // Venue Map + Workshops (department keys, a Workshop department, map shapes, venues, sessions, lists).
   const workshops = await seedWorkshops({ ev, P, mk, dir, tlBox, D });
 
+  // Staff list, Hospitality (mess, meals, guest, stay) and SOS — for the dry-run screens.
+  const hospitality = await seedHospitality({ ev, mk, dir, D });
+
   const summary = `${await User.countDocuments()} users, ${await Ticket.countDocuments()} bookings, ${await ShopCart.countDocuments()} passes, ${await Tent.countDocuments()} tents`;
   await mongoose.disconnect();
   // Ids the tests and screenshots need (e.g. to pick the active event, open a booking).
-  const ids = { eventId: String(ev._id), tickets: Object.fromEntries(Object.entries(T).map(([k, t]) => [k, String(t._id)])), workshops };
+  const ids = { eventId: String(ev._id), tickets: Object.fromEntries(Object.entries(T).map(([k, t]) => [k, String(t._id)])), workshops, hospitality };
   require("fs").mkdirSync(path.join(__dirname, ".data"), { recursive: true });
   require("fs").writeFileSync(path.join(__dirname, ".data", "ids.json"), JSON.stringify(ids, null, 2));
   return summary;

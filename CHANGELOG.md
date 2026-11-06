@@ -13,6 +13,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.46.0] - 2026-11-06
+
+### Changed
+- **New Dashboard.** Developers, Directors and Admins get a festival overview of the event picked in the sidebar: a "Needs attention now" strip (open SOS, staff not marked for the next meal, failed ticket emails, sessions over capacity, passes still to admit), headline tiles, and sections for the Gate, Accommodation, People, Hospitality, Workshops and Comms & safety with charts. Every panel links to its page. Revenue shows for Directors only. It refreshes every minute while the tab is open.
+- Team Leads and Volunteers get a simple view: their team's (or own) attendance today, the next meal, their latest Billboard notes and their bed tonight.
+- The old dashboard (fixed pass names, counts that didn't match Bookings) is gone.
+
+---
+
 ## [1.45.1] - 2026-11-06
 
 ### Changed
@@ -31,7 +40,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.44.0] - 2026-11-07
+## [1.44.0] - 2026-11-06
 
 ### Changed
 - **Counts and lists follow the event's staff list** (the event picked in the sidebar):
@@ -43,7 +52,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.43.0] - 2026-11-07
+## [1.43.0] - 2026-11-06
 
 ### Added
 - **Staff list per event.** Each event now has its own staff list: who works that event. People keep one account, one role and one department across all events. Developers, Directors and Admins are always on every event.
@@ -59,14 +68,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.42.0] - 2026-11-07
+## [1.42.0] - 2026-11-06
 
 ### Added
 - **Admin › Users › Bulk Add** (Developers, Directors, Admins): add many staff users at once from an Excel file. **Download template** gives the columns (name, email, password, role, home department; optional food preference, gender, date of joining) plus a "How to fill" sheet. Drop the file (pick the sheet when there are several): every row is checked first and shown as **Ready**, **Problem** (with the reason) or **Duplicate** (the email is already a user, deactivated ones included, or appears earlier in the file). **Add N users** adds only the ready rows; the rest are skipped. The result can be downloaded (without passwords). Up to 500 rows per file. Each new user gets read access to their home department; the date of joining stays empty when not given. Only a Developer can add Developers. A reminder asks to delete the file afterwards, since it holds passwords.
 
 ---
 
-## [1.41.0] - 2026-11-07
+## [1.41.0] - 2026-11-06
 
 ### Added
 - **Venue Map: pins are locked.** Every time the map opens, pins can't be dragged, so scrolling on a phone no longer moves them by accident. A lock button next to Street / Satellite (for people who may edit) unlocks moving; a pin being edited in its form can still be moved. Areas still move only in their own Edit.
@@ -76,7 +85,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.40.0] - 2026-11-07
+## [1.40.0] - 2026-11-06
 
 ### Added
 - **Public festival page — My plan:** a star on every session keeps it in **My plan** on the phone; a changed time, place or status is marked there.
@@ -90,7 +99,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.39.0] - 2026-11-07
+## [1.39.0] - 2026-11-06
 
 ### Added
 - **SOS page** (sidebar, with a red count of open alerts) for Directors, Admins, Developers and the chosen departments: each help request with the time, a small map, directions, "outside the venue" when it is, the participant's message and call-back phone, and **Mark handled** with a note. Refreshes every 15 seconds; tapping the alert opens it.
@@ -103,7 +112,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.38.0] - 2026-11-07
+## [1.38.0] - 2026-11-06
 
 ### Added
 - **Public festival page — Map tab:** a street map of the festival with its public places and areas (no-go zones in red), a legend, "Show my location", and a tap for the name, the Box Office's open / closed status and walking directions. The map loads only when the tab is opened.
@@ -117,7 +126,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.37.0] - 2026-11-07
+## [1.37.0] - 2026-11-06
 
 ### Added
 - **Announcements › Public page:** a new audience tile to also post on the public festival page (for General, Urgent, Schedule and Weather posts), with or without staff. The confirmation says where it goes; the sent history shows a Public badge, a **Remove from public page** button and a Removed badge.
