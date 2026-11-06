@@ -1,0 +1,41 @@
+# Publishes the release build in docs/ to GitHub Pages (rchomeproject.in).
+#
+# Added in v1.45.1 (2026-11-06): GitHub's built-in "pages build and
+# deployment" run got stuck in Queued and could not be cancelled or deleted,
+# blocking every deploy. This workflow has its own queue and skips Jekyll; it
+# uploads docs/ exactly as committed, so the service-worker hashes in
+# docs/ngsw.json and docs/live/ngsw.json stay valid.
+#
+# Needs Settings → Pages → Source = "GitHub Actions". The custom domain comes
+# from the Pages settings (docs/CNAME is kept as well).
+name: Deploy site to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**']
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deployment
+        uses: actions/deploy-pages@v4
