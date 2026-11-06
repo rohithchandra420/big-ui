@@ -1,61 +1,159 @@
 <div class="page-ph">
   <div>
-    <div class="page-ph-title">Dashboard</div>
-    <div class="page-ph-sub">BiG 6.0 · Overview</div>
+    <div class="page-ph-title">{{ event ? event.name + ' · ' : '' }}{{ isTop ? 'Festival overview' : 'Dashboard' }}</div>
+    <div class="page-ph-sub" *ngIf="isAuthenticated">
+      <ng-container *ngIf="data?.day?.index">Day {{ data!.day.index }} of {{ data!.day.total }} · </ng-container>
+      <span class="d-upd" *ngIf="data || mine"><i></i>{{ updatedText }} · refreshes every minute</span>
+    </div>
+  </div>
+  <div class="d-band" *ngIf="days.length && isTop" aria-label="Festival days">
+    <div class="d-day" *ngFor="let d of days; trackBy: trackIdx" [class.now]="d.now"><b>{{ d.label }}</b>{{ d.sub }}</div>
   </div>
 </div>
 
-<div class="dashboard-page">
+<div class="d-page">
 
-  <!-- Anonymous visitor — no data fetch attempted (would 401), just a way in -->
   <div class="signin-prompt" *ngIf="!isAuthenticated">
     <mat-icon class="signin-icon">lock</mat-icon>
-    <p>Sign in to see ticketing, accommodation, and volunteer data.</p>
-    <button class="btn-brand" routerLink="/login">Sign In</button>
+    <p>Sign in to see the festival overview.</p>
+    <button class="btn-cta" routerLink="/login">Sign In</button>
   </div>
 
   <ng-container *ngIf="isAuthenticated">
+    <div class="d-empty" *ngIf="!event">Pick an event in the sidebar to see its dashboard.</div>
+    <div class="warn-banner" *ngIf="error">{{ error }}</div>
+    <div class="d-empty" *ngIf="event && loading && !data && !mine">Loading…</div>
 
-    <div class="stat-row">
-      <div class="stat">
-        <div class="stat-l">Tickets Sold</div>
-        <div class="stat-n">{{ totalTicketsSold }}</div>
+    <!-- ═════════ Director / Admin / Developer ═════════ -->
+    <ng-container *ngIf="isTop && data as d">
+      <div class="d-attn" *ngIf="d.attention.length">
+        <h2>Needs attention now</h2>
+        <div class="d-attn-row">
+          <a class="d-chip" *ngFor="let a of d.attention; trackBy: trackKind" [ngClass]="a.level" [routerLink]="a.link">
+            <mat-icon>{{ a.kind === 'sos' ? 'sos' : a.kind === 'email' ? 'mail' : a.kind === 'workshops' ? 'groups' : a.kind === 'gate' ? 'confirmation_number' : 'how_to_reg' }}</mat-icon>{{ a.text }}
+          </a>
+        </div>
       </div>
-      <div class="stat">
-        <div class="stat-l">Admitted</div>
-        <div class="stat-n">{{ totalAdmitted }}</div>
+      <div class="d-calm" *ngIf="!d.attention.length"><mat-icon>check_circle</mat-icon>Nothing needs attention right now.</div>
+
+      <div class="d-tiles">
+        <div class="d-tile money" *ngIf="d.tiles.revenue as r">
+          <div class="l">Revenue</div><div class="v">{{ money(r.total) }}</div>
+          <div class="s"><span class="up" *ngIf="r.today">+{{ money(r.today) }}</span>{{ r.today ? ' today' : 'Nothing booked today' }}</div>
+        </div>
+        <div class="d-tile"><div class="l">Bookings</div><div class="v">{{ num(d.tiles.bookings) }}</div><div class="s">{{ num(d.tiles.spot) }} spot registrations</div></div>
+        <div class="d-tile"><div class="l">Passes</div><div class="v">{{ num(d.tiles.passes) }}</div><div class="s">{{ num(d.tiles.festivalPasses) }} festival · {{ num(d.tiles.tentPasses) }} tent</div></div>
+        <div class="d-tile"><div class="l">Admitted</div><div class="v">{{ pct(d.tiles.admitted, d.tiles.festivalPasses) }}%</div>
+          <div class="s">{{ num(d.tiles.admitted) }} of {{ num(d.tiles.festivalPasses) }}</div><div class="bar"><i [style.width.%]="pct(d.tiles.admitted, d.tiles.festivalPasses)"></i></div></div>
+        <div class="d-tile"><div class="l">Staff on event</div><div class="v">{{ num(d.tiles.staff) }}</div><div class="s">{{ num(d.tiles.staffMarkedToday) }} marked today</div></div>
+        <div class="d-tile"><div class="l">Meals today</div><div class="v">{{ num(d.tiles.mealsServedToday) }}</div>
+          <div class="s">of {{ num(d.tiles.mealsExpectedToday) }} expected</div><div class="bar"><i [style.width.%]="pct(d.tiles.mealsServedToday, d.tiles.mealsExpectedToday)"></i></div></div>
+        <div class="d-tile"><div class="l">Workshop visits</div><div class="v">{{ num(d.tiles.workshopVisitsToday) }}</div><div class="s">{{ d.tiles.sessionsToday }} sessions today</div></div>
+        <div class="d-tile" [class.sos]="d.tiles.sosOpen"><div class="l">SOS</div><div class="v">{{ d.tiles.sosOpen }} open</div><div class="s">{{ d.tiles.sosHandled }} handled</div></div>
       </div>
-      <div class="stat">
-        <div class="stat-l">Pending Admission</div>
-        <div class="stat-n">{{ totalPendingAdmission }}</div>
+
+      <div class="d-grid">
+        <div class="d-sec"><span>Gate</span></div>
+        <div class="d-panel w6"><h2>Admissions today <a routerLink="/box-office/registration">Registration ›</a></h2>
+          <div class="hint">Festival passes admitted per hour (India time)</div><div class="cv"><canvas id="cGate"></canvas></div></div>
+        <div class="d-panel w3"><h2>Admitted</h2><div class="hint">Festival passes</div><div class="cv sm"><canvas id="cAdm"></canvas></div>
+          <div class="legend"><span><i class="k1"></i>Admitted {{ num(d.gate.admitted) }}</span><span><i class="kl"></i>Not yet {{ num(d.gate.notAdmitted) }}</span></div></div>
+        <div class="d-panel w3"><h2>Passes by type <a routerLink="/box-office/bookings">Bookings ›</a></h2><div class="hint">Sold</div>
+          <div class="cv sm"><canvas id="cPass"></canvas></div></div>
+
+        <div class="d-sec"><span>Accommodation</span></div>
+        <div class="d-panel w7"><h2>Tent occupancy <a routerLink="/accommodation/inventory">Inventory ›</a></h2><div class="hint">Places used and free per tent type</div>
+          <div class="none" *ngIf="!d.accommodation.tents.length">No tent types for this event yet.</div>
+          <div class="cv" [hidden]="!d.accommodation.tents.length"><canvas id="cTent"></canvas></div></div>
+        <div class="d-panel w5"><h2>Staff beds tonight <a routerLink="/hospitality/stay">Stay ›</a></h2><div class="hint">Hospitality › Stay</div>
+          <div class="kv"><div><b>{{ num(d.accommodation.beds.inBed) }}</b><span>in a bed</span></div><div><b>{{ num(d.accommodation.beds.movedIn) }}</b><span>moved in</span></div>
+            <div><b [class.warn]="d.accommodation.beds.staffWithoutBed">{{ num(d.accommodation.beds.staffWithoutBed) }}</b><span>staff with no bed</span></div></div>
+          <div class="cv sm mt" [hidden]="!d.accommodation.beds.byType.length"><canvas id="cBeds"></canvas></div></div>
+
+        <div class="d-sec"><span>People</span></div>
+        <div class="d-panel w5"><h2>Staff per department <a routerLink="/admin/departments">Departments ›</a></h2><div class="hint">Team Leads and Volunteers on {{ d.event.name }}'s staff list</div>
+          <div class="none" *ngIf="!d.people.byDept.length">Nobody on the staff list yet.</div>
+          <div class="cv" [hidden]="!d.people.byDept.length"><canvas id="cDept"></canvas></div></div>
+        <div class="d-panel w7"><h2>Attendance <a routerLink="/my-department">My Department ›</a></h2><div class="hint">Share of staff marked, per day and slot (last 7 days)</div>
+          <div class="heat">
+            <div></div><div class="h" *ngFor="let h of heatDays; trackBy: trackIdx">{{ h }}</div>
+            <ng-container *ngFor="let r of heatRows; trackBy: trackIdx">
+              <div>{{ r.slot }}</div>
+              <div class="c" *ngFor="let c of r.cells; trackBy: trackIdx" [style.background]="c.shade" [class.dark]="c.dark">{{ c.v }}%</div>
+            </ng-container>
+          </div>
+          <div class="legend"><span><i class="h1"></i>under 50%</span><span><i class="h2"></i>50–80%</span><span><i class="k1"></i>over 80%</span></div></div>
+
+        <div class="d-sec"><span>Hospitality</span></div>
+        <ng-container *ngIf="d.meals.plan; else noMess">
+          <div class="d-panel w7"><h2>Meals today <a routerLink="/hospitality">Today ›</a></h2><div class="hint">Expected, served and prepared plates</div>
+            <div class="cv"><canvas id="cMeals"></canvas></div></div>
+          <div class="d-panel w5"><h2>Left over <a routerLink="/hospitality/report">Report ›</a></h2>
+            <div class="hint">Share of prepared plates not served, per day<ng-container *ngIf="d.meals.goalPct !== null"> · goal {{ d.meals.goalPct }}%</ng-container></div>
+            <div class="cv"><canvas id="cLeft"></canvas></div></div>
+        </ng-container>
+        <ng-template #noMess><div class="d-panel w12"><div class="none">The mess hasn't opened for this event yet. <a routerLink="/hospitality/setup">Hospitality › Setup</a></div></div></ng-template>
+
+        <div class="d-sec"><span>Workshops</span></div>
+        <div class="d-panel w8"><h2>Today's sessions <a routerLink="/workshops">Planner ›</a></h2><div class="hint">By venue · red line is now · red outline is over capacity</div>
+          <div class="none" *ngIf="!lanes.length">No sessions today.</div>
+          <div class="tl" *ngIf="lanes.length">
+            <div class="tl-row" *ngFor="let l of lanes; trackBy: trackName"><span>{{ l.venue }}</span>
+              <div class="lane">
+                <div class="blk" *ngFor="let b of l.blocks; trackBy: trackIdx" [style.left.%]="b.left" [style.width.%]="b.width"
+                     [style.background]="b.colour" [class.over]="b.over" [title]="b.tip">{{ b.title }}</div>
+                <div class="tl-now" *ngIf="nowPct !== null" [style.left.%]="nowPct"></div>
+              </div>
+            </div>
+            <div class="tl-axis"><span></span><div><span *ngFor="let a of axis; trackBy: trackIdx">{{ a }}</span></div></div>
+          </div></div>
+        <div class="d-panel w4"><h2>Visits by category <a routerLink="/workshops/reports">Reports ›</a></h2><div class="hint">All sessions so far</div>
+          <div class="none" *ngIf="!d.workshops.byCategory.length">No visits yet.</div>
+          <div class="cv sm" [hidden]="!d.workshops.byCategory.length"><canvas id="cCat"></canvas></div></div>
+
+        <div class="d-sec"><span>Comms &amp; safety</span></div>
+        <div class="d-panel w4"><h2>Ticket emails <a routerLink="/admin/email-report">Email Report ›</a></h2><div class="hint">Per booking</div>
+          <div class="cv sm"><canvas id="cMail"></canvas></div></div>
+        <div class="d-panel w4"><h2>SOS <a routerLink="/sos">SOS ›</a></h2><div class="hint">From the public page</div>
+          <div class="kv"><div><b [class.bad]="d.comms.sos.open">{{ d.comms.sos.open }}</b><span>open</span></div><div><b>{{ d.comms.sos.handled }}</b><span>handled</span></div>
+            <div><b>{{ d.comms.sos.avgMinutes !== null ? d.comms.sos.avgMinutes + ' min' : '–' }}</b><span>avg. to handle</span></div></div>
+          <div class="list mt">
+            <div class="li" *ngFor="let s of d.comms.sos.recent; trackBy: trackIdx"><span>{{ s.message ? '“' + s.message + '”' : 'No message' }}</span>
+              <span class="pill" [ngClass]="s.status === 'open' ? 'bad' : 'ok'">{{ s.status === 'open' ? 'Open' : 'Handled' }}</span></div>
+          </div></div>
+        <div class="d-panel w4"><h2>Announcements <a routerLink="/admin/announcements">Announcements ›</a></h2><div class="hint">Last 24 hours</div>
+          <div class="list">
+            <div class="none" *ngIf="!d.comms.announcements.length">Nothing sent in the last 24 hours.</div>
+            <div class="li" *ngFor="let a of d.comms.announcements; trackBy: trackName"><span>{{ a.title }}<small *ngIf="a.public"> · public</small></span>
+              <span class="pill" [ngClass]="pill(a.type)">{{ typeLabel(a.type) }}</span></div>
+            <div class="li" *ngIf="d.comms.announcements.length"><span>Reached</span><b>{{ num(d.comms.reached) }} staff</b></div>
+          </div></div>
       </div>
-      <div class="stat">
-        <div class="stat-l">Accommodation Bookings</div>
-        <div class="stat-n">{{ totalAccommodationBookings }}</div>
-        <div class="stat-s">{{ totalAccommodationAdmitted }} admitted</div>
-      </div>
-      <div class="stat" *ngIf="isTopLevel">
-        <div class="stat-l">Volunteers</div>
-        <div class="stat-n">{{ totalVolunteers }}</div>
-        <div class="stat-s">across {{ departmentCount }} department{{ departmentCount === 1 ? '' : 's' }}</div>
-      </div>
+    </ng-container>
+
+    <!-- ═════════ Team Lead / Volunteer ═════════ -->
+    <div class="d-simple" *ngIf="!isTop && mine as m">
+      <div class="d-panel w12"><h2>Hi {{ m.name }}{{ m.department ? ' · ' + m.department : '' }}</h2>
+        <div class="hint">{{ m.isTeamLead ? 'Team Lead' : 'Volunteer' }} · {{ event?.name }}</div></div>
+      <div class="d-panel w6"><h2>{{ m.isTeamLead ? 'Your team today' : 'Your attendance today' }} <a routerLink="/my-department">My Department ›</a></h2>
+        <div class="hint">{{ m.isTeamLead ? 'Marked per slot' : 'Marked by your Team Lead' }}</div>
+        <div class="slots">
+          <div class="slot" *ngFor="let s of slotKeys; trackBy: trackIdx" [ngClass]="slotState(m.team.slots[s], m.team.size)">
+            <b>{{ m.isTeamLead ? m.team.slots[s] + '/' + m.team.size : (m.team.slots[s] ? '✓' : '–') }}</b>{{ slotLabel(s) }}</div>
+        </div></div>
+      <div class="d-panel w6"><h2>Next meal</h2><div class="hint">Mess Hall</div>
+        <div class="big" *ngIf="m.nextMeal">{{ m.nextMeal.label }} · {{ m.nextMeal.start }}<span class="pill ok" *ngIf="m.nextMeal.open">Open now</span></div>
+        <div class="none" *ngIf="!m.nextMeal">No more meals today.</div>
+        <div class="hint">Show your meal QR from <a routerLink="/profile">My Profile</a> at the desk.</div></div>
+      <div class="d-panel w6"><h2>Billboard <a routerLink="/billboard">Open ›</a></h2>
+        <div class="list">
+          <div class="none" *ngIf="!m.billboard.length">No notes yet.</div>
+          <a class="li" *ngFor="let n of m.billboard; trackBy: trackName" [routerLink]="'/billboard'" [queryParams]="{ n: n._id }">
+            <span [class.unread]="!n.read">{{ n.title }}</span><span class="pill" [ngClass]="pill(n.type)">{{ typeLabel(n.type) }}</span></a>
+        </div></div>
+      <div class="d-panel w6"><h2>Your bed tonight</h2>
+        <ng-container *ngIf="m.bed; else noBed"><div class="big">{{ m.bed.unit }}</div><div class="hint">{{ m.bed.type }}{{ m.bed.movedIn ? ' · moved in' : '' }}</div></ng-container>
+        <ng-template #noBed><div class="none">No bed booked for tonight. Ask Hospitality if you need one.</div></ng-template></div>
     </div>
-
-    <div class="chart-grid">
-      <div class="chart-card">
-        <canvas id="mainDataChart"></canvas>
-      </div>
-      <div class="chart-card">
-        <canvas id="festBarChart"></canvas>
-      </div>
-      <div class="chart-card">
-        <canvas id="accomodationBarChart"></canvas>
-      </div>
-      <div class="chart-card">
-        <canvas id="vehicleBarChart"></canvas>
-      </div>
-    </div>
-
   </ng-container>
-
 </div>
