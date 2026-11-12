@@ -11,6 +11,8 @@ import { MedicalLockService } from '../medical-lock.service';
 import { ADULT_AGE, FoundPerson, GENDERS, Gender, KIND_LABEL, MedicalPatient, RecordCounts, SEVERITY_BADGE, SEVERITY_LABEL } from '../medical.model';
 
 interface WalkIn { name: string; phone: string; age: number | null; gender: Gender | null; guardianName: string; guardianPhone: string; }
+export interface SosHandOver { message: string; phone: string; at: string; }
+
 const emptyWalkIn = (): WalkIn => ({ name: '', phone: '', age: null, gender: null, guardianName: '', guardianPhone: '' });
 
 /** Medical Desk (release 1): find the patient — band, search or walk-in — then open their report. */
@@ -37,6 +39,9 @@ export class MedicalDeskComponent implements OnInit, OnDestroy {
   scanMessage = '';
   opening = false;
 
+  /** Set when opened from an SOS ("Start medical visit"); passed inside the app, never in the address. */
+  sos: SosHandOver | null = null;
+
   walkInOpen = false;
   walkIn: WalkIn = emptyWalkIn();
 
@@ -55,12 +60,17 @@ export class MedicalDeskComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    const st = (typeof history !== 'undefined' && history.state?.sos) as SosHandOver | undefined;
+    if (st) this.sos = { message: String(st.message || ''), phone: String(st.phone || ''), at: String(st.at || '') };
     this.sub = this.events.activeEvent.subscribe(e => {
       this.eventId = e?._id || null;
       this.eventName = e?.name || '';
       this.results = null;
       this.q = '';
       this.load();
+      // From an SOS with a phone: look the caller up straight away.
+      const digits = (this.sos?.phone || '').replace(/\D/g, '');
+      if (digits.length >= 2) { this.q = digits.slice(-10); this.onSearch(); }
     });
   }
 
@@ -127,13 +137,13 @@ export class MedicalDeskComponent implements OnInit, OnDestroy {
 
   /** Opens the person's report (creating it the first time). */
   async open(person: FoundPerson): Promise<void> {
-    if (person.reportId) { this.router.navigate(['/medical/patients', person.reportId]); return; }
+    if (person.reportId) { this.goToReport(person.reportId); return; }
     if (!this.eventId || this.opening) return;
     this.opening = true;
     try {
       const who = person.kind === 'participant' ? { pass: person.passId } : { user: person.userId };
       const { patient } = await this.medical.openReport(this.eventId, person.kind, who);
-      this.router.navigate(['/medical/patients', patient._id]);
+      this.goToReport(patient._id);
     } catch (err: any) {
       this.notify.openErrorSnackBar(err?.error?.message || 'Could not open the report');
     } finally {
@@ -145,8 +155,19 @@ export class MedicalDeskComponent implements OnInit, OnDestroy {
     return this.walkIn.age !== null && this.walkIn.age !== undefined && String(this.walkIn.age) !== '' && Number(this.walkIn.age) < ADULT_AGE;
   }
 
+  /** The report; from an SOS its first visit starts with the SOS message. */
+  private goToReport(id: string): void {
+    if (this.sos) this.router.navigate(['/medical/patients', id], { state: { sos: this.sos } });
+    else this.router.navigate(['/medical/patients', id]);
+  }
+
+  clearSos(): void {
+    this.sos = null;
+  }
+
   startWalkIn(): void {
-    this.walkIn = { ...emptyWalkIn(), name: this.q.trim() };
+    const fromSos = !!this.sos && /^\+?[\d\s-]+$/.test(this.q.trim());
+    this.walkIn = { ...emptyWalkIn(), name: fromSos ? '' : this.q.trim(), phone: this.sos?.phone || '' };
     this.walkInOpen = true;
   }
 
@@ -160,7 +181,7 @@ export class MedicalDeskComponent implements OnInit, OnDestroy {
         guardian: this.walkInMinor ? { name: w.guardianName.trim(), phone: w.guardianPhone.trim(), contacted: false } : undefined
       });
       this.walkInOpen = false;
-      this.router.navigate(['/medical/patients', patient._id]);
+      this.goToReport(patient._id);
     } catch (err: any) {
       this.notify.openErrorSnackBar(err?.error?.message || err?.error?.errors?.[0]?.msg || 'Could not save');
     } finally {

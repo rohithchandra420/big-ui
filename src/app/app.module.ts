@@ -103,6 +103,7 @@ import { MedicalLockComponent } from './medical/lock/medical-lock.component';
 import { MedicalDeskComponent } from './medical/desk/medical-desk.component';
 import { MedicalRecordsComponent } from './medical/records/medical-records.component';
 import { MedicalPatientComponent } from './medical/patient/medical-patient.component';
+import { MedicalReportComponent } from './medical/report/medical-report.component';
 import { BillboardComponent } from './billboard/billboard.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
@@ -187,7 +188,8 @@ LOAD_WASM().subscribe()
     MedicalLockComponent,
     MedicalDeskComponent,
     MedicalRecordsComponent,
-    MedicalPatientComponent
+    MedicalPatientComponent,
+    MedicalReportComponent
   ],
   imports: [
     BrowserModule,

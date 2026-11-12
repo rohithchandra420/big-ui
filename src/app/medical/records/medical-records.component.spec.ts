@@ -18,7 +18,7 @@ describe('MedicalRecordsComponent', () => {
 
   beforeEach(async () => {
     medical = jasmine.createSpyObj('MedicalService', ['access', 'records']);
-    medical.access.and.returnValue(Promise.resolve({ canUse: true, canManage: false, canAudit: false, locked: false, lockMinutes: 15 }));
+    medical.access.and.returnValue(Promise.resolve({ canUse: true, canManage: false, canAudit: false, canExport: false, locked: false, lockMinutes: 15 }));
     medical.records.and.returnValue(Promise.resolve({
       patients: [{ _id: 'p1', kind: 'participant', name: 'Asha', age: 22, allergies: 'Nuts', lastVisitAt: '2026-11-12T08:00:00Z', lastComplaint: 'Fever', lastSeverity: 'serious', lastOutcome: 'referred', visitCount: 2, restingNow: false, followUpDue: null } as any],
       total: 120, page: 0, pageSize: 50, counts: { patients: 120, visitsToday: 4, restingNow: 0, followUpsDue: 2, serious: 3 }

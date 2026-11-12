@@ -7,6 +7,8 @@ import { MedicalPatientComponent, toLocalInput, vitalWarnings } from './medical-
 import { MedicalService } from '../medical.service';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
+import { AppSelectComponent } from '../../shared/app-select/app-select.component';
+import { AppOptionComponent } from '../../shared/app-select/app-option.component';
 import { MedicalPatient, MedicalVisit, PatientReport } from '../medical.model';
 
 const patient = (extra: Partial<MedicalPatient> = {}): MedicalPatient => ({
@@ -33,13 +35,13 @@ describe('MedicalPatientComponent', () => {
   let router: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    medical = jasmine.createSpyObj('MedicalService', ['report', 'updateReport', 'deleteReport', 'addVisit', 'updateVisit', 'deleteVisit', 'markLeft', 'followUpDone', 'medicines', 'audit']);
+    medical = jasmine.createSpyObj('MedicalService', ['report', 'updateReport', 'deleteReport', 'addVisit', 'updateVisit', 'deleteVisit', 'markLeft', 'followUpDone', 'medicines', 'audit', 'access', 'emailReport']);
     medical.report.and.callFake(() => Promise.resolve(report()));
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
     router = jasmine.createSpyObj('Router', ['navigate']);
     await TestBed.configureTestingModule({
-      declarations: [MedicalPatientComponent],
+      declarations: [MedicalPatientComponent, AppSelectComponent, AppOptionComponent],
       imports: [FormsModule],
       providers: [
         { provide: MedicalService, useValue: medical },
@@ -138,4 +140,70 @@ describe('MedicalPatientComponent', () => {
     const w = vitalWarnings({ temperature: 37, pulse: 130, bpSys: 150, bpDia: 85, spo2: 91 });
     expect([...w].sort()).toEqual(['bpSys', 'pulse', 'spo2']);
   });
+
+  it('emails the report with the phone password, or a typed one', fakeAsync(() => {
+    start();
+    medical.access.and.returnValue(Promise.resolve({ safeMode: false } as any));
+    component.openEmail();
+    flushMicrotasks();
+    expect(component.phoneTail).toBeNull();      // phone '900' has fewer than 6 digits
+    expect(component.ownPassword).toBeTrue();
+    component.emailTo = 'kiran@example.com';
+    expect(component.emailReady).toBeFalse();
+    component.emailPassword = 'blue-river';
+    expect(component.emailReady).toBeTrue();
+    medical.emailReport.and.returnValue(Promise.resolve({ to: 'kiran@example.com', redirectedTo: null, password: 'typed' as const }));
+    component.sendEmail();
+    flushMicrotasks();
+    expect(medical.emailReport).toHaveBeenCalledWith('p1', { to: 'kiran@example.com', password: 'blue-river', testRecipient: undefined });
+    expect(component.panel).toBeNull();
+  }));
+
+  it('in test mode needs a tester address', fakeAsync(() => {
+    medical.report.and.returnValue(Promise.resolve({ ...report(), patient: patient({ phone: '+91 98765 43210' }) }));
+    start();
+    medical.access.and.returnValue(Promise.resolve({ safeMode: true } as any));
+    component.openEmail();
+    flushMicrotasks();
+    expect(component.phoneTail).toBe('543210');
+    expect(component.ownPassword).toBeFalse();
+    component.emailTo = 'kiran@example.com';
+    expect(component.emailReady).toBeFalse();
+    component.tester = 'tester@example.com';
+    expect(component.emailReady).toBeTrue();
+  }));
+
+  it('from an SOS the first new visit starts with its message', fakeAsync(() => {
+    history.replaceState({ sos: { message: 'Fainted near stage', phone: '', at: '' } }, '');
+    try {
+      medical.report.and.returnValue(Promise.resolve(report([])));
+      fixture = TestBed.createComponent(MedicalPatientComponent);
+      component = fixture.componentInstance;
+      start();
+      expect(component.form!.complaint).toBe('SOS: Fainted near stage');
+      component.newVisit();
+      expect(component.form!.complaint).toBe('');
+    } finally {
+      history.replaceState(null, '');
+    }
+  }));
+
+  it('Edit details, Email report and Audit log open in the side panel; Escape closes it', fakeAsync(() => {
+    medical.report.and.returnValue(Promise.resolve({ ...report(), can: { manage: true, audit: true } }));
+    start();
+    component.editHeader();
+    fixture.detectChanges();
+    expect(component.panel).toBe('edit');
+    expect(fixture.nativeElement.querySelector('.panel.open .panel-title').textContent).toContain('Edit details');
+    component.onEscape();
+    expect(component.panel).toBeNull();
+    expect(component.header).toBeNull();
+    medical.audit.and.returnValue(Promise.resolve({ entries: [{ _id: 'a1', user: { _id: 'u1', name: 'Nisha' }, action: 'view_report', patientName: 'Kiran Das', at: '2026-11-12T08:00:00Z' }] }));
+    component.openAudit();
+    flushMicrotasks();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.panel.open').textContent).toContain('Opened the report');
+    component.closePanel();
+    expect(component.panelOpen).toBeFalse();
+  }));
 });

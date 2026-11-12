@@ -1,0 +1,76 @@
+<app-medical-lock></app-medical-lock>
+
+<div class="md-page md-wide">
+  <div class="page-ph">
+    <div>
+      <div class="page-ph-title">Medical report</div>
+      <div class="page-ph-sub">{{ eventName || 'No event selected' }} · one festival day at a time (India time)</div>
+    </div>
+    <div class="ph-actions" *ngIf="canExport && report">
+      <button type="button" class="pill-btn primary" (click)="export('day')" [disabled]="exporting"><mat-icon>download</mat-icon>Export this day</button>
+      <button type="button" class="pill-btn" (click)="export('event')" [disabled]="exporting"><mat-icon>download</mat-icon>Whole event</button>
+    </div>
+  </div>
+
+  <div class="no-event-notice" *ngIf="!eventId">Pick an event in the sidebar to see its report.</div>
+
+  <ng-container *ngIf="report">
+    <div class="md-days" role="tablist" aria-label="Festival day">
+      <button type="button" *ngFor="let d of report.days; trackBy: trackDay" class="md-day" role="tab"
+              [class.on]="d === date" [attr.aria-selected]="d === date" (click)="pick(d)">
+        <span>{{ d | date:'EEE' }}</span><strong>{{ d | date:'d MMM' }}</strong>
+      </button>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat"><div class="stat-l">Visits</div><div class="stat-n">{{ report.visits }}</div><div class="stat-s">{{ report.patients }} patients</div></div>
+      <div class="stat"><div class="stat-l">New patients</div><div class="stat-n">{{ report.newPatients }}</div><div class="stat-s">first report that day</div></div>
+      <div class="stat" [class.alert-stat]="report.bySeverity.serious > 0"><div class="stat-l">Serious</div><div class="stat-n">{{ report.bySeverity.serious }}</div><div class="stat-s">visits</div></div>
+      <div class="stat" [class.alert-stat]="report.referrals.length > 0"><div class="stat-l">Hospital / ambulance</div><div class="stat-n">{{ report.referrals.length }}</div><div class="stat-s">sent on</div></div>
+    </div>
+
+    <div class="md-muted md-empty-day" *ngIf="!report.visits">No visits on this day.</div>
+
+    <div class="md-rep-grid" *ngIf="report.visits">
+      <section class="md-card">
+        <h2 class="md-h">Severity</h2>
+        <div class="md-bar" *ngFor="let b of severityBars; trackBy: trackBar"><span class="md-bar-l">{{ b.label }}</span><span class="md-bar-t"><span [style.width.%]="b.pct"></span></span><span class="md-bar-n">{{ b.n }}</span></div>
+      </section>
+      <section class="md-card">
+        <h2 class="md-h">Outcome</h2>
+        <div class="md-bar" *ngFor="let b of outcomeBars; trackBy: trackBar"><span class="md-bar-l">{{ b.label }}</span><span class="md-bar-t"><span [style.width.%]="b.pct"></span></span><span class="md-bar-n">{{ b.n }}</span></div>
+      </section>
+      <section class="md-card">
+        <h2 class="md-h">Patients</h2>
+        <div class="md-bar" *ngFor="let b of typeBars; trackBy: trackBar"><span class="md-bar-l">{{ b.label }}</span><span class="md-bar-t"><span [style.width.%]="b.pct"></span></span><span class="md-bar-n">{{ b.n }}</span></div>
+      </section>
+      <section class="md-card">
+        <h2 class="md-h">Common complaints</h2>
+        <div class="md-bar" *ngFor="let b of complaintBars; trackBy: trackBar"><span class="md-bar-l md-wrap">{{ b.label }}</span><span class="md-bar-t"><span [style.width.%]="b.pct"></span></span><span class="md-bar-n">{{ b.n }}</span></div>
+      </section>
+      <section class="md-card">
+        <h2 class="md-h">Medicines given</h2>
+        <div class="md-muted" *ngIf="!medicineBars.length">None recorded.</div>
+        <div class="md-bar" *ngFor="let b of medicineBars; trackBy: trackBar"><span class="md-bar-l md-wrap">{{ b.label }}</span><span class="md-bar-t"><span [style.width.%]="b.pct"></span></span><span class="md-bar-n">{{ b.n }}</span></div>
+      </section>
+      <section class="md-card">
+        <h2 class="md-h">Visits by hour</h2>
+        <div class="md-hours">
+          <div class="md-hour" *ngFor="let h of hours; trackBy: trackHour" [title]="h.n + ' at ' + h.h + ':00'">
+            <span class="md-hour-b"><span [style.height.%]="h.pct"></span></span>
+            <small>{{ h.h }}</small>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="md-card" *ngIf="report.referrals.length">
+      <h2 class="md-h"><mat-icon class="ms-fill md-h-ic">local_hospital</mat-icon>Sent to hospital</h2>
+      <a class="md-row" *ngFor="let r of report.referrals" [routerLink]="r.patientId ? ['/medical/patients', r.patientId] : null">
+        <span class="md-row-main"><strong>{{ r.name }}</strong><small>{{ outLabel[r.outcome] }}{{ r.hospital ? ' · ' + r.hospital : '' }}</small></span>
+        <span class="badge" [ngClass]="sevBadge[r.severity]">{{ sevLabel[r.severity] }}</span>
+        <span class="md-when">{{ r.at | date:'HH:mm' }}</span>
+      </a>
+    </section>
+  </ng-container>
+</div>

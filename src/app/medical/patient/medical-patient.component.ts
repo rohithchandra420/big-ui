@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, firstValueFrom } from 'rxjs';
 import { NotificationService } from '../../core/notification.service';
@@ -70,6 +70,18 @@ export class MedicalPatientComponent implements OnInit, OnDestroy {
   suggestions: string[] = [];
   audit: AuditEntry[] | null = null;
   warnings = new Map<string, Set<keyof Vitals>>();
+  /** The SOS message, when opened from "Start medical visit" (first new visit starts with it). */
+  private sosMessage: string | null = null;
+
+  // Email report (password-protected PDF)
+  /** The side panel: Edit details, Email report or Audit log (null = closed). */
+  panel: 'edit' | 'email' | 'audit' | null = null;
+  emailTo = '';
+  ownPassword = false;
+  emailPassword = '';
+  tester = '';
+  safeMode = false;
+  sending = false;
 
   private sub?: Subscription;
   private suggestTimer: any = null;
@@ -83,9 +95,12 @@ export class MedicalPatientComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    const st = typeof history !== 'undefined' ? history.state?.sos : null;
+    if (st) this.sosMessage = String(st.message || '').trim() || 'SOS';
     this.sub = this.route.paramMap.subscribe(p => {
       this.id = p.get('id') || '';
       this.form = null;
+      this.panel = null;
       this.header = null;
       this.audit = null;
       this.load();
@@ -128,6 +143,7 @@ export class MedicalPatientComponent implements OnInit, OnDestroy {
       name: p.name, phone: p.phone, email: p.email, age: p.age, gender: p.gender, allergies: p.allergies, conditions: p.conditions,
       guardianName: p.guardian?.name || '', guardianPhone: p.guardian?.phone || '', guardianContacted: !!p.guardian?.contacted
     };
+    this.panel = 'edit';
   }
 
   async saveHeader(): Promise<void> {
@@ -142,7 +158,7 @@ export class MedicalPatientComponent implements OnInit, OnDestroy {
       if (this.patient.kind === 'walkin') { data.name = h.name.trim(); data.email = h.email.trim(); }
       const { patient } = await this.medical.updateReport(this.patient._id, data);
       this.report = { ...this.report!, patient };
-      this.header = null;
+      this.closePanel();
       this.notify.openSucessSnackBar('Report details saved');
     } catch (err: any) {
       this.notify.openErrorSnackBar(err?.error?.message || err?.error?.errors?.[0]?.msg || 'Could not save');
@@ -184,6 +200,10 @@ export class MedicalPatientComponent implements OnInit, OnDestroy {
   newVisit(): void {
     this.editingVisitId = null;
     this.form = emptyVisit();
+    if (this.sosMessage) {
+      this.form.complaint = `SOS: ${this.sosMessage}`.slice(0, 500);
+      this.sosMessage = null;
+    }
   }
 
   editVisit(v: MedicalVisit): void {
@@ -297,8 +317,62 @@ export class MedicalPatientComponent implements OnInit, OnDestroy {
     }
   }
 
-  async toggleAudit(): Promise<void> {
-    if (this.audit) { this.audit = null; return; }
+  // ── Email the report ──
+
+  /** Last 6 digits of the patient's phone (the PDF password), or null. */
+  get phoneTail(): string | null {
+    const d = String(this.patient?.phone || '').replace(/\D/g, '');
+    return d.length >= 6 ? d.slice(-6) : null;
+  }
+
+  async openEmail(): Promise<void> {
+    this.emailTo = this.patient?.email || '';
+    this.ownPassword = !this.phoneTail;
+    this.emailPassword = '';
+    this.panel = 'email';
+    try { this.safeMode = !!(await this.medical.access()).safeMode; } catch { /* the server says it anyway */ }
+  }
+
+  get emailReady(): boolean {
+    const okTo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.emailTo.trim());
+    const okPw = this.ownPassword ? this.emailPassword.length >= 6 : !!this.phoneTail;
+    return okTo && okPw && (!this.safeMode || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.tester.trim())) && !this.sending;
+  }
+
+  async sendEmail(): Promise<void> {
+    if (!this.patient || !this.emailReady) return;
+    this.sending = true;
+    try {
+      const res = await this.medical.emailReport(this.patient._id, {
+        to: this.emailTo.trim(),
+        password: this.ownPassword ? this.emailPassword : undefined,
+        testRecipient: this.safeMode ? this.tester.trim() : undefined
+      });
+      this.closePanel();
+      this.emailPassword = '';
+      this.notify.openSucessSnackBar(res.redirectedTo ? `Test mode: report sent to ${res.redirectedTo}` : `Report sent to ${res.to}. Tell them the password in person or by phone.`);
+    } catch (err: any) {
+      this.notify.openErrorSnackBar(err?.error?.message || err?.error?.errors?.[0]?.msg || 'Could not send the report');
+    } finally {
+      this.sending = false;
+    }
+  }
+
+  get panelOpen(): boolean { return this.panel !== null; }
+
+  closePanel(): void {
+    this.panel = null;
+    this.header = null;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.panelOpen) this.closePanel();
+  }
+
+  async openAudit(): Promise<void> {
+    this.audit = null;
+    this.panel = 'audit';
     const ev = this.report?.event?._id;
     if (!ev || !this.patient) return;
     try {

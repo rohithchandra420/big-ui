@@ -1,6 +1,6 @@
 <app-medical-lock></app-medical-lock>
 
-<div class="md-page">
+<div class="md-page md-wide">
   <div class="page-ph">
     <div>
       <div class="page-ph-title">Medical Desk</div>
@@ -20,6 +20,15 @@
       <div class="stat" [class.alert-stat]="counts.restingNow > 0"><div class="stat-l">Resting now</div><div class="stat-n">{{ counts.restingNow }}</div><div class="stat-s">in the Medical camp</div></div>
       <div class="stat" [class.alert-stat]="counts.followUpsDue > 0"><div class="stat-l">Follow-ups</div><div class="stat-n">{{ counts.followUpsDue }}</div><div class="stat-s">still open</div></div>
       <div class="stat"><div class="stat-l">Serious</div><div class="stat-n">{{ counts.serious }}</div><div class="stat-s">visits this event</div></div>
+    </div>
+
+    <div class="md-sos" *ngIf="sos">
+      <mat-icon class="ms-fill">sos</mat-icon>
+      <div class="md-sos-txt">
+        <strong>From an SOS{{ sos.at ? ' · ' + (sos.at | date:'HH:mm') : '' }}</strong>
+        <span>{{ sos.message ? '“' + sos.message + '”' : 'No message' }}{{ sos.phone ? ' · ' + sos.phone : '' }}</span>
+      </div>
+      <button type="button" class="pill-btn" (click)="clearSos()"><mat-icon>close</mat-icon>Clear</button>
     </div>
 
     <section class="md-card md-find">

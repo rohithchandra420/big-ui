@@ -20,7 +20,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - **Desk:** find the patient by scanning their wrist band, by search, or add a walk-in (with a parent or guardian for under-18s), then open their report. Shows visits today, who is resting in the Medical camp and open follow-ups.
   - **Records:** every patient report on the event, full width, with search, quick-filter cards (today, resting, follow-ups, serious) and filters for type, severity, outcome and dates.
   - **Patient report:** allergies and conditions highlighted at the top, guardian details with a "contacted" switch, a new-visit form (complaint, vitals with unusual readings highlighted, severity, diagnosis, medicines with suggestions, notes, outcome, follow-up), the visit timeline with Change / Delete, "Left the camp" and "Follow-up done", and an audit log for Directors and Developers.
+  - **Report:** pick a festival day — visits, new patients, serious cases, hospital / ambulance, bars for severity, outcome, patient type, common complaints and medicines given, visits by hour, and the list of people sent to hospital.
+  - **Export** (Medical Team Lead, Directors, Developers): the full visit list for the day or the whole event as an Excel file, after a reminder that it holds health data.
+  - Edit details, Email report and the Audit log open in a side panel that slides in from the right, so the report stays in place.
+  - **Email report:** on a patient's report, send the full report as a password-protected PDF — address editable (a ticket's email is often the buyer's), password from the phone's last 6 digits or typed, with a reminder to tell it in person.
 - The Medical pages lock after a period without activity and ask for the password again; a Lock button hides them at once.
+- **Dashboard:** a Medical Desk card under Comms & safety (visits, serious, to hospital, resting now — numbers only).
+- **Venue Map:** Medical camp areas show how many are resting and today's visits.
+- **SOS:** "Start medical visit" (Medical Desk users) opens the Desk with the SOS message and phone filled in; the first visit starts with the SOS message.
+- **Email Report:** new type "Medical report" (address, sender and time only).
+
+### Fixed
+- Hospitality pages (Today, Serving desk, Guests, Report, Stay, Setup) had extra padding inside the page; they now line up edge to edge like Bookings.
 
 ---
 

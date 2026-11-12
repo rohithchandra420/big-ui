@@ -8,6 +8,9 @@ export interface MedicalAccess {
   canUse: boolean;
   canManage: boolean;
   canAudit: boolean;
+  canExport: boolean;
+  /** Outside production every email goes only to a tester address. */
+  safeMode?: boolean;
   locked: boolean;
   lockMinutes: number;
 }
@@ -151,6 +154,25 @@ export interface AuditEntry {
   patientName: string;
   at: string;
 }
+
+export interface Tally { label: string; n: number; }
+
+export interface DayReport {
+  date: string;
+  days: string[];
+  visits: number;
+  patients: number;
+  newPatients: number;
+  byType: Record<PatientKind, number>;
+  bySeverity: Record<Severity, number>;
+  byOutcome: Record<Outcome, number>;
+  complaints: Tally[];
+  medicines: Tally[];
+  byHour: number[];
+  referrals: { patientId: string | null; name: string; at: string; outcome: Outcome; hospital: string; severity: Severity }[];
+}
+
+export type ExportRow = Record<string, string | number>;
 
 export interface Choice<T> { value: T; label: string; icon: string; hint: string; }
 

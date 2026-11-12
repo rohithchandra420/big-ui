@@ -4,7 +4,7 @@ import { Observable, firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { MedicalLockService } from './medical-lock.service';
 import {
-  AuditEntry, FoundPerson, MedicalAccess, MedicalPatient, MedicalVisit, PatientHeaderInput, PatientKind,
+  AuditEntry, DayReport, ExportRow, FoundPerson, MedicalAccess, MedicalPatient, MedicalVisit, PatientHeaderInput, PatientKind,
   PatientReport, RecordFilters, RecordsPage, VisitInput
 } from './medical.model';
 
@@ -87,8 +87,24 @@ export class MedicalService {
     return this.call(() => this.http.post<VisitResult>(`${this.url}/visits/${id}/follow-up-done`, {}));
   }
 
+  /** The full report as a password-protected PDF by email (password: phone's last 6 digits, or `password`). */
+  emailReport(id: string, data: { to: string; password?: string; testRecipient?: string }): Promise<{ to: string; redirectedTo: string | null; password: 'phone' | 'typed' }> {
+    return this.call(() => this.http.post<{ to: string; redirectedTo: string | null; password: 'phone' | 'typed' }>(`${this.url}/patients/${id}/email`, data));
+  }
   medicines(eventId: string, q: string): Promise<{ medicines: string[] }> {
     return this.call(() => this.http.get<{ medicines: string[] }>(this.url + '/medicines', { params: { event: eventId, q } }));
+  }
+  dayReport(eventId: string, date?: string): Promise<DayReport> {
+    const params: Record<string, string> = { event: eventId };
+    if (date) params['date'] = date;
+    return this.call(() => this.http.get<DayReport>(this.url + '/report', { params }));
+  }
+  /** Full visit list (DIR, DEV, Medical TL only). Dates are festival days (YYYY-MM-DD); none = the whole event. */
+  exportVisits(eventId: string, from?: string, to?: string): Promise<{ event: string; rows: ExportRow[]; truncated: boolean }> {
+    const params: Record<string, string> = { event: eventId };
+    if (from) params['from'] = from;
+    if (to) params['to'] = to;
+    return this.call(() => this.http.get<{ event: string; rows: ExportRow[]; truncated: boolean }>(this.url + '/export', { params }));
   }
   audit(eventId: string, patientId?: string): Promise<{ entries: AuditEntry[] }> {
     const params: Record<string, string> = { event: eventId };

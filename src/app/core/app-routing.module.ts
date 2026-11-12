@@ -45,6 +45,7 @@ import { MedicalGuard } from "../medical/medical.guard";
 import { MedicalDeskComponent } from "../medical/desk/medical-desk.component";
 import { MedicalRecordsComponent } from "../medical/records/medical-records.component";
 import { MedicalPatientComponent } from "../medical/patient/medical-patient.component";
+import { MedicalReportComponent } from "../medical/report/medical-report.component";
 import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
@@ -106,6 +107,7 @@ const appRoutes: Routes = [
     // Medical Desk (MEDICAL_CONTEXT.md): DEV, DIR, the Medical department, medical grants — never ADMIN.
     { path: 'medical', canActivate: [AuthGuard, MedicalGuard], component: MedicalDeskComponent },
     { path: 'medical/records', canActivate: [AuthGuard, MedicalGuard], component: MedicalRecordsComponent },
+    { path: 'medical/report', canActivate: [AuthGuard, MedicalGuard], component: MedicalReportComponent },
     { path: 'medical/patients/:id', canActivate: [AuthGuard, MedicalGuard], component: MedicalPatientComponent },
     { path: 'workshops', canActivate: [AuthGuard], component: WorkshopPlannerComponent },
     // A session's lists and door — the Workshop team (members, workshop:write, the Plan group).

@@ -23,7 +23,7 @@ describe('MedicalDeskComponent', () => {
 
   beforeEach(async () => {
     medical = jasmine.createSpyObj('MedicalService', ['access', 'records', 'find', 'findBand', 'openReport']);
-    medical.access.and.returnValue(Promise.resolve({ canUse: true, canManage: false, canAudit: false, locked: false, lockMinutes: 15 }));
+    medical.access.and.returnValue(Promise.resolve({ canUse: true, canManage: false, canAudit: false, canExport: false, locked: false, lockMinutes: 15 }));
     medical.records.and.callFake((_: string, f: any) => Promise.resolve(page(f.resting ? [{ _id: 'p9', name: 'Resting Rao', lastComplaint: 'Faint', lastSeverity: 'moderate', lastVisitAt: '2026-11-12T08:00:00Z' }] : [])));
     router = jasmine.createSpyObj('Router', ['navigate']);
     dialog = jasmine.createSpyObj('MatDialog', ['open']);
@@ -109,5 +109,27 @@ describe('MedicalDeskComponent', () => {
     expect(args[1]).toBe('walkin');
     expect(args[2]).toEqual(jasmine.objectContaining({ name: 'Ravi', age: 12, guardian: { name: 'Meena', phone: '', contacted: false } }));
     expect(router.navigate).toHaveBeenCalledWith(['/medical/patients', 'w1']);
+  }));
+
+  it('from an SOS: shows it, searches the phone, and hands it to the report', fakeAsync(() => {
+    history.replaceState({ sos: { message: 'Fainted near stage', phone: '+91 98765 43210', at: '2026-11-12T05:00:00Z' } }, '');
+    try {
+      medical.find.and.returnValue(Promise.resolve({ people: [] }));
+      fixture = TestBed.createComponent(MedicalDeskComponent);
+      component = fixture.componentInstance;
+      start();
+      tick(300);
+      flushMicrotasks();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.md-sos').textContent).toContain('Fainted near stage');
+      expect(medical.find).toHaveBeenCalledWith('e1', '9876543210');
+      component.startWalkIn();
+      expect(component.walkIn.phone).toBe('+91 98765 43210');
+      expect(component.walkIn.name).toBe('');
+      component.open({ kind: 'walkin', name: 'X', detail: '', reportId: 'r9' });
+      expect(router.navigate).toHaveBeenCalledWith(['/medical/patients', 'r9'], { state: { sos: jasmine.objectContaining({ message: 'Fainted near stage' }) } });
+    } finally {
+      history.replaceState(null, '');
+    }
   }));
 });

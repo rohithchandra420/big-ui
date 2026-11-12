@@ -56,7 +56,7 @@ describe('MedicalService', () => {
 
   it('access() follows the server lock state', fakeAsync(() => {
     service.access();
-    http.expectOne(`${url}/access`).flush({ canUse: true, canManage: false, canAudit: false, locked: false, lockMinutes: 10 });
+    http.expectOne(`${url}/access`).flush({ canUse: true, canManage: false, canAudit: false, canExport: false, locked: false, lockMinutes: 10 });
     flushMicrotasks();
     expect(lock.locked).toBeFalse();
     expect(lock.lockMinutes).toBe(10);
