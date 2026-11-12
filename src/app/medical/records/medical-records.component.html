@@ -6,9 +6,8 @@
       <div class="page-ph-title">Medical records</div>
       <div class="page-ph-sub">{{ eventName || 'No event selected' }} · one report per patient · deleted automatically after the event</div>
     </div>
-    <div class="ph-actions">
-      <a class="pill-btn primary" routerLink="/medical"><mat-icon>medical_services</mat-icon>Medical Desk</a>
-    </div>
+    <!-- Navigation Tabs: Back + this section's pages -->
+    <app-section-header></app-section-header>
   </div>
 
   <div class="no-event-notice" *ngIf="!eventId">Pick an event in the sidebar to see its records.</div>

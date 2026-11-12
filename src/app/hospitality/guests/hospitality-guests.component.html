@@ -4,6 +4,8 @@
     <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · Meal Passes for people without a BiG account</div>
   </div>
   <button type="button" class="btn-cta" [disabled]="!event" (click)="newGuest()">Add guest</button>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
 </div>
 
 <div class="hg-page">

@@ -13,6 +13,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.49.0] - 2026-11-12
+
+### Changed
+- **Navigation Tabs.** The sidebar now shows Main (Dashboard, Billboard, SOS, Venue Map, My Department) and one item per section: Box Office, Accommodation, Workshops, Hospitality, Medical Desk and Admin. A section's pages are tabs in the page header, below the page title:
+  - Every tab keeps its own address, so refreshing, the browser's Back button, bookmarks and notification links stay on the same page.
+  - Clicking a section opens the tab you used last there (remembered in this browser). Signing in still lands on the Dashboard.
+  - A thin Back strip on the left of the tab row: on a page opened from a tab (a booking, a workshop session, a patient, an event) it goes up to that tab; elsewhere it goes to the previous page; it is hidden when there is no earlier page.
+  - Tabs a person may not open are not shown; with only one tab left, the tab row is hidden.
+  - On phones, long tab rows scroll sideways, and the tab row hides while scrolling down and slides back on scroll up.
+- Sidebar items have icons instead of dots.
+- Session lists and Event details: their own back links are replaced by the Back strip. Event details now has a page header.
+- Header links that only repeated a tab are gone: Medical Desk, Records and Desk on the Medical pages, and Back to Today on Hospitality Setup.
+- Full width, like Bookings and Users: Dashboard, SOS, My Department, Admin › Departments, Events (and an event's details), Public Page, and Accommodation › Setup no longer sit in a centred column.
+
+---
+
 ## [1.48.0] - 2026-11-12
 
 ### Added

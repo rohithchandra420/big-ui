@@ -48,7 +48,7 @@
 /* calendar: every night column is exactly one cell wide, header and cells alike */
 .hy-calwrap { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
 .hy-calcard { min-width: 0; }
-.hy-celldet { position: sticky; top: 76px; }
+.hy-celldet { position: sticky; top: 104px; }
 .hy-cal { overflow: auto; max-height: min(62vh, 560px); }
 .hy-cal thead th { position: sticky; top: 0; z-index: 2; background: #fff; }
 .hy-cal thead th.u { z-index: 3; }

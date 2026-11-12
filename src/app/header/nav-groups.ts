@@ -1,29 +1,19 @@
 /**
- * Collapsible sidebar groups (user decisions 2026-11-03): Main starts open,
- * the rest start closed, the group holding the current page always opens,
- * and each person's choice is kept in this browser only.
+ * Collapsible sidebar groups (user decisions 2026-11-03). Since Navigation
+ * Tabs (NAV_TABS_CONTEXT.md) only Main is still a group: it starts open,
+ * opens when you're on one of its pages, and its open/closed state is kept
+ * in this browser only. The other sections are single items with tabs.
  */
-export type NavGroup = 'main' | 'box-office' | 'accommodation' | 'workshops' | 'hospitality' | 'medical' | 'admin';
+export type NavGroup = 'main';
 
 const KEY = 'navGroups';
-const PREFIXES: [string, NavGroup][] = [
-  ['/box-office', 'box-office'],
-  ['/accommodation', 'accommodation'],
-  ['/workshops', 'workshops'],
-  ['/hospitality', 'hospitality'],
-  ['/medical', 'medical'],
-  ['/admin', 'admin'],
-  ['/billboard', 'main'],
-  ['/venue-map', 'main'],
-  ['/my-department', 'main'],
-];
+const MAIN_PAGES = ['/billboard', '/sos', '/venue-map', '/my-department'];
 
-/** Which group a URL belongs to ('/' = Dashboard = main); null for pages outside the groups (Profile…). */
+/** 'main' for Main's pages ('/' = Dashboard); null for every other page. */
 export function groupOfUrl(url: string): NavGroup | null {
   const path = (url || '/').split(/[?#]/)[0];
   if (path === '/' || path === '') return 'main';
-  const hit = PREFIXES.find(([p]) => path === p || path.startsWith(p + '/'));
-  return hit ? hit[1] : null;
+  return MAIN_PAGES.some(p => path === p || path.startsWith(p + '/')) ? 'main' : null;
 }
 
 export function readOpenGroups(): Partial<Record<NavGroup, boolean>> {

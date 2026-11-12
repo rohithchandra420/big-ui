@@ -2,7 +2,7 @@
 
 /* Approximate: 100vh minus the page header, stat row, filters and footer. */
 .setup-tbl-scroll {
-  max-height: calc(100vh - 330px);
+  max-height: calc(100vh - 358px);
   min-height: 160px;
 }
 

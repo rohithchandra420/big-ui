@@ -6,6 +6,8 @@
   <button class="btn-cta" (click)="exportExcel()" [disabled]="!data?.sessions?.length || exporting">
     {{ exporting ? 'Exporting…' : 'Export to Excel' }}
   </button>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
 </div>
 
 <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar to see its workshop reports.</div>

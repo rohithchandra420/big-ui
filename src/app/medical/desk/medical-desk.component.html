@@ -7,9 +7,10 @@
       <div class="page-ph-sub">{{ eventName || 'No event selected' }} · find the patient, then record the visit</div>
     </div>
     <div class="ph-actions">
-      <a class="pill-btn" routerLink="/medical/records"><mat-icon>folder_shared</mat-icon>Records</a>
       <button type="button" class="pill-btn" (click)="lockNow()" title="Hide the records now"><mat-icon>lock</mat-icon>Lock</button>
     </div>
+    <!-- Navigation Tabs: Back + this section's pages -->
+    <app-section-header></app-section-header>
   </div>
 
   <div class="no-event-notice" *ngIf="!eventId">Pick an event in the sidebar to use the Medical Desk.</div>

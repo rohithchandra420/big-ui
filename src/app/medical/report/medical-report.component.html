@@ -10,6 +10,8 @@
       <button type="button" class="pill-btn primary" (click)="export('day')" [disabled]="exporting"><mat-icon>download</mat-icon>Export this day</button>
       <button type="button" class="pill-btn" (click)="export('event')" [disabled]="exporting"><mat-icon>download</mat-icon>Whole event</button>
     </div>
+    <!-- Navigation Tabs: Back + this section's pages -->
+    <app-section-header></app-section-header>
   </div>
 
   <div class="no-event-notice" *ngIf="!eventId">Pick an event in the sidebar to see its report.</div>
