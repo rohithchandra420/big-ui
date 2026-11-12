@@ -1,3 +1,4 @@
+import { NavAccessService } from '../core/nav-access.service';
 import { ComponentFixture, TestBed, fakeAsync, flush } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -69,6 +70,7 @@ describe('VenueMapComponent', () => {
       declarations: [VenueMapComponent, AppSelectComponent, AppOptionComponent],
       imports: [FormsModule, MatIconModule, RouterTestingModule],
       providers: [
+        { provide: NavAccessService, useValue: { canSeeTab: () => true } },
         { provide: LocationService, useValue: svc },
         { provide: EventService, useValue: { activeEvent: event$ } },
         { provide: AuthService, useValue: auth },

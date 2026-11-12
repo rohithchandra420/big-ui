@@ -117,6 +117,8 @@ export class NavAccessService implements OnDestroy {
       case '/box-office/registration': return this.canSeeBoxOffice;
       case '/accommodation/inventory': return this.canSeeAccommodationInventory;
       case '/accommodation/setup': return this.canSeeAccommodationSetup;
+      // Tent Fields: viewed by the Inventory rule; editing is checked on the page and the server
+      case '/accommodation/fields': return this.canSeeAccommodationInventory;
       case '/workshops': return true;
       case '/workshops/reports': return this.canSeeWorkshopReports;
       case '/workshops/setup': return this.canSeeWorkshopSetup;

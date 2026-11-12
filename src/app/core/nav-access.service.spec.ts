@@ -61,7 +61,7 @@ describe('NavAccessService', () => {
     auth.hasDepartmentAccess.and.callFake((_u: any, d: string) => d === 'Box Office');
     user$.next({ _id: 'u2', role: 'VOL' });
     expect(labels('box-office')).toEqual(['Bookings', 'Registration']);
-    expect(labels('accommodation')).toEqual(['Inventory']);
+    expect(labels('accommodation')).toEqual(['Inventory', 'Fields']);
     expect(labels('workshops')).toEqual(['Planner']);
     expect(svc.canSeeSection('admin')).toBeFalse();
     expect(svc.canSeeSection('hospitality')).toBeFalse();

@@ -1,0 +1,14 @@
+:host { display: block; }
+.fg-svg { display: block; margin: 0 auto; user-select: none; }
+.fg-svg.editing { touch-action: none; cursor: crosshair; }
+.fg-ground { fill: #f7f8f5; }
+.fg-lines { stroke: #eceee9; stroke-width: 1; fill: none; }
+.fg-svg.editing .fg-lines { stroke: #d9ddd6; }
+.fg-walk { fill: #ecdfc1; }
+.fg-tent { cursor: pointer; }
+.fg-tent.faded { opacity: 0.28; cursor: default; }
+.fg-halo { fill: none; stroke: none; }
+.fg-tent.sel .fg-halo { fill: rgba(30, 70, 56, 0.12); stroke: var(--color-primary); stroke-width: 2; }
+.fg-tent.match .fg-halo { fill: rgba(37, 99, 235, 0.14); stroke: #2563eb; stroke-width: 2.5; }
+.fg-no { font-size: 8.5px; font-weight: 700; fill: #1a1a1a; font-family: inherit; pointer-events: none; }
+.fg-warn { fill: #f59e0b; stroke: #fff; stroke-width: 1.5; }

@@ -1,0 +1,26 @@
+.fp-body { display: flex; flex-direction: column; gap: 10px; color: var(--text-primary); min-width: 0; }
+.fp-muted { font-size: 13px; color: var(--text-muted); }
+.fp-empty { font-size: 13px; color: var(--text-secondary); background: #f6f7f5; border-radius: 10px; padding: 14px; }
+.fp-bar { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.fp-field { min-width: 200px; margin: 0; }
+.fp-sum { font-size: 13px; color: var(--text-secondary); padding-bottom: 6px; }
+.fp-sum b { color: var(--color-primary); }
+.fp-spacer { flex: 1; }
+.fp-zoom { display: flex; gap: 6px; }
+.fp-legend { font-size: 12px; color: var(--text-muted); display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+.fp-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.fp-dot { width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; display: inline-block; }
+.fp-main { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 12px; min-height: 0; }
+.fp-canvas { background: var(--surface-card); border: 1px solid var(--border-default); border-radius: 12px; overflow: auto; height: min(60vh, 520px); min-height: 260px; padding: 8px; }
+.fp-side { border: 1px solid var(--border-default); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow: auto; max-height: min(60vh, 520px); }
+.fp-no { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.fp-free { font-size: 13px; font-weight: 600; color: #166534; background: #ecfdf3; border-radius: 8px; padding: 5px 9px; }
+.fp-warn { font-size: 12.5px; color: #92400e; background: #fef6d8; border-radius: 8px; padding: 6px 9px; }
+.fp-person { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 5px; }
+.fp-name { color: var(--text-primary); min-width: 0; overflow-wrap: anywhere; }
+.fp-g { color: var(--text-secondary); white-space: nowrap; }
+@media (max-width: 700px) {
+  .fp-main { grid-template-columns: minmax(0, 1fr); }
+  .fp-canvas { height: 48vh; }
+  .fp-side { max-height: none; }
+}

@@ -1,0 +1,177 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">{{ field?.name || 'Tent field' }}</div>
+    <div class="page-ph-sub" *ngIf="field">
+      {{ field.rows }} rows × {{ field.cols }} columns · {{ counts?.placed || 0 }} {{ counts?.placed === 1 ? 'tent' : 'tents' }}<ng-container *ngIf="editing"> · editing the layout</ng-container>
+    </div>
+  </div>
+  <div class="tf-acts" *ngIf="field && !canEdit && field.area">
+    <button type="button" class="btn-ghost" (click)="showOnMap()">Show on map</button>
+  </div>
+  <div class="tf-acts" *ngIf="field && canEdit">
+    <ng-container *ngIf="!editing">
+      <button type="button" class="btn-ghost" *ngIf="field.area" (click)="showOnMap()">Show on map</button>
+      <button type="button" class="btn-ghost" (click)="openSettings()">Field settings</button>
+      <button type="button" class="btn-cta" (click)="startEdit()">Edit layout</button>
+    </ng-container>
+    <ng-container *ngIf="editing">
+      <span class="tf-changes" aria-live="polite">{{ changes ? changes + ' unsaved ' + (changes === 1 ? 'change' : 'changes') : 'No changes yet' }}</span>
+      <button type="button" class="btn-ghost" (click)="discard()" [disabled]="savingLayout">Discard</button>
+      <button type="button" class="btn-cta" (click)="saveLayout()" [disabled]="!changes || savingLayout">{{ savingLayout ? 'Saving…' : 'Save layout' }}</button>
+    </ng-container>
+  </div>
+  <!-- Navigation Tabs: Back to Fields + Accommodation's pages -->
+  <app-section-header></app-section-header>
+</div>
+
+<div class="tf-wrap">
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <!-- Field settings -->
+  <form class="tf-settings" *ngIf="settingsOpen" (ngSubmit)="saveSettings()" aria-label="Field settings">
+    <div class="tf-settings-row">
+      <div class="field tf-s-name">
+        <label for="tfs-name">Name</label>
+        <input id="tfs-name" name="name" type="text" maxlength="60" [(ngModel)]="settings.name" autocomplete="off">
+      </div>
+      <div class="field tf-s-size">
+        <label for="tfs-rows">Rows</label>
+        <input id="tfs-rows" name="rows" type="number" min="1" [max]="MAX" [(ngModel)]="settings.rows">
+      </div>
+      <div class="field tf-s-size">
+        <label for="tfs-cols">Columns</label>
+        <input id="tfs-cols" name="cols" type="number" min="1" [max]="MAX" [(ngModel)]="settings.cols">
+      </div>
+    </div>
+    <div class="field">
+      <label>Camping zone on the Venue Map</label>
+      <!-- app-select (not native <select>); options from a stored list + trackBy -->
+      <app-select name="zone" [(ngModel)]="settings.area" placeholder="Not linked">
+        <app-option value="">Not linked</app-option>
+        <app-option *ngFor="let z of zones; trackBy: trackZone" [value]="z._id" [disabled]="!!z.takenBy">{{ z.name }}{{ z.takenBy ? ' (linked to ' + z.takenBy + ')' : '' }}</app-option>
+      </app-select>
+    </div>
+    <p class="tf-muted" *ngIf="!zones.length">No Camping zones on the Venue Map for this event yet. Draw one there to link it.</p>
+    <div class="field-error" *ngIf="settingsError" role="alert">{{ settingsError }}</div>
+    <div class="tf-settings-acts">
+      <button type="button" class="btn-danger" (click)="deleteField()">Delete field</button>
+      <span class="tf-spacer"></span>
+      <button type="button" class="btn-ghost" (click)="settingsOpen = false" [disabled]="savingSettings">Cancel</button>
+      <button type="submit" class="btn-cta" [disabled]="savingSettings">{{ savingSettings ? 'Saving…' : 'Save' }}</button>
+    </div>
+  </form>
+
+  <ng-container *ngIf="field">
+    <!-- Toolbar -->
+    <div class="tf-toolbar">
+      <ng-container *ngIf="!editing">
+        <div class="search-field tf-search">
+          <mat-icon aria-hidden="true">search</mat-icon>
+          <input type="search" [(ngModel)]="search" (ngModelChange)="runSearch()" placeholder="Find a tent number or a person" aria-label="Find a tent number or a person">
+        </div>
+        <span class="tf-found" *ngIf="search.trim()" aria-live="polite">{{ matches.length ? matches.length + ' found' : 'Not on this field' }}</span>
+      </ng-container>
+
+      <div class="tf-tools" *ngIf="editing" role="toolbar" aria-label="Layout tools">
+        <button type="button" class="tf-tool" [class.on]="tool === 'place'" [attr.aria-pressed]="tool === 'place'" (click)="setTool('place')"><mat-icon aria-hidden="true">add_home</mat-icon>Place tents</button>
+        <button type="button" class="tf-tool" [class.on]="tool === 'path'" [attr.aria-pressed]="tool === 'path'" (click)="setTool('path')"><mat-icon aria-hidden="true">route</mat-icon>Path</button>
+        <button type="button" class="tf-tool" [class.on]="tool === 'move'" [attr.aria-pressed]="tool === 'move'" (click)="setTool('move')"><mat-icon aria-hidden="true">open_with</mat-icon>Move</button>
+        <button type="button" class="tf-tool" [class.on]="tool === 'erase'" [attr.aria-pressed]="tool === 'erase'" (click)="setTool('erase')"><mat-icon aria-hidden="true">ink_eraser</mat-icon>Remove</button>
+        <button type="button" class="tf-tool" (click)="undo()" [disabled]="!canUndo"><mat-icon aria-hidden="true">undo</mat-icon>Undo</button>
+        <button type="button" class="tf-tool tf-tool-danger" (click)="clearAll()" [disabled]="!placedNow"><mat-icon aria-hidden="true">delete_sweep</mat-icon>Remove all tents</button>
+      </div>
+
+      <span class="tf-spacer"></span>
+      <div class="tf-zoom" role="group" aria-label="Zoom">
+        <button type="button" class="pill-btn" (click)="zoomBy(1 / 1.25)" aria-label="Zoom out"><mat-icon>remove</mat-icon></button>
+        <button type="button" class="pill-btn" (click)="fit()">Fit</button>
+        <button type="button" class="pill-btn" (click)="zoomBy(1.25)" aria-label="Zoom in"><mat-icon>add</mat-icon></button>
+      </div>
+    </div>
+
+    <!-- What the current tool does, in one line -->
+    <div class="tf-hint" *ngIf="editing" aria-live="polite">
+      <ng-container [ngSwitch]="tool">
+        <span *ngSwitchCase="'place'">
+          <ng-container *ngIf="nextTent; else allPlaced">Tap a square, or drag across several. Next tent: <b>{{ nextTent.tent_no }}</b></ng-container>
+          <ng-template #allPlaced>Every tent is placed. Make more in Accommodation › Setup.</ng-template>
+        </span>
+        <span *ngSwitchCase="'path'">Tap or drag to mark walkways. Do it again on a walkway to clear it.</span>
+        <span *ngSwitchCase="'move'">
+          <ng-container *ngIf="moving; else pickOne">Now tap an empty square for <b>{{ tents.get(moving)?.tent_no }}</b>.</ng-container>
+          <ng-template #pickOne>Tap the tent you want to move.</ng-template>
+        </span>
+        <span *ngSwitchCase="'erase'">Tap a tent to take it off the field (it goes back to the list), or a walkway to clear it.</span>
+      </ng-container>
+    </div>
+
+    <div class="tf-body">
+      <!-- The field -->
+      <div class="tf-canvas" #scroller [class.editing]="editing">
+        <app-field-grid [rows]="field.rows" [cols]="field.cols" [name]="field.name"
+                        [tents]="tentViews" [paths]="pathViews" [gridPath]="gridPath" [zoom]="zoom" [editing]="editing"
+                        [selectedId]="selected?._id || moving" [matchIds]="matches"
+                        (cellDown)="onDown($event)" (cellMove)="onMove($event)"></app-field-grid>
+      </div>
+
+      <!-- Side: tent details (view) or tents to place (edit) -->
+      <aside class="tf-side" *ngIf="!editing" [class.sheet]="!!selected">
+        <ng-container *ngIf="selected as t; else summary">
+          <div class="tf-d-head">
+            <div>
+              <div class="tf-d-no">{{ t.tent_no }}</div>
+              <div class="tf-d-type"><i [style.border-color]="colorOf(t)"></i>{{ t.passType?.name || 'Tent' }}</div>
+            </div>
+            <button type="button" class="tf-x" (click)="selected = null" aria-label="Close"><mat-icon>close</mat-icon></button>
+          </div>
+          <div class="tf-d-meta">{{ rowColOf(t) }}</div>
+          <div class="tf-d-state" [ngClass]="t.state">{{ takenOf(t) }} of {{ t.capacity }} {{ t.capacity === 1 ? 'place' : 'places' }} taken</div>
+          <div class="tf-d-meta" *ngIf="takenOf(t)">{{ genderMix(t) }}</div>
+          <div class="tf-d-list" *ngIf="takenOf(t); else nobody">
+            <!-- Same details as Inventory's occupant cards, and the same Vacate -->
+            <div class="tf-d-person" *ngFor="let o of t.occupants">
+              <div class="tf-d-top">
+                <span class="tf-d-name">{{ o.name || '(no name)' }}</span>
+                <span class="tf-badge" [class.in]="o.isAdmitted">{{ o.isAdmitted ? 'Admitted' : 'Not admitted' }}</span>
+              </div>
+              <div class="tf-d-line"><mat-icon aria-hidden="true">wc</mat-icon>{{ o.gender || '—' }}</div>
+              <div class="tf-d-line"><mat-icon aria-hidden="true">call</mat-icon>{{ o.phone_no || '—' }}</div>
+              <div class="tf-d-line"><mat-icon aria-hidden="true">mail</mat-icon><span class="tf-d-wrap">{{ o.email || '—' }}</span></div>
+              <div class="tf-d-line" *ngIf="o.order_id != null"><mat-icon aria-hidden="true">receipt_long</mat-icon>Order #{{ o.order_id }}</div>
+              <button type="button" class="tf-vacate" *ngIf="canManage" (click)="vacate(o, t)" [disabled]="vacating === o._id">
+                {{ vacating === o._id ? 'Vacating…' : 'Vacate' }}
+              </button>
+            </div>
+          </div>
+          <ng-template #nobody><div class="tf-muted">Nobody in this tent yet.</div></ng-template>
+        </ng-container>
+        <ng-template #summary>
+          <div class="tf-side-title">This field</div>
+          <div class="tf-legend">
+            <div><i class="lg empty"></i>Empty <b>{{ counts?.empty || 0 }}</b></div>
+            <div><i class="lg partly"></i>Partly full <b>{{ counts?.partly || 0 }}</b></div>
+            <div><i class="lg full"></i>Full <b>{{ counts?.full || 0 }}</b></div>
+            <div><i class="lg walk"></i>Walkway</div>
+          </div>
+          <div class="tf-muted">Tap a tent to see who's in it.</div>
+          <div class="tf-muted" *ngIf="!counts?.placed && canEdit">No tents yet. Use <b>Edit layout</b> to place them.</div>
+        </ng-template>
+      </aside>
+
+      <aside class="tf-side" *ngIf="editing">
+        <div class="tf-side-title">Tents to place <span class="tf-count">{{ unplacedCount }}</span></div>
+        <div class="tf-muted" *ngIf="!groups.length">Every tent is placed.</div>
+        <div class="tf-group" *ngFor="let g of groups; trackBy: trackGroup" [class.on]="g.id === pickedType">
+          <button type="button" class="tf-group-head" (click)="pickType(g.id)" [attr.aria-pressed]="g.id === pickedType">
+            <i [style.border-color]="g.color"></i><span class="tf-group-name">{{ g.name }}</span><span class="tf-count">{{ g.tents.length }}</span>
+          </button>
+          <div class="tf-chips" *ngIf="g.id === pickedType">
+            <button type="button" class="tf-chip" *ngFor="let t of g.tents.slice(0, 80); trackBy: trackTent"
+                    [class.on]="nextTent?._id === t._id" (click)="pickTent(t)">{{ t.tent_no }}</button>
+            <span class="tf-muted" *ngIf="g.tents.length > 80">+{{ g.tents.length - 80 }} more</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+</div>

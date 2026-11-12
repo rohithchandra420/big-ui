@@ -1,3 +1,4 @@
+import { NavAccessService } from '../core/nav-access.service';
 import { AfterViewInit, OnInit, Component, ElementRef, HostListener, NgZone, OnDestroy, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import type * as Leaflet from 'leaflet';
@@ -148,7 +149,7 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
   folded = new Set<string>(this.readFolded());
   private liveTimer?: ReturnType<typeof setInterval>;
   /** Live statuses from GET /map/status (Hospitality H3: the Mess Hall), by area id. */
-  statusByArea = new Map<string, { kind: string; open: boolean; label: string }>();
+  statusByArea = new Map<string, { kind: string; open: boolean; label: string; fieldId?: string }>();
   /** Live statuses of pins from GET /map/status (the Box Office), by location id. */
   statusByLocation = new Map<string, { kind: string; open: boolean; label: string }>();
   /**
@@ -192,8 +193,12 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     private zone: NgZone,
     private route: ActivatedRoute,
     private router: Router,
-    private workshops: WorkshopService
+    private workshops: WorkshopService,
+    private nav: NavAccessService
   ) {}
+
+  /** Tent Fields (B3): "Open field layout" for people who can see Accommodation › Fields. */
+  get canOpenFields(): boolean { return this.nav.canSeeTab('/accommodation/fields'); }
 
   get isTL(): boolean { return this.auth.currentUser?.role === 'TL'; }
   get includedImports(): number {

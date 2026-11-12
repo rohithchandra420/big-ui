@@ -13,6 +13,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.50.0] - 2026-11-12
+
+### Added
+- **Accommodation › Fields (Tent Fields).** A map-like layout of each camping field, square by square:
+  - **Fields** tab: every field of the event with its size, how full it is (empty / partly / full) and how many tents of each type are on it (e.g. SH 12 · SO 4). Admins add a field with a name, rows and columns (up to 60 × 60).
+  - **A field's page:** tents drawn as small houses with their number, coloured by how full they are and outlined by tent type; walkways in sand. Zoom in, out and Fit. Search by tent number (any style, e.g. "sh-014") or a person's name. Tap a tent to see its row and column and the same details as Inventory for each person in it (gender, phone, email, order, Admitted / Not admitted), with **Vacate** for people who can vacate in Inventory. On phones the details slide up from the bottom.
+  - **Edit layout** (Developers, Directors, Admins): Place tents (tap a square or drag across several; tents drop in number order, or pick a specific one), Path, Move, Remove, Undo and **Remove all tents** (one click, walkways stay), with a one-line hint for the tool in use. Nothing is stored until Save; Discard drops the changes, and leaving with unsaved changes asks first.
+  - Field settings: rename, resize, delete, and link the field to its **Camping zone on the Venue Map**. A linked field has **Show on map**.
+- **Venue Map:** a Camping zone linked to a field shows the field's counts (places free, empty / partly / full) and an **Open field layout** button.
+- **Box Office › Allocate Tent: Pick on field.** Next to the tent list, open the field layout and tap the tent: only tents of this pass's type with a free place are bright, tents with someone of another gender inside get an amber dot, and tapping one shows who is in it. Choosing it fills the tent in the form; Allocate then works as before (same checks, same gender confirmation).
+
+---
+
 ## [1.49.0] - 2026-11-12
 
 ### Changed

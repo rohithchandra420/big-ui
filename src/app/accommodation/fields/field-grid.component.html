@@ -1,0 +1,20 @@
+<svg #svg class="fg-svg" [class.editing]="editing"
+     [attr.width]="width * zoom" [attr.height]="height * zoom"
+     [attr.viewBox]="'0 0 ' + width + ' ' + height"
+     (pointerdown)="onDown($event)" (pointermove)="onMove($event)"
+     role="img" [attr.aria-label]="name + ', ' + tents.length + ' tents'">
+  <rect class="fg-ground" x="0" y="0" [attr.width]="width" [attr.height]="height"></rect>
+  <path class="fg-lines" [attr.d]="gridPath"></path>
+  <rect *ngFor="let p of paths; trackBy: trackKey" class="fg-walk"
+        [attr.x]="p.x" [attr.y]="p.y" [attr.width]="CELL" [attr.height]="CELL"></rect>
+  <g *ngFor="let t of tents; trackBy: trackKey" class="fg-tent"
+     [attr.transform]="'translate(' + t.x + ' ' + t.y + ')'"
+     [class.match]="isMatch(t.id)" [class.sel]="selectedId === t.id" [class.faded]="isFaded(t.id)">
+    <rect class="fg-halo" x="1" y="1" [attr.width]="CELL - 2" [attr.height]="CELL - 2" rx="6"></rect>
+    <path d="M5 31 V15 L17 5 L29 15 V31 Z" [attr.fill]="t.fill" [attr.stroke]="t.stroke"
+          stroke-width="1.8" stroke-linejoin="round"></path>
+    <text *ngIf="showLabels" class="fg-no" x="17" y="26" text-anchor="middle">{{ t.label }}</text>
+    <circle *ngIf="isWarn(t.id)" class="fg-warn" cx="28" cy="8" r="4.5"></circle>
+    <title>{{ t.no }}</title>
+  </g>
+</svg>

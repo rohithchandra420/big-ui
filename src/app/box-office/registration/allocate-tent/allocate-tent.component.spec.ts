@@ -1,3 +1,4 @@
+import { MatDialog } from '@angular/material/dialog';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -46,6 +47,7 @@ describe('AllocateTentComponent', () => {
       declarations: [AllocateTentComponent, AppSelectComponent, AppOptionComponent],
       imports: [FormsModule],
       providers: [
+        { provide: MatDialog, useValue: jasmine.createSpyObj('MatDialog', ['open']) },
         { provide: AccomodationService, useValue: accomodationServiceSpy },
         { provide: NotificationService, useValue: notificationSpy },
         { provide: EventService, useValue: eventServiceStub },

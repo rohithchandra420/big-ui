@@ -190,7 +190,14 @@
         <div class="vm-grow"><div class="vm-name">{{ selectedArea.name }}</div><div class="vm-muted">{{ areaInfo(selectedArea.kind).label }}</div></div>
         <button type="button" class="vm-x" aria-label="Close" (click)="closePanels()"><mat-icon>close</mat-icon></button>
       </div>
-      <div class="vm-row" *ngIf="statusByArea.get(selectedArea._id) as ms"><b>{{ ms.open ? 'Open' : 'Closed' }}</b> · {{ ms.label }}</div>
+      <ng-container *ngIf="statusByArea.get(selectedArea._id) as ms">
+        <div class="vm-row" *ngIf="ms.kind !== 'tent_field'"><b>{{ ms.open ? 'Open' : 'Closed' }}</b> · {{ ms.label }}</div>
+        <!-- Tent Fields (B3): the linked field's counts, and its layout -->
+        <div class="vm-row" *ngIf="ms.kind === 'tent_field'">{{ ms.label }}</div>
+        <div class="vm-actions" *ngIf="ms.kind === 'tent_field' && ms.fieldId && canOpenFields">
+          <a class="pill-btn primary" [routerLink]="['/accommodation/fields', ms.fieldId]"><mat-icon>grid_on</mat-icon>Open field layout</a>
+        </div>
+      </ng-container>
       <!-- Workshops (W8): this area's sessions, on now → upcoming → past -->
       <div class="vm-tl" *ngIf="selectedArea.kind === 'workshop_area'">
         <div class="vm-tl-hd">

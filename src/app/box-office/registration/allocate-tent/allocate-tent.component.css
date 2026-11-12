@@ -7,3 +7,6 @@
 .cb-wrap-inert {
   pointer-events: none;
 }
+
+/* Tent Fields (B4): the tent list and "Pick on field" side by side, stacking on phones */
+.at-tent-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
