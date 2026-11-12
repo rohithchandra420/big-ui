@@ -1,4 +1,5 @@
-.d-page{max-width:1300px;margin:0 auto}
+/* Edge to edge like Bookings / Users (user, 2026-11-12): no centred max-width column. */
+.d-page{width:100%}
 .d-empty,.none{color:var(--text-secondary);font-size:13px;padding:6px 0}
 .d-empty{padding:24px 0;text-align:center}
 .d-band{display:flex;gap:6px;flex-wrap:wrap}

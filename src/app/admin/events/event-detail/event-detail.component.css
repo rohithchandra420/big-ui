@@ -1,6 +1,6 @@
+/* Edge to edge like Bookings / Users (user, 2026-11-12): no centred max-width column. */
 .detail-page {
-  max-width: 760px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .loading-wrap {
@@ -9,30 +9,7 @@
   padding: 48px 0;
 }
 
-/* ── Top toolbar ─────────────────────────────────────────── */
-.top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.btn-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-primary);
-  padding: 6px 0;
-  font-family: inherit;
-}
-.btn-back mat-icon { font-size: 18px; height: 18px; width: 18px; }
-.btn-back:hover { opacity: 0.75; }
-
+/* ── Edit (in the page header) ───────────────────────────── */
 .btn-edit {
   padding: 6px 14px;
   background: transparent;

@@ -6,9 +6,11 @@ import { login, USERS } from './helpers';
 // service worker, so this browser can't subscribe — delivery to a phone is
 // checked by hand on UAT.)
 
+// Navigation Tabs: Admin is one sidebar item; its pages are tabs in the page header.
 const openAdminPage = async (page: Page, label: string) => {
   if ((page.viewportSize()?.width ?? 1440) < 769) await page.locator('.hamburger-btn').click();
-  await page.locator('.nav-item', { hasText: label }).click();
+  await page.locator('.nav-item', { hasText: /\bAdmin\s*$/ }).click();
+  await page.locator('.sec-tab', { hasText: label }).click();
 };
 
 test.describe('Announcements (DEV/DIR/ADMIN)', () => {
@@ -69,6 +71,7 @@ test.describe('Announcements (DEV/DIR/ADMIN)', () => {
     await login(page, USERS.volunteer);
     await page.goto('/');
     await expect(page.locator('.nav-item', { hasText: 'Announcements' })).toHaveCount(0);
+    await expect(page.locator('.nav-item', { hasText: /\bAdmin\s*$/ })).toHaveCount(0);
     await page.goto('/admin/announcements');
     await expect(page).not.toHaveURL(/\/admin\/announcements$/);
   });

@@ -19,7 +19,7 @@
 .hg-badge.ok { background: #ecfdf3; color: #15803d; }
 .hg-empty { padding: 14px; margin: 0; }
 
-.hg-panel { position: sticky; top: 76px; }
+.hg-panel { position: sticky; top: 104px; }
 .hg-panel h2 { font-size: 16px; margin: 0; color: var(--text-primary); }
 .hg-x { border: 0; background: none; cursor: pointer; color: var(--text-muted); display: grid; place-items: center; }
 .hg-form { display: grid; gap: 12px; }

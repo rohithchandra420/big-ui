@@ -1,7 +1,6 @@
 <div class="page-ph">
   <div class="ph-left">
     <div class="ph-text">
-      <a class="ph-back" routerLink="/workshops"><mat-icon>arrow_back</mat-icon>Planner</a>
       <div class="page-ph-title">{{ s?.workshop?.title || 'Session' }}</div>
       <div class="page-ph-sub">{{ when }}</div>
     </div>
@@ -14,6 +13,8 @@
       <span class="dot"></span>Entry {{ data.doorOpen ? 'open' : 'closed' }}
     </span>
   </div>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
 </div>
 
 <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>

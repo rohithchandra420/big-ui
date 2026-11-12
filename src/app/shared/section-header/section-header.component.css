@@ -1,0 +1,84 @@
+/* Navigation Tabs — the tab row. It sits as the last row inside the page's
+   own sticky .page-ph (which wraps), so header and tabs stick together.
+   Negative margins reach the header's left edge and its bottom border. */
+:host {
+  display: block;
+  flex: 1 0 100%;
+  width: 100%;
+  margin-top: 2px;
+  margin-bottom: -1rem; /* .page-ph bottom padding: tabs sit on its bottom border */
+  color: var(--text-primary);
+}
+:host(.empty) { display: none; }
+
+.sec-row {
+  display: flex;
+  align-items: stretch;
+  max-height: 64px;
+  transition: max-height 0.22s ease, opacity 0.18s ease;
+}
+
+/* Back: thin soft-tint strip flush on the left edge, square, chevron top to bottom */
+.sec-back {
+  flex: none;
+  width: 20px;
+  margin-left: -1.5rem; /* .page-ph side padding */
+  margin-right: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #e3ece7;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.sec-back:hover { background: #d4e3db; }
+.sec-back:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.sec-back svg { display: block; width: 12px; height: 32px; shape-rendering: geometricPrecision; }
+
+.sec-tabs-wrap { position: relative; flex: 1; min-width: 0; display: flex; }
+.sec-tabs-wrap.more::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 3px;
+  width: 30px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), var(--surface-card));
+  pointer-events: none;
+}
+.sec-tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sec-tabs::-webkit-scrollbar { display: none; }
+
+.sec-tab {
+  padding: 8px 12px 9px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.sec-tab:hover { color: var(--text-primary); }
+.sec-tab.on { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
+.sec-tab:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; border-radius: 4px; }
+
+@media (max-width: 768px) {
+  /* Phone: the tab row tucks away while scrolling down, slides back on scroll up */
+  :host(.tuck) { margin-bottom: 0; }
+  :host(.tuck) .sec-row { max-height: 0; opacity: 0; overflow: hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sec-row { transition: none; }
+}

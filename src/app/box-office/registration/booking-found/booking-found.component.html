@@ -3,6 +3,8 @@
     <div class="page-ph-title">Booking Found</div>
     <div class="page-ph-sub" *ngIf="ticket">{{ admittedCount }} of {{ totalCount }} admitted</div>
   </div>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
 </div>
 
 <div class="alert ai" *ngIf="ticket">Parent booking found — Ticket #{{ ticket.order_id }}</div>

@@ -10,8 +10,8 @@
 
 .ann-side {
   position: sticky;
-  top: 96px;                         /* below the sticky page header */
-  height: calc(100vh - 116px);
+  top: 124px;                         /* below the sticky page header */
+  height: calc(100vh - 144px);
   display: flex;
   flex-direction: column;
   min-width: 0;

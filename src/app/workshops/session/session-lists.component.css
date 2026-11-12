@@ -5,13 +5,6 @@
 .ph-text { min-width: 0; }
 .ph-text .page-ph-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Back link above the title: the same text link as Admin › Events' "← Events" */
-.ph-back {
-  display: inline-flex; align-items: center; gap: 3px; margin-bottom: 2px;
-  font-size: 12px; font-weight: 500; color: var(--color-primary); text-decoration: none;
-}
-.ph-back:hover { text-decoration: underline; }
-.ph-back mat-icon { font-size: 16px; width: 16px; height: 16px; }
-
 .reg-chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px;
   border: 1px solid var(--border-default); font-size: 12px; font-weight: 500; color: var(--text-secondary);

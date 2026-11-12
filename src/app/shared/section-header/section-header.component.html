@@ -1,0 +1,20 @@
+<div class="sec-row" *ngIf="!empty">
+  <button type="button" class="sec-back" *ngIf="showBack" (click)="goBack()"
+          [attr.aria-label]="backLabel" [title]="backLabel">
+    <!-- Curved arms (not straight lines) so the thin chevron renders smooth -->
+    <svg viewBox="0 0 12 32" width="12" height="32" aria-hidden="true" focusable="false">
+      <path d="M9.6 2.2 C7.4 6.6 4.9 11.6 3.1 15.2 Q2.7 16 3.1 16.8 C4.9 20.4 7.4 25.4 9.6 29.8"
+            fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <div class="sec-tabs-wrap" [class.more]="moreRight" *ngIf="tabs.length > 1">
+    <nav class="sec-tabs" #strip (scroll)="updateFade()" [attr.aria-label]="section?.label + ' pages'">
+      <a *ngFor="let t of tabs; trackBy: trackByPath"
+         class="sec-tab"
+         [routerLink]="t.path"
+         [class.on]="t.path === activePath"
+         [attr.aria-current]="t.path === activePath ? 'page' : null">{{ t.label }}</a>
+    </nav>
+  </div>
+</div>

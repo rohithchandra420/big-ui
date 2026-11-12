@@ -79,6 +79,7 @@ import { TicketEmailDialogComponent } from './box-office/email/ticket-email-dial
 import { CustomEmailDialogComponent } from './box-office/email/custom-email-dialog/custom-email-dialog.component';
 import { EmailProgressComponent } from './box-office/email/email-progress/email-progress.component';
 import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
+import { SectionHeaderComponent } from './shared/section-header/section-header.component';
 import { NotificationSettingsComponent } from './profile/notification-settings/notification-settings.component';
 import { AnnouncementsComponent } from './admin/announcements/announcements.component';
 import { PublicPageComponent } from './admin/public-page/public-page.component';
@@ -164,6 +165,7 @@ LOAD_WASM().subscribe()
     EmailActionsComponent,
     EmailHistoryComponent,
     PwaStatusComponent,
+    SectionHeaderComponent,
     NotificationSettingsComponent,
     AnnouncementsComponent,
     PublicPageComponent,
