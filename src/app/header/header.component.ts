@@ -143,6 +143,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
         return this.authService.canManageHospitality(this.currentUser);
     }
 
+    /** Medical Desk: DEV, DIR, the Medical department, medical grants — never ADMIN (same rule as the server). */
+    get canSeeMedical(): boolean {
+        return this.authService.canUseMedical(this.currentUser);
+    }
+
     get canSeeAdminMenu(): boolean {
         return this.adminMenuRoles.includes(this.userRole);
     }

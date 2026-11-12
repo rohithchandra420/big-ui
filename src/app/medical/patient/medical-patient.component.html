@@ -1,0 +1,267 @@
+<app-medical-lock></app-medical-lock>
+
+<div class="md-page md-report">
+  <div class="page-ph">
+    <div>
+      <div class="page-ph-title">{{ patient?.name || 'Patient report' }}</div>
+      <div class="page-ph-sub" *ngIf="patient">{{ kindLabel[patient.kind] }} · {{ report?.event?.name }} · {{ patient.visitCount }} {{ patient.visitCount === 1 ? 'visit' : 'visits' }}</div>
+    </div>
+    <div class="ph-actions">
+      <a class="pill-btn" routerLink="/medical/records"><mat-icon>folder_shared</mat-icon>Records</a>
+      <a class="pill-btn" routerLink="/medical"><mat-icon>medical_services</mat-icon>Desk</a>
+    </div>
+  </div>
+
+  <div class="md-muted" *ngIf="loading && !report">Loading…</div>
+  <div class="md-muted" *ngIf="!loading && !report">This report isn't available. It may have been deleted.</div>
+
+  <ng-container *ngIf="patient">
+    <!-- Allergies / conditions first: the thing nobody may miss -->
+    <div class="md-alert" *ngIf="patient.allergies || patient.conditions" role="note">
+      <mat-icon class="ms-fill">warning</mat-icon>
+      <div>
+        <div *ngIf="patient.allergies"><strong>Allergies:</strong> {{ patient.allergies }}</div>
+        <div *ngIf="patient.conditions"><strong>Conditions:</strong> {{ patient.conditions }}</div>
+      </div>
+    </div>
+
+    <section class="md-card md-who">
+      <div class="md-who-grid">
+        <div><span class="md-k">Type</span><span class="md-v">{{ kindLabel[patient.kind] }}</span></div>
+        <div><span class="md-k">Age</span><span class="md-v">{{ patient.age ?? '—' }}</span></div>
+        <div><span class="md-k">Gender</span><span class="md-v">{{ patient.gender || '—' }}</span></div>
+        <div><span class="md-k">Phone</span><span class="md-v">{{ patient.phone || '—' }}</span></div>
+        <div><span class="md-k">Email</span><span class="md-v md-wrap">{{ patient.email || '—' }}</span></div>
+      </div>
+      <div class="md-guardian" *ngIf="isMinor">
+        <mat-icon class="ms-fill">family_restroom</mat-icon>
+        <div class="md-guardian-txt">
+          <strong>Minor — guardian</strong>
+          <span>{{ patient.guardian.name || 'Name not noted' }}{{ patient.guardian.phone ? ' · ' + patient.guardian.phone : '' }}</span>
+        </div>
+        <label class="toggle-chip" [class.on]="patient.guardian.contacted">
+          <input class="sr-only" type="checkbox" [checked]="patient.guardian.contacted" (change)="setGuardianContacted(!patient.guardian.contacted)">
+          <mat-icon>{{ patient.guardian.contacted ? 'check_circle' : 'call' }}</mat-icon>{{ patient.guardian.contacted ? 'Guardian contacted' : 'Not contacted yet' }}
+        </label>
+      </div>
+      <div class="md-who-acts">
+        <button type="button" class="pill-btn" (click)="editHeader()"><mat-icon>edit</mat-icon>Edit details</button>
+        <button type="button" class="pill-btn primary" (click)="openEmail()"><mat-icon>forward_to_inbox</mat-icon>Email report</button>
+        <button type="button" class="pill-btn" *ngIf="report?.can?.audit" (click)="openAudit()"><mat-icon>history</mat-icon>Audit log</button>
+        <button type="button" class="pill-btn md-danger" *ngIf="report?.can?.manage" (click)="deleteReport()"><mat-icon>delete</mat-icon>Delete report</button>
+      </div>
+    </section>
+
+    <!-- Side panel: Edit details / Email report / Audit log (slides in, the page stays put) -->
+    <div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
+    <div class="panel md-panel" [class.open]="panelOpen" role="dialog" aria-modal="true" [attr.aria-hidden]="!panelOpen">
+
+      <!-- Edit details -->
+      <form class="md-panel-form" *ngIf="panel === 'edit' && header" (ngSubmit)="saveHeader()">
+        <div class="panel-hd">
+          <div class="panel-title">Edit details</div>
+          <button type="button" class="panel-close" (click)="closePanel()" aria-label="Close" title="Close">✕</button>
+        </div>
+        <div class="panel-body">
+          <label class="field" *ngIf="patient.kind === 'walkin'"><span>Name *</span><input name="hname" [(ngModel)]="header.name" required maxlength="100"></label>
+          <label class="field"><span>Phone</span><input name="hphone" type="tel" [(ngModel)]="header.phone" maxlength="20"></label>
+          <label class="field" *ngIf="patient.kind === 'walkin'"><span>Email</span><input name="hemail" type="email" [(ngModel)]="header.email" maxlength="200"></label>
+          <div class="md-grid">
+            <label class="field"><span>Age</span><input name="hage" type="number" min="0" max="120" [(ngModel)]="header.age"></label>
+            <label class="field"><span>Gender</span>
+              <app-select name="hgender" [(ngModel)]="header.gender">
+                <app-option [value]="null">Not given</app-option>
+                <app-option *ngFor="let g of genders" [value]="g">{{ g }}</app-option>
+              </app-select>
+            </label>
+          </div>
+          <label class="field"><span>Allergies</span><textarea name="hall" rows="2" [(ngModel)]="header.allergies" maxlength="500" placeholder="e.g. Penicillin, peanuts"></textarea></label>
+          <label class="field"><span>Conditions</span><textarea name="hcon" rows="2" [(ngModel)]="header.conditions" maxlength="500" placeholder="e.g. Asthma, diabetes"></textarea></label>
+          <div class="md-minor" *ngIf="headerMinor">
+            <mat-icon class="ms-fill">family_restroom</mat-icon><span>Under {{ adultAge }}: parent or guardian.</span>
+            <label class="field"><span>Guardian name</span><input name="hgn" [(ngModel)]="header.guardianName" maxlength="100"></label>
+            <label class="field"><span>Guardian phone</span><input name="hgp" type="tel" [(ngModel)]="header.guardianPhone" maxlength="20"></label>
+          </div>
+        </div>
+        <div class="panel-actions">
+          <button type="button" class="btn-ghost" (click)="closePanel()">Close</button>
+          <button type="submit" class="btn-cta" [disabled]="saving || (patient.kind === 'walkin' && !header.name.trim())">Save details</button>
+        </div>
+      </form>
+
+      <!-- Email report -->
+      <form class="md-panel-form" *ngIf="panel === 'email'" (ngSubmit)="sendEmail()">
+        <div class="panel-hd">
+          <div class="panel-title">Email the report</div>
+          <button type="button" class="panel-close" (click)="closePanel()" aria-label="Close" title="Close">✕</button>
+        </div>
+        <div class="panel-body">
+          <p class="md-muted md-p0">The full report goes as a password-protected PDF. The email itself says nothing about their health.</p>
+          <label class="field"><span>Send to</span><input name="emailTo" type="email" [(ngModel)]="emailTo" placeholder="patient@example.com" required maxlength="200"></label>
+          <div class="md-hint" *ngIf="patient.kind === 'participant'">A ticket's email is often the buyer's — check it is the patient's own address.</div>
+
+          <div class="md-sub">Password</div>
+          <div class="md-pw">
+            <label class="toggle-chip" [class.on]="!ownPassword" *ngIf="phoneTail">
+              <input class="sr-only" type="radio" name="pwmode" [checked]="!ownPassword" (change)="ownPassword = false">
+              <mat-icon>smartphone</mat-icon>Last 6 digits of their phone
+            </label>
+            <label class="toggle-chip" [class.on]="ownPassword">
+              <input class="sr-only" type="radio" name="pwmode" [checked]="ownPassword" (change)="ownPassword = true">
+              <mat-icon>password</mat-icon>Type a password
+            </label>
+          </div>
+          <div class="md-hint" *ngIf="!phoneTail">No phone number with 6 digits on the report — type a password.</div>
+          <label class="field" *ngIf="ownPassword"><span>Password (6+ characters)</span><input name="emailPw" type="text" [(ngModel)]="emailPassword" minlength="6" maxlength="40" autocomplete="off"></label>
+          <div class="warn-banner md-mt"><mat-icon class="warn-icon">key</mat-icon><div>Tell the patient the password in person or by phone — {{ ownPassword ? 'the one you typed' : 'the last 6 digits of their phone' }}. It is never in the email.</div></div>
+
+          <label class="field" *ngIf="safeMode"><span>Test mode — tester address (the email goes only here)</span><input name="tester" type="email" [(ngModel)]="tester" maxlength="200"></label>
+        </div>
+        <div class="panel-actions">
+          <button type="button" class="btn-ghost" (click)="closePanel()">Close</button>
+          <button type="submit" class="btn-cta" [disabled]="!emailReady">{{ sending ? 'Sending…' : 'Send report' }}</button>
+        </div>
+      </form>
+
+      <!-- Audit log (DIR / DEV) -->
+      <ng-container *ngIf="panel === 'audit'">
+        <div class="panel-hd">
+          <div>
+            <div class="panel-title">Audit log</div>
+            <div class="md-muted">Who opened or changed this report</div>
+          </div>
+          <button type="button" class="panel-close" (click)="closePanel()" aria-label="Close" title="Close">✕</button>
+        </div>
+        <div class="panel-body">
+          <div class="md-muted" *ngIf="!audit">Loading…</div>
+          <div class="md-muted" *ngIf="audit && !audit.length">Nothing logged yet.</div>
+          <div class="md-audit-row" *ngFor="let e of audit || []; trackBy: trackEntry">
+            <span class="md-when">{{ e.at | date:'d MMM, HH:mm' }}</span>
+            <span><strong>{{ e.user?.name || 'Unknown' }}</strong><br><span class="md-muted">{{ auditLabel[e.action] || e.action }}</span></span>
+          </div>
+        </div>
+        <div class="panel-actions">
+          <button type="button" class="btn-ghost" (click)="closePanel()">Close</button>
+        </div>
+      </ng-container>
+    </div>
+
+    <button type="button" class="btn-cta md-new" *ngIf="!form" (click)="newVisit()"><mat-icon>add</mat-icon>New visit</button>
+
+    <!-- New / edit visit -->
+    <form class="md-card md-visit-form" id="md-visit-form" *ngIf="form" (ngSubmit)="saveVisit()">
+      <h2 class="md-h">{{ editingVisitId ? 'Change visit' : 'New visit' }}</h2>
+
+      <div class="md-grid md-grid-2">
+        <label class="field"><span>Complaint *</span><input name="complaint" [(ngModel)]="form.complaint" required maxlength="500" placeholder="What brought them in"></label>
+        <label class="field"><span>Time of visit</span><input name="at" type="datetime-local" [(ngModel)]="form.atLocal"></label>
+      </div>
+
+      <div class="md-sub">Vitals <small>(optional)</small></div>
+      <div class="md-vitals">
+        <label class="field"><span>Temp °C</span><input name="temp" type="number" step="0.1" min="30" max="45" inputmode="decimal" [(ngModel)]="form.vitals.temperature"></label>
+        <label class="field"><span>Pulse /min</span><input name="pulse" type="number" min="20" max="250" inputmode="numeric" [(ngModel)]="form.vitals.pulse"></label>
+        <label class="field"><span>BP sys</span><input name="bps" type="number" min="50" max="260" inputmode="numeric" [(ngModel)]="form.vitals.bpSys"></label>
+        <label class="field"><span>BP dia</span><input name="bpd" type="number" min="30" max="160" inputmode="numeric" [(ngModel)]="form.vitals.bpDia"></label>
+        <label class="field"><span>SpO₂ %</span><input name="spo2" type="number" min="50" max="100" inputmode="numeric" [(ngModel)]="form.vitals.spo2"></label>
+      </div>
+
+      <div class="md-sub">Severity *</div>
+      <div class="md-tiles md-tiles-3" role="radiogroup" aria-label="Severity">
+        <label class="choice-tile" *ngFor="let s of severities" [ngClass]="'md-sev-' + s.value" [class.selected]="form.severity === s.value">
+          <input class="sr-only" type="radio" name="severity" [value]="s.value" [checked]="form.severity === s.value" (change)="pickSeverity(s.value)">
+          <mat-icon class="choice-tile-check ms-fill">check_circle</mat-icon>
+          <span class="choice-tile-ic"><mat-icon class="ms-fill">{{ s.icon }}</mat-icon></span>
+          <span class="choice-tile-name">{{ s.label }}</span>
+          <span class="choice-tile-short">{{ s.hint }}</span>
+        </label>
+      </div>
+
+      <label class="field"><span>Diagnosis</span><textarea name="diagnosis" rows="2" [(ngModel)]="form.diagnosis" maxlength="1000"></textarea></label>
+
+      <div class="md-sub">Medicines given</div>
+      <datalist id="md-med-list"><option *ngFor="let s of suggestions" [value]="s"></option></datalist>
+      <div class="md-med" *ngFor="let m of form.medicines; let i = index; trackBy: trackIndex">
+        <label class="field md-med-name"><span class="sr-only">Medicine</span><input [name]="'mn' + i" [(ngModel)]="m.name" (ngModelChange)="suggest($event)" list="md-med-list" placeholder="Medicine" maxlength="100" autocomplete="off"></label>
+        <label class="field"><span class="sr-only">Dose</span><input [name]="'md' + i" [(ngModel)]="m.dose" placeholder="Dose (e.g. 500 mg)" maxlength="100"></label>
+        <label class="field md-med-qty"><span class="sr-only">Quantity</span><input [name]="'mq' + i" [(ngModel)]="m.qty" placeholder="Qty" maxlength="50"></label>
+        <button type="button" class="md-icon-btn" (click)="removeMedicine(i)" aria-label="Remove medicine"><mat-icon>close</mat-icon></button>
+      </div>
+      <button type="button" class="pill-btn md-add-med" (click)="addMedicine()" [disabled]="form.medicines.length >= 20"><mat-icon>add</mat-icon>Add medicine</button>
+
+      <label class="field"><span>Notes</span><textarea name="notes" rows="2" [(ngModel)]="form.notes" maxlength="2000"></textarea></label>
+
+      <div class="md-sub">Outcome *</div>
+      <div class="md-tiles md-tiles-4" role="radiogroup" aria-label="Outcome">
+        <label class="choice-tile" *ngFor="let o of outcomes" [class.selected]="form.outcome === o.value">
+          <input class="sr-only" type="radio" name="outcome" [value]="o.value" [checked]="form.outcome === o.value" (change)="pickOutcome(o.value)">
+          <mat-icon class="choice-tile-check ms-fill">check_circle</mat-icon>
+          <span class="choice-tile-ic"><mat-icon class="ms-fill">{{ o.icon }}</mat-icon></span>
+          <span class="choice-tile-name">{{ o.label }}</span>
+          <span class="choice-tile-short">{{ o.hint }}</span>
+        </label>
+      </div>
+      <label class="field" *ngIf="needsHospital"><span>Hospital</span><input name="hospital" [(ngModel)]="form.hospital" maxlength="150" placeholder="Hospital name"></label>
+
+      <div class="md-follow">
+        <label class="toggle-chip" [class.on]="form.followUp.needed">
+          <input class="sr-only" type="checkbox" name="fu" [(ngModel)]="form.followUp.needed">
+          <mat-icon>event_repeat</mat-icon>Follow-up needed
+        </label>
+        <ng-container *ngIf="form.followUp.needed">
+          <label class="field"><span>When</span><input name="fuat" type="datetime-local" [(ngModel)]="form.followUpAtLocal"></label>
+          <label class="field md-grow"><span>What to check</span><input name="funote" [(ngModel)]="form.followUp.note" maxlength="300"></label>
+        </ng-container>
+      </div>
+
+      <label class="field"><span>Also attended by</span><input name="also" [(ngModel)]="form.alsoAttended" maxlength="200" placeholder="Other staff or doctor (optional)"></label>
+
+      <div class="md-form-acts">
+        <button type="button" class="btn-ghost" (click)="cancelForm()">Cancel</button>
+        <button type="submit" class="btn-cta" [disabled]="!formReady || saving">{{ saving ? 'Saving…' : (editingVisitId ? 'Save changes' : 'Record visit') }}</button>
+      </div>
+    </form>
+
+    <!-- Timeline -->
+    <h2 class="md-h md-tl-h" *ngIf="visits.length">Visits</h2>
+    <ol class="md-tl">
+      <li class="md-tl-item" *ngFor="let v of visits; trackBy: trackVisit" [ngClass]="'md-tl-' + v.severity">
+        <span class="md-tl-dot" aria-hidden="true"></span>
+        <div class="md-card md-visit">
+          <div class="md-visit-hd">
+            <span class="md-when">{{ v.at | date:'EEE d MMM, HH:mm' }}</span>
+            <span class="badge" [ngClass]="sevBadge[v.severity]">{{ sevLabel[v.severity] }}</span>
+            <span class="badge bx">{{ outLabel[v.outcome] }}{{ v.hospital ? ' · ' + v.hospital : '' }}</span>
+            <span class="badge ba" *ngIf="v.outcome === 'resting' && !v.leftAt">Resting now</span>
+          </div>
+          <div class="md-visit-complaint">{{ v.complaint }}</div>
+
+          <div class="md-vchips" *ngIf="hasVitals(v)">
+            <span class="md-vchip" *ngIf="v.vitals.temperature != null" [class.warn]="warn(v, 'temperature')">{{ v.vitals.temperature }} °C</span>
+            <span class="md-vchip" *ngIf="v.vitals.pulse != null" [class.warn]="warn(v, 'pulse')">Pulse {{ v.vitals.pulse }}</span>
+            <span class="md-vchip" *ngIf="v.vitals.bpSys != null || v.vitals.bpDia != null" [class.warn]="warn(v, 'bpSys') || warn(v, 'bpDia')">BP {{ v.vitals.bpSys ?? '–' }}/{{ v.vitals.bpDia ?? '–' }}</span>
+            <span class="md-vchip" *ngIf="v.vitals.spo2 != null" [class.warn]="warn(v, 'spo2')">SpO₂ {{ v.vitals.spo2 }}%</span>
+          </div>
+
+          <dl class="md-dl">
+            <ng-container *ngIf="v.diagnosis"><dt>Diagnosis</dt><dd>{{ v.diagnosis }}</dd></ng-container>
+            <ng-container *ngIf="v.medicines.length"><dt>Medicines</dt><dd><span class="md-medline" *ngFor="let m of v.medicines">{{ m.name }}<small *ngIf="m.dose || m.qty"> · {{ m.dose }}{{ m.dose && m.qty ? ' · ' : '' }}{{ m.qty ? '×' + m.qty : '' }}</small></span></dd></ng-container>
+            <ng-container *ngIf="v.notes"><dt>Notes</dt><dd>{{ v.notes }}</dd></ng-container>
+            <ng-container *ngIf="v.leftAt"><dt>Left the camp</dt><dd>{{ v.leftAt | date:'EEE d MMM, HH:mm' }}</dd></ng-container>
+            <ng-container *ngIf="v.followUp?.needed"><dt>Follow-up</dt><dd>{{ v.followUp.at ? (v.followUp.at | date:'EEE d MMM, HH:mm') : 'No time set' }}{{ v.followUp.note ? ' · ' + v.followUp.note : '' }}<span class="badge bg md-ml" *ngIf="v.followUp.done">Done</span></dd></ng-container>
+          </dl>
+
+          <div class="md-visit-ft">
+            <span class="md-muted">Attended by {{ v.attendedBy?.name }}{{ v.alsoAttended ? ' with ' + v.alsoAttended : '' }}<ng-container *ngIf="v.edits.length"> · changed by {{ v.edits[v.edits.length - 1].by?.name }} {{ v.edits[v.edits.length - 1].at | date:'d MMM, HH:mm' }}</ng-container></span>
+            <span class="md-visit-acts">
+              <button type="button" class="pill-btn primary" *ngIf="v.outcome === 'resting' && !v.leftAt" (click)="markLeft(v)"><mat-icon>logout</mat-icon>Left the camp</button>
+              <button type="button" class="pill-btn primary" *ngIf="v.followUp?.needed && !v.followUp.done" (click)="followUpDone(v)"><mat-icon>task_alt</mat-icon>Follow-up done</button>
+              <button type="button" class="pill-btn" *ngIf="v.canEdit" (click)="editVisit(v)"><mat-icon>edit</mat-icon>Change</button>
+              <button type="button" class="pill-btn md-danger" *ngIf="v.canDelete" (click)="deleteVisit(v)"><mat-icon>delete</mat-icon>Delete</button>
+            </span>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </ng-container>
+</div>

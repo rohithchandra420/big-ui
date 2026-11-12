@@ -35,6 +35,8 @@ export interface DashboardOverview {
     announcements: { title: string; type: string; public: boolean; at: string }[];
     reached: number;
   };
+  /** Medical Desk (counts only, never names). Missing on an older API. */
+  medical?: { visitsToday: number; seriousToday: number; hospitalToday: number; restingNow: number };
 }
 
 export interface DashboardMine {

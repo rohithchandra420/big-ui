@@ -137,7 +137,7 @@ describe('EmailReportComponent', () => {
 
     it('keeps option lists stable between change-detection passes', () => {
       expect(component.deliveryOptions).toBe(component.deliveryOptions);
-      expect(component.typeOptions.map(o => o.value)).toEqual(['ticket', 'custom', 'test']);
+      expect(component.typeOptions.map(o => o.value)).toEqual(['ticket', 'custom', 'test', 'medical_report']);
     });
 
     it('pages on the server', () => {

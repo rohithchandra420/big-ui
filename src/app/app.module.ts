@@ -99,6 +99,11 @@ import { ExpectedListComponent } from './hospitality/expected-list/expected-list
 import { HospitalityGuestsComponent } from './hospitality/guests/hospitality-guests.component';
 import { HospitalityReportComponent } from './hospitality/report/hospitality-report.component';
 import { HospitalityStayComponent } from './hospitality/stay/hospitality-stay.component';
+import { MedicalLockComponent } from './medical/lock/medical-lock.component';
+import { MedicalDeskComponent } from './medical/desk/medical-desk.component';
+import { MedicalRecordsComponent } from './medical/records/medical-records.component';
+import { MedicalPatientComponent } from './medical/patient/medical-patient.component';
+import { MedicalReportComponent } from './medical/report/medical-report.component';
 import { BillboardComponent } from './billboard/billboard.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
@@ -179,7 +184,12 @@ LOAD_WASM().subscribe()
     ExpectedListComponent,
     HospitalityGuestsComponent,
     HospitalityReportComponent,
-    HospitalityStayComponent
+    HospitalityStayComponent,
+    MedicalLockComponent,
+    MedicalDeskComponent,
+    MedicalRecordsComponent,
+    MedicalPatientComponent,
+    MedicalReportComponent
   ],
   imports: [
     BrowserModule,

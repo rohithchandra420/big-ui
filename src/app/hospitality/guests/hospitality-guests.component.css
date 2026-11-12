@@ -1,5 +1,5 @@
 /* Guests (H3): list + side panel, full width like the other Hospitality pages. Card shell: .hx-card in styles.css. */
-.hg-page { padding: 16px 20px 40px; }
+.hg-page { padding: 0; }   /* the app shell pads every page (like Bookings) */
 .grow { flex: 1; min-width: 0; }
 .hg-grid { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; align-items: start; }
 
@@ -51,6 +51,6 @@
   .hg-panel { position: static; }
 }
 @media (max-width: 520px) {
-  .hg-page { padding: 12px 16px 40px; }
+  .hg-page { padding: 0; }
   .hg-kinds, .hg-two { grid-template-columns: 1fr; }
 }

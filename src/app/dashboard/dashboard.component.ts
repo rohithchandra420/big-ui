@@ -58,6 +58,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   nowPct: number | null = null;
   updatedText = '';
 
+  /** Medical Desk link on the Medical card: only for people who can open it (never ADMIN). */
+  canOpenMedical = false;
   private subs = new Subscription();
   private timer: any = null;
   private seq = 0;
@@ -75,6 +77,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.isAuthenticated = !!user;
       this.isTop = TOP_ROLES.includes(user?.role || '');
       this.isDirector = user?.role === 'DIR';
+      this.canOpenMedical = this.auth.canUseMedical(user);
       if (!user) this.clear();
     }));
     this.subs.add(this.events.activeEvent.subscribe(ev => {

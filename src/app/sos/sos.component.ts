@@ -1,10 +1,11 @@
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import type * as Leaflet from 'leaflet';
 import { SosAlert, SosService } from '../core/sos.service';
 import { EventService } from '../core/event.service';
 import { NotificationService } from '../core/notification.service';
+import { AuthService } from '../core/auth.service';
 
 export const REFRESH_MS = 15000;
 const STREET = { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '&copy; OpenStreetMap contributors' };
@@ -40,7 +41,15 @@ export class SosComponent implements OnInit, OnDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private subs: Subscription[] = [];
 
-  constructor(private sos: SosService, private events: EventService, private route: ActivatedRoute,
+  /** Medical Desk users get "Start medical visit" (MEDICAL_CONTEXT.md, M4). */
+  get canStartMedical(): boolean { return this.auth.canUseMedical(this.auth.currentUser); }
+
+  /** Opens the Medical Desk with the SOS message and phone filled in — passed inside the app, not in the address. */
+  startMedical(s: { message: string; phone: string; createdAt: string }): void {
+    this.router.navigate(['/medical'], { state: { sos: { message: s.message || '', phone: s.phone || '', at: s.createdAt } } });
+  }
+
+  constructor(private auth: AuthService, private router: Router, private sos: SosService, private events: EventService, private route: ActivatedRoute,
               private notify: NotificationService, private zone: NgZone) {}
 
   ngOnInit(): void {

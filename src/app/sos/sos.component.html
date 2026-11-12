@@ -32,6 +32,7 @@
           <span>Location accurate to {{ s.accuracy ? s.accuracy + ' m' : 'unknown' }}</span>
           <a class="pill-btn" [href]="directions(s)" target="_blank" rel="noopener" (click)="$event.stopPropagation()"><mat-icon>directions</mat-icon>Directions</a>
           <a class="pill-btn primary" *ngIf="s.phone" [href]="tel(s.phone)" (click)="$event.stopPropagation()"><mat-icon>call</mat-icon>Call {{ s.phone }}</a>
+          <button type="button" class="pill-btn primary" *ngIf="canStartMedical" (click)="startMedical(s); $event.stopPropagation()"><mat-icon>medical_services</mat-icon>Start medical visit</button>
         </div>
         <div class="sos-handle" *ngIf="s.status === 'open'" (click)="$event.stopPropagation()">
           <input type="text" maxlength="200" [(ngModel)]="notes[s._id]" placeholder="Note (optional), e.g. Medical team reached them" aria-label="Note">

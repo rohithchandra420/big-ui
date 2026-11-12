@@ -1,5 +1,5 @@
 /* Layout and look follow mocks/mock-hospitality.html (approved). */
-.ht-page { padding: 16px 20px 40px; }   /* full width, like Bookings */
+.ht-page { padding: 0; }   /* the app shell pads every page (like Bookings) */
 .grow { flex: 1; }
 .ht-daybar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 .ht-dname { min-width: 130px; text-align: center; }
@@ -70,7 +70,7 @@
   .ht-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 520px) {
-  .ht-page { padding: 12px 16px 40px; }
+  .ht-page { padding: 0; }
   .ht-big { font-size: 32px; }
   .ht-meter { flex-basis: 50px; }
 }

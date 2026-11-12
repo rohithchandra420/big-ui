@@ -1,12 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { SosComponent } from './sos.component';
 import { SosAlert, SosService } from '../core/sos.service';
 import { EventService } from '../core/event.service';
 import { NotificationService } from '../core/notification.service';
+import { AuthService } from '../core/auth.service';
 
 const alert = (over: Partial<SosAlert> = {}): SosAlert => ({
   _id: 's1', lat: 20.98, lng: 79.35, accuracy: 12, message: 'Fainted near stage', phone: '+91 98765 43210',
@@ -19,6 +20,8 @@ describe('SosComponent', () => {
   let c: SosComponent;
   let sos: any;
   let notify: jasmine.SpyObj<NotificationService>;
+  let router: jasmine.SpyObj<Router>;
+  let medicalUser = false;
   const text = () => (fixture.nativeElement as HTMLElement).textContent || '';
 
   beforeEach(async () => {
@@ -35,7 +38,9 @@ describe('SosComponent', () => {
         { provide: SosService, useValue: sos },
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject({ _id: 'ev1', name: 'BiG 7.0' }) } },
         { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap({})) } },
-        { provide: NotificationService, useValue: notify }
+        { provide: NotificationService, useValue: notify },
+        { provide: Router, useValue: (router = jasmine.createSpyObj('Router', ['navigate'])) },
+        { provide: AuthService, useValue: { currentUser: {}, canUseMedical: () => medicalUser } }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -81,5 +86,15 @@ describe('SosComponent', () => {
     sos.list.and.returnValue(throwError(() => new Error('down')));
     c.load();
     expect(c.error).toContain('Could not load');
+  });
+
+  it('Start medical visit: only for Medical Desk users, passes the SOS inside the app', () => {
+    medicalUser = false;
+    expect(c.canStartMedical).toBeFalse();
+    medicalUser = true;
+    expect(c.canStartMedical).toBeTrue();
+    c.startMedical({ message: 'Fainted near stage', phone: '+91 98765 43210', createdAt: '2026-11-12T05:00:00Z' });
+    expect(router.navigate).toHaveBeenCalledWith(['/medical'], { state: { sos: { message: 'Fainted near stage', phone: '+91 98765 43210', at: '2026-11-12T05:00:00Z' } } });
+    medicalUser = false;
   });
 });

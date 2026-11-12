@@ -1,6 +1,6 @@
 // Email epic (see EMAIL_CONTEXT.md) — shapes returned by big-api's /emails routes.
 
-export type EmailType = 'ticket' | 'custom' | 'test';
+export type EmailType = 'ticket' | 'custom' | 'test' | 'medical_report';
 export type EmailLogStatus = 'queued' | 'sending' | 'sent' | 'failed' | 'skipped';
 export type TicketEmailMode = 'unsent' | 'all';
 /** What Brevo reported after sending (webhook). Null = nothing heard yet. */

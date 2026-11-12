@@ -17,7 +17,7 @@ import { deliveryBadge, deliveryLabel, deliveryProblem, deliveryStatus } from '.
 
 type ReportCard = 'sent' | 'delivered' | 'bounced' | 'failed' | 'opened';
 
-const TYPE_LABELS: Record<EmailType, string> = { ticket: 'Ticket', custom: 'Custom', test: 'Test' };
+const TYPE_LABELS: Record<EmailType, string> = { ticket: 'Ticket', custom: 'Custom', test: 'Test', medical_report: 'Medical report' };
 const STATUS_LABELS: Record<EmailLogStatus, string> = {
   queued: 'Queued', sending: 'Sending…', sent: 'Sent', failed: 'Failed', skipped: 'Skipped'
 };
@@ -27,7 +27,7 @@ const STATUS_BADGES: Record<EmailLogStatus, string> = {
 
 // Fixed option lists — constants, never rebuilt in a getter (see the
 // *ngFor / <app-option> identity rule in CLAUDE.md).
-const TYPE_OPTIONS = (['ticket', 'custom', 'test'] as EmailType[]).map(value => ({ value, label: TYPE_LABELS[value] }));
+const TYPE_OPTIONS = (['ticket', 'custom', 'test', 'medical_report'] as EmailType[]).map(value => ({ value, label: TYPE_LABELS[value] }));
 const STATUS_OPTIONS = (['queued', 'sending', 'sent', 'failed', 'skipped'] as EmailLogStatus[])
   .map(value => ({ value, label: STATUS_LABELS[value] }));
 const DELIVERY_OPTIONS: { value: EmailDeliveryFilter; label: string }[] = [

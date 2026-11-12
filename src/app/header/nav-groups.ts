@@ -3,7 +3,7 @@
  * the rest start closed, the group holding the current page always opens,
  * and each person's choice is kept in this browser only.
  */
-export type NavGroup = 'main' | 'box-office' | 'accommodation' | 'workshops' | 'hospitality' | 'admin';
+export type NavGroup = 'main' | 'box-office' | 'accommodation' | 'workshops' | 'hospitality' | 'medical' | 'admin';
 
 const KEY = 'navGroups';
 const PREFIXES: [string, NavGroup][] = [
@@ -11,6 +11,7 @@ const PREFIXES: [string, NavGroup][] = [
   ['/accommodation', 'accommodation'],
   ['/workshops', 'workshops'],
   ['/hospitality', 'hospitality'],
+  ['/medical', 'medical'],
   ['/admin', 'admin'],
   ['/billboard', 'main'],
   ['/venue-map', 'main'],

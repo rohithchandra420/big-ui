@@ -1,5 +1,5 @@
 /* Layout follows the Report tab of mocks/mock-hospitality.html. Card shell: .hx-card in styles.css. */
-.hr-page { padding: 16px 20px 40px; }
+.hr-page { padding: 0; }   /* the app shell pads every page (like Bookings) */
 .grow { flex: 1; }
 .hr-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 .hr-seg { display: inline-flex; border: 1px solid var(--border-default); border-radius: 999px; padding: 2px; background: #fff; }
@@ -66,6 +66,6 @@
   .hr-fgrid, .hr-more-in { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 520px) {
-  .hr-page { padding: 12px 16px 40px; }
+  .hr-page { padding: 0; }
   .hr-dept { min-width: 0; width: 100%; }
 }

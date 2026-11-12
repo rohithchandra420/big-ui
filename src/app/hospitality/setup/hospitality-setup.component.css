@@ -1,5 +1,5 @@
 /* Layout and look follow mocks/mock-hospitality.html (approved). Card shell: .hx-card in styles.css. */
-.hs-page { padding: 16px 20px 40px; }   /* full width, like Bookings */
+.hs-page { padding: 0; }   /* the app shell pads every page (like Bookings) */
 .hs-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
 .hs-col { display: grid; gap: 16px; min-width: 0; }
 .grow { flex: 1; }
@@ -43,7 +43,7 @@
 
 @media (max-width: 900px) { .hs-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 520px) {
-  .hs-page { padding: 12px 16px 40px; }
+  .hs-page { padding: 0; }
   .hs-range { grid-template-columns: 1fr; }
   .hs-wide { grid-column: auto; }
 }
