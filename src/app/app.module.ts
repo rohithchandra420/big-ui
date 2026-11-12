@@ -79,6 +79,11 @@ import { TicketEmailDialogComponent } from './box-office/email/ticket-email-dial
 import { CustomEmailDialogComponent } from './box-office/email/custom-email-dialog/custom-email-dialog.component';
 import { EmailProgressComponent } from './box-office/email/email-progress/email-progress.component';
 import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
+import { SectionHeaderComponent } from './shared/section-header/section-header.component';
+import { TentFieldsComponent } from './accommodation/fields/tent-fields.component';
+import { TentFieldComponent } from './accommodation/fields/tent-field.component';
+import { FieldGridComponent } from './accommodation/fields/field-grid.component';
+import { FieldPickerDialogComponent } from './accommodation/fields/field-picker-dialog.component';
 import { NotificationSettingsComponent } from './profile/notification-settings/notification-settings.component';
 import { AnnouncementsComponent } from './admin/announcements/announcements.component';
 import { PublicPageComponent } from './admin/public-page/public-page.component';
@@ -99,6 +104,11 @@ import { ExpectedListComponent } from './hospitality/expected-list/expected-list
 import { HospitalityGuestsComponent } from './hospitality/guests/hospitality-guests.component';
 import { HospitalityReportComponent } from './hospitality/report/hospitality-report.component';
 import { HospitalityStayComponent } from './hospitality/stay/hospitality-stay.component';
+import { MedicalLockComponent } from './medical/lock/medical-lock.component';
+import { MedicalDeskComponent } from './medical/desk/medical-desk.component';
+import { MedicalRecordsComponent } from './medical/records/medical-records.component';
+import { MedicalPatientComponent } from './medical/patient/medical-patient.component';
+import { MedicalReportComponent } from './medical/report/medical-report.component';
 import { BillboardComponent } from './billboard/billboard.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
@@ -159,6 +169,11 @@ LOAD_WASM().subscribe()
     EmailActionsComponent,
     EmailHistoryComponent,
     PwaStatusComponent,
+    SectionHeaderComponent,
+    TentFieldsComponent,
+    TentFieldComponent,
+    FieldGridComponent,
+    FieldPickerDialogComponent,
     NotificationSettingsComponent,
     AnnouncementsComponent,
     PublicPageComponent,
@@ -179,7 +194,12 @@ LOAD_WASM().subscribe()
     ExpectedListComponent,
     HospitalityGuestsComponent,
     HospitalityReportComponent,
-    HospitalityStayComponent
+    HospitalityStayComponent,
+    MedicalLockComponent,
+    MedicalDeskComponent,
+    MedicalRecordsComponent,
+    MedicalPatientComponent,
+    MedicalReportComponent
   ],
   imports: [
     BrowserModule,

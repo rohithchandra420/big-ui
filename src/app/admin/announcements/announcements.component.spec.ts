@@ -11,6 +11,11 @@ import { AdminService } from '../admin.service';
 import { AuthService } from '../../core/auth.service';
 import { AppSelectComponent } from '../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../shared/app-select/app-option.component';
+import { Component } from '@angular/core';
+
+/** Navigation Tabs: the page header now holds the tab row (tested on its own). */
+@Component({ selector: 'app-section-header', template: '' })
+class SectionHeaderStubComponent {}
 
 describe('AnnouncementsComponent', () => {
   let fixture: ComponentFixture<AnnouncementsComponent>;
@@ -41,7 +46,7 @@ describe('AnnouncementsComponent', () => {
     snack = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     TestBed.configureTestingModule({
       imports: [FormsModule, MatIconModule],
-      declarations: [AnnouncementsComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [AnnouncementsComponent, AppSelectComponent, AppOptionComponent, SectionHeaderStubComponent],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }), currentActiveEvent: { _id: 'e1', name: 'BiG 7.0' } } },
         { provide: PushService, useValue: push },

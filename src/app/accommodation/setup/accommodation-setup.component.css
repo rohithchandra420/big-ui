@@ -1,11 +1,7 @@
+/* Edge to edge like Bookings / Users (user, 2026-11-12): no centred max-width column. */
+/* The form keeps its own narrower width (.setup-form). */
 .setup-body {
-  /* Widened from 480px so the summary cards below have room to sit
-     side-by-side — the form itself keeps the original narrower width. */
-  max-width: 900px;
-  padding: 24px;
-  /* Bug fix (2026-08-20) — was left-aligned, missing the margin:0 auto every
-     other page's container already has alongside its max-width. */
-  margin: 0 auto;
+  width: 100%;
 }
 
 .setup-form {
@@ -14,9 +10,8 @@
   border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 20px;
-  /* Bug fix (2026-08-20) — was flush-left within .setup-body, same issue as
-     Register New User's .form-card before that same fix. */
-  margin: 0 auto;
+  /* Edge to edge (2026-11-12): the form starts at the left, like the other full-width pages. */
+  margin: 0;
 }
 
 /* Enhancement (2026-08-20) — per-PassType inventory summary cards. Now sits
@@ -183,5 +178,5 @@
 }
 
 @media (max-width: 600px) {
-  .setup-body { padding: 16px; max-width: 100%; }
+  .setup-body { max-width: 100%; }
 }

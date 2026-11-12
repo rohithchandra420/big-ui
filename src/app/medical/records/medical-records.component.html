@@ -1,0 +1,81 @@
+<app-medical-lock></app-medical-lock>
+
+<div class="md-page md-wide">
+  <div class="page-ph">
+    <div>
+      <div class="page-ph-title">Medical records</div>
+      <div class="page-ph-sub">{{ eventName || 'No event selected' }} · one report per patient · deleted automatically after the event</div>
+    </div>
+    <!-- Navigation Tabs: Back + this section's pages -->
+    <app-section-header></app-section-header>
+  </div>
+
+  <div class="no-event-notice" *ngIf="!eventId">Pick an event in the sidebar to see its records.</div>
+
+  <ng-container *ngIf="eventId">
+    <div class="stat-row" *ngIf="counts">
+      <div class="stat tap" [class.act]="quick === 'all'" (click)="setQuick('all')"><div class="stat-l">Patients</div><div class="stat-n">{{ counts.patients }}</div><div class="stat-s">this event</div></div>
+      <div class="stat tap" [class.act]="quick === 'today'" (click)="setQuick('today')"><div class="stat-l">Visits today</div><div class="stat-n">{{ counts.visitsToday }}</div><div class="stat-s">seen today</div></div>
+      <div class="stat tap" [class.act]="quick === 'resting'" [class.alert-stat]="counts.restingNow > 0" (click)="setQuick('resting')"><div class="stat-l">Resting now</div><div class="stat-n">{{ counts.restingNow }}</div><div class="stat-s">in the Medical camp</div></div>
+      <div class="stat tap" [class.act]="quick === 'followUp'" [class.alert-stat]="counts.followUpsDue > 0" (click)="setQuick('followUp')"><div class="stat-l">Follow-ups</div><div class="stat-n">{{ counts.followUpsDue }}</div><div class="stat-s">still open</div></div>
+      <div class="stat tap" [class.act]="quick === 'serious'" (click)="setQuick('serious')"><div class="stat-l">Serious</div><div class="stat-n">{{ counts.serious }}</div><div class="stat-s">visits</div></div>
+    </div>
+
+    <div class="tbl-container">
+      <div class="tbl-filters md-filters">
+        <label class="search-field md-search">
+          <mat-icon>search</mat-icon>
+          <input type="search" [(ngModel)]="f.q" (ngModelChange)="onSearch()" placeholder="Name, phone or email" aria-label="Search records">
+        </label>
+        <app-select [(ngModel)]="f.type" (ngModelChange)="changed()" aria-label="Patient type">
+          <app-option *ngFor="let o of typeOptions; trackBy: trackOpt" [value]="o.value">{{ o.label }}</app-option>
+        </app-select>
+        <app-select [(ngModel)]="f.severity" (ngModelChange)="changed()" aria-label="Severity">
+          <app-option *ngFor="let o of severityOptions; trackBy: trackOpt" [value]="o.value">{{ o.label }}</app-option>
+        </app-select>
+        <app-select [(ngModel)]="f.outcome" (ngModelChange)="changed()" aria-label="Outcome">
+          <app-option *ngFor="let o of outcomeOptions; trackBy: trackOpt" [value]="o.value">{{ o.label }}</app-option>
+        </app-select>
+        <label class="md-date"><span>From</span><input type="date" [(ngModel)]="f.from" (change)="changed()" [disabled]="quick === 'today'"></label>
+        <label class="md-date"><span>To</span><input type="date" [(ngModel)]="f.to" (change)="changed()" [disabled]="quick === 'today'"></label>
+        <button type="button" class="pill-btn" (click)="clear()"><mat-icon>filter_alt_off</mat-icon>Clear</button>
+      </div>
+
+      <div class="tbl-scroll md-tbl-scroll">
+        <table class="tbl md-tbl">
+          <thead>
+            <tr>
+              <th>Patient</th><th>Type</th><th>Age</th><th>Last visit</th><th>Complaint</th><th>Severity</th><th>Outcome</th><th>Visits</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of patients; trackBy: trackPatient" (click)="openReport(p)" tabindex="0" (keydown.enter)="openReport(p)">
+              <td><strong class="md-name">{{ p.name }}</strong><span class="md-flag" *ngIf="p.allergies" title="Allergies noted"><mat-icon class="ms-fill">warning</mat-icon></span></td>
+              <td>{{ kindLabel[p.kind] }}</td>
+              <td>{{ p.age ?? '—' }}</td>
+              <td>{{ p.lastVisitAt ? (p.lastVisitAt | date:'EEE d MMM, HH:mm') : '—' }}</td>
+              <td class="md-wrap">{{ p.lastComplaint || '—' }}</td>
+              <td><span class="badge" *ngIf="p.lastSeverity" [ngClass]="sevBadge[p.lastSeverity]">{{ sevLabel[p.lastSeverity] }}</span></td>
+              <td>{{ p.lastOutcome ? outLabel[p.lastOutcome] : '—' }}</td>
+              <td>{{ p.visitCount }}</td>
+              <td class="md-tags">
+                <span class="badge ba" *ngIf="p.restingNow">Resting</span>
+                <span class="badge bb" *ngIf="p.followUpDue">Follow-up {{ p.followUpDue | date:'d MMM' }}</span>
+              </td>
+            </tr>
+            <tr *ngIf="!patients.length && !loading"><td colspan="9" class="md-empty">No records match.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tbl-foot">
+        <span>{{ total }} {{ total === 1 ? 'patient' : 'patients' }}</span>
+        <span class="md-pager" *ngIf="pages > 1">
+          <button type="button" class="pill-btn" (click)="go((f.page || 0) - 1)" [disabled]="!f.page">Previous</button>
+          Page {{ (f.page || 0) + 1 }} of {{ pages }}
+          <button type="button" class="pill-btn" (click)="go((f.page || 0) + 1)" [disabled]="(f.page || 0) + 1 >= pages">Next</button>
+        </span>
+      </div>
+    </div>
+  </ng-container>
+</div>

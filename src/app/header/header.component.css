@@ -76,22 +76,23 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* Dot indicator */
-.nav-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #ddd;
+/* Item icon (Navigation Tabs, user 2026-11-12: icons instead of dots) */
+.nav-ic {
+  font-size: 19px;
+  width: 19px;
+  height: 19px;
   flex-shrink: 0;
-  transition: background 0.12s ease;
+  color: #9a9f9b;
+  transition: color 0.12s ease;
 }
 
-.nav-item:hover .nav-dot {
-  background: #bbb;
+.nav-item:hover .nav-ic {
+  color: #666;
 }
 
-.nav-item.active .nav-dot {
-  background: var(--color-primary);
+.nav-item.active .nav-ic {
+  color: var(--color-primary);
+  font-variation-settings: 'FILL' 1;
 }
 
 /* Unread count (Billboard) */
@@ -250,3 +251,10 @@
 }
 .nav-group-toggle .nav-count + .nav-chev { margin-left: 0; }
 .nav-chev.open { transform: rotate(0deg); }
+
+/* Navigation Tabs: thin line between the Main group and the section items */
+.nav-sep {
+  height: 1px;
+  background: #e5e5e5;
+  margin: 0.75rem 1rem 0.5rem;
+}

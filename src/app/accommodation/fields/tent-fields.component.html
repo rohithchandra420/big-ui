@@ -1,0 +1,71 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Tent Fields</div>
+    <div class="page-ph-sub">
+      {{ eventName || 'No event selected' }}<ng-container *ngIf="eventId && !loading"> · {{ fields.length }} {{ fields.length === 1 ? 'field' : 'fields' }}<ng-container *ngIf="canEdit"> · {{ unplaced }} {{ unplaced === 1 ? 'tent' : 'tents' }} not placed yet</ng-container></ng-container>
+    </div>
+  </div>
+  <button type="button" class="btn-cta" *ngIf="canEdit && !adding" (click)="startAdd()">+ New field</button>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
+</div>
+
+<div class="tf-page">
+  <div class="warn-banner" *ngIf="!eventId">No event selected. Choose one from the Event picker in the sidebar first.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <!-- New field -->
+  <form class="tf-new" *ngIf="adding" (ngSubmit)="create()" aria-labelledby="tf-new-title">
+    <div class="tf-new-title" id="tf-new-title">New field</div>
+    <div class="tf-new-row">
+      <div class="field tf-name">
+        <label for="tf-name">Name</label>
+        <input id="tf-name" name="name" type="text" maxlength="60" [(ngModel)]="form.name" placeholder="e.g. Shanti Field" autocomplete="off">
+      </div>
+      <div class="field tf-size">
+        <label for="tf-rows">Rows</label>
+        <input id="tf-rows" name="rows" type="number" min="1" [max]="MAX" [(ngModel)]="form.rows">
+      </div>
+      <div class="field tf-size">
+        <label for="tf-cols">Columns</label>
+        <input id="tf-cols" name="cols" type="number" min="1" [max]="MAX" [(ngModel)]="form.cols">
+      </div>
+    </div>
+    <p class="tf-hint">One tent per square. Up to {{ MAX }} × {{ MAX }}. You can change the size later.</p>
+    <div class="field-error" *ngIf="formError" role="alert">{{ formError }}</div>
+    <div class="tf-new-acts">
+      <button type="button" class="btn-ghost" (click)="adding = false" [disabled]="saving">Cancel</button>
+      <button type="submit" class="btn-cta" [disabled]="saving">{{ saving ? 'Creating…' : 'Create and lay out tents' }}</button>
+    </div>
+  </form>
+
+  <div class="tf-empty" *ngIf="eventId && !loading && !loadError && !fields.length && !adding">
+    <mat-icon aria-hidden="true">grid_on</mat-icon>
+    <div class="tf-empty-t">No tent fields yet</div>
+    <div class="tf-empty-s" *ngIf="canEdit">Create a field, then place your tents on it square by square.</div>
+    <div class="tf-empty-s" *ngIf="!canEdit">An admin sets up the fields. They'll show here.</div>
+  </div>
+
+  <div class="tf-grid" *ngIf="fields.length">
+    <button type="button" class="tf-card" *ngFor="let f of fields; trackBy: trackById" (click)="open(f)">
+      <span class="tf-card-top">
+        <span class="tf-card-name">{{ f.name }}</span>
+        <span class="tf-card-size">{{ f.rows }} × {{ f.cols }}</span>
+      </span>
+      <span class="tf-bar" aria-hidden="true">
+        <i class="full" [style.width.%]="share(f, 'full')"></i>
+        <i class="partly" [style.width.%]="share(f, 'partly')"></i>
+      </span>
+      <span class="tf-card-counts" *ngIf="f.counts?.placed; else noTents">
+        <span><b>{{ f.counts?.placed }}</b> tents</span>
+        <span class="c-empty">{{ f.counts?.empty }} empty</span>
+        <span class="c-partly">{{ f.counts?.partly }} partly</span>
+        <span class="c-full">{{ f.counts?.full }} full</span>
+      </span>
+      <ng-template #noTents><span class="tf-card-counts muted">No tents placed yet</span></ng-template>
+      <span class="tf-types" *ngIf="f.types?.length" aria-label="Tents by type">
+        <span class="tf-type" *ngFor="let t of f.types" [title]="t.name"><b>{{ t.code || t.name }}</b> {{ t.count }}</span>
+      </span>
+    </button>
+  </div>
+</div>

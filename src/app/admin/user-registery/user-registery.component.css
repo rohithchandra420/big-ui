@@ -27,13 +27,13 @@
 /* Approximate: 100vh minus page padding, .page-ph, .stat-row, .tbl-filters
    and .tbl-foot — same estimate approach as bookings.component.css. */
 .users-tbl-scroll {
-  max-height: calc(100vh - 360px);
+  max-height: calc(100vh - 388px);
 }
 
 @media (max-width: 768px) {
   /* Extra offset for the mobile topbar; the stat cards also wrap to more rows */
   .users-tbl-scroll {
-    max-height: calc(100vh - 440px);
+    max-height: calc(100vh - 468px);
   }
 }
 

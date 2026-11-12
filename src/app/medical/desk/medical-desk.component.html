@@ -1,0 +1,108 @@
+<app-medical-lock></app-medical-lock>
+
+<div class="md-page md-wide">
+  <div class="page-ph">
+    <div>
+      <div class="page-ph-title">Medical Desk</div>
+      <div class="page-ph-sub">{{ eventName || 'No event selected' }} · find the patient, then record the visit</div>
+    </div>
+    <div class="ph-actions">
+      <button type="button" class="pill-btn" (click)="lockNow()" title="Hide the records now"><mat-icon>lock</mat-icon>Lock</button>
+    </div>
+    <!-- Navigation Tabs: Back + this section's pages -->
+    <app-section-header></app-section-header>
+  </div>
+
+  <div class="no-event-notice" *ngIf="!eventId">Pick an event in the sidebar to use the Medical Desk.</div>
+
+  <ng-container *ngIf="eventId">
+    <div class="stat-row" *ngIf="counts">
+      <div class="stat"><div class="stat-l">Visits today</div><div class="stat-n">{{ counts.visitsToday }}</div><div class="stat-s">{{ counts.patients }} patients this event</div></div>
+      <div class="stat" [class.alert-stat]="counts.restingNow > 0"><div class="stat-l">Resting now</div><div class="stat-n">{{ counts.restingNow }}</div><div class="stat-s">in the Medical camp</div></div>
+      <div class="stat" [class.alert-stat]="counts.followUpsDue > 0"><div class="stat-l">Follow-ups</div><div class="stat-n">{{ counts.followUpsDue }}</div><div class="stat-s">still open</div></div>
+      <div class="stat"><div class="stat-l">Serious</div><div class="stat-n">{{ counts.serious }}</div><div class="stat-s">visits this event</div></div>
+    </div>
+
+    <div class="md-sos" *ngIf="sos">
+      <mat-icon class="ms-fill">sos</mat-icon>
+      <div class="md-sos-txt">
+        <strong>From an SOS{{ sos.at ? ' · ' + (sos.at | date:'HH:mm') : '' }}</strong>
+        <span>{{ sos.message ? '“' + sos.message + '”' : 'No message' }}{{ sos.phone ? ' · ' + sos.phone : '' }}</span>
+      </div>
+      <button type="button" class="pill-btn" (click)="clearSos()"><mat-icon>close</mat-icon>Clear</button>
+    </div>
+
+    <section class="md-card md-find">
+      <h2 class="md-h">Find the patient</h2>
+      <div class="md-find-acts">
+        <button type="button" class="md-scan" (click)="scan()">
+          <mat-icon class="ms-fill">qr_code_scanner</mat-icon>
+          <span><strong>Scan wrist band</strong><small>Participants and staff</small></span>
+        </button>
+        <label class="search-field md-search">
+          <mat-icon>search</mat-icon>
+          <input type="search" [(ngModel)]="q" (ngModelChange)="onSearch()" placeholder="Name, email, phone or order number" aria-label="Search patients">
+        </label>
+      </div>
+      <div class="md-msg" *ngIf="scanMessage"><mat-icon>info</mat-icon>{{ scanMessage }}</div>
+
+      <div class="md-results" *ngIf="results">
+        <div class="md-muted" *ngIf="!results.length && !searching">Nobody found. Not in the system? Add them as a walk-in.</div>
+        <button type="button" class="md-person" *ngFor="let p of results; trackBy: trackPerson" (click)="open(p)" [disabled]="opening">
+          <span class="md-kind" [attr.data-kind]="p.kind">{{ kindLabel[p.kind] }}</span>
+          <span class="md-person-main"><strong>{{ p.name }}</strong><small>{{ p.detail }}</small></span>
+          <span class="md-person-go"><span class="md-go-txt">{{ p.reportId ? 'Open report' : 'Start report' }}</span><mat-icon>chevron_right</mat-icon></span>
+        </button>
+      </div>
+
+      <button type="button" class="pill-btn primary md-walkin-btn" *ngIf="!walkInOpen" (click)="startWalkIn()"><mat-icon>person_add</mat-icon>Walk-in (not in the system)</button>
+
+      <form class="md-walkin" *ngIf="walkInOpen" (ngSubmit)="saveWalkIn()">
+        <h3 class="md-h3">Walk-in</h3>
+        <div class="md-grid">
+          <label class="field"><span>Name *</span><input name="wname" [(ngModel)]="walkIn.name" required maxlength="100"></label>
+          <label class="field"><span>Phone</span><input name="wphone" type="tel" [(ngModel)]="walkIn.phone" maxlength="20"></label>
+          <label class="field"><span>Age</span><input name="wage" type="number" min="0" max="120" [(ngModel)]="walkIn.age"></label>
+          <label class="field"><span>Gender</span>
+            <app-select name="wgender" [(ngModel)]="walkIn.gender">
+              <app-option [value]="null">Not given</app-option>
+              <app-option *ngFor="let g of genders" [value]="g">{{ g }}</app-option>
+            </app-select>
+          </label>
+        </div>
+        <div class="md-minor" *ngIf="walkInMinor">
+          <mat-icon class="ms-fill">family_restroom</mat-icon>
+          <span>Under {{ adultAge }}: note a parent or guardian.</span>
+          <div class="md-grid">
+            <label class="field"><span>Guardian name</span><input name="gname" [(ngModel)]="walkIn.guardianName" maxlength="100"></label>
+            <label class="field"><span>Guardian phone</span><input name="gphone" type="tel" [(ngModel)]="walkIn.guardianPhone" maxlength="20"></label>
+          </div>
+        </div>
+        <div class="md-form-acts">
+          <button type="button" class="btn-ghost" (click)="walkInOpen = false">Cancel</button>
+          <button type="submit" class="btn-cta" [disabled]="!walkIn.name.trim() || opening">Start report</button>
+        </div>
+      </form>
+    </section>
+
+    <div class="md-two">
+      <section class="md-card">
+        <h2 class="md-h"><mat-icon class="ms-fill md-h-ic">airline_seat_flat</mat-icon>Resting now</h2>
+        <div class="md-muted" *ngIf="!resting.length">Nobody is resting in the Medical camp.</div>
+        <a class="md-row" *ngFor="let p of resting; trackBy: trackPatient" [routerLink]="['/medical/patients', p._id]">
+          <span class="md-row-main"><strong>{{ p.name }}</strong><small>{{ p.lastComplaint }}</small></span>
+          <span class="badge" *ngIf="p.lastSeverity" [ngClass]="sevBadge[p.lastSeverity]">{{ sevLabel[p.lastSeverity] }}</span>
+          <span class="md-when">{{ p.lastVisitAt | date:'HH:mm' }}</span>
+        </a>
+      </section>
+      <section class="md-card">
+        <h2 class="md-h"><mat-icon class="ms-fill md-h-ic">event_repeat</mat-icon>Follow-ups</h2>
+        <div class="md-muted" *ngIf="!followUps.length">No follow-ups open.</div>
+        <a class="md-row" *ngFor="let p of followUps; trackBy: trackPatient" [routerLink]="['/medical/patients', p._id]">
+          <span class="md-row-main"><strong>{{ p.name }}</strong><small>{{ p.lastComplaint }}</small></span>
+          <span class="md-when">{{ p.followUpDue | date:'EEE d MMM, HH:mm' }}</span>
+        </a>
+      </section>
+    </div>
+  </ng-container>
+</div>

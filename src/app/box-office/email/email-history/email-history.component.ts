@@ -6,7 +6,7 @@ import { EmailService } from '../../../core/email.service';
 import { EmailBatchTrackerService } from '../../../core/email-batch-tracker.service';
 import { deliveryBadge, deliveryLabel, deliveryProblem, deliveryStatus } from '../email-delivery.utils';
 
-const TYPE_LABELS: Record<EmailType, string> = { ticket: 'Ticket', custom: 'Custom', test: 'Test' };
+const TYPE_LABELS: Record<EmailType, string> = { ticket: 'Ticket', custom: 'Custom', test: 'Test', medical_report: 'Medical report' };
 const STATUS_LABELS: Record<EmailLogStatus, string> = {
   queued: 'Queued', sending: 'Sending…', sent: 'Sent', failed: 'Failed', skipped: 'Skipped'
 };

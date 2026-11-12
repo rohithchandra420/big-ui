@@ -52,7 +52,7 @@ describe('DashboardComponent', () => {
       imports: [MatIconModule, RouterTestingModule],
       providers: [
         { provide: DashboardService, useValue: api },
-        { provide: AuthService, useValue: { user: user$ } },
+        { provide: AuthService, useValue: { user: user$, canUseMedical: (u: any) => ['DEV', 'DIR'].includes(u?.role) } },
         { provide: EventService, useValue: { activeEvent: event$ } }
       ]
     });

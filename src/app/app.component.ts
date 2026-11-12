@@ -3,6 +3,7 @@ import { AuthService } from './core/auth.service';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Subscription, combineLatest } from 'rxjs';
 import { EventService } from './core/event.service';
+import { NavHistoryService } from './core/nav-history.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 
 @Component({
@@ -25,7 +26,9 @@ export class AppComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private _snackBar: MatSnackBar,
     private breakpointObserver: BreakpointObserver,
-    private eventService: EventService
+    private eventService: EventService,
+    // Navigation Tabs: created here so it hears the very first navigation (Back + last tab per section).
+    private navHistory: NavHistoryService
   ) {}
 
   /** Open sidebar automatically on desktop when authenticated; close on mobile/logged-out */

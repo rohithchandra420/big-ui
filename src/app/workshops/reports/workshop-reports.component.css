@@ -1,6 +1,6 @@
 /* Full-width like Bookings (stat row + table + side panel). */
 
-.rp-scroll { max-height: calc(100vh - 340px); min-height: 160px; }
+.rp-scroll { max-height: calc(100vh - 368px); min-height: 160px; }
 
 .rp-seg {
   display: inline-flex; border: 1.5px solid var(--border-default); border-radius: 999px; overflow: hidden;

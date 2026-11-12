@@ -20,7 +20,7 @@
          [routerLinkActiveOptions]="{ exact: true }"
          (click)="onNavClick()"
          *ngIf="isAuthenticated">
-        <span class="nav-dot"></span>
+        <mat-icon class="nav-ic" aria-hidden="true">dashboard</mat-icon>
         Dashboard
       </a>
 
@@ -29,7 +29,7 @@
          routerLinkActive="active"
          (click)="onNavClick()"
          *ngIf="isAuthenticated">
-        <span class="nav-dot"></span>
+        <mat-icon class="nav-ic" aria-hidden="true">push_pin</mat-icon>
         Billboard
         <span class="nav-count" *ngIf="unreadNotes" [attr.aria-label]="unreadNotes + ' unread'">{{ unreadNotes > 99 ? '99+' : unreadNotes }}</span>
       </a>
@@ -39,7 +39,7 @@
          routerLinkActive="active"
          (click)="onNavClick()"
          *ngIf="canSeeSos">
-        <span class="nav-dot"></span>
+        <mat-icon class="nav-ic" aria-hidden="true">sos</mat-icon>
         SOS
         <span class="nav-count sos-nav-count" *ngIf="openSos" [attr.aria-label]="openSos + ' open SOS'">{{ openSos }}</span>
       </a>
@@ -49,7 +49,7 @@
          routerLinkActive="active"
          (click)="onNavClick()"
          *ngIf="isAuthenticated">
-        <span class="nav-dot"></span>
+        <mat-icon class="nav-ic" aria-hidden="true">map</mat-icon>
         Venue Map
       </a>
 
@@ -58,228 +58,26 @@
          routerLinkActive="active"
          (click)="onNavClick()"
          *ngIf="isAuthenticated">
-        <span class="nav-dot"></span>
+        <mat-icon class="nav-ic" aria-hidden="true">groups</mat-icon>
         My Department
       </a>
     </div>
 
-    <!-- Box Office group — visible to admin roles, box-office permission, or Box Office dept -->
-    <ng-container *ngIf="isAuthenticated && canSeeBoxOffice">
-      <button type="button" class="nav-group-label nav-group-toggle" (click)="toggleGroup('box-office')" [attr.aria-expanded]="isOpen('box-office')">
-        Box Office<mat-icon class="nav-chev" [class.open]="isOpen('box-office')">expand_more</mat-icon>
-      </button>
-      <div class="nav-group-items" *ngIf="isOpen('box-office')">
-
-        <a class="nav-item"
-           routerLink="/box-office/bookings"
-           routerLinkActive="active"
-           (click)="onNavClick()">
-          <span class="nav-dot"></span>
-          Bookings
-        </a>
-
-        <a class="nav-item"
-           routerLink="/box-office/registration"
-           routerLinkActive="active"
-           (click)="onNavClick()">
-          <span class="nav-dot"></span>
-          Registration
-        </a>
-      </div>
-    </ng-container>
-
-    <!-- Accommodation group — Inventory visible broadly (Box-Office-style
-         gate), Setup admin-only. See ACCOMMODATION_CONTEXT.md decision #9. -->
-    <ng-container *ngIf="isAuthenticated && (canSeeAccommodationInventory || canSeeAccommodationSetup)">
-      <button type="button" class="nav-group-label nav-group-toggle" (click)="toggleGroup('accommodation')" [attr.aria-expanded]="isOpen('accommodation')">
-        Accommodation<mat-icon class="nav-chev" [class.open]="isOpen('accommodation')">expand_more</mat-icon>
-      </button>
-      <div class="nav-group-items" *ngIf="isOpen('accommodation')">
-
-        <a class="nav-item"
-           routerLink="/accommodation/inventory"
-           routerLinkActive="active"
-           (click)="onNavClick()"
-           *ngIf="canSeeAccommodationInventory">
-          <span class="nav-dot"></span>
-          Inventory
-        </a>
-
-        <a class="nav-item"
-           routerLink="/accommodation/setup"
-           routerLinkActive="active"
-           (click)="onNavClick()"
-           *ngIf="canSeeAccommodationSetup">
-          <span class="nav-dot"></span>
-          Setup
-        </a>
-      </div>
-    </ng-container>
-
-    <!-- Workshops group — Planner for everyone, Setup for the Plan group -->
+    <!-- Navigation Tabs (NAV_TABS_CONTEXT.md): one item per section. Its pages are
+         tabs in the section header; the item opens the tab used last there. -->
     <ng-container *ngIf="isAuthenticated">
-      <button type="button" class="nav-group-label nav-group-toggle" (click)="toggleGroup('workshops')" [attr.aria-expanded]="isOpen('workshops')">
-        Workshops<mat-icon class="nav-chev" [class.open]="isOpen('workshops')">expand_more</mat-icon>
-      </button>
-      <div class="nav-group-items" *ngIf="isOpen('workshops')">
-
+      <div class="nav-sep" role="separator"></div>
+      <ng-container *ngFor="let s of sections; trackBy: trackBySection">
         <a class="nav-item"
-           routerLink="/workshops"
-           routerLinkActive="active"
-           [routerLinkActiveOptions]="{ exact: true }"
+           *ngIf="nav.canSeeSection(s.key)"
+           [routerLink]="sectionLinks[s.key]"
+           [class.active]="activeSection === s.key"
+           [attr.aria-current]="activeSection === s.key ? 'true' : null"
            (click)="onNavClick()">
-          <span class="nav-dot"></span>
-          Planner
+          <mat-icon class="nav-ic" aria-hidden="true">{{ s.icon }}</mat-icon>
+          {{ s.label }}
         </a>
-
-        <a class="nav-item"
-           routerLink="/workshops/reports"
-           routerLinkActive="active"
-           (click)="onNavClick()"
-           *ngIf="canSeeWorkshopReports">
-          <span class="nav-dot"></span>
-          Reports
-        </a>
-
-        <a class="nav-item"
-           routerLink="/workshops/setup"
-           routerLinkActive="active"
-           (click)="onNavClick()"
-           *ngIf="canSeeWorkshopSetup">
-          <span class="nav-dot"></span>
-          Setup
-        </a>
-      </div>
-    </ng-container>
-
-    <!-- Hospitality group — the Hospitality TL, hospitality:manage and top roles -->
-    <ng-container *ngIf="isAuthenticated && canSeeHospitality">
-      <button type="button" class="nav-group-label nav-group-toggle" (click)="toggleGroup('hospitality')" [attr.aria-expanded]="isOpen('hospitality')">
-        Hospitality<mat-icon class="nav-chev" [class.open]="isOpen('hospitality')">expand_more</mat-icon>
-      </button>
-      <div class="nav-group-items" *ngIf="isOpen('hospitality')">
-
-        <a class="nav-item"
-           routerLink="/hospitality"
-           routerLinkActive="active"
-           [routerLinkActiveOptions]="{ exact: true }"
-           (click)="onNavClick()">
-          <span class="nav-dot"></span>
-          Today
-        </a>
-
-        <a class="nav-item"
-           routerLink="/hospitality/desk"
-           routerLinkActive="active"
-           (click)="onNavClick()">
-          <span class="nav-dot"></span>
-          Serving desk
-        </a>
-
-        <a class="nav-item"
-           routerLink="/hospitality/guests"
-           routerLinkActive="active"
-           (click)="onNavClick()">
-          <span class="nav-dot"></span>
-          Guests
-        </a>
-
-        <a class="nav-item"
-           routerLink="/hospitality/report"
-           routerLinkActive="active"
-           (click)="onNavClick()">
-          <span class="nav-dot"></span>
-          Report
-        </a>
-
-        <a class="nav-item"
-           routerLink="/hospitality/stay"
-           routerLinkActive="active"
-           (click)="onNavClick()">
-          <span class="nav-dot"></span>
-          Stay
-        </a>
-
-        <a class="nav-item"
-           routerLink="/hospitality/setup"
-           routerLinkActive="active"
-           (click)="onNavClick()">
-          <span class="nav-dot"></span>
-          Setup
-        </a>
-      </div>
-    </ng-container>
-
-    <!-- Admin group — visible to DEV / DIR / ADMIN / TL -->
-    <ng-container *ngIf="isAuthenticated && canSeeAdminMenu">
-      <button type="button" class="nav-group-label nav-group-toggle" (click)="toggleGroup('admin')" [attr.aria-expanded]="isOpen('admin')">
-        Admin<mat-icon class="nav-chev" [class.open]="isOpen('admin')">expand_more</mat-icon>
-      </button>
-      <div class="nav-group-items" *ngIf="isOpen('admin')">
-
-        <a class="nav-item"
-           routerLink="/admin/user"
-           routerLinkActive="active"
-           (click)="onNavClick()">
-          <span class="nav-dot"></span>
-          Users
-        </a>
-
-        <a class="nav-item"
-           routerLink="/admin/departments"
-           routerLinkActive="active"
-           (click)="onNavClick()"
-           *ngIf="canSeeManageDepts">
-          <span class="nav-dot"></span>
-          Departments
-        </a>
-
-        <a class="nav-item"
-           routerLink="/admin/events"
-           routerLinkActive="active"
-           (click)="onNavClick()"
-           *ngIf="canSeeManageEvents">
-          <span class="nav-dot"></span>
-          Events
-        </a>
-
-        <a class="nav-item"
-           routerLink="/admin/email-report"
-           routerLinkActive="active"
-           (click)="onNavClick()"
-           *ngIf="canSeeEmailReport">
-          <span class="nav-dot"></span>
-          Email Report
-        </a>
-
-        <a class="nav-item"
-           routerLink="/admin/announcements"
-           routerLinkActive="active"
-           (click)="onNavClick()"
-           *ngIf="canSeeManageEvents">
-          <span class="nav-dot"></span>
-          Announcements
-        </a>
-
-        <a class="nav-item"
-           routerLink="/admin/public-page"
-           routerLinkActive="active"
-           (click)="onNavClick()"
-           *ngIf="canSeeManageEvents">
-          <span class="nav-dot"></span>
-          Public Page
-        </a>
-
-        <!-- UAT-RESET: remove before Production -->
-        <a class="nav-item"
-           routerLink="/admin/uat-reset"
-           routerLinkActive="active"
-           (click)="onNavClick()"
-           *ngIf="canSeeUatReset">
-          <span class="nav-dot"></span>
-          UAT Reset
-        </a>
-      </div>
+      </ng-container>
     </ng-container>
 
   </nav>

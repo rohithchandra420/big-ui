@@ -4,6 +4,8 @@
     <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · prepared, served and left over</div>
   </div>
   <button type="button" class="btn-cta" [disabled]="!report || exporting" (click)="exportExcel()">{{ exporting ? 'Exporting…' : 'Excel' }}</button>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
 </div>
 
 <div class="hr-page">

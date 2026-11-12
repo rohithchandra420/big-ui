@@ -55,12 +55,18 @@
   <div class="divider"></div>
   <div class="section-lbl" style="margin-bottom: 8px;">Choose Tent ({{ shopItem.item_name }})</div>
 
-  <div class="field" style="max-width: 280px;">
-    <label>Target tent</label>
-    <app-select [(ngModel)]="selectedTentId">
-      <app-option [value]="null">Auto-pick next available</app-option>
-      <app-option *ngFor="let t of vacantTents" [value]="t._id">{{ t.tent_no }} ({{ vacancyOf(t) }} free)</app-option>
-    </app-select>
+  <div class="at-tent-row">
+    <div class="field" style="max-width: 280px; flex: 1 1 220px; margin: 0;">
+      <label>Target tent</label>
+      <app-select [(ngModel)]="selectedTentId">
+        <app-option [value]="null">Auto-pick next available</app-option>
+        <app-option *ngFor="let t of vacantTents" [value]="t._id">{{ t.tent_no }} ({{ vacancyOf(t) }} free)</app-option>
+      </app-select>
+    </div>
+    <!-- Tent Fields (B4): choose the tent on the field layout -->
+    <button type="button" class="pill-btn primary" *ngIf="shopItem.passType" (click)="openFieldPicker()">
+      <mat-icon aria-hidden="true">grid_on</mat-icon>Pick on field
+    </button>
   </div>
 
   <div class="alert aw" *ngIf="genderMismatchPending">

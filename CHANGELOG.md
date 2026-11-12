@@ -13,6 +13,57 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.50.0] - 2026-11-12
+
+### Added
+- **Accommodation › Fields (Tent Fields).** A map-like layout of each camping field, square by square:
+  - **Fields** tab: every field of the event with its size, how full it is (empty / partly / full) and how many tents of each type are on it (e.g. SH 12 · SO 4). Admins add a field with a name, rows and columns (up to 60 × 60).
+  - **A field's page:** tents drawn as small houses with their number, coloured by how full they are and outlined by tent type; walkways in sand. Zoom in, out and Fit. Search by tent number (any style, e.g. "sh-014") or a person's name. Tap a tent to see its row and column and the same details as Inventory for each person in it (gender, phone, email, order, Admitted / Not admitted), with **Vacate** for people who can vacate in Inventory. On phones the details slide up from the bottom.
+  - **Edit layout** (Developers, Directors, Admins): Place tents (tap a square or drag across several; tents drop in number order, or pick a specific one), Path, Move, Remove, Undo and **Remove all tents** (one click, walkways stay), with a one-line hint for the tool in use. Nothing is stored until Save; Discard drops the changes, and leaving with unsaved changes asks first.
+  - Field settings: rename, resize, delete, and link the field to its **Camping zone on the Venue Map**. A linked field has **Show on map**.
+- **Venue Map:** a Camping zone linked to a field shows the field's counts (places free, empty / partly / full) and an **Open field layout** button.
+- **Box Office › Allocate Tent: Pick on field.** Next to the tent list, open the field layout and tap the tent: only tents of this pass's type with a free place are bright, tents with someone of another gender inside get an amber dot, and tapping one shows who is in it. Choosing it fills the tent in the form; Allocate then works as before (same checks, same gender confirmation).
+
+---
+
+## [1.49.0] - 2026-11-12
+
+### Changed
+- **Navigation Tabs.** The sidebar now shows Main (Dashboard, Billboard, SOS, Venue Map, My Department) and one item per section: Box Office, Accommodation, Workshops, Hospitality, Medical Desk and Admin. A section's pages are tabs in the page header, below the page title:
+  - Every tab keeps its own address, so refreshing, the browser's Back button, bookmarks and notification links stay on the same page.
+  - Clicking a section opens the tab you used last there (remembered in this browser). Signing in still lands on the Dashboard.
+  - A thin Back strip on the left of the tab row: on a page opened from a tab (a booking, a workshop session, a patient, an event) it goes up to that tab; elsewhere it goes to the previous page; it is hidden when there is no earlier page.
+  - Tabs a person may not open are not shown; with only one tab left, the tab row is hidden.
+  - On phones, long tab rows scroll sideways, and the tab row hides while scrolling down and slides back on scroll up.
+- Sidebar items have icons instead of dots.
+- Session lists and Event details: their own back links are replaced by the Back strip. Event details now has a page header.
+- Header links that only repeated a tab are gone: Medical Desk, Records and Desk on the Medical pages, and Back to Today on Hospitality Setup.
+- Full width, like Bookings and Users: Dashboard, SOS, My Department, Admin › Departments, Events (and an event's details), Public Page, and Accommodation › Setup no longer sit in a centred column.
+
+---
+
+## [1.48.0] - 2026-11-12
+
+### Added
+- **Medical Desk (release 1).** A new sidebar group for the medical team (Developers, Directors, the Medical department and people given medical access — not Admins):
+  - **Desk:** find the patient by scanning their wrist band, by search, or add a walk-in (with a parent or guardian for under-18s), then open their report. Shows visits today, who is resting in the Medical camp and open follow-ups.
+  - **Records:** every patient report on the event, full width, with search, quick-filter cards (today, resting, follow-ups, serious) and filters for type, severity, outcome and dates.
+  - **Patient report:** allergies and conditions highlighted at the top, guardian details with a "contacted" switch, a new-visit form (complaint, vitals with unusual readings highlighted, severity, diagnosis, medicines with suggestions, notes, outcome, follow-up), the visit timeline with Change / Delete, "Left the camp" and "Follow-up done", and an audit log for Directors and Developers.
+  - **Report:** pick a festival day — visits, new patients, serious cases, hospital / ambulance, bars for severity, outcome, patient type, common complaints and medicines given, visits by hour, and the list of people sent to hospital.
+  - **Export** (Medical Team Lead, Directors, Developers): the full visit list for the day or the whole event as an Excel file, after a reminder that it holds health data.
+  - Edit details, Email report and the Audit log open in a side panel that slides in from the right, so the report stays in place.
+  - **Email report:** on a patient's report, send the full report as a password-protected PDF — address editable (a ticket's email is often the buyer's), password from the phone's last 6 digits or typed, with a reminder to tell it in person.
+- The Medical pages lock after a period without activity and ask for the password again; a Lock button hides them at once.
+- **Dashboard:** a Medical Desk card under Comms & safety (visits, serious, to hospital, resting now — numbers only).
+- **Venue Map:** Medical camp areas show how many are resting and today's visits.
+- **SOS:** "Start medical visit" (Medical Desk users) opens the Desk with the SOS message and phone filled in; the first visit starts with the SOS message.
+- **Email Report:** new type "Medical report" (address, sender and time only).
+
+### Fixed
+- Hospitality pages (Today, Serving desk, Guests, Report, Stay, Setup) had extra padding inside the page; they now line up edge to edge like Bookings.
+
+---
+
 ## [1.47.0] - 2026-11-06
 
 ### Added

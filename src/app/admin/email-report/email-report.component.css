@@ -39,12 +39,12 @@
 /* Estimated like bookings.component.css: viewport minus header, cards,
    filters and footer. */
 .report-tbl-scroll {
-  max-height: calc(100vh - 400px);
+  max-height: calc(100vh - 428px);
 }
 
 @media (max-width: 768px) {
   .report-tbl-scroll {
-    max-height: calc(100vh - 480px);
+    max-height: calc(100vh - 508px);
   }
 }
 
