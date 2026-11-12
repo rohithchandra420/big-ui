@@ -49,6 +49,8 @@ import { MedicalReportComponent } from "../medical/report/medical-report.compone
 import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
+import { TentFieldsComponent } from "../accommodation/fields/tent-fields.component";
+import { TentFieldComponent } from "../accommodation/fields/tent-field.component";
 
 // const profileGuard: CanActivateFn = (
 //     route: ActivatedRouteSnapshot,
@@ -127,6 +129,9 @@ const appRoutes: Routes = [
     { path: 'accomodation', redirectTo: 'accommodation/inventory', pathMatch: 'full' },
     { path: 'accommodation/setup', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: AccommodationSetupComponent },
     { path: 'accommodation/inventory', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: AccommodationInventoryComponent },
+    // Tent Fields (Epic B): seen by the Inventory rule; editing is DEV/DIR/ADMIN (checked by the server too)
+    { path: 'accommodation/fields', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: TentFieldsComponent },
+    { path: 'accommodation/fields/:id', canActivate: [AuthGuard, AuthPermissionGuard], canDeactivate: [(c: TentFieldComponent) => c.canLeave()], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: TentFieldComponent },
     { path: 'admin', canActivate:[AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: AdminComponent, children: [
         { path: 'user', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: UserRegisteryComponent },
         { path: 'departments', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentsComponent },

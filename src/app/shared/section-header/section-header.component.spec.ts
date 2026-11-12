@@ -78,6 +78,7 @@ describe('SectionHeaderComponent (tab row)', () => {
 
   it('is hidden when only one tab is allowed and there is no Back', fakeAsync(() => {
     hidden.add('/accommodation/setup');
+    hidden.add('/accommodation/fields');
     go('/accommodation/inventory');
     expect(el().classList).toContain('empty');
     expect(el().querySelector('.sec-row')).toBeNull();

@@ -5,6 +5,8 @@ import { Tent } from '../../../models/tent.model';
 import { AccomodationService, TentAllocationResult } from '../../../accomodation/accomodation.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventService } from '../../../core/event.service';
+import { MatDialog } from '@angular/material/dialog';
+import { FieldPickerDialogComponent, FieldPickerData } from '../../../accommodation/fields/field-picker-dialog.component';
 
 @Component({
   selector: 'app-allocate-tent',
@@ -39,7 +41,8 @@ export class AllocateTentComponent implements OnInit {
   constructor(
     private accomodationService: AccomodationService,
     private notificationService: NotificationService,
-    private eventService: EventService
+    private eventService: EventService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit() {
@@ -117,6 +120,31 @@ export class AllocateTentComponent implements OnInit {
       next: (res) => this.vacantTents = res,
       error: () => this.vacantTents = []
     });
+  }
+
+  /**
+   * Tent Fields (B4): pick the tent on the field layout instead of the list.
+   * Only chooses the tent — Allocate then works exactly as before.
+   */
+  openFieldPicker() {
+    const activeEvent = this.eventService.currentActiveEvent;
+    if (!activeEvent || !this.shopItem.passType) return;
+    const data: FieldPickerData = {
+      eventId: activeEvent._id,
+      passTypeId: this.shopItem.passType,
+      passTypeName: this.shopItem.passTypeName || this.shopItem.item_name || 'tent',
+      gender: this.selectedFestivalPass?.gender || this.localGender || null,
+    };
+    this.dialog.open(FieldPickerDialogComponent, { width: '980px', maxWidth: '96vw', data, autoFocus: false })
+      .afterClosed().subscribe((tentId?: string) => {
+        if (!tentId) return;
+        if (this.vacantTents.some(t => t._id === tentId)) { this.selectedTentId = tentId; return; }
+        // The list may be older than the field: reload it, then select
+        this.accomodationService.getAvailableTents(this.shopItem.passType!).subscribe({
+          next: res => { this.vacantTents = res; this.selectedTentId = res.some(t => t._id === tentId) ? tentId : null; },
+          error: () => this.notificationService.openErrorSnackBar('Could not load the free tents')
+        });
+      });
   }
 
   searchManually() {

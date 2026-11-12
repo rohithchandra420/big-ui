@@ -80,6 +80,10 @@ import { CustomEmailDialogComponent } from './box-office/email/custom-email-dial
 import { EmailProgressComponent } from './box-office/email/email-progress/email-progress.component';
 import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
 import { SectionHeaderComponent } from './shared/section-header/section-header.component';
+import { TentFieldsComponent } from './accommodation/fields/tent-fields.component';
+import { TentFieldComponent } from './accommodation/fields/tent-field.component';
+import { FieldGridComponent } from './accommodation/fields/field-grid.component';
+import { FieldPickerDialogComponent } from './accommodation/fields/field-picker-dialog.component';
 import { NotificationSettingsComponent } from './profile/notification-settings/notification-settings.component';
 import { AnnouncementsComponent } from './admin/announcements/announcements.component';
 import { PublicPageComponent } from './admin/public-page/public-page.component';
@@ -166,6 +170,10 @@ LOAD_WASM().subscribe()
     EmailHistoryComponent,
     PwaStatusComponent,
     SectionHeaderComponent,
+    TentFieldsComponent,
+    TentFieldComponent,
+    FieldGridComponent,
+    FieldPickerDialogComponent,
     NotificationSettingsComponent,
     AnnouncementsComponent,
     PublicPageComponent,

@@ -46,8 +46,9 @@ export const NAV_SECTIONS: NavSection[] = [
     tabs: [
       { path: '/accommodation/inventory', label: 'Inventory' },
       { path: '/accommodation/setup', label: 'Setup' },
+      { path: '/accommodation/fields', label: 'Fields', exact: true },
     ],
-    details: [],
+    details: [{ pattern: /^\/accommodation\/fields\/[^/]+$/, parent: '/accommodation/fields' }],
   },
   {
     key: 'workshops', label: 'Workshops', icon: 'palette', prefix: '/workshops',

@@ -32,6 +32,7 @@ describe('nav-sections', () => {
       ['/medical/patients/p-1', 'Records'],
       ['/admin/events/e-7', 'Events'],
       ['/admin/departments/d-1', 'Departments'],
+      ['/accommodation/fields/f-1', 'Fields'],
     ];
     for (const [url, parent] of cases) {
       const m = matchUrl(url)!;

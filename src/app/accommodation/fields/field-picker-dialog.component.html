@@ -1,0 +1,65 @@
+<h2 mat-dialog-title>Pick a {{ data.passTypeName }} on a field</h2>
+
+<mat-dialog-content class="fp-body">
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+  <div class="fp-muted" *ngIf="loadingList">Loading the fields…</div>
+
+  <div class="fp-empty" *ngIf="!loadingList && !error && !fields.length">
+    No field has a {{ data.passTypeName }} placed on it yet. Use the tent list instead, or place tents in Accommodation › Fields.
+  </div>
+
+  <ng-container *ngIf="fields.length">
+    <div class="fp-bar">
+      <div class="field fp-field" *ngIf="fields.length > 1">
+        <label>Field</label>
+        <app-select [ngModel]="fieldId" (ngModelChange)="pick($event)">
+          <app-option *ngFor="let f of fields; trackBy: trackField" [value]="f._id">{{ f.name }}</app-option>
+        </app-select>
+      </div>
+      <div class="fp-sum" *ngIf="field && !loadingField">
+        <b>{{ freeHere }}</b> {{ freeHere === 1 ? 'tent has' : 'tents have' }} a free place<span *ngIf="fields.length === 1"> on {{ field.name }}</span>
+      </div>
+      <span class="fp-spacer"></span>
+      <div class="fp-zoom" role="group" aria-label="Zoom">
+        <button type="button" class="pill-btn" (click)="zoomBy(1 / 1.25)" aria-label="Zoom out"><mat-icon>remove</mat-icon></button>
+        <button type="button" class="pill-btn" (click)="fit()">Fit</button>
+        <button type="button" class="pill-btn" (click)="zoomBy(1.25)" aria-label="Zoom in"><mat-icon>add</mat-icon></button>
+      </div>
+    </div>
+
+    <div class="fp-legend">
+      Only tents you can pick are bright.
+      <span><i class="fp-dot"></i>someone of another gender is inside</span>
+    </div>
+
+    <div class="fp-main">
+      <div class="fp-canvas" #scroller>
+        <app-field-grid *ngIf="field" [rows]="field.rows" [cols]="field.cols" [name]="field.name"
+                        [tents]="tentViews" [paths]="pathViews" [gridPath]="gridPath" [zoom]="zoom"
+                        [selectedId]="selected?._id || ''" [allowed]="allowed" [warn]="warn"
+                        (cellDown)="onDown($event)"></app-field-grid>
+      </div>
+
+      <aside class="fp-side" aria-live="polite">
+        <ng-container *ngIf="selected as t; else hint">
+          <div class="fp-no">{{ t.tent_no }}</div>
+          <div class="fp-free">{{ freeOf(t) }} of {{ t.capacity }} {{ t.capacity === 1 ? 'place' : 'places' }} free</div>
+          <div class="fp-warn" *ngIf="isWarn(t)">Someone of another gender is in this tent. Box Office will ask you to confirm.</div>
+          <div class="fp-person" *ngFor="let o of t.occupants">
+            <span class="fp-name">{{ o.name || '(no name)' }}</span>
+            <span class="fp-g">{{ o.gender || '—' }}</span>
+          </div>
+          <div class="fp-muted" *ngIf="!t.occupants?.length">Nobody in this tent yet.</div>
+        </ng-container>
+        <ng-template #hint><div class="fp-muted">Tap a bright tent to see who's in it.</div></ng-template>
+      </aside>
+    </div>
+  </ng-container>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button type="button" class="btn-ghost" (click)="cancel()">Cancel</button>
+  <button type="button" class="btn-cta" (click)="choose()" [disabled]="!selected">
+    {{ selected ? 'Choose ' + selected.tent_no : 'Choose this tent' }}
+  </button>
+</mat-dialog-actions>
