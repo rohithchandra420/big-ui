@@ -41,6 +41,10 @@ import { HospitalityDeskComponent } from "../hospitality/desk/hospitality-desk.c
 import { HospitalityGuestsComponent } from "../hospitality/guests/hospitality-guests.component";
 import { HospitalityReportComponent } from "../hospitality/report/hospitality-report.component";
 import { HospitalityStayComponent } from "../hospitality/stay/hospitality-stay.component";
+import { MedicalGuard } from "../medical/medical.guard";
+import { MedicalDeskComponent } from "../medical/desk/medical-desk.component";
+import { MedicalRecordsComponent } from "../medical/records/medical-records.component";
+import { MedicalPatientComponent } from "../medical/patient/medical-patient.component";
 import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
@@ -99,6 +103,10 @@ const appRoutes: Routes = [
     { path: 'hospitality/report', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityReportComponent },
     { path: 'hospitality/stay', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityStayComponent },
     { path: 'hospitality/setup', canActivate: [AuthGuard, HospitalityGuard], component: HospitalitySetupComponent },
+    // Medical Desk (MEDICAL_CONTEXT.md): DEV, DIR, the Medical department, medical grants — never ADMIN.
+    { path: 'medical', canActivate: [AuthGuard, MedicalGuard], component: MedicalDeskComponent },
+    { path: 'medical/records', canActivate: [AuthGuard, MedicalGuard], component: MedicalRecordsComponent },
+    { path: 'medical/patients/:id', canActivate: [AuthGuard, MedicalGuard], component: MedicalPatientComponent },
     { path: 'workshops', canActivate: [AuthGuard], component: WorkshopPlannerComponent },
     // A session's lists and door — the Workshop team (members, workshop:write, the Plan group).
     { path: 'workshops/sessions/:id', canActivate: [AuthGuard, WorkshopRunGuard], component: SessionListsComponent },

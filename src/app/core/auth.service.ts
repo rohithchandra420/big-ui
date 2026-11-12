@@ -108,6 +108,15 @@ export class AuthService {
         return (user.permissions || []).includes('hospitality:manage');
     }
 
+    /** Medical Desk (MEDICAL_CONTEXT.md), same rule as big-api utils/medicalAccess.js —
+     *  DEV, DIR, the Medical department (key `medical`), medical:<any tier>. Never ADMIN. */
+    canUseMedical(user: User | null): boolean {
+        if (!user || user.role === 'ADMIN') return false;
+        if (['DEV', 'DIR'].includes(user.role)) return true;
+        if (this.inDepartmentKey(user, 'medical')) return true;
+        return (user.permissions || []).some(p => p.startsWith('medical:'));
+    }
+
     hasDepartmentAccess(user: User, deptName: string): boolean {
         return (user.departments || []).some(d =>
             d.department?.name?.toLowerCase() === deptName.toLowerCase()

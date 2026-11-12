@@ -210,6 +210,32 @@
       </div>
     </ng-container>
 
+    <!-- Medical Desk group — DEV, DIR, the Medical department, medical grants (never ADMIN) -->
+    <ng-container *ngIf="isAuthenticated && canSeeMedical">
+      <button type="button" class="nav-group-label nav-group-toggle" (click)="toggleGroup('medical')" [attr.aria-expanded]="isOpen('medical')">
+        Medical Desk<mat-icon class="nav-chev" [class.open]="isOpen('medical')">expand_more</mat-icon>
+      </button>
+      <div class="nav-group-items" *ngIf="isOpen('medical')">
+
+        <a class="nav-item"
+           routerLink="/medical"
+           routerLinkActive="active"
+           [routerLinkActiveOptions]="{ exact: true }"
+           (click)="onNavClick()">
+          <span class="nav-dot"></span>
+          Desk
+        </a>
+
+        <a class="nav-item"
+           routerLink="/medical/records"
+           routerLinkActive="active"
+           (click)="onNavClick()">
+          <span class="nav-dot"></span>
+          Records
+        </a>
+      </div>
+    </ng-container>
+
     <!-- Admin group — visible to DEV / DIR / ADMIN / TL -->
     <ng-container *ngIf="isAuthenticated && canSeeAdminMenu">
       <button type="button" class="nav-group-label nav-group-toggle" (click)="toggleGroup('admin')" [attr.aria-expanded]="isOpen('admin')">

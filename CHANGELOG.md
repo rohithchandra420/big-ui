@@ -13,6 +13,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.48.0] - 2026-11-12
+
+### Added
+- **Medical Desk (release 1).** A new sidebar group for the medical team (Developers, Directors, the Medical department and people given medical access — not Admins):
+  - **Desk:** find the patient by scanning their wrist band, by search, or add a walk-in (with a parent or guardian for under-18s), then open their report. Shows visits today, who is resting in the Medical camp and open follow-ups.
+  - **Records:** every patient report on the event, full width, with search, quick-filter cards (today, resting, follow-ups, serious) and filters for type, severity, outcome and dates.
+  - **Patient report:** allergies and conditions highlighted at the top, guardian details with a "contacted" switch, a new-visit form (complaint, vitals with unusual readings highlighted, severity, diagnosis, medicines with suggestions, notes, outcome, follow-up), the visit timeline with Change / Delete, "Left the camp" and "Follow-up done", and an audit log for Directors and Developers.
+- The Medical pages lock after a period without activity and ask for the password again; a Lock button hides them at once.
+
+---
+
 ## [1.47.0] - 2026-11-06
 
 ### Added
