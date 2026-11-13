@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { BehaviorSubject, of } from 'rxjs';
 import { HospitalityGuestsComponent } from './hospitality-guests.component';
+import { SlidePanelComponent } from '../../shared/slide-panel/slide-panel.component';
 import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
@@ -32,7 +33,7 @@ describe('HospitalityGuestsComponent', () => {
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
     await TestBed.configureTestingModule({
-      declarations: [HospitalityGuestsComponent],
+      declarations: [HospitalityGuestsComponent, SlidePanelComponent],
       imports: [FormsModule],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
@@ -58,6 +59,31 @@ describe('HospitalityGuestsComponent', () => {
     component.search = 'echo';
     component.apply();
     expect(component.shown.map(g => g.name)).toEqual(['Sound crew']);
+  }));
+
+  it('Add guest and a guest open in the slide panel; ✕ on an edit goes back to the guest', fakeAsync(() => {
+    start();
+    expect(fixture.nativeElement.querySelector('.sp-panel')).toBeNull();
+    component.newGuest();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-title').textContent.trim()).toBe('Add guest');
+    expect(fixture.nativeElement.querySelector('#hg-name')).toBeTruthy();
+    (fixture.nativeElement.querySelector('.sp-x') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-panel')).toBeNull();
+
+    (fixture.nativeElement.querySelectorAll('.hg-row')[0] as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-title').textContent.trim()).toBe('Sound crew');
+    expect(fixture.nativeElement.querySelector('.sp-sub').textContent.trim()).toBe('Echo Rentals');
+    expect(fixture.nativeElement.querySelector('.sp-panel').textContent).toContain('Issue pass');
+    component.editGuest();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-title').textContent.trim()).toBe('Edit guest');
+    (fixture.nativeElement.querySelector('.sp-x') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(component.mode).toBe('view');
+    expect(fixture.nativeElement.querySelector('.sp-title').textContent.trim()).toBe('Sound crew');
   }));
 
   it('keeps the shown list stable between change-detection passes', fakeAsync(() => {

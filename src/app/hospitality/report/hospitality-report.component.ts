@@ -41,8 +41,8 @@ export class HospitalityReportComponent implements OnInit, OnDestroy {
   /** Stored for the *ngFor (never built in a getter). */
   departments: { _id: string; name: string }[] = [];
   bars: Bar[] = [];
-  /** Open meal rows, "date|meal". */
-  expanded = new Set<string>();
+  /** The meal open in the slide panel, "date|meal" ('' = closed). */
+  openKey = '';
   /** The meal whose figures are being entered, "date|meal". */
   editing = '';
   fig: FigForm = { veg: null, nonVeg: null, kg: null, note: '' };
@@ -102,6 +102,11 @@ export class HospitalityReportComponent implements OnInit, OnDestroy {
     this.from = this.to = localDate(d);
     this.load();
   }
+  toToday() {
+    if (!this.report) return;
+    this.from = this.to = this.report.today;
+    this.load();
+  }
   wholeMess() {
     if (!this.report) return;
     this.mode = 'range';
@@ -116,9 +121,18 @@ export class HospitalityReportComponent implements OnInit, OnDestroy {
   }
   colour(meal: string): string { return MEALS.find(m => m.key === meal)?.colour || '#888'; }
   key(date: string, meal: string) { return `${date}|${meal}`; }
-  toggle(date: string, meal: string) {
-    const k = this.key(date, meal);
-    this.expanded.has(k) ? this.expanded.delete(k) : this.expanded.add(k);
+  open(date: string, meal: string) { this.openKey = this.key(date, meal); }
+  /** The meal in the slide panel (looked up by key, so a reload shows fresh numbers). */
+  get openMeal(): { date: string; meal: ReportMeal } | null {
+    if (!this.openKey || !this.report) return null;
+    const [date, meal] = this.openKey.split('|');
+    const m = this.report.days.find(d => d.date === date)?.meals.find(x => x.meal === meal);
+    return m ? { date, meal: m } : null;
+  }
+  /** Close the panel and open the kitchen-figures form for that meal. */
+  editFromPanel(date: string, m: ReportMeal) {
+    this.openKey = '';
+    this.startFigures(date, m);
   }
   trackDay = (_: number, d: { date: string }) => d.date;
   trackMeal = (_: number, m: ReportMeal) => m.meal;

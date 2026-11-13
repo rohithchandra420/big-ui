@@ -36,13 +36,14 @@
       </div>
     </section>
 
-    <!-- Panel -->
-    <section class="hx-card hg-panel" *ngIf="mode === 'new' || selected">
+  </div>
+
+  <!-- Guest panel: slide panel (side on desktop, bottom on phones) -->
+  <app-slide-panel [open]="mode === 'new' || !!selected" [icon]="panelIcon" [title]="panelTitle" [subtitle]="panelSubtitle"
+                   (closed)="panelClosed()">
       <!-- Add / edit -->
       <ng-container *ngIf="mode !== 'view'">
-        <div class="hx-hd"><h2><mat-icon class="ms-fill">person_add</mat-icon>{{ mode === 'new' ? 'Add guest' : 'Edit guest' }}</h2><span class="grow"></span>
-          <button type="button" class="hg-x" aria-label="Close" (click)="mode === 'new' ? closePanel() : (mode = 'view')"><mat-icon>close</mat-icon></button></div>
-        <div class="hx-bd hg-form">
+        <div class="hg-form">
           <div class="field"><label for="hg-name">Name *</label><input id="hg-name" type="text" maxlength="60" [(ngModel)]="form.name" placeholder="e.g. Sound crew" /></div>
           <div class="field"><label for="hg-note">Organisation / note</label><input id="hg-note" type="text" maxlength="120" [(ngModel)]="form.note" placeholder="e.g. Echo Rentals" /></div>
           <div class="field">
@@ -59,12 +60,7 @@
 
       <!-- Guest + passes -->
       <ng-container *ngIf="mode === 'view' && selected as g">
-        <div class="hx-hd">
-          <span class="hg-av big">{{ g.name.charAt(0) }}</span>
-          <div class="grow"><h2>{{ g.name }}</h2><div class="hx-muted">{{ g.note }}{{ g.note && g.phone ? ' · ' : '' }}{{ g.phone }}</div></div>
-          <button type="button" class="hg-x" aria-label="Close" (click)="closePanel()"><mat-icon>close</mat-icon></button>
-        </div>
-        <div class="hx-bd">
+        <div>
           <div class="hg-acts">
             <button type="button" class="pill-btn hx-primary" *ngIf="!issuing" (click)="startPass()"><mat-icon>confirmation_number</mat-icon>Issue pass</button>
             <button type="button" class="pill-btn" (click)="editGuest()"><mat-icon>edit</mat-icon>Edit</button>
@@ -115,6 +111,5 @@
           <p class="hx-muted" *ngIf="!g.passes.length && !issuing">No passes yet.</p>
         </div>
       </ng-container>
-    </section>
-  </div>
+  </app-slide-panel>
 </div>

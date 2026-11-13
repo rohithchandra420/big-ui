@@ -1520,11 +1520,44 @@ select:focus {
 @media (max-width: 1000px) {
   .hy-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hy-night { grid-column: 1 / -1; }
+  /* ‹ Night of … › centred between its arrows (was flush left on phones) */
+  .hy-night > div { flex: 1; min-width: 0; text-align: center; }
+}
+/* Stay › Units: a unit row opens its details in the slide panel */
+.hy-uhead.sel { background: #eef3ef; }
+.hy-uopen { flex: none; color: var(--text-muted); font-size: 20px; width: 20px; height: 20px; }
+
+/* Day stepper ‹ label › (Hospitality Today / Report): the three stay together
+   on one line; on phones it takes a full row with the label centred. */
+.day-nav { display: inline-flex; align-items: center; gap: 6px; }
+.day-nav > .pill-btn { flex: none; }
+.day-nav-label { flex: 1; min-width: 110px; text-align: center; color: var(--text-primary); }
+.day-nav-label b { display: block; font-size: 15px; color: var(--text-primary); }
+.day-nav-label small { display: block; font-size: 12px; color: var(--text-muted); }
+@media (max-width: 520px) {
+  .day-nav { display: flex; width: 100%; }
+  .day-nav-label { min-width: 0; }
+  /* "Back to today" under the stepper, full width */
+  .pill-btn.day-nav-today { flex: 1 1 100%; justify-content: center; }
+}
+/* Stay › night stepper: let "Back to today" drop under it on small screens */
+@media (max-width: 1000px) { .hy-night { flex-wrap: wrap; } }
+
+/* Serving desk › Expected: day stepper, then the four meals */
+.hx-emeals { display: flex; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 520px) {
+  .hx-emeals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; }
+  .hx-emeals .toggle-chip { justify-content: center; padding-left: 4px; padding-right: 4px; }
 }
 /* Stay: tabs + search row, and the Stays list scrolls under its fixed header */
 .hy-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 .hy-search { flex: 1 1 240px; max-width: 420px; height: 40px; box-sizing: border-box; }
 .hy-bar app-select { width: 170px; }
+@media (max-width: 520px) {
+  /* Phone: search on its own row, the Type and Night filters share the next one */
+  .hy-search { flex-basis: 100%; max-width: none; }
+  .hy-bar app-select { flex: 1 1 0; min-width: 0; width: auto; }
+}
 .hy-scroll { max-height: min(62vh, 560px); overflow-y: auto; }
 
 /* Announcements › "Public page" audience (public page PH3). Global because the

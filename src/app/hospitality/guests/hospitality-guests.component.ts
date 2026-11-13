@@ -126,6 +126,22 @@ export class HospitalityGuestsComponent implements OnInit, OnDestroy {
     this.formError = '';
   }
   closePanel() { this.selected = null; this.mode = 'view'; this.issuing = false; }
+  /** ✕ / Esc / tap outside: an edit goes back to the guest, anything else closes. */
+  panelClosed() {
+    if (this.mode === 'edit' && this.selected) this.mode = 'view';
+    else this.closePanel();
+  }
+  get panelTitle(): string {
+    if (this.mode === 'new') return 'Add guest';
+    if (this.mode === 'edit') return 'Edit guest';
+    return this.selected?.name || '';
+  }
+  get panelSubtitle(): string {
+    const g = this.selected;
+    if (!g || this.mode === 'new') return '';
+    return [g.note, g.phone].filter(Boolean).join(' · ');
+  }
+  get panelIcon(): string { return this.mode === 'view' ? 'badge' : 'person_add'; }
 
   async saveGuest() {
     if (!this.event || this.busy) return;

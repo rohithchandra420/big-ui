@@ -210,6 +210,15 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** The unit open in the slide panel (looked up by id, so a reload shows fresh data). */
+  get expandedUnit(): StayUnitItem | null {
+    return this.expanded ? this.data?.units.find(u => u._id === this.expanded) || null : null;
+  }
+  unitSubtitle(u: StayUnitItem | null): string {
+    if (!u) return '';
+    return [u.type?.name, `${u.beds} bed${u.beds === 1 ? '' : 's'}`, u.area?.name].filter(Boolean).join(' · ');
+  }
+
   /** Busiest night in the mess period: "4 / 6". */
   peak(u: StayUnitItem): number { return u.nights.reduce((m, n) => Math.max(m, n.taken), 0); }
   availText(u: StayUnitItem): string {
@@ -277,6 +286,16 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     this.statsNight = d;
     this.load();
   }
+  /** Back to today: only offered when today is a mess night. */
+  get todayInMess(): boolean {
+    const d = this.data;
+    return !!d && d.today >= d.messDates.opensOn && d.today <= d.messDates.closesOn;
+  }
+  statsToToday() {
+    if (!this.data || !this.todayInMess) return;
+    this.statsNight = this.data.today;
+    this.load();
+  }
 
   async assign(f: FreeUnit, confirmGender = false) {
     const p = this.person;
@@ -337,6 +356,12 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     if (d < this.data.messDates.opensOn) d = this.data.messDates.opensOn;
     if (d > this.data.messDates.closesOn) return;
     this.calFrom = d;
+    this.buildCalendar();
+    this.applyFilter();
+  }
+  calToToday() {
+    if (!this.data || !this.todayInMess) return;
+    this.calFrom = this.data.today;
     this.buildCalendar();
     this.applyFilter();
   }
