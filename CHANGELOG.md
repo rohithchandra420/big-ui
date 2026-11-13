@@ -13,6 +13,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.51.0] - 2026-11-13
+
+### Added
+- **WASH — Water, Sanitation & Hygiene** (new sidebar section, story WA1). For the WASH team, DEV / DIR / ADMIN and anyone given WASH access.
+  - **Monitor:** every water station and toilet block of the event with its state — Not started, OK, Due soon, Overdue, Empty (water) or Out of order. A ring on each card shows how much of the refill / cleaning time has gone. Tap a count to filter; filter by Water / Toilets; search.
+  - **Refilled / Cleaned any time:** the moment it is done becomes the last one, and the next one is due that many hours later. **Empty** (water) and **Out of order** (with a note) are marked by hand; **Back in service** ends Out of order. Each facility's history opens in the side panel.
+  - **Setup** (WASH Team Lead, DEV / DIR / ADMIN): pick a Water or Toilets pin or a Washroom area from the Venue Map (washrooms can be either), or drop a new pin here, and set how often it is refilled / cleaned (every 1–24 hours) and, for water, its capacity in litres. Remove takes it out of WASH; the pin stays on the map.
+  - **QR stickers:** Setup prints one sticker per facility. Scanning it — with the phone's camera or the **Scan QR** button on Monitor — opens that facility, and what is logged then is marked "via QR" in its history. **Require a QR scan** (per event, off by default) makes Refilled / Cleaned ask for the facility's sticker first; Empty and Out of order can still be reported from anywhere.
+  - **Stock:** the event's central store — toilet paper, soap, sanitiser and so on. Each item shows what is in store, a level bar and a Low / Out mark once it reaches its "Low at" number; low items come first. The WASH Team Lead (and DEV / DIR / ADMIN) record **Received** and **Used** and manage the items; everyone else with WASH access views. Using more than the store holds is allowed with a warning — the item goes to 0. Each item keeps its history.
+  - **Alerts:** the WASH team on the event (Team Leads and Volunteers) and DEV / DIR / ADMIN get a notification, and a note on their Billboard, when a facility goes overdue, is marked Empty or Out of order, or a stock item starts running low. Tapping it opens that facility (or Stock). Mute them under My Profile › Notifications › **WASH alerts**.
+  - **Report:** one festival day at a time (India time), with a day stepper and Back to today — refills, cleanings, how many facilities went overdue, problems reported and logs made via QR; per facility how often it was done and how long it stood overdue or empty / out of order, with that day's log in the side panel; stock used and received. **Export** saves the day as an Excel file (Facilities, Log, Stock).
+- **Dashboard** (DEV / DIR / ADMIN): a WASH card — facilities working, overdue, empty / out of order and stock items running low — and a line in the attention strip when a facility needs attention or stock is low.
+- **Public page map:** toilets and washrooms the WASH team looks after show **Open** or **Closed**; water stations show **Refilled** or **Empty**.
+- **Venue Map:** WASH facilities show their state as a coloured dot on the pin or the Washroom area, with the last and next refill / cleaning in the tooltip.
+
+---
+
 ## [1.50.1] - 2026-11-13
 
 ### Changed

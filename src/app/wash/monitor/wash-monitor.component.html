@@ -1,0 +1,134 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">WASH</div>
+    <div class="page-ph-sub">Water, Sanitation &amp; Hygiene · {{ event?.name || 'No event selected' }}</div>
+  </div>
+  <div class="wm-hbtns">
+    <a class="btn-ghost wm-maplink" routerLink="/venue-map"><mat-icon>map</mat-icon>Venue Map</a>
+    <button type="button" class="btn-cta wm-scan" *ngIf="canLog && facilities.length" (click)="scanAny()"><mat-icon>qr_code_scanner</mat-icon>Scan QR</button>
+  </div>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
+</div>
+
+<div class="wm-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <ng-container *ngIf="event">
+    <!-- State counts: tap to filter -->
+    <div class="wm-strip" role="group" aria-label="Filter by state">
+      <button type="button" class="wm-st" *ngFor="let s of stateOrder; trackBy: trackState"
+              [class.on]="stateFilter === s" [attr.aria-pressed]="stateFilter === s" [ngClass]="'t-' + stateInfo[s].tone"
+              (click)="toggleState(s)">
+        <b>{{ counts[s] }}</b>
+        <small><i></i>{{ stateInfo[s].label }}</small>
+      </button>
+    </div>
+
+    <div class="wm-tools">
+      <div class="wm-kind" role="group" aria-label="Facility type">
+        <button type="button" *ngFor="let k of kinds" [class.on]="kind === k.key" (click)="setKind(k.key)">
+          <mat-icon>{{ k.icon }}</mat-icon>{{ k.label }}
+        </button>
+      </div>
+      <div class="search-field wm-search">
+        <mat-icon>search</mat-icon>
+        <input type="text" [(ngModel)]="search" (ngModelChange)="apply()" placeholder="Search facility" aria-label="Search facility" />
+      </div>
+    </div>
+
+    <div class="wm-empty" *ngIf="!loading && !facilities.length">
+      <mat-icon>water_drop</mat-icon>
+      <p>No WASH facilities yet.</p>
+      <a class="btn-cta" routerLink="/wash/setup" *ngIf="canManage">Set up facilities</a>
+      <p class="wm-muted" *ngIf="!canManage">The WASH Team Lead adds them in Setup.</p>
+    </div>
+    <p class="wm-muted" *ngIf="facilities.length && !cards.length">No facilities match.</p>
+
+    <div class="wm-grid">
+      <article class="wm-card" *ngFor="let c of cards; trackBy: trackCard" [ngClass]="'t-' + c.info.tone">
+        <button type="button" class="wm-top" (click)="open(c.f)" [attr.aria-label]="'Open ' + c.f.name">
+          <span class="wm-ring" [style.--p]="c.pct" [class.k-water]="c.f.kind === 'water'">
+            <span><mat-icon class="ms-fill">{{ kindInfo[c.f.kind].icon }}</mat-icon></span>
+          </span>
+          <span class="wm-txt">
+            <b>{{ c.f.name }}</b>
+            <small>{{ c.last }}</small>
+            <small><span class="wm-pill"><mat-icon>{{ c.info.icon }}</mat-icon>{{ c.info.label }}</span> {{ c.sub }}</small>
+          </span>
+        </button>
+        <div class="wm-acts" *ngIf="canLog">
+          <button type="button" class="wm-act main" [disabled]="busyId === c.f._id" (click)="mainAction(c.f)">
+            <mat-icon>{{ c.doneIcon }}</mat-icon>{{ c.doneLabel }}
+          </button>
+          <button type="button" class="wm-act" *ngIf="c.f.kind === 'water' && c.f.status === 'ok'" (click)="open(c.f, 'empty')">
+            <mat-icon>water_loss</mat-icon>Empty
+          </button>
+          <button type="button" class="wm-act" *ngIf="c.f.status !== 'out_of_order'" (click)="open(c.f, 'out_of_order')"
+                  title="Out of order" aria-label="Out of order">
+            <mat-icon>block</mat-icon>
+          </button>
+        </div>
+      </article>
+    </div>
+  </ng-container>
+
+  <app-slide-panel [open]="!!selected" [icon]="panelIcon" [title]="panelTitle" [subtitle]="panelSubtitle" (closed)="closePanel()">
+    <ng-container *ngIf="selected as f">
+      <!-- Note for Empty / Out of order -->
+      <div class="wm-note" *ngIf="noteFor">
+        <div class="field">
+          <label for="wm-note">{{ noteFor === 'out_of_order' ? 'What is wrong? *' : 'Note (optional)' }}</label>
+          <textarea id="wm-note" rows="3" maxlength="300" [(ngModel)]="note"
+                    [placeholder]="noteFor === 'out_of_order' ? 'e.g. Pump broken, plumber called' : 'e.g. Tank dry'"></textarea>
+        </div>
+        <div class="field-error" *ngIf="noteError">{{ noteError }}</div>
+        <div class="wm-acts">
+          <button type="button" class="btn-ghost" (click)="noteFor = null">Cancel</button>
+          <button type="button" class="btn-cta" [disabled]="busyId === f._id" (click)="saveNote()">
+            Mark {{ noteFor === 'out_of_order' ? 'out of order' : 'empty' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Actions (also where a scanned sticker lands) -->
+      <div class="wm-panel-acts" *ngIf="canLog && !noteFor">
+        <p class="wm-scanned" *ngIf="selectedScanned"><mat-icon>qr_code_2</mat-icon>Sticker scanned — logs are marked "via QR"</p>
+        <p class="wm-muted" *ngIf="requireQr && !selectedScanned && f.status !== 'out_of_order'">
+          <mat-icon class="wm-ic">qr_code_scanner</mat-icon>{{ kindInfo[f.kind].doneLabel }} asks for this facility's QR sticker.
+        </p>
+        <div class="wm-acts">
+          <button type="button" class="wm-act main wm-big" [disabled]="busyId === f._id" (click)="mainAction(f)">
+            <mat-icon>{{ selectedDone.icon }}</mat-icon>{{ selectedDone.label }}
+          </button>
+          <button type="button" class="wm-act" *ngIf="f.kind === 'water' && f.status === 'ok'" (click)="open(f, 'empty')"><mat-icon>water_loss</mat-icon>Empty</button>
+          <button type="button" class="wm-act" *ngIf="f.status !== 'out_of_order'" (click)="open(f, 'out_of_order')"><mat-icon>block</mat-icon>Out of order</button>
+        </div>
+      </div>
+
+      <dl class="wm-kv">
+        <dt>Status</dt><dd><span class="wm-pill" [ngClass]="'t-' + stateInfo[selectedState!].tone">{{ stateInfo[selectedState!].label }}</span></dd>
+        <dt>Last {{ f.kind === 'water' ? 'refill' : 'clean' }}</dt>
+        <dd>{{ f.lastDoneAt ? clock(f.lastDoneAt) + (f.lastDoneBy ? ' by ' + f.lastDoneBy : '') : 'Not started' }}</dd>
+        <dt>Next due</dt><dd>{{ f.dueAt ? clock(f.dueAt) : '—' }} (every {{ f.intervalHours }} h)</dd>
+        <ng-container *ngIf="f.capacityLitres"><dt>Capacity</dt><dd>{{ f.capacityLitres }} L</dd></ng-container>
+        <ng-container *ngIf="f.statusNote"><dt>Note</dt><dd>{{ f.statusNote }}</dd></ng-container>
+        <dt>Public map</dt><dd>{{ publicText }}</dd>
+      </dl>
+
+      <p class="section-lbl">History</p>
+      <p class="wm-muted" *ngIf="historyLoading">Loading…</p>
+      <p class="wm-muted" *ngIf="!historyLoading && !history.length">Nothing logged yet.</p>
+      <ul class="wm-tl">
+        <li *ngFor="let h of history; trackBy: trackLog">
+          <mat-icon>{{ actionInfo[h.action].icon }}</mat-icon>
+          <div>
+            {{ actionInfo[h.action].label }}<ng-container *ngIf="h.by"> · {{ h.by }}</ng-container>
+            <small>{{ clock(h.at) }} · {{ h.at | date: 'd MMM' }}<ng-container *ngIf="h.viaQr"> · via QR</ng-container><ng-container *ngIf="h.note"> · "{{ h.note }}"</ng-container></small>
+          </div>
+        </li>
+      </ul>
+    </ng-container>
+  </app-slide-panel>
+</div>

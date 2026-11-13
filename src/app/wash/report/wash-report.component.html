@@ -1,0 +1,95 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">WASH Report</div>
+    <div class="page-ph-sub">Water, Sanitation &amp; Hygiene · {{ event?.name || 'No event selected' }}</div>
+  </div>
+  <button type="button" class="btn-ghost wr-export" [disabled]="!report || exporting" (click)="export()"><mat-icon>download</mat-icon>Export</button>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
+</div>
+
+<div class="wr-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <ng-container *ngIf="report as r">
+    <div class="wr-bar">
+      <div class="day-nav">
+        <button type="button" class="pill-btn" (click)="shiftDay(-1)" aria-label="Previous day"><mat-icon>chevron_left</mat-icon></button>
+        <span class="day-nav-label">{{ dayLabel(r.date) }}</span>
+        <button type="button" class="pill-btn" [disabled]="r.date >= r.today" (click)="shiftDay(1)" aria-label="Next day"><mat-icon>chevron_right</mat-icon></button>
+      </div>
+      <button type="button" class="pill-btn day-nav-today" *ngIf="!isToday" (click)="toToday()"><mat-icon>today</mat-icon>Back to today</button>
+      <span class="wr-muted" *ngIf="isToday">Today so far</span>
+    </div>
+
+    <div class="wr-sum">
+      <div class="wr-tile"><mat-icon class="ms-fill k-water">water_drop</mat-icon><b>{{ r.summary.refills }}</b><small>Refills</small></div>
+      <div class="wr-tile"><mat-icon class="ms-fill k-toilets">wc</mat-icon><b>{{ r.summary.cleanings }}</b><small>Cleanings</small></div>
+      <div class="wr-tile" [class.bad]="r.summary.overdueFacilities"><mat-icon>warning</mat-icon><b>{{ r.summary.overdueFacilities }}</b><small>Went overdue</small></div>
+      <div class="wr-tile" [class.bad]="r.summary.problems"><mat-icon>block</mat-icon><b>{{ r.summary.problems }}</b><small>Problems reported</small></div>
+      <div class="wr-tile"><mat-icon>qr_code_2</mat-icon><b>{{ r.summary.viaQr }}</b><small>Logged via QR</small></div>
+    </div>
+
+    <p class="section-lbl">Facilities</p>
+    <p class="wr-muted" *ngIf="!r.facilities.length">No facilities set up for this event.</p>
+    <div class="tbl-container wr-tbl" *ngIf="r.facilities.length">
+      <table>
+        <thead><tr><th>Facility</th><th>Done</th><th class="wr-hide">Via QR</th><th>Overdue</th><th class="wr-hide">Empty / out of order</th><th></th></tr></thead>
+        <tbody>
+          <tr *ngFor="let f of r.facilities; trackBy: trackFacility" class="wr-row" (click)="openId = f._id">
+            <td>
+              <span class="wr-name">
+                <mat-icon class="ms-fill" [class.k-water]="f.kind === 'water'" [class.k-toilets]="f.kind !== 'water'">{{ kindInfo[f.kind].icon }}</mat-icon>
+                <span><b>{{ f.name }}</b><small>every {{ f.intervalHours }} h</small></span>
+              </span>
+            </td>
+            <td><b>{{ f.done }}</b> <small>{{ f.kind === 'water' ? 'refills' : 'cleanings' }}</small></td>
+            <td class="wr-hide">{{ f.viaQr || '—' }}</td>
+            <td [class.wr-bad]="f.overdueMin">{{ duration(f.overdueMin) }}</td>
+            <td class="wr-hide" [class.wr-bad]="f.downMin">{{ duration(f.downMin) }}</td>
+            <td class="wr-end"><mat-icon>chevron_right</mat-icon></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="section-lbl wr-gap">Stock</p>
+    <p class="wr-muted" *ngIf="!r.stock.length">Nothing was used or received this day.</p>
+    <div class="tbl-container wr-tbl" *ngIf="r.stock.length">
+      <table>
+        <thead><tr><th>Item</th><th>Used</th><th>Received</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let s of r.stock; trackBy: trackStock">
+            <td><b>{{ s.name }}</b></td>
+            <td>{{ s.used || '—' }} <small *ngIf="s.used">{{ s.unit }}</small></td>
+            <td>{{ s.received || '—' }} <small *ngIf="s.received">{{ s.unit }}</small></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <app-slide-panel [open]="!!opened" [icon]="opened ? kindInfo[opened.kind].icon : 'water_drop'" [title]="opened?.name || ''"
+                   [subtitle]="report ? dayLabel(report.date) : ''" (closed)="openId = null">
+    <ng-container *ngIf="opened as f">
+      <dl class="wr-kv">
+        <dt>{{ f.kind === 'water' ? 'Refills' : 'Cleanings' }}</dt><dd>{{ f.done }}<ng-container *ngIf="f.viaQr"> ({{ f.viaQr }} via QR)</ng-container></dd>
+        <dt>Overdue</dt><dd>{{ duration(f.overdueMin) }}</dd>
+        <dt>Empty / out of order</dt><dd>{{ duration(f.downMin) }}</dd>
+        <dt>Problems reported</dt><dd>{{ f.problems }}</dd>
+      </dl>
+      <p class="section-lbl">This day's log</p>
+      <p class="wr-muted" *ngIf="!f.logs.length">Nothing was logged this day.</p>
+      <ul class="wr-tl">
+        <li *ngFor="let l of f.logs; trackBy: trackLog">
+          <b>{{ l.time }}</b>
+          <div>
+            {{ actionInfo[l.action].label }}<ng-container *ngIf="l.by"> · {{ l.by }}</ng-container><ng-container *ngIf="l.viaQr"> · via QR</ng-container>
+            <small *ngIf="l.note">"{{ l.note }}"</small>
+          </div>
+        </li>
+      </ul>
+    </ng-container>
+  </app-slide-panel>
+</div>

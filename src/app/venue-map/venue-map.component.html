@@ -167,7 +167,10 @@
         <div class="vm-grow"><div class="vm-name">{{ selected.name }}</div><div class="vm-muted">{{ typeInfo(selected.type).label }}</div></div>
         <button type="button" class="vm-x" aria-label="Close" (click)="closePanels()"><mat-icon>close</mat-icon></button>
       </div>
-      <div class="vm-row" *ngIf="statusByLocation.get(selected._id) as ps"><b>{{ ps.open ? 'Open' : 'Closed' }}</b> · {{ ps.label }}</div>
+      <div class="vm-row" *ngIf="statusByLocation.get(selected._id) as ps">
+        <ng-container *ngIf="ps.kind !== 'wash'"><b>{{ ps.open ? 'Open' : 'Closed' }}</b> · </ng-container>{{ ps.label }}
+        <a *ngIf="ps.kind === 'wash'" routerLink="/wash"> · WASH</a>
+      </div>
       <div class="vm-warn" *ngIf="locInfo.get(selected._id)?.outside"><mat-icon>warning</mat-icon>Outside the festival boundary</div>
       <div class="vm-row" *ngIf="locInfo.get(selected._id)?.zones?.length"><b>In:</b> {{ locInfo.get(selected._id)!.zones.join(', ') }}</div>
       <div class="vm-row" *ngIf="selected.department"><b>Department:</b> {{ selected.department.name }}</div>
@@ -191,7 +194,9 @@
         <button type="button" class="vm-x" aria-label="Close" (click)="closePanels()"><mat-icon>close</mat-icon></button>
       </div>
       <ng-container *ngIf="statusByArea.get(selectedArea._id) as ms">
-        <div class="vm-row" *ngIf="ms.kind !== 'tent_field'"><b>{{ ms.open ? 'Open' : 'Closed' }}</b> · {{ ms.label }}</div>
+        <div class="vm-row" *ngIf="ms.kind !== 'tent_field' && ms.kind !== 'wash'"><b>{{ ms.open ? 'Open' : 'Closed' }}</b> · {{ ms.label }}</div>
+        <!-- A Washroom area set up in WASH -->
+        <div class="vm-row" *ngIf="ms.kind === 'wash'">{{ ms.label }}<a routerLink="/wash"> · WASH</a></div>
         <!-- Tent Fields (B3): the linked field's counts, and its layout -->
         <div class="vm-row" *ngIf="ms.kind === 'tent_field'">{{ ms.label }}</div>
         <div class="vm-actions" *ngIf="ms.kind === 'tent_field' && ms.fieldId && canOpenFields">

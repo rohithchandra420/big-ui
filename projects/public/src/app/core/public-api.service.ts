@@ -25,8 +25,10 @@ export interface PublicEvent {
 }
 
 /** PH4a public map: whitelisted pins and areas only. */
-export interface PublicMapPin { id: string; name: string; type: string; lat: number; lng: number; open?: boolean; note?: string; }
-export interface PublicMapArea { id: string; name: string; kind: string; points: [number, number][]; }
+/** WASH: toilets are open / closed; a water station is refilled / empty. Only for places the WASH team set up. */
+export type PublicWash = 'open' | 'closed' | 'refilled' | 'empty';
+export interface PublicMapPin { id: string; name: string; type: string; lat: number; lng: number; open?: boolean; note?: string; wash?: PublicWash; }
+export interface PublicMapArea { id: string; name: string; kind: string; points: [number, number][]; wash?: PublicWash; }
 export type PublicMapAnswer = { off: false; pins: PublicMapPin[]; areas: PublicMapArea[] } | { off: true };
 
 /** PH6: photos staff chose to show, and "through the years". */

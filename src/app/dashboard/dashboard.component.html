@@ -124,6 +124,10 @@
         <div class="d-panel w4" *ngIf="d.medical as md"><h2>Medical Desk <a *ngIf="canOpenMedical" routerLink="/medical/report">Report ›</a></h2><div class="hint">Today · numbers only</div>
           <div class="kv"><div><b>{{ md.visitsToday }}</b><span>visits</span></div><div><b [class.bad]="md.seriousToday">{{ md.seriousToday }}</b><span>serious</span></div>
             <div><b [class.bad]="md.hospitalToday">{{ md.hospitalToday }}</b><span>to hospital</span></div><div><b>{{ md.restingNow }}</b><span>resting now</span></div></div></div>
+        <!-- WASH (WA5): facility states and low stock right now — counts only -->
+        <div class="d-panel w4" *ngIf="d.wash as wa"><h2>WASH <a routerLink="/wash">Monitor ›</a></h2><div class="hint">Water &amp; toilets · right now</div>
+          <div class="kv"><div><b>{{ wa.states.ok + wa.states.due_soon }}</b><span>working</span></div><div><b [class.bad]="wa.states.overdue">{{ wa.states.overdue }}</b><span>overdue</span></div>
+            <div><b [class.bad]="wa.states.empty + wa.states.out_of_order">{{ wa.states.empty + wa.states.out_of_order }}</b><span>empty / out of order</span></div><div><b [class.bad]="wa.stockLow">{{ wa.stockLow }}</b><span>stock low</span></div></div></div>
         <div class="d-panel w4"><h2>Announcements <a routerLink="/admin/announcements">Announcements ›</a></h2><div class="hint">Last 24 hours</div>
           <div class="list">
             <div class="none" *ngIf="!d.comms.announcements.length">Nothing sent in the last 24 hours.</div>

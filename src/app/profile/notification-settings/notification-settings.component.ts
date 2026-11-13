@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { NotificationPrefs, PushService } from '../../core/push.service';
 import { NotificationService } from '../../core/notification.service';
+import { AuthService } from '../../core/auth.service';
 
 /** My Profile → Notifications (PWA Phase 2): this device on/off, categories, test. */
 @Component({
@@ -12,15 +13,20 @@ export class NotificationSettingsComponent implements OnInit {
   busy = false;
   savingPref: keyof NotificationPrefs | null = null;
 
-  readonly categories: { key: keyof NotificationPrefs; label: string; hint: string }[] = [
+  /** A stored list (never a getter): the WASH row is added in ngOnInit for people who get WASH alerts. */
+  categories: { key: keyof NotificationPrefs; label: string; hint: string }[] = [
     { key: 'emailBatch', label: 'Email batch finished', hint: 'When ticket or custom emails you sent have all gone out.' },
     { key: 'announcements', label: 'Announcements', hint: 'Messages from the festival organisers.' },
     { key: 'meals', label: 'Meals', hint: 'Meal time changes and when the Mess Hall opens or closes.' }
   ];
 
-  constructor(public push: PushService, private notifications: NotificationService) { }
+  constructor(public push: PushService, private notifications: NotificationService, private auth: AuthService) { }
 
   ngOnInit(): void {
+    if (this.auth.canViewWash(this.auth.currentUser)) {
+      this.categories = [...this.categories,
+        { key: 'wash', label: 'WASH alerts', hint: 'A water station or toilet overdue, empty or out of order, and stock running low.' }];
+    }
     this.push.load();
   }
 

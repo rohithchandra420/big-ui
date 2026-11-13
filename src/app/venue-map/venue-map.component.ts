@@ -149,9 +149,9 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
   folded = new Set<string>(this.readFolded());
   private liveTimer?: ReturnType<typeof setInterval>;
   /** Live statuses from GET /map/status (Hospitality H3: the Mess Hall), by area id. */
-  statusByArea = new Map<string, { kind: string; open: boolean; label: string; fieldId?: string }>();
+  statusByArea = new Map<string, { kind: string; open: boolean; label: string; fieldId?: string; state?: string }>();
   /** Live statuses of pins from GET /map/status (the Box Office), by location id. */
-  statusByLocation = new Map<string, { kind: string; open: boolean; label: string }>();
+  statusByLocation = new Map<string, { kind: string; open: boolean; label: string; state?: string }>();
   /**
    * A touch screen: hover tooltips close straight after a tap there, so the
    * same one-line info opens as a small popup on tap instead (2026-11-04).
@@ -296,13 +296,15 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private pin(type: string, isSel = false, draft = false, status?: { open: boolean }): Leaflet.DivIcon {
+  private pin(type: string, isSel = false, draft = false, status?: { open: boolean; state?: string }): Leaflet.DivIcon {
     const t = typeInfo(type);
+    // WASH facilities colour the dot by their state (wash-<state>); others: open green / closed grey.
+    const stClass = status?.state ? ` wash-${status.state.replace(/[^a-z_]/g, '')}` : (status?.open ? ' open' : '');
     return this.L!.divIcon({
       className: 'vm-pin-wrap', iconSize: [34, 34], iconAnchor: [17, 34], tooltipAnchor: [0, -30], popupAnchor: [0, -30],
       html: `<div class="vm-pin${isSel ? ' sel' : ''}${draft ? ' draft' : ''}" style="background:${t.color}">` +
             `<span class="material-symbols-rounded">${draft ? 'add_location' : t.icon}</span>` +
-            (status ? `<i class="vm-status${status.open ? ' open' : ''}"></i>` : '') + '</div>'
+            (status ? `<i class="vm-status${stClass}"></i>` : '') + '</div>'
     });
   }
 
@@ -543,6 +545,8 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   private liveBadge(a: VenueArea): string {
     const st = this.statusByArea.get(a._id);
+    // A Washroom area set up in WASH: the dot's colour is its state, like WASH pins.
+    if (st?.state) return `<i class="vm-status wash-${st.state.replace(/[^a-z_]/g, '')}"></i>`;
     if (st) return `<i class="vm-status${st.open ? ' open' : ''}"></i>`;
     const w = this.workshopStatus.get(a._id);
     return w ? statusBadge(w) : '';

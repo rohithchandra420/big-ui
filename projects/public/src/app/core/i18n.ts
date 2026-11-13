@@ -97,6 +97,8 @@ const EN = {
   'map.directions': 'Directions',
   'map.open': 'Open',
   'map.closed': 'Closed',
+  'map.refilled': 'Refilled',
+  'map.noWater': 'Empty',
   'map.water': 'Water',
   'map.toilets': 'Toilets',
   'map.stage': 'Stage',

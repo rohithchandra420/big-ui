@@ -2,7 +2,7 @@ import { AfterViewInit, Component, ElementRef, Input, NgZone, OnChanges, OnDestr
 import { NgFor, NgIf } from '@angular/common';
 import type * as Leaflet from 'leaflet';
 import { Subscription } from 'rxjs';
-import { PublicMapArea, PublicMapPin } from '../core/public-api.service';
+import { PublicMapArea, PublicMapPin, PublicWash } from '../core/public-api.service';
 import { I18nService, TPipe } from '../core/i18n';
 import { AREA_LOOK, PIN_LOOK, centreOf, directionsUrl } from '../core/map-data';
 import { MyLocationService } from '../core/my-location.service';
@@ -114,7 +114,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
       const shape = look.line
         ? L.polyline(a.points, opts)
         : L.polygon(a.points, { ...opts, fillColor: look.colour, fillOpacity: a.kind === 'boundary' ? 0.04 : a.kind === 'nogo' ? 0.3 : 0.18 });
-      shape.bindPopup(this.popup(a.name, look.word, centreOf(a)));
+      shape.bindPopup(this.popup(a.name, look.word, centreOf(a), undefined, a.wash));
       shape.addTo(this.layer!);
       this.byId.set(a.id, shape as any);
       bounds.push(...a.points);
@@ -122,7 +122,9 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     for (const p of this.pins) {
       const look = PIN_LOOK[p.type];
       if (!look) continue;
-      const status = p.type === 'box_office' ? (p.open ? 'open' : 'closed') : '';
+      // The dot: the Box Office open / closed; a WASH facility working (green) or not (grey).
+      const status = p.type === 'box_office' ? (p.open ? 'open' : 'closed')
+        : p.wash ? (WASH_OK[p.wash] ? 'open' : 'closed') : '';
       const marker = L.marker([p.lat, p.lng], {
         icon: L.divIcon({
           className: 'pub-pin',
@@ -159,16 +161,23 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.L.circleMarker(at, { radius: 8, color: '#fff', weight: 3, fillColor: '#3b8fd6', fillOpacity: 1 }).addTo(this.meLayer);
   }
 
-  private popup(name: string, word: any, at: [number, number], pin?: PublicMapPin): string {
+  private popup(name: string, word: any, at: [number, number], pin?: PublicMapPin, areaWash?: PublicWash): string {
     const t = (k: any) => esc(this.i18n.t(k));
     let status = '';
+    const wash = pin?.wash || areaWash;
     if (pin?.type === 'box_office') {
       status = `<div class="pp-status ${pin.open ? 'open' : 'closed'}">${t(pin.open ? 'map.open' : 'map.closed')}${pin.note ? ' · ' + esc(pin.note) : ''}</div>`;
+    } else if (wash) {
+      status = `<div class="pp-status ${WASH_OK[wash] ? 'open' : 'closed'}">${t(WASH_WORD[wash])}</div>`;
     }
     return `<div class="pub-pop"><small>${t(word)}</small><b>${esc(name)}</b>${status}`
       + `<a href="${directionsUrl(at)}" target="_blank" rel="noopener">${t('map.directions')}</a></div>`;
   }
 }
+
+/** WASH facility status: is it usable, and the word shown. */
+const WASH_OK: Record<PublicWash, boolean> = { open: true, refilled: true, closed: false, empty: false };
+const WASH_WORD: Record<PublicWash, string> = { open: 'map.open', closed: 'map.closed', refilled: 'map.refilled', empty: 'map.noWater' };
 
 /** The legend: one chip per kind on the map, pins first. */
 function buildLegend(pins: PublicMapPin[], areas: PublicMapArea[]) {
