@@ -18,6 +18,7 @@
         <button type="button" class="pill-btn" (click)="shiftStats(-1)" aria-label="Previous night"><mat-icon>chevron_left</mat-icon></button>
         <div><b>Night of {{ short(d.nightStats.date) }}</b><small>{{ d.nightStats.date === d.today ? 'Tonight' : '' }}</small></div>
         <button type="button" class="pill-btn" (click)="shiftStats(1)" aria-label="Next night"><mat-icon>chevron_right</mat-icon></button>
+        <button type="button" class="pill-btn day-nav-today" *ngIf="todayInMess && d.nightStats.date !== d.today" (click)="statsToToday()"><mat-icon>today</mat-icon>Back to today</button>
       </div>
       <div class="hy-stat"><span>Staff with a bed</span><b>{{ d.nightStats.staffInBed }}</b><small>of {{ d.nightStats.staffTotal }} staff</small></div>
       <div class="hy-stat" [class.warn]="d.nightStats.withoutBed.length"><span>No bed</span><b>{{ d.nightStats.withoutBed.length }}</b><small>staff</small></div>
@@ -69,31 +70,22 @@
           <p class="hx-muted hx-bd" *ngIf="d.types.length && !d.units.length">No units yet.</p>
           <p class="hx-muted hx-bd" *ngIf="d.units.length && !shownUnits.length">Nothing matches "{{ filter }}".</p>
           <div class="hy-unit" *ngFor="let u of shownUnits; trackBy: trackId">
-            <button type="button" class="hy-uhead" (click)="expanded = expanded === u._id ? '' : u._id">
+            <button type="button" class="hy-uhead" [class.sel]="expanded === u._id" (click)="expanded = u._id">
               <span class="hy-uic"><mat-icon class="ms-fill">{{ u.type?.icon || 'bed' }}</mat-icon></span>
               <span class="grow"><b>{{ u.name }}</b><small>{{ u.type?.name }} · {{ u.beds }} bed{{ u.beds === 1 ? '' : 's' }}{{ u.area ? ' · ' + u.area.name : '' }}</small></span>
               <span class="hy-occ" [class.full]="peak(u) >= u.beds">busiest night {{ peak(u) }}/{{ u.beds }}</span>
+              <mat-icon class="hy-uopen" aria-hidden="true">chevron_right</mat-icon>
             </button>
-            <div class="hy-udet" *ngIf="expanded === u._id">
-              <div><b>Available:</b> {{ availText(u) }}</div>
-              <div *ngIf="u.notes"><b>Notes:</b> {{ u.notes }}</div>
-              <div><b>Stays:</b> {{ u.stays.length }}</div>
-              <div class="hy-acts">
-                <button type="button" class="pill-btn" (click)="editUnit(u)"><mat-icon>edit</mat-icon>Edit</button>
-                <button type="button" class="pill-btn" *ngIf="!u.stays.length" (click)="deleteUnit(u)"><mat-icon>delete</mat-icon>Delete</button>
-                <a class="pill-btn" *ngIf="u.area" routerLink="/venue-map" [queryParams]="{ area: u.area._id }"><mat-icon>map</mat-icon>On the map</a>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
       <div class="hy-col">
-        <!-- Unit form -->
-        <section class="hx-card" *ngIf="form as f">
-          <div class="hx-hd"><h2><mat-icon class="ms-fill">{{ f._id ? 'edit' : 'add_home' }}</mat-icon>{{ f._id ? 'Edit ' + f.name : f.batch ? 'Many units at once' : 'New unit' }}</h2>
-            <span class="grow"></span><button type="button" class="hy-x" aria-label="Close" (click)="form = null"><mat-icon>close</mat-icon></button></div>
-          <div class="hx-bd hy-form">
+        <!-- Unit form: slide panel (side on desktop, bottom on phones) -->
+        <app-slide-panel [open]="!!form" [icon]="form?._id ? 'edit' : 'add_home'"
+                         [title]="form ? (form._id ? 'Edit ' + form.name : form.batch ? 'Many units at once' : 'New unit') : ''"
+                         (closed)="form = null">
+          <div class="hy-form" *ngIf="form as f">
             <div class="field">
               <label>Type</label>
               <app-select [(ngModel)]="f.type">
@@ -129,7 +121,7 @@
             <div class="field"><label for="hy-o">Notes</label><input id="hy-o" type="text" maxlength="200" [(ngModel)]="f.notes" /></div>
             <div class="hy-acts"><button type="button" class="pill-btn hx-primary" [disabled]="busy" (click)="saveUnit()"><mat-icon>save</mat-icon>Save</button></div>
           </div>
-        </section>
+        </app-slide-panel>
 
         <!-- Types -->
         <section class="hx-card">
@@ -236,6 +228,7 @@
         <button type="button" class="pill-btn" (click)="shiftCal(-calDays)" aria-label="Earlier"><mat-icon>chevron_left</mat-icon></button>
         <span class="hx-muted">{{ short(calDates[0]) }} – {{ short(calDates[calDates.length - 1]) }}</span>
         <button type="button" class="pill-btn" (click)="shiftCal(calDays)" aria-label="Later"><mat-icon>chevron_right</mat-icon></button>
+        <button type="button" class="pill-btn" *ngIf="todayInMess && calFrom !== d.today" (click)="calToToday()"><mat-icon>today</mat-icon>Back to today</button>
       </div>
       <div class="hx-bd">
         <div class="hy-cal" *ngIf="d.units.length; else noUnits">
@@ -283,4 +276,24 @@
     </section>
     </div>
   </ng-container>
+
+  <!-- Unit details: slide panel (side on desktop, bottom on phones) -->
+  <app-slide-panel [open]="!!expandedUnit" [title]="expandedUnit?.name || ''" [icon]="expandedUnit?.type?.icon || 'bed'"
+                   [subtitle]="unitSubtitle(expandedUnit)" (closed)="expanded = ''">
+    <div class="hy-udet" *ngIf="expandedUnit as u">
+      <div><b>Available:</b> {{ availText(u) }}</div>
+      <div><b>Busiest night:</b> {{ peak(u) }} of {{ u.beds }} bed{{ u.beds === 1 ? '' : 's' }}</div>
+      <div *ngIf="u.notes"><b>Notes:</b> {{ u.notes }}</div>
+      <div><b>Stays:</b> {{ u.stays.length }}</div>
+      <div class="hy-stay" *ngFor="let s of u.stays; trackBy: trackId">
+        <span class="grow">{{ s.person.name }}{{ s.people > 1 ? ' ×' + s.people : '' }}<small>{{ s.person.kind === 'guest' ? 'Guest' : 'Staff' }} · {{ short(s.from) }} → {{ short(s.to) }}</small></span>
+        <span class="hy-tag" [class.in]="s.movedInAt && !s.movedOutAt" [class.out]="s.movedOutAt">{{ s.movedOutAt ? 'Moved out' : s.movedInAt ? 'Moved in' : 'Booked' }}</span>
+      </div>
+      <div class="hy-acts">
+        <button type="button" class="pill-btn" (click)="expanded = ''; editUnit(u)"><mat-icon>edit</mat-icon>Edit</button>
+        <button type="button" class="pill-btn" *ngIf="!u.stays.length" (click)="expanded = ''; deleteUnit(u)"><mat-icon>delete</mat-icon>Delete</button>
+        <a class="pill-btn" *ngIf="u.area" routerLink="/venue-map" [queryParams]="{ area: u.area._id }"><mat-icon>map</mat-icon>On the map</a>
+      </div>
+    </div>
+  </app-slide-panel>
 </div>

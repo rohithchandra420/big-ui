@@ -19,16 +19,17 @@
         <button type="button" [class.on]="mode === 'day'" (click)="setMode('day')">Day</button>
         <button type="button" [class.on]="mode === 'range'" (click)="setMode('range')">Date range</button>
       </div>
-      <ng-container *ngIf="mode === 'day'">
+      <div class="day-nav" *ngIf="mode === 'day'">
         <button type="button" class="pill-btn" (click)="shiftDay(-1)" aria-label="Previous day"><mat-icon>chevron_left</mat-icon></button>
-        <span class="hr-dname">{{ dayLabel(r.from) }}</span>
+        <span class="day-nav-label hr-dname">{{ dayLabel(r.from) }}</span>
         <button type="button" class="pill-btn" (click)="shiftDay(1)" aria-label="Next day"><mat-icon>chevron_right</mat-icon></button>
-      </ng-container>
-      <ng-container *ngIf="mode === 'range'">
+      </div>
+      <button type="button" class="pill-btn day-nav-today" *ngIf="mode === 'day' && r.from !== r.today" (click)="toToday()"><mat-icon>today</mat-icon>Back to today</button>
+      <div class="hr-range" *ngIf="mode === 'range'">
         <input type="date" class="hr-date" [(ngModel)]="from" (change)="load()" aria-label="From" />
         <span class="hx-muted">to</span>
         <input type="date" class="hr-date" [(ngModel)]="to" (change)="load()" aria-label="To" />
-      </ng-container>
+      </div>
       <button type="button" class="pill-btn" (click)="wholeMess()"><mat-icon>date_range</mat-icon>Whole mess period</button>
       <span class="grow"></span>
       <app-select class="hr-dept" [ngModel]="department" (ngModelChange)="setDepartment($event)">
@@ -58,7 +59,7 @@
           <tbody *ngFor="let d of r.days; trackBy: trackDay">
             <tr class="hr-day" *ngIf="r.days.length > 1"><td [attr.colspan]="filtered ? 6 : 10">{{ dayLabel(d.date) }}</td></tr>
             <ng-container *ngFor="let m of d.meals; trackBy: trackMeal">
-              <tr class="hr-row" (click)="toggle(d.date, m.meal)">
+              <tr class="hr-row" [class.sel]="openKey === key(d.date, m.meal)" (click)="open(d.date, m.meal)">
                 <td><span class="hr-nm"><i [style.background]="colour(m.meal)"></i>{{ m.label }}</span></td>
                 <td class="num" *ngIf="!filtered">{{ m.asked ?? '—' }}</td>
                 <td class="num" *ngIf="!filtered">
@@ -78,7 +79,7 @@
                   <div class="hr-flow" *ngIf="m.prepared; else waiting"><i class="s" [style.flex]="m.served"></i><i class="w" [style.flex]="m.leftover || 0.001"></i></div>
                   <ng-template #waiting><span class="hx-muted">waiting</span></ng-template>
                 </td>
-                <td><mat-icon class="hr-chev">{{ expanded.has(key(d.date, m.meal)) ? 'expand_less' : 'expand_more' }}</mat-icon></td>
+                <td><mat-icon class="hr-chev" aria-hidden="true">chevron_right</mat-icon></td>
               </tr>
               <tr class="hr-form" *ngIf="editing === key(d.date, m.meal)">
                 <td [attr.colspan]="10">
@@ -92,26 +93,6 @@
                   <div class="hr-acts">
                     <button type="button" class="btn-cta" [disabled]="busy" (click)="saveFigures(d.date, m)">Save figures</button>
                     <button type="button" class="btn-ghost" (click)="editing = ''">Cancel</button>
-                  </div>
-                </td>
-              </tr>
-              <tr class="hr-more" *ngIf="expanded.has(key(d.date, m.meal))">
-                <td [attr.colspan]="10">
-                  <div class="hr-more-in">
-                    <div class="hr-depts">
-                      <div class="hr-dh">By department (staff)</div>
-                      <div class="hr-drow" *ngFor="let x of m.perDept; trackBy: trackDept">
-                        <span class="grow">{{ x.department?.name || 'No department' }}</span><b>{{ x.served }}</b>
-                        <span class="hx-muted" *ngIf="x.flagged || x.refused">{{ x.flagged }} without attendance · {{ x.refused }} refused</span>
-                      </div>
-                      <p class="hx-muted" *ngIf="!m.perDept.length">Nobody from the staff was served.</p>
-                    </div>
-                    <div class="hr-side">
-                      <div>Veg {{ m.veg }} · Non-veg {{ m.nonVeg }} · {{ m.blocked }} blocked · {{ m.extra }} extra plates</div>
-                      <div *ngIf="m.hasFigures">Prepared {{ m.vegPrepared }} Veg · {{ m.nonVegPrepared }} Non-veg<ng-container *ngIf="m.leftoverKg !== null"> · {{ m.leftoverKg }} kg left</ng-container></div>
-                      <div *ngIf="m.note" class="hx-muted">“{{ m.note }}”</div>
-                      <button type="button" class="pill-btn" *ngIf="m.hasFigures && !filtered" (click)="startFigures(d.date, m)"><mat-icon>edit</mat-icon>Edit kitchen figures</button>
-                    </div>
                   </div>
                 </td>
               </tr>
@@ -159,4 +140,30 @@
       </div>
     </section>
   </ng-container>
+
+  <!-- Meal details: slide panel (side on desktop, bottom on phones) -->
+  <app-slide-panel [open]="!!openMeal" icon="restaurant"
+                   [title]="openMeal ? openMeal.meal.label : ''"
+                   [subtitle]="openMeal ? dayLabel(openMeal.date) + ' · ' + openMeal.meal.served + ' served' : ''"
+                   (closed)="openKey = ''">
+    <ng-container *ngIf="openMeal as o">
+      <div class="hr-side">
+        <div>Veg {{ o.meal.veg }} · Non-veg {{ o.meal.nonVeg }} · {{ o.meal.blocked }} blocked · {{ o.meal.extra }} extra plates</div>
+        <div>{{ o.meal.guests }} guest plates · {{ o.meal.flagged }} without attendance · {{ o.meal.refused }} refused</div>
+        <div *ngIf="o.meal.hasFigures">Prepared {{ o.meal.vegPrepared }} Veg · {{ o.meal.nonVegPrepared }} Non-veg<ng-container *ngIf="o.meal.leftoverKg !== null"> · {{ o.meal.leftoverKg }} kg left</ng-container></div>
+        <div *ngIf="o.meal.note" class="hx-muted">“{{ o.meal.note }}”</div>
+        <button type="button" class="pill-btn" *ngIf="!filtered && (o.meal.hasFigures || o.meal.closed)" (click)="editFromPanel(o.date, o.meal)">
+          <mat-icon>{{ o.meal.hasFigures ? 'edit' : 'add' }}</mat-icon>{{ o.meal.hasFigures ? 'Edit kitchen figures' : 'Add kitchen figures' }}
+        </button>
+      </div>
+      <div class="hr-depts">
+        <div class="hr-dh">By department (staff)</div>
+        <div class="hr-drow" *ngFor="let x of o.meal.perDept; trackBy: trackDept">
+          <span class="grow">{{ x.department?.name || 'No department' }}</span><b>{{ x.served }}</b>
+          <span class="hx-muted hr-dsub" *ngIf="x.flagged || x.refused">{{ x.flagged }} without attendance · {{ x.refused }} refused</span>
+        </div>
+        <p class="hx-muted" *ngIf="!o.meal.perDept.length">Nobody from the staff was served.</p>
+      </div>
+    </ng-container>
+  </app-slide-panel>
 </div>

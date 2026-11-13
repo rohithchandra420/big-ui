@@ -15,10 +15,12 @@
 
   <!-- Day picker -->
   <div class="ht-daybar" *ngIf="day?.plan">
-    <button type="button" class="pill-btn" (click)="shiftDay(-1)" aria-label="Previous day"><mat-icon>chevron_left</mat-icon></button>
-    <div class="ht-dname"><b>{{ dayLabel }}</b><small>{{ isToday ? 'Today' : '' }}{{ isToday && messDayText ? ' · ' : '' }}{{ messDayText }}</small></div>
-    <button type="button" class="pill-btn" (click)="shiftDay(1)" aria-label="Next day"><mat-icon>chevron_right</mat-icon></button>
-    <button type="button" class="pill-btn" *ngIf="!isToday" (click)="date = null; load(true)"><mat-icon>today</mat-icon>Back to today</button>
+    <div class="day-nav">
+      <button type="button" class="pill-btn" (click)="shiftDay(-1)" aria-label="Previous day"><mat-icon>chevron_left</mat-icon></button>
+      <div class="day-nav-label ht-dname"><b>{{ dayLabel }}</b><small>{{ isToday ? 'Today' : '' }}{{ isToday && messDayText ? ' · ' : '' }}{{ messDayText }}</small></div>
+      <button type="button" class="pill-btn" (click)="shiftDay(1)" aria-label="Next day"><mat-icon>chevron_right</mat-icon></button>
+    </div>
+    <button type="button" class="pill-btn day-nav-today" *ngIf="!isToday" (click)="date = null; load(true)"><mat-icon>today</mat-icon>Back to today</button>
   </div>
 
   <div class="warn-banner" *ngIf="day && !day.plan">
@@ -119,13 +121,15 @@
               <button type="button" class="pill-btn hx-wa" (click)="copyWhatsapp()"><mat-icon>chat</mat-icon>Copy for WhatsApp</button>
             </div>
             <pre class="hx-wa-prev" *ngIf="whatsapp">{{ whatsapp }}</pre>
-            <button type="button" class="pill-btn ht-who" [attr.aria-expanded]="whoOpen" (click)="toggleWho()">
-              <mat-icon>{{ whoOpen ? 'expand_less' : 'checklist' }}</mat-icon><ng-container *ngIf="whoOpen">Hide who&#39;s counted</ng-container><ng-container *ngIf="!whoOpen">Who&#39;s counted ({{ s.expected.total }})</ng-container>
+            <button type="button" class="pill-btn ht-who" aria-haspopup="dialog" (click)="toggleWho()">
+              <mat-icon>checklist</mat-icon>Who&#39;s counted ({{ s.expected.total }})
             </button>
-            <div class="hx-eopen" *ngIf="whoOpen">
+            <!-- Who's counted: slide panel (side on desktop, bottom on phones) -->
+            <app-slide-panel [open]="whoOpen" icon="checklist" title="Who's counted"
+                             [subtitle]="dayLabel + ' · ' + s.expected.total + ' expected'" (closed)="toggleWho()">
               <p class="hx-muted" *ngIf="!who">Loading…</p>
               <app-expected-list [data]="who"></app-expected-list>
-            </div>
+            </app-slide-panel>
           </div>
         </section>
 

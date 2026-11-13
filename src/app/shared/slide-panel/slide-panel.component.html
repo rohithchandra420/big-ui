@@ -1,0 +1,17 @@
+<ng-container *ngIf="open">
+  <div class="sp-backdrop" (click)="close()"></div>
+  <aside class="sp-panel" role="dialog" aria-modal="true" [attr.aria-label]="title">
+    <div class="sp-grab" aria-hidden="true"></div>
+    <header class="sp-head">
+      <mat-icon class="ms-fill sp-ic" *ngIf="icon">{{ icon }}</mat-icon>
+      <div class="sp-titles">
+        <div class="sp-title">{{ title }}</div>
+        <div class="sp-sub" *ngIf="subtitle">{{ subtitle }}</div>
+      </div>
+      <button type="button" class="sp-x" aria-label="Close" (click)="close()"><mat-icon>close</mat-icon></button>
+    </header>
+    <div class="sp-body">
+      <ng-content></ng-content>
+    </div>
+  </aside>
+</ng-container>

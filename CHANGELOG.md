@@ -13,6 +13,24 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.50.1] - 2026-11-13
+
+### Changed
+- **Details slide in instead of opening inside the page.** On desktop a panel slides in from the right; on phones it slides up from the bottom. Close it with ✕, Esc or a tap outside.
+  - **Hospitality › Stay:** tapping a unit shows its availability, notes, the people staying and Edit / Delete / On the map. **One unit**, **Many at once** and **Edit** open their form in the panel too.
+  - **Hospitality › Report:** tapping a meal row shows its Veg / Non-veg split, guests, people without attendance, refused plates, the kitchen figures and the breakdown by department, with Add or Edit kitchen figures.
+  - **Hospitality › Today:** Who's counted opens the expected list in the panel.
+  - **Hospitality › Guests:** Add guest and a guest's details (passes, Issue pass, Edit, Delete) open in the panel; the guest list now uses the full width.
+- **Hospitality › Serving desk › Expected:** the day is picked with the same ‹ date › stepper as the Report (starting on today) instead of a date box. On phones the four meals share one row.
+- **Back to today** on every day stepper that is away from today: Today, Report, Serving desk, and Stay's night counts and calendar.
+
+### Fixed
+- **Phones: the tab row under the page title flickered** while scrolling (seen on real phones, not in a desktop browser's phone view). It now hides only after a steady scroll down, comes back after a steady scroll up, ignores the bounce at the end of a page, and stays put on pages that barely scroll.
+- **Phones: the date steppers were misaligned** on Hospitality › Today, Report and Stay. ‹ date › now stays together on one centred row; on Report the Day / Date range switch, the dates and the other filters each get their own row.
+- **Phones: Hospitality › Stay filters** — the Type and Night filters now share one row under the search.
+
+---
+
 ## [1.50.0] - 2026-11-12
 
 ### Added

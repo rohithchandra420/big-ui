@@ -167,9 +167,15 @@
         </div>
         <div class="hx-bd">
           <div class="hx-epick" role="group" aria-label="Pick a day and meal">
-            <input type="date" [(ngModel)]="expDate" (ngModelChange)="pickExpected()" aria-label="Day" />
-            <button type="button" class="toggle-chip" *ngFor="let m of expMeals; trackBy: trackMealChip" [class.on]="expPicked && expMeal === m.key" (click)="expMeal = m.key; pickExpected()">{{ m.label }}</button>
-            <button type="button" class="pill-btn" *ngIf="expPicked" (click)="resetExpected()"><mat-icon>schedule</mat-icon>Now</button>
+            <div class="day-nav">
+              <button type="button" class="pill-btn" (click)="shiftExpDay(-1)" aria-label="Previous day"><mat-icon>chevron_left</mat-icon></button>
+              <span class="day-nav-label hx-eday"><b>{{ expDayLabel }}</b><small *ngIf="expIsToday">Today</small></span>
+              <button type="button" class="pill-btn" (click)="shiftExpDay(1)" aria-label="Next day"><mat-icon>chevron_right</mat-icon></button>
+            </div>
+            <div class="hx-emeals">
+              <button type="button" class="toggle-chip" *ngFor="let m of expMeals; trackBy: trackMealChip" [class.on]="expPicked && expMeal === m.key" (click)="expMeal = m.key; pickExpected()">{{ m.label }}</button>
+            </div>
+            <button type="button" class="pill-btn day-nav-today" *ngIf="expPicked" (click)="resetExpected()"><mat-icon>today</mat-icon>Back to today</button>
           </div>
           <div class="hx-eopen"><app-expected-list [data]="expected"></app-expected-list></div>
         </div>
