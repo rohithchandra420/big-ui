@@ -1,0 +1,88 @@
+/* WASH › Monitor. Full width like Bookings. Every text rule sets its colour. */
+.wm-page { padding: 0; color: var(--text-primary); }   /* the app shell pads every page (like Bookings) — never add page padding */
+.wm-maplink, .wm-scan { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.wm-hbtns { display: flex; gap: 8px; flex-wrap: wrap; }
+.wm-panel-acts { margin-bottom: 14px; }
+.wm-big { padding: 11px 12px; font-size: 14px; }
+.wm-scanned { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #2f855a; margin: 0 0 8px; }
+.wm-ic { font-size: 16px; width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; }
+.wm-muted { color: var(--text-secondary); font-size: 13px; margin: 8px 0; }
+
+.t-ns { --sc: #64748b; --sb: #eef1f5; }
+.t-ok { --sc: #2f855a; --sb: #e6f4ec; }
+.t-soon { --sc: #b7791f; --sb: #fdf3e1; }
+.t-over { --sc: #c2410c; --sb: #fdebe2; }
+.t-empty { --sc: #1d4ed8; --sb: #e5ecfd; }
+.t-ooo { --sc: #6b7280; --sb: #eceef1; }
+
+.wm-strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.wm-st { font: inherit; text-align: left; background: #fff; border: 1px solid var(--border-default); border-radius: 12px;
+  padding: 10px 12px; cursor: pointer; color: var(--text-primary); }
+.wm-st.on { outline: 2px solid var(--color-primary); }
+.wm-st b { display: block; font-size: 22px; line-height: 1.1; color: var(--text-primary); }
+.wm-st small { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); }
+.wm-st i { width: 8px; height: 8px; border-radius: 50%; background: var(--sc); }
+
+.wm-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+.wm-kind { display: flex; background: #fff; border: 1px solid var(--border-default); border-radius: 99px; padding: 3px; }
+.wm-kind button { font: inherit; font-size: 13px; border: 0; background: none; padding: 5px 12px; border-radius: 99px; cursor: pointer;
+  color: var(--text-secondary); display: flex; gap: 5px; align-items: center; }
+.wm-kind button.on { background: var(--color-primary); color: #fff; }
+.wm-kind mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.wm-search { flex: 1; min-width: 180px; }
+
+.wm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+.wm-card { background: #fff; border: 1px solid var(--border-default); border-radius: 14px; padding: 12px;
+  display: flex; flex-direction: column; gap: 10px; position: relative; color: var(--text-primary); }
+.wm-card::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 4px; border-radius: 0 4px 4px 0; background: var(--sc); }
+/* The card takes its state's colour: border + soft tint. Problems are stronger. */
+.wm-card.t-soon, .wm-card.t-over, .wm-card.t-empty, .wm-card.t-ooo { border-color: var(--sc); background: var(--sb); }
+.wm-card.t-over, .wm-card.t-empty { box-shadow: 0 0 0 1px var(--sc); }
+.wm-card.t-over .wm-txt b, .wm-card.t-empty .wm-txt b { color: var(--sc); }
+/* Out of order: hatched, dashed, greyed — clearly not in use */
+.wm-card.t-ooo { border-style: dashed; border-width: 2px;
+  background: repeating-linear-gradient(135deg, #eceef1 0 10px, #e1e4e8 10px 20px); }
+.wm-card.t-ooo .wm-txt b { color: #4b5563; text-decoration: line-through; }
+.wm-card.t-ooo .wm-txt small { color: #4b5563; }
+.wm-card.t-ooo .wm-ring { filter: grayscale(1); opacity: .7; }
+.wm-card.t-ooo .wm-pill { background: #4b5563; color: #fff; }
+.wm-card.t-over .wm-pill, .wm-card.t-empty .wm-pill { background: var(--sc); color: #fff; }
+.wm-top { font: inherit; display: flex; gap: 12px; align-items: center; background: none; border: 0; padding: 0; text-align: left;
+  cursor: pointer; color: var(--text-primary); }
+.wm-ring { --p: 0; flex: none; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
+  background: conic-gradient(var(--sc) calc(var(--p) * 1%), #f0f0f0 0); color: #6b46c1; }
+.wm-ring.k-water { color: #2b6cb0; }
+.wm-ring > span { width: 44px; height: 44px; border-radius: 50%; background: #fff; display: grid; place-items: center; }
+.wm-txt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wm-txt b { font-size: 14.5px; color: var(--text-primary); overflow-wrap: anywhere; }
+.wm-txt small { font-size: 12px; color: var(--text-secondary); }
+.wm-pill { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 700; padding: 1px 8px;
+  border-radius: 99px; background: var(--sb); color: var(--sc); }
+.wm-pill mat-icon { font-size: 14px; width: 14px; height: 14px; }
+
+.wm-acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.wm-act { font: inherit; font-size: 12.5px; font-weight: 600; border: 1px solid var(--border-default); background: #fff;
+  border-radius: 8px; padding: 6px 10px; cursor: pointer; display: inline-flex; gap: 5px; align-items: center; color: var(--text-primary); }
+.wm-act.main { background: var(--color-primary); border-color: var(--color-primary); color: #fff; flex: 1; justify-content: center; }
+.wm-act:disabled { opacity: .6; cursor: default; }
+.wm-act mat-icon { font-size: 17px; width: 17px; height: 17px; }
+
+.wm-empty { text-align: center; padding: 40px 16px; color: var(--text-secondary); }
+.wm-empty mat-icon { font-size: 40px; width: 40px; height: 40px; color: var(--color-primary); }
+.wm-empty p { color: var(--text-secondary); }
+
+.wm-note { background: #f7f8f6; border: 1px solid var(--border-default); border-radius: 12px; padding: 12px; margin-bottom: 14px; color: var(--text-primary); }
+.wm-note textarea { width: 100%; }
+.wm-kv { display: grid; grid-template-columns: 110px 1fr; gap: 6px 10px; font-size: 13px; margin: 0 0 14px; color: var(--text-primary); }
+.wm-kv dt { color: var(--text-secondary); font-weight: 600; }
+.wm-kv dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
+.wm-tl { list-style: none; margin: 0; padding: 0; }
+.wm-tl li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; font-size: 13px; padding-bottom: 10px; color: var(--text-primary); }
+.wm-tl mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--color-secondary); }
+.wm-tl small { display: block; font-size: 12px; color: var(--text-secondary); overflow-wrap: anywhere; }
+
+@media (max-width: 900px) { .wm-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 768px) {
+  .wm-maplink { display: none; }
+  .wm-grid { grid-template-columns: minmax(0, 1fr); }
+}

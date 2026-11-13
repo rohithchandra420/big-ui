@@ -46,6 +46,11 @@ import { MedicalDeskComponent } from "../medical/desk/medical-desk.component";
 import { MedicalRecordsComponent } from "../medical/records/medical-records.component";
 import { MedicalPatientComponent } from "../medical/patient/medical-patient.component";
 import { MedicalReportComponent } from "../medical/report/medical-report.component";
+import { WashGuard } from "../wash/wash.guard";
+import { WashMonitorComponent } from "../wash/monitor/wash-monitor.component";
+import { WashSetupComponent } from "../wash/setup/wash-setup.component";
+import { WashStockComponent } from "../wash/stock/wash-stock.component";
+import { WashReportComponent } from "../wash/report/wash-report.component";
 import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
@@ -111,6 +116,11 @@ const appRoutes: Routes = [
     { path: 'medical/records', canActivate: [AuthGuard, MedicalGuard], component: MedicalRecordsComponent },
     { path: 'medical/report', canActivate: [AuthGuard, MedicalGuard], component: MedicalReportComponent },
     { path: 'medical/patients/:id', canActivate: [AuthGuard, MedicalGuard], component: MedicalPatientComponent },
+    // WASH (WASH_CONTEXT.md): Monitor = the WASH team + wash grants; Setup = DEV/DIR/ADMIN, WASH TL, wash:manage.
+    { path: 'wash', canActivate: [AuthGuard, WashGuard], component: WashMonitorComponent },
+    { path: 'wash/stock', canActivate: [AuthGuard, WashGuard], component: WashStockComponent },
+    { path: 'wash/report', canActivate: [AuthGuard, WashGuard], component: WashReportComponent },
+    { path: 'wash/setup', canActivate: [AuthGuard, WashGuard], component: WashSetupComponent, data: { washManage: true } },
     { path: 'workshops', canActivate: [AuthGuard], component: WorkshopPlannerComponent },
     // A session's lists and door — the Workshop team (members, workshop:write, the Plan group).
     { path: 'workshops/sessions/:id', canActivate: [AuthGuard, WorkshopRunGuard], component: SessionListsComponent },

@@ -1305,6 +1305,13 @@ select:focus {
 /* Mess Hall open / closed dot (Hospitality) — sits on the pin's top-right. */
 .vm-status { position: absolute; right: -4px; top: -4px; width: 12px; height: 12px; border-radius: 50%; background: #9ca3af; border: 2px solid #fff; }
 .vm-status.open { background: #16a34a; }
+/* WASH facility pins (WASH WA1): dot colour by state */
+.vm-status.wash-ok { background: #2f855a; }
+.vm-status.wash-due_soon { background: #d69e2e; }
+.vm-status.wash-overdue { background: #c2410c; }
+.vm-status.wash-empty { background: #1d4ed8; }
+.vm-status.wash-out_of_order { background: #4b5563; }
+.vm-status.wash-not_started { background: #cbd5e1; }
 .vm-area-ic {
   width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
   border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, .3); opacity: .92;

@@ -104,6 +104,12 @@ export class NavAccessService implements OnDestroy {
   /** Medical Desk: DEV, DIR, the Medical department, medical grants — never ADMIN. */
   get canSeeMedical(): boolean { return this.authService.canUseMedical(this.user); }
 
+  /** WASH › Monitor: the WASH team and wash grants (any tier). */
+  get canSeeWash(): boolean { return this.authService.canViewWash(this.user); }
+
+  /** WASH › Setup: DEV/DIR/ADMIN, the WASH TL, wash:manage. */
+  get canSeeWashSetup(): boolean { return this.authService.canManageWash(this.user); }
+
   get canSeeAdminMenu(): boolean { return ADMIN_MENU_ROLES.includes(this.role); }
 
   /** Departments, Events, Announcements, Public Page. */
@@ -131,6 +137,10 @@ export class NavAccessService implements OnDestroy {
       case '/medical':
       case '/medical/records':
       case '/medical/report': return this.canSeeMedical;
+      case '/wash':
+      case '/wash/stock':
+      case '/wash/report': return this.canSeeWash;
+      case '/wash/setup': return this.canSeeWashSetup;
       case '/admin/user': return this.canSeeAdminMenu;
       case '/admin/departments':
       case '/admin/events':

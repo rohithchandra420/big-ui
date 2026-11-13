@@ -117,6 +117,28 @@ export class AuthService {
         return (user.permissions || []).some(p => p.startsWith('medical:'));
     }
 
+    /** WASH (WASH_CONTEXT.md), same rule as big-api utils/washAccess.js —
+     *  Manage (Setup): DEV/DIR/ADMIN, the WASH department's TL, wash:manage. */
+    canManageWash(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        if (user.role === 'TL' && this.inDepartmentKey(user, 'wash')) return true;
+        return (user.permissions || []).includes('wash:manage');
+    }
+
+    /** Log (Refilled / Cleaned / …): the Manage group, every WASH member, wash:write. */
+    canLogWash(user: User | null): boolean {
+        if (!user) return false;
+        if (this.canManageWash(user) || this.inDepartmentKey(user, 'wash')) return true;
+        return (user.permissions || []).includes('wash:write');
+    }
+
+    /** View (Monitor, no buttons): the Log group and wash:read (any tier). */
+    canViewWash(user: User | null): boolean {
+        if (!user) return false;
+        return this.canLogWash(user) || (user.permissions || []).some(p => p.startsWith('wash:'));
+    }
+
     hasDepartmentAccess(user: User, deptName: string): boolean {
         return (user.departments || []).some(d =>
             d.department?.name?.toLowerCase() === deptName.toLowerCase()

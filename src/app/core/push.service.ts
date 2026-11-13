@@ -8,6 +8,8 @@ export interface NotificationPrefs {
   emailBatch: boolean;
   announcements: boolean;
   meals: boolean;
+  /** WASH alerts: a facility overdue / empty / out of order, stock running low. */
+  wash: boolean;
 }
 
 export interface PushConfig {

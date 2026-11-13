@@ -165,4 +165,28 @@ describe('MapViewComponent', () => {
     expect((c as any).popup('<b>x</b>', 'map.boundary', [1, 2])).toContain('&lt;b&gt;x&lt;/b&gt;');
     fixture.destroy();
   });
+
+  it('shows a WASH facility\'s status: a dot on the pin and one word in the popup', async () => {
+    TestBed.configureTestingModule({ imports: [MapViewComponent] });
+    const fixture = TestBed.createComponent(MapViewComponent);
+    const c = fixture.componentInstance;
+    c.pins = [
+      { ...pins[0], wash: 'refilled' }, { ...pins[1], wash: 'empty' },
+      { ...pins[2], wash: 'closed' },   // toilets out of order
+    ];
+    c.areas = [];
+    c.ngOnChanges();
+    fixture.detectChanges();
+    for (let i = 0; i < 50 && !c.ready && !c.failed; i++) await new Promise(r => setTimeout(r, 100));
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelectorAll('.pub-pin b').length).toBe(3);
+    expect(el.querySelectorAll('.pub-pin b.open').length).toBe(1);
+    const pop = (pin?: PublicMapPin, wash?: any) => (c as any).popup('x', 'map.water', [1, 2], pin, wash) as string;
+    expect(pop(c.pins[0])).toContain('<div class="pp-status open">Refilled</div>');
+    expect(pop(c.pins[1])).toContain('<div class="pp-status closed">Empty</div>');
+    expect(pop(c.pins[2])).toContain('<div class="pp-status closed">Closed</div>');
+    expect(pop(undefined, 'open')).toContain('<div class="pp-status open">Open</div>');   // a Washroom area
+    expect(pop(pins[0])).not.toContain('pp-status');                                          // not set up in WASH
+    fixture.destroy();
+  });
 });
