@@ -205,7 +205,7 @@ export class AttendeeListComponent implements OnChanges {
     if (!user) return false;
     if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
     return this.authService.hasPermission(user, 'box-office:write')
-      || this.authService.hasDepartmentAccess(user, 'Box Office');
+      || this.authService.inDepartmentKey(user, 'box-office');
   }
 
   private bandChanged(updated: Shopcart) {

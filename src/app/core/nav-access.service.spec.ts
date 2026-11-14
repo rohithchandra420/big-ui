@@ -23,11 +23,13 @@ describe('NavAccessService', () => {
     auth = {
       user: user$,
       hasPermission: jasmine.createSpy('hasPermission').and.returnValue(false),
-      hasDepartmentAccess: jasmine.createSpy('hasDepartmentAccess').and.returnValue(false),
+      inDepartmentKey: jasmine.createSpy('inDepartmentKey').and.returnValue(false),
       canPlanWorkshops: jasmine.createSpy('canPlanWorkshops').and.returnValue(false),
       canReadWorkshops: jasmine.createSpy('canReadWorkshops').and.returnValue(false),
       canManageHospitality: jasmine.createSpy('canManageHospitality').and.returnValue(false),
       canUseMedical: jasmine.createSpy('canUseMedical').and.returnValue(false),
+      // Accommodation (key `tenting`): top roles by default, like the real service.
+      canReadTenting: jasmine.createSpy('canReadTenting').and.callFake((u: any) => ['DEV', 'DIR', 'ADMIN'].includes(u?.role)),
     };
     TestBed.configureTestingModule({
       providers: [
@@ -58,13 +60,20 @@ describe('NavAccessService', () => {
   });
 
   it('a Box Office volunteer sees Box Office and only Inventory under Accommodation', () => {
-    auth.hasDepartmentAccess.and.callFake((_u: any, d: string) => d === 'Box Office');
+    auth.inDepartmentKey.and.callFake((_u: any, k: string) => k === 'box-office');
     user$.next({ _id: 'u2', role: 'VOL' });
     expect(labels('box-office')).toEqual(['Bookings', 'Registration']);
     expect(labels('accommodation')).toEqual(['Inventory', 'Fields']);
     expect(labels('workshops')).toEqual(['Planner']);
     expect(svc.canSeeSection('admin')).toBeFalse();
     expect(svc.canSeeSection('hospitality')).toBeFalse();
+  });
+
+  it('the Tenting team sees all of Accommodation (Setup too), and nothing of Box Office', () => {
+    auth.canReadTenting.and.returnValue(true);
+    user$.next({ _id: 'u5', role: 'VOL' });
+    expect(labels('accommodation')).toEqual(['Inventory', 'Setup', 'Fields']);
+    expect(svc.canSeeSection('box-office')).toBeFalse();
   });
 
   it('a Team Lead sees only Users under Admin; Email Report needs an Admin-menu role too', () => {

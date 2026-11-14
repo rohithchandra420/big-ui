@@ -7,6 +7,8 @@ import { DepartmentDetailComponent } from './department-detail.component';
 import { AdminService, DeptDetail } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
 import { AuthService } from '../../../core/auth.service';
+import { AppSelectComponent } from '../../../shared/app-select/app-select.component';
+import { AppOptionComponent } from '../../../shared/app-select/app-option.component';
 
 const mockDetail: DeptDetail = {
   _id: 'd1',
@@ -38,13 +40,13 @@ describe('DepartmentDetailComponent', () => {
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
 
     adminServiceSpy.getDepartments.and.returnValue(of([
-      { _id: 'd-m1', name: 'Music Stage A', key: 'music' }, { _id: 'd-x', name: 'Operations', key: 'operations' }
+      { _id: 'd-m1', name: 'Workshop Tent A', key: 'workshop' }, { _id: 'd-x', name: 'Operations', key: 'general' }
     ] as any));
     adminServiceSpy.getDepartmentDetail.and.returnValue(of(mockDetail));
     adminServiceSpy.getAllUsers.and.returnValue(of(allUsers));
 
     await TestBed.configureTestingModule({
-      declarations: [DepartmentDetailComponent],
+      declarations: [DepartmentDetailComponent, AppSelectComponent, AppOptionComponent],
       imports: [
         MatAutocompleteModule, ReactiveFormsModule
       ],
@@ -52,8 +54,7 @@ describe('DepartmentDetailComponent', () => {
         { provide: AdminService, useValue: adminServiceSpy },
         { provide: NotificationService, useValue: notificationSpy },
         { provide: AuthService, useValue: {
-          deptNameToKey: (n: string) => (n || '').toLowerCase().replace(/\s+/g, '-'),
-          deptKeyOf: (d: any) => d?.key || (d?.name || '').toLowerCase().replace(/\s+/g, '-')
+          deptKeyOf: (d: any) => (['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash'].includes(d?.key) ? d.key : (d ? 'general' : ''))
         } }
       ],
       schemas: [NO_ERRORS_SCHEMA]
@@ -108,29 +109,31 @@ describe('DepartmentDetailComponent', () => {
       fixture.detectChanges();
     });
 
-    it('suggests existing keys and says when the key is shared (shared keys)', () => {
-      expect(component.existingKeys).toEqual(['music', 'operations']);
-      component.editForm.get('key')!.setValue('music');
-      expect(component.sharedWith).toBe('Music Stage A');
+    it('offers only the built-in keys, and says when the picked key is shared', () => {
+      expect(component.accessKeys.map(k => k.key)).toEqual(['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash']);
+      component.editForm.get('key')!.setValue('workshop');
+      expect(component.sharedWith).toBe('Workshop Tent A');
+      expect(component.keyAbout).toContain('door');
       fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain('Shared with: Music Stage A — same access');
-      component.editForm.get('key')!.setValue('brand-new');
+      expect(fixture.nativeElement.textContent).toContain('Shared with: Workshop Tent A — same access');
+      component.editForm.get('key')!.setValue('wash');
       expect(component.sharedWith).toBe('');
     });
 
-    it('starts blank, with a Key field that follows the name until edited', () => {
+    it('starts on "general" (no page access) and the key never follows the name', () => {
       expect(component.mode).toBe('create');
+      expect(component.editForm.get('key')!.value).toBe('general');
       component.editForm.get('name')!.setValue('Box Office');
-      expect(component.editForm.get('key')!.value).toBe('box-office');
-      component.editForm.get('key')!.setValue('gate');
-      component.onKeyInput();
-      component.editForm.get('name')!.setValue('Front Gate');
-      expect(component.editForm.get('key')!.value).toBe('gate');
+      expect(component.editForm.get('key')!.value).toBe('general');
+      expect(component.sharedWith).toBe('');   // nothing to share on "general"
+      expect(component.formInvalid).toBeFalse();
     });
 
-    it('refuses a bad key', () => {
+    it('refuses a key that is not built-in', () => {
       component.editForm.get('name')!.setValue('Ops');
-      component.editForm.get('key')!.setValue('Ops Team');
+      component.editForm.get('key')!.setValue('finance');
+      expect(component.formInvalid).toBeTrue();
+      component.editForm.get('key')!.setValue('');
       expect(component.formInvalid).toBeTrue();
     });
 
@@ -139,10 +142,11 @@ describe('DepartmentDetailComponent', () => {
       adminServiceSpy.createDepartment.and.returnValue(of({ _id: 'd5', name: 'Finance' }));
       adminServiceSpy.updateDepartment.and.returnValue(of({}));
       component.editForm.get('name')!.setValue('Finance');
+      component.editForm.get('key')!.setValue('wash');   // the picked built-in key is what is sent
       component.editedTls = [{ _id: 'tl2', name: 'Carol DIR' }];
       component.editedVolunteers = [{ _id: 'v3', name: 'Eve VOL' }];
       component.save();
-      expect(adminServiceSpy.createDepartment).toHaveBeenCalledWith({ name: 'Finance', key: 'finance', description: '' });
+      expect(adminServiceSpy.createDepartment).toHaveBeenCalledWith({ name: 'Finance', key: 'wash', description: '' });
       expect(adminServiceSpy.updateDepartment).toHaveBeenCalledWith('d5', { addUserIds: ['tl2', 'v3'] });
       expect(changed).toHaveBeenCalledWith('d5');
       expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Department created');

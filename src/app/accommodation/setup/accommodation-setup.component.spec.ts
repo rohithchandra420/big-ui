@@ -7,6 +7,7 @@ import { AccommodationSetupComponent, suggestPassTypeCode, summarizeTentTypes } 
 import { AccomodationService } from '../../accomodation/accomodation.service';
 import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
+import { AuthService } from '../../core/auth.service';
 import { EventItem, EventDetail, PassType } from '../../models/event.model';
 import { Tent } from '../../models/tent.model';
 import { AppSelectComponent } from '../../shared/app-select/app-select.component';
@@ -134,6 +135,7 @@ describe('AccommodationSetupComponent', () => {
   let activeEventSubject: BehaviorSubject<EventItem | null>;
   let eventServiceStub: { activeEvent: BehaviorSubject<EventItem | null>; currentActiveEvent: EventItem | null; getEventDetail: jasmine.Spy; updatePassType: jasmine.Spy };
   let notificationSpy: jasmine.SpyObj<NotificationService>;
+  let authStub: { currentUser: any; canWriteTenting: jasmine.Spy };
 
   const mockEvent = { _id: 'event1', name: 'Test Event' } as EventItem;
   let codedPassType: PassType;
@@ -155,8 +157,11 @@ describe('AccommodationSetupComponent', () => {
       tents: []
     } as any;
 
-    accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', ['createTents', 'getAllTents']);
+    accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', ['createTents', 'getAllTents', 'getTentPassTypes']);
     accomodationServiceSpy.getAllTents.and.returnValue(of([]));
+    // The server sends only the Tent-category pass types.
+    accomodationServiceSpy.getTentPassTypes.and.returnValue(of([codedPassType, codelessPassType]));
+    authStub = { currentUser: { role: 'ADMIN' }, canWriteTenting: jasmine.createSpy('canWriteTenting').and.returnValue(true) };
     activeEventSubject = new BehaviorSubject<EventItem | null>(mockEvent);
     eventServiceStub = {
       activeEvent: activeEventSubject,
@@ -173,6 +178,7 @@ describe('AccommodationSetupComponent', () => {
         { provide: AccomodationService, useValue: accomodationServiceSpy },
         { provide: EventService, useValue: eventServiceStub },
         { provide: NotificationService, useValue: notificationSpy },
+        { provide: AuthService, useValue: authStub },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -183,26 +189,52 @@ describe('AccommodationSetupComponent', () => {
   });
 
   it('loads only tent-category pass types for the active event', () => {
-    expect(eventServiceStub.getEventDetail).toHaveBeenCalledWith('event1');
+    expect(accomodationServiceSpy.getTentPassTypes).toHaveBeenCalledWith('event1');
+    expect(eventServiceStub.getEventDetail).not.toHaveBeenCalled();   // that one is DEV/DIR/ADMIN only
     expect(component.tentPassTypes).toEqual([codedPassType, codelessPassType]);
   });
 
+  describe('by Tenting tier', () => {
+    it('Read: sees the page but no create form, and submit does nothing', () => {
+      authStub.currentUser = { role: 'VOL' };
+      authStub.canWriteTenting.and.returnValue(false);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.setup-form')).toBeNull();
+      component.form.setValue({ passTypeId: 'pt1', capacity: 2, quantity: 1, code: '' });
+      component.submit();
+      expect(accomodationServiceSpy.createTents).not.toHaveBeenCalled();
+    });
+
+    it('Write (not DEV/DIR/ADMIN): creates units, but can\'t add a missing pass type code', () => {
+      authStub.currentUser = { role: 'VOL' };
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.setup-form')).not.toBeNull();
+      expect(component.canSetCode).toBeFalse();
+      component.form.setValue({ passTypeId: 'pt2', capacity: 2, quantity: 1, code: 'SO' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('has no code yet. Ask a Director or Admin');
+      component.submit();
+      expect(eventServiceStub.updatePassType).not.toHaveBeenCalled();
+      expect(accomodationServiceSpy.createTents).not.toHaveBeenCalled();
+    });
+  });
+
   it('flags noActiveEvent when the active event changes to none, and clears the pass type list', () => {
-    eventServiceStub.getEventDetail.calls.reset();
+    accomodationServiceSpy.getTentPassTypes.calls.reset();
     activeEventSubject.next(null);
     expect(component.noActiveEvent).toBeTrue();
     expect(component.tentPassTypes).toEqual([]);
-    expect(eventServiceStub.getEventDetail).not.toHaveBeenCalled();
+    expect(accomodationServiceSpy.getTentPassTypes).not.toHaveBeenCalled();
   });
 
   it('reacts to the active event resolving after startup (the race this subscription exists for)', () => {
     activeEventSubject.next(null); // simulates ngOnInit running before EventService's own load resolves
     expect(component.noActiveEvent).toBeTrue();
 
-    eventServiceStub.getEventDetail.calls.reset();
+    accomodationServiceSpy.getTentPassTypes.calls.reset();
     activeEventSubject.next(mockEvent); // resolves a moment later
     expect(component.noActiveEvent).toBeFalse();
-    expect(eventServiceStub.getEventDetail).toHaveBeenCalledWith('event1');
+    expect(accomodationServiceSpy.getTentPassTypes).toHaveBeenCalledWith('event1');
   });
 
   it('needsCode is false for a pass type that already has one', () => {

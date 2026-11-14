@@ -8,6 +8,7 @@ import { Router } from "@angular/router";
 import { environment } from "src/environments/environment.development";
 import { NotificationService } from "./notification.service";
 import { PushService } from "./push.service";
+import { DEFAULT_ACCESS_KEY, accessKey, isAccessKey } from "./access-keys";
 
 @Injectable()
 export class AuthService {
@@ -31,15 +32,13 @@ export class AuthService {
         return user.permissions || [];
     }
 
-    deptNameToKey(name: string): string {
-        return (name || '').toLowerCase().replace(/\s+/g, '-');
-    }
-
-    /** A department's permission key: its fixed `key`, or the name-based key
-     *  for departments not migrated yet (same fallback as big-api's deptKeyOf). */
+    /** A department's access key — always one of the built-in keys
+     *  (core/access-keys.ts): its stored `key` when that is a built-in one,
+     *  otherwise "general" (no page access). The NAME is never used — same
+     *  rule as big-api's deptKeyOf. */
     deptKeyOf(dept: { name?: string; key?: string } | null | undefined): string {
         if (!dept) return '';
-        return dept.key || this.deptNameToKey(dept.name || '');
+        return isAccessKey(dept.key) ? dept.key! : DEFAULT_ACCESS_KEY;
     }
 
     // Effective module -> best tier, including a TL's automatic 'manage' over their own department(s)
@@ -58,7 +57,8 @@ export class AuthService {
         if (user.role === 'TL') {
             (user.departments || []).forEach(d => {
                 const key = this.deptKeyOf(d.department);
-                if (key) map[key] = 'manage';
+                // Only keys that give something ("general" has no tiers).
+                if (key && accessKey(key)?.tiers.length) map[key] = 'manage';
             });
         }
         return map;
@@ -139,10 +139,33 @@ export class AuthService {
         return this.canLogWash(user) || (user.permissions || []).some(p => p.startsWith('wash:'));
     }
 
-    hasDepartmentAccess(user: User, deptName: string): boolean {
-        return (user.departments || []).some(d =>
-            d.department?.name?.toLowerCase() === deptName.toLowerCase()
-        );
+    /** Accommodation (key `tenting`), same rule as big-api utils/tentingAccess.js —
+     *  Read (see Setup, Inventory, Fields): DEV/DIR/ADMIN, every Tenting member, tenting:read and up. */
+    canReadTenting(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.inDepartmentKey(user, 'tenting') || this.hasPermission(user, 'tenting:read');
+    }
+
+    /** Write (create / edit / delete units, vacate): DEV/DIR/ADMIN, the Tenting TL, tenting:write and up.
+     *  (hasPermission counts a TL's automatic Manage on their own key.) */
+    canWriteTenting(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.hasPermission(user, 'tenting:write');
+    }
+
+    /** Manage (create, change and lay out tent fields): DEV/DIR/ADMIN, the Tenting TL, tenting:manage. */
+    canManageTentFields(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.hasPermission(user, 'tenting:manage');
+    }
+
+    /** Vacate a tent slot: the Tenting Write group, or Box Office Write (as before). */
+    canVacateTents(user: User | null): boolean {
+        if (!user) return false;
+        return this.canWriteTenting(user) || this.hasPermission(user, 'box-office:write');
     }
 
     get currentUser$() { return this.user.asObservable(); }

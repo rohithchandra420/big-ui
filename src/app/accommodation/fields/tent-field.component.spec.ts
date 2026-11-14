@@ -46,7 +46,11 @@ describe('TentFieldComponent', () => {
     confirm.confirm.and.returnValue(of(true));
     accom = jasmine.createSpyObj('AccomodationService', ['vacateTentSlot']);
     accom.vacateTentSlot.and.returnValue(of({} as any));
-    const auth = { get currentUser() { return { role, permissions: perms }; }, hasPermission: (_u: any, p: string) => perms.includes(p) };
+    const auth = {
+      get currentUser() { return { role, permissions: perms }; },
+      // Vacate: DEV/DIR/ADMIN, Tenting Write and up, or Box Office Write (as the real service).
+      canVacateTents: (u: any) => ['DEV', 'DIR', 'ADMIN'].includes(u?.role) || perms.includes('tenting:write') || perms.includes('box-office:write')
+    };
     await TestBed.configureTestingModule({
       imports: [FormsModule, MatIconModule, RouterTestingModule],
       declarations: [TentFieldComponent, FieldGridComponent, SectionHeaderStubComponent],

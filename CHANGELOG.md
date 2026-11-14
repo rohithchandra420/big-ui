@@ -13,6 +13,28 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.52.0] - 2026-11-14
+
+### Changed
+- **Access keys are now a built-in list.** A key only does something when a page uses it, so keys are no longer typed in: General (no page access), Box Office, Accommodation, Workshops, Hospitality, Medical Desk and WASH. A new key arrives together with its page.
+  - **Admin › Departments › Create:** the key is picked from a dropdown, with a line saying what that key gives the department's members. It starts on General. As before, the key can't be changed later, and several departments can share one.
+  - **Admin › Users › user form:** "Extra access" shows one row per key, always — even before a department uses it — and only the levels that key really has (Hospitality: Manage only; Medical Desk: Use). The picked level says what it gives. General has no row, since it gives nothing.
+  - Picking a user's home department picks **Read** on that department's key by default (when the key has a Read level); the rest is extra access. Changing the department moves that default.
+  - A new user no longer gets a "General: Read" entry. It gave nothing.
+- **Box Office staff are recognised by their department's key, not its name.** The Box Office menu, its pages, Accommodation › Inventory and Fields, and Replace band used to look for a department called "Box Office"; renaming it would have hidden them. A renamed (or second) Box Office department now keeps its access, and a department that is only named "Box Office" gets none.
+- **Accommodation has its own key ("tenting").** Until now Setup was for DEV / DIR / ADMIN only and nobody else could change inventory.
+  - **Read** — every member of a Tenting department, and Accommodation Read: see Setup, Inventory and Fields.
+  - **Write** — the Tenting Team Lead, and Accommodation Write: also create units in Setup, edit and delete units and vacate occupants in Inventory.
+  - **Manage** — the Tenting Team Lead, and Accommodation Manage: also create, change and lay out tent fields.
+  - Setup shows the summary cards to everyone who can open it; the create form only with Write. A pass type without a code still needs a Director or Admin to set it under Admin › Events.
+  - Box Office keeps what it had: Inventory, Fields and Vacate (with Box Office Write). Edit and Delete of units in Inventory now follow the Accommodation rule, where they belong.
+- A department is read by its key only. A department without a built-in key counts as General until its key is set.
+
+### Development
+- The e2e sample data gives departments built-in keys.
+
+---
+
 ## [1.51.0] - 2026-11-13
 
 ### Added
