@@ -85,6 +85,8 @@
   filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .18)) drop-shadow(0 22px 26px rgba(0, 0, 0, .30));
   animation: bb-pop .2s ease;
 }
+.bb-big.has-task { width: min(560px, 100%); transform: none; }
+.bb-status { display: block; margin-top: 8px; }
 .bb-big .bb-title { font-size: 36px; }
 .bb-big .bb-msg { display: block; font-size: 15px; white-space: pre-line; overflow: visible; }
 .bb-meta { display: grid; gap: 4px; margin-top: 18px; padding-top: 12px; border-top: 1px dashed rgba(0, 0, 0, .2); font-size: 12.5px; color: var(--ink); overflow-wrap: anywhere; }

@@ -28,6 +28,8 @@ describe('NavAccessService', () => {
       canReadWorkshops: jasmine.createSpy('canReadWorkshops').and.returnValue(false),
       canManageHospitality: jasmine.createSpy('canManageHospitality').and.returnValue(false),
       canUseMedical: jasmine.createSpy('canUseMedical').and.returnValue(false),
+      // Announcements: top roles by default, like the real service; Helpdesk in its own test.
+      canAnnounce: jasmine.createSpy('canAnnounce').and.callFake((u: any) => ['DEV', 'DIR', 'ADMIN'].includes(u?.role)),
       // Accommodation (key `tenting`): top roles by default, like the real service.
       canReadTenting: jasmine.createSpy('canReadTenting').and.callFake((u: any) => ['DEV', 'DIR', 'ADMIN'].includes(u?.role)),
     };
@@ -82,6 +84,14 @@ describe('NavAccessService', () => {
     expect(labels('admin')).toEqual(['Users', 'Email Report']);
     user$.next({ _id: 'u4', role: 'VOL' });
     expect(svc.canSeeSection('admin')).toBeFalse();
+  });
+
+  it('Helpdesk sees only Announcements under Admin', () => {
+    auth.canAnnounce.and.returnValue(true);
+    user$.next({ _id: 'u6', role: 'VOL' });
+    expect(labels('admin')).toEqual(['Announcements']);
+    user$.next({ _id: 'u7', role: 'TL' });
+    expect(labels('admin')).toEqual(['Users', 'Announcements']);
   });
 
   it('never shows UAT Reset to anyone but a Developer', () => {

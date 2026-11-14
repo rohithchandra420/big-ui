@@ -13,6 +13,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.56.0] - 2026-11-14
+
+### Added
+- **Helpdesk on Announcements (Helpdesk story 1).** Members of a Helpdesk department, and people granted Helpdesk Manage, see Admin › Announcements (and only that tab of Admin) and can use all of it.
+  - New built-in access key Helpdesk in Create Department and the user form.
+- **Tasks with a shared status and a timeline.**
+  - Announcements: the right panel now switches between Announcements (the Sent list) and Tasks, each using the panel's full height. Tasks load when that view is opened, with status chips (Open, New, Acknowledged, In Progress, Blocked, Closed, All). A task opens in a side panel with its timeline.
+  - Billboard: a Task note shows its status; the opened note shows the status, the buttons that move it on, and the timeline. Blocked asks for a reason.
+  - My Department: a "Tasks for <department>" card with the same list, shown once the department has a task.
+  - Only Helpdesk and DEV / DIR / ADMIN see Reopen on a Closed task.
+
+### Changed
+- Announcements page subtitle and the Task type's hint.
+
+---
+
 ## [1.55.0] - 2026-11-14
 
 ### Added

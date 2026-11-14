@@ -1,0 +1,45 @@
+<div class="tk-sheet">
+  <p class="tk-note" *ngIf="loading">Loading the task…</p>
+
+  <ng-container *ngIf="task as t">
+    <div class="tk-sheet-h">
+      <b>Status</b>
+      <app-task-pill [status]="t.status"></app-task-pill>
+      <span class="tk-note tk-shared" *ngIf="sharedWith">Shared with everyone in {{ sharedWith }}</span>
+    </div>
+
+    <div class="tk-acts" *ngIf="next.length && !blocking">
+      <button type="button" class="tk-act tk-s-{{ s.value }}" *ngFor="let s of next; trackBy: trackByValue" [disabled]="saving" (click)="pick(s.value)">
+        <mat-icon aria-hidden="true">{{ s.icon }}</mat-icon>{{ label(s) }}
+      </button>
+    </div>
+    <p class="tk-note" *ngIf="!t.canChange">
+      {{ t.status === 'closed' ? 'Closed. Helpdesk can reopen it.' : 'You see the status. Only the receiving department changes it.' }}
+    </p>
+
+    <div class="tk-block" *ngIf="blocking">
+      <label for="tk-why">What is blocking it? (required)</label>
+      <input id="tk-why" type="text" [(ngModel)]="note" [maxlength]="noteMax" placeholder="e.g. waiting for the water tanker" (keydown.enter)="confirmBlock()">
+      <div class="tk-block-acts">
+        <button type="button" class="btn-ghost" [disabled]="saving" (click)="cancelBlock()">Cancel</button>
+        <button type="button" class="tk-block-go" [disabled]="saving" (click)="confirmBlock()">{{ saving ? 'Saving…' : 'Mark Blocked' }}</button>
+      </div>
+    </div>
+  </ng-container>
+
+  <p class="tk-error" *ngIf="error" role="alert">{{ error }}</p>
+
+  <ng-container *ngIf="task">
+    <p class="tk-lbl">Timeline</p>
+    <ul class="tk-tl">
+      <li *ngFor="let h of timeline; trackBy: trackByIndex" class="tk-s-{{ h.status }}">
+        <span class="tk-dot"><mat-icon aria-hidden="true">{{ h.meta.icon }}</mat-icon></span>
+        <div>
+          <b>{{ h.meta.label }}</b> · {{ h.by || 'Someone' }}
+          <small>{{ h.at | date:'d MMM, h:mm a' }}</small>
+          <q *ngIf="h.note">{{ h.note }}</q>
+        </div>
+      </li>
+    </ul>
+  </ng-container>
+</div>

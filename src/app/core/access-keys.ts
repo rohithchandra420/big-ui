@@ -99,6 +99,13 @@ export const ACCESS_KEYS: AccessKey[] = [
       { tier: 'write', label: 'Write', gives: 'Also assign, reassign and free volunteers, and see deposit amounts' },
       { tier: 'manage', label: 'Manage', gives: 'Also record, correct and refund deposits, and ask volunteers for their location' }
     ]
+  },
+  {
+    key: 'helpdesk', label: 'Helpdesk',
+    about: 'Members send announcements and tasks, and follow every task.',
+    tiers: [
+      { tier: 'manage', label: 'Manage', gives: 'Announcements: send, send again, and follow and reopen tasks' }
+    ]
   }
 ];
 

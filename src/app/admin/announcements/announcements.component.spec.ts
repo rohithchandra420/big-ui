@@ -7,15 +7,22 @@ import { AnnouncementsComponent } from './announcements.component';
 import { PushService } from '../../core/push.service';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
-import { AdminService } from '../admin.service';
 import { AuthService } from '../../core/auth.service';
 import { AppSelectComponent } from '../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../shared/app-select/app-option.component';
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 /** Navigation Tabs: the page header now holds the tab row (tested on its own). */
 @Component({ selector: 'app-section-header', template: '' })
 class SectionHeaderStubComponent {}
+
+/** Helpdesk (HD1): the Tasks card (tested on its own). */
+@Component({ selector: 'app-task-list', template: '' })
+class TaskListStubComponent {
+  @Input() heading = '';
+  @Input() hint = '';
+  reload = jasmine.createSpy('reload');
+}
 
 describe('AnnouncementsComponent', () => {
   let fixture: ComponentFixture<AnnouncementsComponent>;
@@ -38,7 +45,8 @@ describe('AnnouncementsComponent', () => {
       sendAnnouncement: jasmine.createSpy('sendAnnouncement').and.callFake((b: any) =>
         Promise.resolve({ ...past, _id: 'a2', ...b, departments: depts.filter(d => b.departments.includes(d._id)), delivered: 5 })),
       resendAnnouncement: jasmine.createSpy('resendAnnouncement').and.resolveTo({ ...past, _id: 'a3', resentFrom: 'a1', delivered: 1 }),
-      publicSessions: jasmine.createSpy('publicSessions').and.resolveTo([])
+      publicSessions: jasmine.createSpy('publicSessions').and.resolveTo([]),
+      announcementDepartments: () => of(depts)
     };
     auth = { currentUser: { role: 'DIR' } };
     confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
@@ -46,11 +54,10 @@ describe('AnnouncementsComponent', () => {
     snack = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     TestBed.configureTestingModule({
       imports: [FormsModule, MatIconModule],
-      declarations: [AnnouncementsComponent, AppSelectComponent, AppOptionComponent, SectionHeaderStubComponent],
+      declarations: [AnnouncementsComponent, AppSelectComponent, AppOptionComponent, SectionHeaderStubComponent, TaskListStubComponent],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }), currentActiveEvent: { _id: 'e1', name: 'BiG 7.0' } } },
         { provide: PushService, useValue: push },
-        { provide: AdminService, useValue: { getDepartments: () => of(depts) } },
         { provide: AuthService, useValue: auth },
         { provide: ConfirmationService, useValue: confirm },
         { provide: NotificationService, useValue: snack }
@@ -100,6 +107,23 @@ describe('AnnouncementsComponent', () => {
     const inputs = Array.from(el().querySelectorAll<HTMLInputElement>('.ann-type input, .ann-chip input'));
     expect(inputs.length).toBe(6 + 4 + 2 + 1);   // 6 types, 4 roles (no Developers), 2 departments, "Only BiG 7.0 staff"
     expect(inputs.every(i => i.classList.contains('sr-only'))).toBeTrue();
+  });
+
+  describe('right panel views (Helpdesk, HD1)', () => {
+    it('opens on the Sent list; Tasks is created (and so loaded) only when picked', fakeAsync(() => {
+      tick();
+      fixture.detectChanges();
+      expect(el().querySelector('app-task-list')).toBeNull();
+      expect(el().querySelector('.ann-list')).not.toBeNull();
+      const tabs = el().querySelectorAll<HTMLButtonElement>('.ann-tabs button');
+      tabs[1].click();
+      fixture.detectChanges();
+      expect(el().querySelector('app-task-list')).not.toBeNull();
+      expect(el().querySelector('.ann-list')).toBeNull();
+      tabs[0].click();
+      fixture.detectChanges();
+      expect(el().querySelector('.ann-list')).not.toBeNull();
+    }));
   });
 
   describe('Developers as an audience', () => {

@@ -58,6 +58,8 @@ export interface Announcement {
   publicAlert?: 'none' | 'all' | 'session';
   publicSession?: { _id: string; workshop?: { title: string } } | null;
   publicDelivered?: number;
+  /** A Task's shared status (Helpdesk, HD1); null on every other type. */
+  status?: string | null;
 }
 
 /**
@@ -72,7 +74,7 @@ export type PushDeviceState = 'unsupported' | 'ios-needs-install' | 'server-off'
 
 export const PUSH_PROMPT_DISMISSED_KEY = 'pushPromptDismissed';
 
-/** PWA Phase 2 — push notifications on this device, plus announcements (DEV/DIR/ADMIN). */
+/** PWA Phase 2 — push notifications on this device, plus announcements (DEV/DIR/ADMIN and Helpdesk). */
 @Injectable({ providedIn: 'root' })
 export class PushService {
   private url = environment.URL;
@@ -159,6 +161,11 @@ export class PushService {
 
   sendAnnouncement(body: AnnouncementInput) {
     return firstValueFrom(this.http.post<Announcement>(this.url + '/push/announcements', body));
+  }
+
+  /** The departments an announcement can go to (for everyone who may announce). */
+  announcementDepartments() {
+    return this.http.get<{ _id: string; name: string }[]>(this.url + '/push/departments');
   }
 
   /** PH5: the public event's sessions (from the public API), for "phones that starred a session". */

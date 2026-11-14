@@ -116,7 +116,10 @@ export class NavAccessService implements OnDestroy {
 
   get canSeeAdminMenu(): boolean { return ADMIN_MENU_ROLES.includes(this.role); }
 
-  /** Departments, Events, Announcements, Public Page. */
+  /** Announcements: DEV/DIR/ADMIN and Helpdesk (department key `helpdesk`, helpdesk:manage). */
+  get canSeeAnnouncements(): boolean { return this.authService.canAnnounce(this.user); }
+
+  /** Departments, Events, Public Page. */
   get canSeeAdminTopPages(): boolean { return TOP_ROLES.includes(this.role); }
 
   /** May this person see the tab for this route? */
@@ -150,8 +153,8 @@ export class NavAccessService implements OnDestroy {
       case '/admin/user': return this.canSeeAdminMenu;
       case '/admin/departments':
       case '/admin/events':
-      case '/admin/announcements':
       case '/admin/public-page': return this.canSeeAdminTopPages;
+      case '/admin/announcements': return this.canSeeAnnouncements;
       // Both sat inside the Admin group before, so they keep needing an Admin-menu role.
       case '/admin/email-report': return this.canSeeAdminMenu && this.canSeeEmailReport;
       case '/admin/uat-reset': return this.canSeeAdminMenu && this.canSeeUatReset; // UAT-RESET: remove before Production

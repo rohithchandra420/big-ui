@@ -4,6 +4,7 @@ import { SwPush } from '@angular/service-worker';
 import { BehaviorSubject, Subscription, firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
+import { TaskStatus } from './task.service';
 
 /** The announcement types plus BiG's own private "Emails sent" note. */
 export type BillboardNoteType = 'general' | 'urgent' | 'schedule' | 'weather' | 'reminder' | 'task' | 'email' | 'meal' | 'sos';
@@ -17,6 +18,8 @@ export interface BillboardNote {
   from: string | null;       // sender's name; null for BiG's own notes
   roles: string[];
   departments: string[];     // department names
+  /** A sent Task's shared status (Helpdesk, HD1); null / absent on everything else. */
+  status?: TaskStatus | null;
   read: boolean;
 }
 

@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Announcement, AnnouncementType, PushService } from '../../core/push.service';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
-import { AdminService } from '../admin.service';
+import { TaskListComponent } from '../../shared/task/task-list.component';
 import { AuthService } from '../../core/auth.service';
 import { EventService } from '../../core/event.service';
 
@@ -25,7 +25,7 @@ export interface TypeOption {
 }
 
 /**
- * Admin → Announcements (PWA Phase 2): DEV/DIR/ADMIN send a push notification
+ * Admin → Announcements (PWA Phase 2): DEV/DIR/ADMIN and Helpdesk send a push notification
  * to roles and/or departments (home department), pick a type, and can send a
  * past one again. The server enforces who may send; the route guard only keeps
  * others off the page.
@@ -58,7 +58,7 @@ export class AnnouncementsComponent implements OnInit {
     { value: 'reminder', label: 'Reminder', icon: 'notifications_active', prefix: 'Reminder: ', short: 'Quiet nudge', badge: 'Reminder',
       hint: 'Quiet: a phone that already shows a reminder won\'t sound again.' },
     { value: 'task', label: 'Task', icon: 'task_alt', prefix: 'Task: ', short: 'Something to do', badge: 'Task',
-      hint: 'Something staff need to do. Tracking (seen / done) is coming later.' }
+      hint: 'Something staff need to do. It starts as New; the people who get it move it on, and every change is kept on its timeline.' }
   ];
   readonly titleMax = TITLE_MAX;
   readonly messageMax = MESSAGE_MAX;
@@ -86,6 +86,8 @@ export class AnnouncementsComponent implements OnInit {
   visibleHistory: Announcement[] = [];
   loadingHistory = true;
   resendingId: string | null = null;
+  /** Right panel: the Sent list or the Tasks list — one at a time, each full height. */
+  sideTab: 'sent' | 'tasks' = 'sent';
 
   // Sent-announcements filters ('' = all)
   search = '';
@@ -95,18 +97,20 @@ export class AnnouncementsComponent implements OnInit {
 
   constructor(
     private push: PushService,
-    private admin: AdminService,
     private notifications: NotificationService,
     private confirm: ConfirmationService,
     private auth: AuthService,
     private events: EventService
   ){ }
 
+  /** The Tasks card: refreshed after a Task is sent. */
+  @ViewChild(TaskListComponent) taskList?: TaskListComponent;
+
   ngOnInit(): void {
     this.isDev = this.auth.currentUser?.role === 'DEV';
     this.roleOptions = this.isDev ? this.allRoles : this.allRoles.filter(r => r.value !== 'DEV');
     this.loadHistory();
-    this.admin.getDepartments().subscribe({
+    this.push.announcementDepartments().subscribe({
       next: d => this.departmentOptions = [...d].sort((a, b) => a.name.localeCompare(b.name)),
       error: () => this.departmentOptions = []
     });
@@ -316,6 +320,7 @@ export class AnnouncementsComponent implements OnInit {
       this.resetForm();
       this.history = [sent, ...this.history];
       this.applyFilters();
+      if (sent.type === 'task') this.taskList?.reload();
     } catch (err: any) {
       this.notifications.openErrorSnackBar(this.errorText(err, 'Could not send the announcement'));
     } finally {
@@ -337,6 +342,7 @@ export class AnnouncementsComponent implements OnInit {
       this.reportSent(sent);
       this.history = [sent, ...this.history];
       this.applyFilters();
+      if (sent.type === 'task') this.taskList?.reload();
     } catch (err: any) {
       this.notifications.openErrorSnackBar(this.errorText(err, 'Could not send it again'));
     } finally {

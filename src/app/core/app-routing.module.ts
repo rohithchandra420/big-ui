@@ -148,7 +148,8 @@ const appRoutes: Routes = [
     // Tent Fields (Epic B): seen by the Inventory rule; editing is DEV/DIR/ADMIN (checked by the server too)
     { path: 'accommodation/fields', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'tenting:read'], departmentKeys: ['box-office', 'tenting'] }, component: TentFieldsComponent },
     { path: 'accommodation/fields/:id', canActivate: [AuthGuard, AuthPermissionGuard], canDeactivate: [(c: TentFieldComponent) => c.canLeave()], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'tenting:read'], departmentKeys: ['box-office', 'tenting'] }, component: TentFieldComponent },
-    { path: 'admin', canActivate:[AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: AdminComponent, children: [
+    // Helpdesk (key `helpdesk`) comes in for Announcements only; every child keeps its own guard.
+    { path: 'admin', canActivate:[AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'], permissions: ['helpdesk:manage'], departmentKeys: ['helpdesk'] }, component: AdminComponent, children: [
         { path: 'user', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: UserRegisteryComponent },
         { path: 'departments', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentsComponent },
         { path: 'departments/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentsComponent }, // opens that department's panel
@@ -156,7 +157,7 @@ const appRoutes: Routes = [
         { path: 'events/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventDetailComponent },
         // DEV/DIR/ADMIN only (decided by the backend via /emails/config)
         { path: 'email-report', canActivate: [EmailAccessGuard], component: EmailReportComponent },
-        { path: 'announcements', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: AnnouncementsComponent },
+        { path: 'announcements', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['helpdesk:manage'], departmentKeys: ['helpdesk'] }, component: AnnouncementsComponent },
         { path: 'public-page', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: PublicPageComponent },
         { path: 'uat-reset', canActivate: [AuthPermissionGuard], data: { roles: ['DEV'] }, component: UatResetComponent } // UAT-RESET: remove before Production
     ]},

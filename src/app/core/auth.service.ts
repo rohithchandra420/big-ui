@@ -149,6 +149,14 @@ export class AuthService {
         return (user.permissions || []).some(p => p === 'volunteer:write' || p === 'volunteer:manage');
     }
 
+    /** Announcements page and the full Tasks list, same rule as big-api utils/helpdeskAccess.js:
+     *  DEV/DIR/ADMIN, every member of a Helpdesk department (key `helpdesk`), helpdesk:manage. */
+    canAnnounce(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.inDepartmentKey(user, 'helpdesk') || (user.permissions || []).includes('helpdesk:manage');
+    }
+
     /** View (the page and profiles): the Assign group and volunteer:read. */
     canViewVolunteers(user: User | null): boolean {
         if (!user) return false;

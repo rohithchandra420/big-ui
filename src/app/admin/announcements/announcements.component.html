@@ -1,7 +1,7 @@
 <div class="page-ph">
   <div>
     <div class="page-ph-title">Announcements</div>
-    <div class="page-ph-sub">Push notifications to staff phones</div>
+    <div class="page-ph-sub">Send to staff and the public page. Follow the tasks you sent.</div>
   </div>
   <!-- Navigation Tabs: Back + this section's pages -->
   <app-section-header></app-section-header>
@@ -143,10 +143,21 @@
     </div>
   </div>
 
-  <aside class="ann-side" aria-label="Sent announcements">
-  <div class="section-lbl ann-history-lbl">
-    Sent announcements <span class="ann-history-count" *ngIf="history.length">{{ history.length }}</span>
-  </div>
+  <aside class="ann-side" [class.ann-side-tasks]="sideTab === 'tasks'" aria-label="Sent announcements and tasks">
+  <!-- One view at a time, each with the panel's full height (like Stay's Units / Calendar) -->
+  <nav class="ann-tabs" aria-label="Show">
+    <button type="button" [class.on]="sideTab === 'sent'" [attr.aria-pressed]="sideTab === 'sent'" (click)="sideTab = 'sent'">
+      <mat-icon class="ms-fill" aria-hidden="true">campaign</mat-icon>Announcements<span class="ann-history-count" *ngIf="history.length">{{ history.length }}</span>
+    </button>
+    <button type="button" [class.on]="sideTab === 'tasks'" [attr.aria-pressed]="sideTab === 'tasks'" (click)="sideTab = 'tasks'">
+      <mat-icon class="ms-fill" aria-hidden="true">task_alt</mat-icon>Tasks
+    </button>
+  </nav>
+
+  <!-- Tasks (Helpdesk, HD1): every task sent, with its live status. Loaded when this view is opened. -->
+  <app-task-list class="ann-tasks" *ngIf="sideTab === 'tasks'" heading="Tasks" hint="Every task sent, with its live status. Tap one for its timeline."></app-task-list>
+
+  <ng-container *ngIf="sideTab === 'sent'">
   <!-- Search + filters (on the loaded history) -->
   <div class="ann-filters" *ngIf="history.length > 0">
     <label class="search-field">
@@ -211,6 +222,7 @@
       </div>
     </div>
   </div>
+  </ng-container>
   </aside>
 
 </div>

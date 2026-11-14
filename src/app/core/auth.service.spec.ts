@@ -229,6 +229,22 @@ describe('AuthService', () => {
         });
     });
 
+    describe('Announcements access (Helpdesk, by department key)', () => {
+        const desk = { _id: 'd1', name: 'Front Desk', key: 'helpdesk' };
+        const mk = (role: string, depts: any[] = [], perms: string[] = []) =>
+            new User('Test', 'a@b.com', '', role, '', '', '123', undefined, depts.map(d => ({ department: d, access: ['read'] })), perms);
+
+        it('top roles, every Helpdesk member and helpdesk:manage only', () => {
+            expect(service.canAnnounce(mk('ADMIN'))).toBeTrue();
+            expect(service.canAnnounce(mk('VOL', [desk]))).toBeTrue();
+            expect(service.canAnnounce(mk('TL', [desk]))).toBeTrue();
+            expect(service.canAnnounce(mk('VOL', [], ['helpdesk:manage']))).toBeTrue();
+            expect(service.canAnnounce(mk('TL', [{ _id: 'd2', name: 'Helpdesk', key: 'general' }]))).toBeFalse();
+            expect(service.canAnnounce(mk('VOL', [], ['wash:manage']))).toBeFalse();
+            expect(service.canAnnounce(null)).toBeFalse();
+        });
+    });
+
     describe('deptKeyOf', () => {
         it('returns the stored built-in key, else "general" — the name is never used', () => {
             expect(service.deptKeyOf({ name: 'Front Gate', key: 'box-office' })).toBe('box-office');
