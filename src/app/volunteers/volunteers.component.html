@@ -198,6 +198,7 @@
             <dt>Gender</dt><dd>{{ p.gender || 'Not given' }}</dd>
             <dt>Stay</dt><dd>{{ p.stay ? (p.stay.unit + (p.stay.type ? ' · ' + p.stay.type : '') + (p.stay.movedIn ? '' : ' · not moved in yet')) : 'No bed given yet' }}</dd>
             <dt>Staff band</dt><dd>{{ p.band ? 'Linked' : 'Not linked' }}</dd>
+            <dt>Deposit</dt><dd>{{ depositLabel[p.deposit.status] }}<ng-container *ngIf="p.deposit.amount"> · {{ money(p.deposit.amount) }}</ng-container></dd>
           </dl>
         </div>
 

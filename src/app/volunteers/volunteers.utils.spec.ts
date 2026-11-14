@@ -1,5 +1,5 @@
 import { VolBoard, Volunteer } from './volunteers.model';
-import { buildBoard, moveMessage, needStatus } from './volunteers.utils';
+import { buildBoard, money, moveMessage, needStatus } from './volunteers.utils';
 
 const vol = (id: string, name: string, department: string | null, marked = true): Volunteer => ({
   _id: id, name, avatarVersion: 0, department, unassigned: !department, phone: '900000' + id, dateOfJoining: null,
@@ -53,6 +53,12 @@ describe('volunteers utils', () => {
     expect(buildBoard(board(), { ...all, search: '9000003' }).rows.map(r => r.v.name)).toEqual(['Chand']);
     expect(buildBoard(board(), { ...all, stat: 'unassigned' }).lanes).toEqual([]);
     expect(buildBoard(board(), { ...all, stat: 'short' }).lanes.map(l => l.dept.name)).toEqual(['WASH']);
+  });
+
+  it('writes money with Indian grouping', () => {
+    expect(money(150000)).toBe('₹1,50,000');
+    expect(money(0)).toBe('₹0');
+    expect(money(undefined)).toBe('');
   });
 
   it('words the move message', () => {

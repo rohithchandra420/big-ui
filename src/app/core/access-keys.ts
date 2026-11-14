@@ -96,8 +96,8 @@ export const ACCESS_KEYS: AccessKey[] = [
     noHomeRead: true,
     tiers: [
       { tier: 'read', label: 'Read', gives: 'See the Volunteers page and volunteer profiles' },
-      { tier: 'write', label: 'Write', gives: 'Also assign, reassign and free volunteers' },
-      { tier: 'manage', label: 'Manage', gives: 'Also deposits and location requests (coming)' }
+      { tier: 'write', label: 'Write', gives: 'Also assign, reassign and free volunteers, and see deposit amounts' },
+      { tier: 'manage', label: 'Manage', gives: 'Also record, correct and refund deposits (location requests coming)' }
     ]
   }
 ];

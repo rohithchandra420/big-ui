@@ -13,6 +13,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.54.0] - 2026-11-14
+
+### Added
+- **Volunteers › Deposits tab.** The security deposit of every volunteer on the event.
+  - Stat cards (Collected, Not collected, Refunded, with money totals) filter the table; search by name or phone.
+  - Tap a volunteer to record a deposit (amount, Cash / UPI / Bank transfer / Other, date, note), correct it, refund it in full, or remove an entry made by mistake. Each deposit keeps its history.
+  - A standard deposit amount for the event pre-fills the form and can be changed per volunteer.
+  - People who left the event or were deactivated while a deposit is held stay on the list, flagged, until refunded.
+  - Export to Excel of what is on screen.
+  - Who sees what: the status for everyone who opens Volunteers; amounts and the export need Volunteers Write access; changes need Manage. The Volunteer Team Lead and DEV / DIR / ADMIN have all of it.
+- The volunteer profile panel shows the deposit status.
+
+---
+
 ## [1.53.0] - 2026-11-14
 
 ### Added

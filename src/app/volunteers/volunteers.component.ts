@@ -5,7 +5,7 @@ import { NotificationService } from '../core/notification.service';
 import { EventItem } from '../models/event.model';
 import { VolunteersService } from './volunteers.service';
 import { VolBoard, VolDepartment, VolProfile, Volunteer } from './volunteers.model';
-import { BoardView, Lane, StatFilter, buildBoard, moveMessage } from './volunteers.utils';
+import { BoardView, DEPOSIT_LABEL, Lane, StatFilter, buildBoard, money, moveMessage } from './volunteers.utils';
 
 type Panel = 'closed' | 'profile' | 'need';
 interface Destination { id: string | null; name: string; icon: string }
@@ -121,6 +121,9 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     this.notMarked = !this.notMarked;
     this.apply();
   }
+
+  money = money;
+  depositLabel = DEPOSIT_LABEL;
 
   trackVol = (_: number, v: Volunteer) => v._id;
   trackLane = (_: number, l: Lane) => l.dept._id;

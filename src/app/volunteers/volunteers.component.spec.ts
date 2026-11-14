@@ -16,7 +16,7 @@ const vol = (id: string, name: string, department: string | null, marked = true)
 
 const profile: VolProfile = {
   _id: '1', name: 'Anil', email: 'anil@example.com', phone: '+919000000001', avatarVersion: 0, department: null, unassigned: true,
-  dateOfJoining: '2026-11-10T00:00:00.000Z', foodPreference: 'veg', gender: 'Male', stay: null, band: false, meals: 4,
+  dateOfJoining: '2026-11-10T00:00:00.000Z', foodPreference: 'veg', gender: 'Male', stay: null, band: false, meals: 4, deposit: { status: 'held', amount: 500 },
   attendance: [{ date: '2026-11-13', morning: true, afternoon: false, night: false }, { date: '2026-11-14', morning: false, afternoon: false, night: false }]
 };
 

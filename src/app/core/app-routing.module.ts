@@ -53,6 +53,7 @@ import { WashStockComponent } from "../wash/stock/wash-stock.component";
 import { WashReportComponent } from "../wash/report/wash-report.component";
 import { VolunteersGuard } from "../volunteers/volunteers.guard";
 import { VolunteersComponent } from "../volunteers/volunteers.component";
+import { VolunteerDepositsComponent } from "../volunteers/deposits/volunteer-deposits.component";
 import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
@@ -125,6 +126,7 @@ const appRoutes: Routes = [
     { path: 'wash/setup', canActivate: [AuthGuard, WashGuard], component: WashSetupComponent, data: { washManage: true } },
     // Volunteers (V1): DEV/DIR/ADMIN, the Volunteer department's TL, volunteer grants.
     { path: 'volunteers', canActivate: [AuthGuard, VolunteersGuard], component: VolunteersComponent },
+    { path: 'volunteers/deposits', canActivate: [AuthGuard, VolunteersGuard], component: VolunteerDepositsComponent },
     { path: 'workshops', canActivate: [AuthGuard], component: WorkshopPlannerComponent },
     // A session's lists and door — the Workshop team (members, workshop:write, the Plan group).
     { path: 'workshops/sessions/:id', canActivate: [AuthGuard, WorkshopRunGuard], component: SessionListsComponent },

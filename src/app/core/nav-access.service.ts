@@ -145,7 +145,8 @@ export class NavAccessService implements OnDestroy {
       case '/wash/stock':
       case '/wash/report': return this.canSeeWash;
       case '/wash/setup': return this.canSeeWashSetup;
-      case '/volunteers': return this.canSeeVolunteers;
+      case '/volunteers':
+      case '/volunteers/deposits': return this.canSeeVolunteers;
       case '/admin/user': return this.canSeeAdminMenu;
       case '/admin/departments':
       case '/admin/events':

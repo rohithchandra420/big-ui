@@ -40,6 +40,42 @@ export interface MoveResult {
   department: { _id: string; name: string } | null;
 }
 
+export type DepositStatus = 'none' | 'held' | 'refunded';
+export type DepositMode = 'cash' | 'upi' | 'bank' | 'other';
+
+export interface DepositLog { action: 'collected' | 'corrected' | 'refunded'; at: string; by: string; amount: number; mode: DepositMode }
+
+/** One person on the Deposits tab. The money fields are missing for people who only see the status. */
+export interface DepositRow {
+  _id: string;
+  name: string;
+  avatarVersion: number;
+  phone: string;
+  department: string;
+  status: DepositStatus;
+  /** 'left' = no longer a volunteer on this event, 'deactivated' = account deactivated — while a deposit is still held. */
+  flag: '' | 'left' | 'deactivated';
+  amount?: number;
+  mode?: DepositMode;
+  note?: string;
+  collectedAt?: string;
+  collectedBy?: string;
+  refundedAt?: string | null;
+  refundedBy?: string;
+  refundMode?: DepositMode | null;
+  refundNote?: string;
+  log?: DepositLog[];
+}
+
+export interface DepositList {
+  canManage: boolean;
+  seeAmounts: boolean;
+  modes: DepositMode[];
+  defaultAmount?: number;
+  totals: { held: number; none: number; refunded: number; heldAmount?: number; refundedAmount?: number };
+  rows: DepositRow[];
+}
+
 export interface NeedInfo { needed: number; have: number; canSet: boolean }
 
 export interface VolProfile {
@@ -56,5 +92,7 @@ export interface VolProfile {
   stay: { unit: string; type: string; from: string; to: string; movedIn: boolean } | null;
   band: boolean;
   meals: number;
+  /** Security deposit for the event; `amount` only for people who may see amounts. */
+  deposit: { status: DepositStatus; amount?: number };
   attendance: ({ date: string } & VolSlots)[];
 }

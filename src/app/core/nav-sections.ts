@@ -94,6 +94,7 @@ export const NAV_SECTIONS: NavSection[] = [
     key: 'volunteers', label: 'Volunteers', icon: 'diversity_3', prefix: '/volunteers',
     tabs: [
       { path: '/volunteers', label: 'Volunteers', exact: true },
+      { path: '/volunteers/deposits', label: 'Deposits' },
     ],
     details: [],
   },

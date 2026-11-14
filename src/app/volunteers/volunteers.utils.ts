@@ -106,6 +106,14 @@ export function buildBoard(board: VolBoard | null, f: BoardFilter): BoardView {
   };
 }
 
+export const MODE_LABEL: Record<string, string> = { cash: 'Cash', upi: 'UPI', bank: 'Bank transfer', other: 'Other' };
+export const DEPOSIT_LABEL: Record<string, string> = { held: 'Collected', none: 'Not collected', refunded: 'Refunded' };
+
+/** "₹1,500" (Indian grouping); "" when there is no amount to show. */
+export function money(amount: number | null | undefined): string {
+  return typeof amount === 'number' ? '₹' + amount.toLocaleString('en-IN') : '';
+}
+
 /** "3 volunteers moved to WASH" / "Asha freed to Unassigned". */
 export function moveMessage(moved: number, firstName: string, deptName: string | null): string {
   const who = moved === 1 ? firstName : `${moved} volunteers`;

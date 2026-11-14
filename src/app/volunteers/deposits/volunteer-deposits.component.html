@@ -1,0 +1,190 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Volunteer Deposits</div>
+    <div class="page-ph-sub">Security deposits · {{ event?.name || 'No event selected' }}</div>
+  </div>
+  <button type="button" class="btn-ghost" *ngIf="seeAmounts" [disabled]="!rows.length" (click)="export()"><mat-icon>download</mat-icon> Export</button>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
+</div>
+
+<div class="vl-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+  <p class="vl-muted" *ngIf="loading">Loading…</p>
+
+  <ng-container *ngIf="event && data as d">
+    <!-- Stat cards (tap to filter) -->
+    <div class="vl-stats vd-stats">
+      <button type="button" class="vl-stat" [class.on]="filter === 'held'" (click)="setFilter('held')">
+        <mat-icon>savings</mat-icon>
+        <span><b>{{ d.totals.held }}</b><small>Collected<ng-container *ngIf="seeAmounts"> · {{ money(d.totals.heldAmount) }} held</ng-container></small></span>
+      </button>
+      <button type="button" class="vl-stat" [class.on]="filter === 'none'" [class.warn]="d.totals.none > 0" (click)="setFilter('none')">
+        <mat-icon>pending_actions</mat-icon><span><b>{{ d.totals.none }}</b><small>Not collected</small></span>
+      </button>
+      <button type="button" class="vl-stat" [class.on]="filter === 'refunded'" (click)="setFilter('refunded')">
+        <mat-icon>currency_exchange</mat-icon>
+        <span><b>{{ d.totals.refunded }}</b><small>Refunded<ng-container *ngIf="seeAmounts"> · {{ money(d.totals.refundedAmount) }}</ng-container></small></span>
+      </button>
+    </div>
+
+    <div class="vl-tools">
+      <div class="search-field vl-search">
+        <mat-icon>search</mat-icon>
+        <input type="text" [(ngModel)]="search" (ngModelChange)="apply()" placeholder="Search name or phone" aria-label="Search volunteer" />
+      </div>
+      <span class="vl-std" *ngIf="seeAmounts">
+        Standard deposit: <b>{{ d.defaultAmount ? money(d.defaultAmount) : 'not set' }}</b>
+        <button type="button" class="pill-btn" *ngIf="canManage" (click)="startStandard()"><mat-icon>edit</mat-icon>{{ d.defaultAmount ? 'Change' : 'Set' }}</button>
+      </span>
+    </div>
+
+    <p class="vl-muted" *ngIf="!d.rows.length">No volunteers on this event's staff list yet.</p>
+
+    <div class="vl-tbl-wrap" *ngIf="d.rows.length">
+      <table class="vl-tbl">
+        <thead>
+          <tr>
+            <th>Volunteer</th><th class="vl-wide">Department</th><th>Status</th>
+            <th *ngIf="seeAmounts">Amount</th><th class="vl-wide" *ngIf="seeAmounts">Paid by</th>
+            <th class="vl-wide" *ngIf="seeAmounts">Collected</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of rows; trackBy: trackRow" (click)="open(r)">
+            <td>
+              <span class="vl-cell-who">
+                <app-user-avatar [userId]="r._id" [name]="r.name" [version]="r.avatarVersion" [size]="26" [muted]="!!r.flag"></app-user-avatar>
+                <b>{{ r.name }}</b>
+                <span class="vl-pill flag" *ngIf="r.flag">{{ r.flag === 'left' ? 'Left the event' : 'Deactivated' }}</span>
+              </span>
+            </td>
+            <td class="vl-wide">{{ r.department || (r.flag ? '—' : 'Unassigned') }}</td>
+            <td><span class="vl-pill" [ngClass]="r.status">{{ statusLabel[r.status] }}</span></td>
+            <td class="vl-money" *ngIf="seeAmounts">{{ money(r.amount) || '—' }}</td>
+            <td class="vl-wide" *ngIf="seeAmounts">{{ r.mode ? modeLabel[r.mode] : '—' }}</td>
+            <td class="vl-wide" *ngIf="seeAmounts">
+              <ng-container *ngIf="r.collectedAt; else dash">{{ r.collectedAt | date: 'd MMM' }} · {{ r.collectedBy }}</ng-container>
+              <ng-template #dash>—</ng-template>
+            </td>
+          </tr>
+          <tr *ngIf="!rows.length"><td [attr.colspan]="seeAmounts ? 6 : 3">No volunteers match.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <app-slide-panel [open]="mode !== 'closed'" icon="savings" [title]="panelTitle" [subtitle]="panelSubtitle" (closed)="panelClosed()">
+    <!-- Standard deposit -->
+    <div class="vl-form" *ngIf="mode === 'standard'">
+      <div class="field">
+        <label for="vd-std">Standard deposit for this event (₹)</label>
+        <input id="vd-std" type="number" min="0" step="1" inputmode="numeric" [(ngModel)]="standard" (keydown.enter)="saveStandard()" />
+      </div>
+      <p class="vl-muted">Fills the amount when you record a deposit; it can still be changed for each volunteer. 0 removes it.</p>
+      <div class="field-error" *ngIf="formError">{{ formError }}</div>
+      <div class="vl-btns">
+        <button type="button" class="btn-ghost" (click)="close()">Cancel</button>
+        <button type="button" class="btn-cta" [disabled]="busy" (click)="saveStandard()">Save</button>
+      </div>
+    </div>
+
+    <!-- Record / correct -->
+    <div class="vl-form" *ngIf="mode === 'record' && selected as r">
+      <div class="field">
+        <label for="vd-amount">Amount (₹) *</label>
+        <input id="vd-amount" type="number" min="1" step="1" inputmode="numeric" [(ngModel)]="form.amount" />
+      </div>
+      <div class="field">
+        <label>Paid by *</label>
+        <div class="vl-modes" role="radiogroup" aria-label="Paid by">
+          <button type="button" class="toggle-chip" role="radio" *ngFor="let m of data?.modes || []; trackBy: trackMode"
+                  [class.on]="form.mode === m" [attr.aria-checked]="form.mode === m" (click)="form.mode = m">{{ modeLabel[m] }}</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="vd-date">Collected on</label>
+        <input id="vd-date" type="date" [max]="maxDate" [(ngModel)]="form.collectedAt" />
+      </div>
+      <div class="field">
+        <label for="vd-note">Note</label>
+        <input id="vd-note" type="text" maxlength="200" [(ngModel)]="form.note" placeholder="e.g. receipt number" />
+      </div>
+      <div class="field-error" *ngIf="formError">{{ formError }}</div>
+      <div class="vl-btns">
+        <button type="button" class="btn-ghost" (click)="panelClosed()">Cancel</button>
+        <button type="button" class="btn-cta" [disabled]="busy" (click)="saveRecord()">{{ r.status === 'none' ? 'Record deposit' : 'Save correction' }}</button>
+      </div>
+    </div>
+
+    <!-- Refund (in full) -->
+    <div class="vl-form" *ngIf="mode === 'refund' && selected as r">
+      <p class="vd-big">Refund <b>{{ money(r.amount) }}</b> in full to {{ r.name }}.</p>
+      <div class="field">
+        <label>Refunded by *</label>
+        <div class="vl-modes" role="radiogroup" aria-label="Refunded by">
+          <button type="button" class="toggle-chip" role="radio" *ngFor="let m of data?.modes || []; trackBy: trackMode"
+                  [class.on]="refundForm.mode === m" [attr.aria-checked]="refundForm.mode === m" (click)="refundForm.mode = m">{{ modeLabel[m] }}</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="vd-rnote">Note</label>
+        <input id="vd-rnote" type="text" maxlength="200" [(ngModel)]="refundForm.note" placeholder="e.g. returned at exit" />
+      </div>
+      <p class="vl-muted">A refund cannot be undone or changed afterwards.</p>
+      <div class="field-error" *ngIf="formError">{{ formError }}</div>
+      <div class="vl-btns">
+        <button type="button" class="btn-ghost" (click)="panelClosed()">Cancel</button>
+        <button type="button" class="btn-cta" [disabled]="busy" (click)="saveRefund()">Refund {{ money(r.amount) }}</button>
+      </div>
+    </div>
+
+    <!-- One person's deposit -->
+    <div class="vl-prof" *ngIf="mode === 'view' && selected as r">
+      <div class="warn-banner vd-flag" *ngIf="r.flag">
+        {{ r.flag === 'left' ? 'No longer a volunteer on this event.' : 'This account is deactivated.' }} The deposit is still held — refund it to close it.
+      </div>
+      <div class="vl-acts" *ngIf="canManage && r.status !== 'refunded'">
+        <button type="button" class="pill-btn" *ngIf="r.status === 'none'" (click)="startRecord(r)"><mat-icon>add</mat-icon>Record deposit</button>
+        <ng-container *ngIf="r.status === 'held'">
+          <button type="button" class="pill-btn" (click)="startRefund(r)"><mat-icon>currency_exchange</mat-icon>Refund</button>
+          <button type="button" class="pill-btn" (click)="startRecord(r)"><mat-icon>edit</mat-icon>Correct</button>
+          <button type="button" class="pill-btn danger" (click)="remove(r)"><mat-icon>delete</mat-icon>Remove</button>
+        </ng-container>
+      </div>
+
+      <p class="vl-muted" *ngIf="r.status === 'none'">No deposit recorded for this event.</p>
+      <p class="vl-muted" *ngIf="r.status !== 'none' && !seeAmounts">{{ statusLabel[r.status] }}. Amounts are shown to people with Write access.</p>
+
+      <ng-container *ngIf="seeAmounts && r.status !== 'none'">
+        <div>
+          <p class="section-lbl">Deposit</p>
+          <dl class="vl-kv">
+            <dt>Amount</dt><dd>{{ money(r.amount) }}</dd>
+            <dt>Paid by</dt><dd>{{ r.mode ? modeLabel[r.mode] : '' }}</dd>
+            <dt>Collected</dt><dd>{{ r.collectedAt | date: 'd MMM y' }} · {{ r.collectedBy }}</dd>
+            <ng-container *ngIf="r.note"><dt>Note</dt><dd>{{ r.note }}</dd></ng-container>
+          </dl>
+        </div>
+        <div *ngIf="r.status === 'refunded'">
+          <p class="section-lbl">Refund</p>
+          <dl class="vl-kv">
+            <dt>Refunded</dt><dd>{{ r.refundedAt | date: 'd MMM y' }} · {{ r.refundedBy }}</dd>
+            <dt>Paid by</dt><dd>{{ r.refundMode ? modeLabel[r.refundMode] : '' }}</dd>
+            <ng-container *ngIf="r.refundNote"><dt>Note</dt><dd>{{ r.refundNote }}</dd></ng-container>
+          </dl>
+        </div>
+        <div *ngIf="r.log?.length">
+          <p class="section-lbl">History</p>
+          <ul class="vl-log">
+            <li *ngFor="let l of r.log">
+              {{ l.action === 'collected' ? 'Collected' : l.action === 'corrected' ? 'Corrected to' : 'Refunded' }} {{ money(l.amount) }} · {{ modeLabel[l.mode] }}
+              <small>{{ l.at | date: 'd MMM y, h:mm a' }} · {{ l.by }}</small>
+            </li>
+          </ul>
+        </div>
+      </ng-container>
+    </div>
+  </app-slide-panel>
+</div>
