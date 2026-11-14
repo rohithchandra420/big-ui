@@ -79,17 +79,18 @@ export class NavAccessService implements OnDestroy {
     if (!this.user) return false;
     if (TOP_ROLES.includes(this.role)) return true;
     return this.authService.hasPermission(this.user, 'box-office:read') ||
-           this.authService.hasDepartmentAccess(this.user, 'Box Office');
+           this.authService.inDepartmentKey(this.user, 'box-office');
   }
 
-  /** Accommodation Setup creates real inventory — admin roles only (ACCOMMODATION_CONTEXT.md #9). */
+  /** Accommodation Setup: DEV/DIR/ADMIN and the Tenting team (key `tenting`, Read and up) —
+   *  creating units needs Write, the page hides the form otherwise. */
   get canSeeAccommodationSetup(): boolean {
-    return TOP_ROLES.includes(this.role);
+    return this.authService.canReadTenting(this.user);
   }
 
-  /** Inventory (view) uses the Box Office rule: tent inventory is Box Office's concern too. */
+  /** Inventory and Fields (view): the Tenting team, and Box Office as before. */
   get canSeeAccommodationInventory(): boolean {
-    return this.canSeeBoxOffice;
+    return this.canSeeBoxOffice || this.authService.canReadTenting(this.user);
   }
 
   /** Workshops › Setup: the Plan group (same rule as the server). */

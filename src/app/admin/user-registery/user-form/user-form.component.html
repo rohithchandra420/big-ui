@@ -68,25 +68,31 @@
     </div>
   </div>
 
-  <div class="section-lbl">Access <span class="key-note">(by department key — departments sharing a key get the same access)</span></div>
-  <div class="dept-access-table">
+  <div class="section-lbl">Extra access <span class="key-note">(on top of what their own department gives)</span></div>
+  <div class="dept-access-table" *ngIf="accessKeys.length">
     <div *ngFor="let k of accessKeys; trackBy: trackKey" class="dept-row">
-      <span class="dept-name"><span class="key-tag" [title]="k.names">{{ k.key }}</span></span>
+      <span class="dept-name" [title]="k.names ? 'Departments with this key: ' + k.names : 'No department has this key yet'">
+        {{ k.label }} <span class="key-tag">{{ k.key }}</span>
+      </span>
       <div class="chip-group">
         <button
-          *ngFor="let level of permLevels"
+          *ngFor="let t of k.tiers; trackBy: trackTier"
           type="button"
           class="access-chip"
-          [class.chip-read]="level === 'read' && keySelections[k.key] === level"
-          [class.chip-write]="level === 'write' && keySelections[k.key] === level"
-          [class.chip-manage]="level === 'manage' && keySelections[k.key] === level"
-          [class.chip-inactive]="keySelections[k.key] !== level"
-          (click)="setKeyLevel(k.key, level)">
-          {{ level | titlecase }}
+          [title]="t.gives"
+          [attr.aria-pressed]="keySelections[k.key] === t.tier"
+          [class.chip-read]="t.tier === 'read' && keySelections[k.key] === t.tier"
+          [class.chip-write]="t.tier === 'write' && keySelections[k.key] === t.tier"
+          [class.chip-manage]="t.tier === 'manage' && keySelections[k.key] === t.tier"
+          [class.chip-inactive]="keySelections[k.key] !== t.tier"
+          (click)="setKeyLevel(k.key, t.tier)">
+          {{ t.label }}
         </button>
       </div>
+      <span class="key-gives" *ngIf="givesOf(k) as gives">{{ gives }}</span>
     </div>
   </div>
+  <p class="key-none" *ngIf="!accessKeys.length">Your department's key gives no extra access to set.</p>
 
   <div class="btn-row form-actions">
     <button class="btn-ghost" type="button" (click)="cancelled.emit()">Cancel</button>

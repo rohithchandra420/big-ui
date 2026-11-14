@@ -97,3 +97,17 @@
 @media (max-width: 480px) {
   :host-context(.panel) .form-actions > button { flex: 1 1 0; min-width: 0; text-align: center; }
 }
+
+/* Built-in access keys: what the picked tier gives, on its own line under the chips. */
+.key-gives {
+  flex: 1 1 100%;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.key-none {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}

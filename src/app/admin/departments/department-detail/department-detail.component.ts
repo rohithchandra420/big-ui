@@ -3,6 +3,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { AdminService, DeptDetail } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
 import { AuthService } from '../../../core/auth.service';
+import { ACCESS_KEYS, AccessKey, DEFAULT_ACCESS_KEY, accessKey, isAccessKey } from '../../../core/access-keys';
 
 interface UserChip { _id: string; name: string; avatarVersion?: number; departments?: any[]; }
 
@@ -35,11 +36,23 @@ export class DepartmentDetailComponent implements OnChanges {
 
   editForm = new FormGroup({
     name: new FormControl('', Validators.required),
-    // Create only — fixed after creation (permission grants use it).
-    key: new FormControl('', [Validators.pattern(/^[a-z0-9-]{1,40}$/)]),
+    // Create only — fixed after creation (permission grants use it). One of
+    // the built-in keys (core/access-keys.ts), picked from a dropdown.
+    key: new FormControl(DEFAULT_ACCESS_KEY),
     description: new FormControl('')
   });
-  private keyEdited = false;
+
+  /** The built-in keys for the Create form's dropdown (a stored list: stable identities for *ngFor). */
+  readonly accessKeys: AccessKey[] = ACCESS_KEYS;
+
+  trackKey(_: number, k: AccessKey): string {
+    return k.key;
+  }
+
+  /** What the picked key gives, under the dropdown. */
+  get keyAbout(): string {
+    return accessKey(this.editForm.get('key')?.value)?.about || '';
+  }
 
   // Working sets during edit / create — changes are not persisted until Save is clicked
   editedTls: UserChip[] = [];
@@ -62,14 +75,7 @@ export class DepartmentDetailComponent implements OnChanges {
     private adminService: AdminService,
     private notificationService: NotificationService,
     private authService: AuthService
-  ) {
-    // On Create, the key follows the name until someone types in it.
-    this.editForm.get('name')!.valueChanges.subscribe(name => {
-      if (this.mode === 'create' && !this.keyEdited) {
-        this.editForm.get('key')!.setValue(this.authService.deptNameToKey((name || '').trim()), { emitEvent: false });
-      }
-    });
-  }
+  ) { }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['deptId'] || (changes['eventId'] && !changes['eventId'].firstChange && this.mode === 'view')) this.reset();
@@ -87,8 +93,7 @@ export class DepartmentDetailComponent implements OnChanges {
     } else {
       this.mode = 'create';
       this.detail = null;
-      this.keyEdited = false;
-      this.editForm.reset({ name: '', key: '', description: '' });
+      this.editForm.reset({ name: '', key: DEFAULT_ACCESS_KEY, description: '' });
       this.editedTls = [];
       this.editedVolunteers = [];
       if (!this.usersLoaded) this.loadAllUsers();
@@ -97,24 +102,23 @@ export class DepartmentDetailComponent implements OnChanges {
   }
 
   // ── Shared department keys (2026-11-06) ──
-  /** Every department's name + key, for the Create form's key suggestions. */
+  /** Every department's name + key, for the Create form's "Shared with" line. */
   private existingDepts: { name: string; key: string }[] = [];
-  existingKeys: string[] = [];
 
   private loadExistingKeys() {
     this.adminService.getDepartments().subscribe({
       next: (depts) => {
         this.existingDepts = depts.map(d => ({ name: d.name, key: this.authService.deptKeyOf(d) }));
-        this.existingKeys = [...new Set(this.existingDepts.map(d => d.key).filter(Boolean))].sort();
       },
-      error: () => { this.existingDepts = []; this.existingKeys = []; }
+      error: () => { this.existingDepts = []; }
     });
   }
 
-  /** "Music Stage A" when the typed key is already used — the new department gets the same access. */
+  /** "Music Stage A" when the picked key is already used — the new department gets the same access.
+   *  Not for "general": it gives no access, so there is nothing to share. */
   get sharedWith(): string {
-    const key = (this.editForm.get('key')?.value || '').trim().toLowerCase();
-    if (!key || this.mode !== 'create') return '';
+    const key = this.editForm.get('key')?.value || '';
+    if (!key || key === DEFAULT_ACCESS_KEY || this.mode !== 'create') return '';
     return this.existingDepts.filter(d => d.key === key).map(d => d.name).join(', ');
   }
 
@@ -136,10 +140,6 @@ export class DepartmentDetailComponent implements OnChanges {
     this.volWarnings = {};
     this.mode = 'edit';
     if (!this.usersLoaded) this.loadAllUsers();
-  }
-
-  onKeyInput() {
-    this.keyEdited = true;
   }
 
   // Esc: leave Edit for the details, otherwise close the panel
@@ -262,10 +262,7 @@ export class DepartmentDetailComponent implements OnChanges {
 
   get formInvalid(): boolean {
     if (this.editForm.get('name')!.invalid) return true;
-    if (this.mode === 'create') {
-      const key = this.editForm.get('key')!;
-      return !key.value || key.invalid;
-    }
+    if (this.mode === 'create') return !isAccessKey(this.editForm.get('key')!.value);
     return false;
   }
 
@@ -279,7 +276,7 @@ export class DepartmentDetailComponent implements OnChanges {
     this.saving = true;
     const { name, key, description } = this.editForm.value;
     const memberIds = [...this.editedTls, ...this.editedVolunteers].map(u => u._id);
-    this.adminService.createDepartment({ name: name!.trim(), key: key!.trim(), description: description || '' }).subscribe({
+    this.adminService.createDepartment({ name: name!.trim(), key: key || DEFAULT_ACCESS_KEY, description: description || '' }).subscribe({
       next: (dept) => {
         if (!memberIds.length) return this.created(dept._id);
         this.adminService.updateDepartment(dept._id, { addUserIds: memberIds }).subscribe({

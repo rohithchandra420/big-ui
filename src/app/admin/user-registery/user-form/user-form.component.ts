@@ -1,9 +1,11 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
 import { AbstractControl, FormControl, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 
 import { AdminService } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
 import { AuthService } from '../../../core/auth.service';
+import { Subscription } from 'rxjs';
+import { ACCESS_KEYS, AccessKey, AccessKeyTier, grantTier } from '../../../core/access-keys';
 
 export type PermLevel = 'none' | 'read' | 'write' | 'manage';
 export type UserFormMode = 'create' | 'edit';
@@ -28,7 +30,7 @@ const passwordsMatch = (group: AbstractControl): ValidationErrors | null => {
   templateUrl: './user-form.component.html',
   styleUrls: ['./user-form.component.css']
 })
-export class UserFormComponent implements OnInit, OnChanges {
+export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
 
   @Input() mode: UserFormMode = 'create';
   /** The user being edited (edit mode only). */
@@ -44,14 +46,15 @@ export class UserFormComponent implements OnInit, OnChanges {
   @Output() saved = new EventEmitter<any>();
   @Output() cancelled = new EventEmitter<void>();
 
-  readonly permLevels: PermLevel[] = ['read', 'write', 'manage'];
   readonly genders = ['Male', 'Female', 'Prefer not to say'];
   /**
-   * Shared department keys (2026-11-06): access is granted per department KEY,
-   * so departments sharing a key ("music": Music Stage A, Music Stage B) are
-   * one row with one level. Stored list (stable identities for *ngFor).
+   * Built-in access keys (2026-11-14): one row per key that gives something
+   * (core/access-keys.ts) — always shown, even before any department uses the
+   * key — with only the tiers that key really has. `names` = the departments
+   * carrying the key (the tooltip). A TL sees only their own department's key.
+   * Stored list (stable identities for *ngFor).
    */
-  accessKeys: { key: string; names: string }[] = [];
+  accessKeys: (AccessKey & { names: string })[] = [];
   keySelections: { [key: string]: PermLevel } = {};
   saving = false;
 
@@ -104,6 +107,15 @@ export class UserFormComponent implements OnInit, OnChanges {
     return k.key;
   }
 
+  trackTier(_: number, t: AccessKeyTier): string {
+    return t.tier;
+  }
+
+  /** What the picked tier of this key gives (the line under the chips). */
+  givesOf(k: AccessKey): string {
+    return k.tiers.find(t => t.tier === this.keySelections[k.key])?.gives || '';
+  }
+
   /** The department list can arrive after the form opens: rebuild the rows, keeping picks. */
   ngOnChanges(changes: SimpleChanges) {
     if (changes['departments'] && !changes['departments'].firstChange) {
@@ -111,13 +123,12 @@ export class UserFormComponent implements OnInit, OnChanges {
       this.buildAccessKeys();
       Object.keys(kept).forEach(k => { if (k in this.keySelections) this.keySelections[k] = kept[k]; });
       if (this.isEdit && this.user) this.populateFromUser();
-      const general = this.departments.find(d => d.name.toLowerCase() === 'general');
-      const gKey = general ? this.authService.deptKeyOf(general) : '';
-      if (!this.isEdit && gKey && !(gKey in kept)) this.keySelections[gKey] = 'read';
+      // Create: the department may have been picked before its list arrived.
+      else if (!this.defaultedKey) this.defaultHomeRead(this.form.controls.homeDepartment.value);
     }
   }
 
-  /** One row per key, with the names of the departments that share it. */
+  /** One row per built-in key that has tiers, with the names of the departments carrying it. */
   private buildAccessKeys() {
     const byKey = new Map<string, string[]>();
     this.departments.forEach(d => {
@@ -126,21 +137,47 @@ export class UserFormComponent implements OnInit, OnChanges {
       if (!byKey.has(key)) byKey.set(key, []);
       byKey.get(key)!.push(d.name);
     });
-    this.accessKeys = [...byKey].map(([key, names]) => ({ key, names: names.sort((a, b) => a.localeCompare(b)).join(', ') }))
-      .sort((a, b) => a.key.localeCompare(b.key));
+    this.accessKeys = ACCESS_KEYS
+      .filter(k => k.tiers.length > 0)
+      // A TL only gets their own department(s) in `departments`, so only that key.
+      .filter(k => this.isTopLevel || byKey.has(k.key))
+      .map(k => ({ ...k, names: (byKey.get(k.key) || []).sort((a, b) => a.localeCompare(b)).join(', ') }));
+    this.keySelections = {};
     this.accessKeys.forEach(k => { this.keySelections[k.key] = 'none'; });
+  }
+
+  /** The key whose Read was picked by default for the current home department (see defaultHomeRead). */
+  private defaultedKey = '';
+  private homeSub?: Subscription;
+
+  /**
+   * Picking a home department picks Read on that department's key by default
+   * (user, 2026-11-14) — the rest is extra access. Only when the key has a Read
+   * tier and nothing is picked on it yet. Changing the department takes that
+   * default back off the old key, unless it was raised or was there before.
+   */
+  private defaultHomeRead(deptId: string | null) {
+    if (this.defaultedKey && this.keySelections[this.defaultedKey] === 'read') this.keySelections[this.defaultedKey] = 'none';
+    this.defaultedKey = '';
+    const dept = this.departments.find(d => d._id === deptId);
+    const row = dept && this.accessKeys.find(k => k.key === this.authService.deptKeyOf(dept));
+    if (!row || !row.tiers.some(t => t.tier === 'read') || this.keySelections[row.key] !== 'none') return;
+    this.keySelections[row.key] = 'read';
+    this.defaultedKey = row.key;
+  }
+
+  ngOnDestroy() {
+    this.homeSub?.unsubscribe();
   }
 
   ngOnInit() {
     this.buildAccessKeys();
+    this.homeSub = this.form.controls.homeDepartment.valueChanges.subscribe(id => this.defaultHomeRead(id));
 
     if (this.isEdit) {
       this.form.controls.password.disable();
       this.form.controls.confirmPassword.disable();
       this.populateFromUser();
-    } else {
-      const general = this.departments.find(d => d.name.toLowerCase() === 'general');
-      if (general) this.keySelections[this.authService.deptKeyOf(general)] = 'read';
     }
 
     if (!this.isTopLevel) {
@@ -155,6 +192,7 @@ export class UserFormComponent implements OnInit, OnChanges {
     const homeDept = u.departments?.[0]?.department;
     const homeDeptId = homeDept && typeof homeDept !== 'string' ? homeDept._id : homeDept;
 
+    // Loading the user is not "picking" a department: no default Read on top of their saved grants.
     this.form.patchValue({
       userName: u.name,
       email: u.email,
@@ -163,13 +201,12 @@ export class UserFormComponent implements OnInit, OnChanges {
       dateOfJoining: u.dateOfJoining ? u.dateOfJoining.substring(0, 10) : null,
       foodPreference: u.foodPreference === 'non-veg' ? 'non-veg' : 'veg',
       gender: u.gender || ''
-    });
+    }, { emitEvent: false });
 
+    // Only grants that do something (built-in key, a tier it uses) show as picked.
     (u.permissions || []).forEach((perm: string) => {
-      const [key, action] = perm.split(':');
-      if (key in this.keySelections && this.permLevels.includes(action as PermLevel)) {
-        this.keySelections[key] = action as PermLevel;
-      }
+      const g = grantTier(perm);
+      if (g && g.key in this.keySelections) this.keySelections[g.key] = g.tier;
     });
   }
 

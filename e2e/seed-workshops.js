@@ -26,7 +26,7 @@ const square = ([lat, lng], r) => [[lat - r, lng - r], [lat - r, lng + r], [lat 
 async function seedWorkshops({ ev, P, mk, dir, tlBox, D }) {
   // ── department keys (the seeds upsert without the save hook) + a Workshop department
   for (const d of await Department.find({ key: { $exists: false } })) {
-    await Department.updateOne({ _id: d._id }, { key: Department.keyFromName(d.name) });
+    await Department.updateOne({ _id: d._id }, { key: Department.defaultKeyFor(d.name) });   // a built-in key
   }
   const ws = await Department.create({ name: "Workshop", description: "Workshops: venues, schedule, lists and the door." });
   D["Workshop"] = ws._id;

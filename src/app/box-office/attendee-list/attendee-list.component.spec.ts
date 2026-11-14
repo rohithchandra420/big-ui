@@ -41,11 +41,11 @@ describe('AttendeeListComponent', () => {
   const configureWith = (ticket: Ticket) => {
     TestBed.resetTestingModule();
     boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['checkIn', 'linkBand', 'replaceBand', 'bandHistory']);
-    authSpy = jasmine.createSpyObj('AuthService', ['hasPermission', 'hasDepartmentAccess'], {
+    authSpy = jasmine.createSpyObj('AuthService', ['hasPermission', 'inDepartmentKey'], {
       currentUser: { role: 'VOL', departments: [], permissions: [] }
     });
     authSpy.hasPermission.and.returnValue(false);
-    authSpy.hasDepartmentAccess.and.callFake(() => canReplace);
+    authSpy.inDepartmentKey.and.callFake(() => canReplace);
     accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', ['getTentById', 'vacateTentSlot']);
     accomodationServiceSpy.getTentById.and.returnValue(of({} as Tent));
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);

@@ -130,18 +130,18 @@ const appRoutes: Routes = [
     // workshop:manage via the department key), anyone granted workshop:manage.
     { path: 'workshops/setup', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['workshop:manage'] }, component: WorkshopSetupComponent },
     { path: 'my-department', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL', 'VOL'] }, component: MyDepartmentComponent },
-    { path: 'box-office/bookings', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BookingsComponent },
-    { path: 'box-office/registration', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: RegistrationComponent },
-    { path: 'box-office/registration/:id', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BookingFoundComponent },
+    { path: 'box-office/bookings', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departmentKeys: ['box-office'] }, component: BookingsComponent },
+    { path: 'box-office/registration', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departmentKeys: ['box-office'] }, component: RegistrationComponent },
+    { path: 'box-office/registration/:id', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departmentKeys: ['box-office'] }, component: BookingFoundComponent },
     // Old spelling, kept as a redirect for anyone with the URL bookmarked —
     // see ACCOMMODATION_CONTEXT.md decision #10. AccomodationComponent
     // itself was deleted in v1.13.0 (legacy cleanup).
     { path: 'accomodation', redirectTo: 'accommodation/inventory', pathMatch: 'full' },
-    { path: 'accommodation/setup', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: AccommodationSetupComponent },
-    { path: 'accommodation/inventory', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: AccommodationInventoryComponent },
+    { path: 'accommodation/setup', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['tenting:read'], departmentKeys: ['tenting'] }, component: AccommodationSetupComponent },
+    { path: 'accommodation/inventory', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'tenting:read'], departmentKeys: ['box-office', 'tenting'] }, component: AccommodationInventoryComponent },
     // Tent Fields (Epic B): seen by the Inventory rule; editing is DEV/DIR/ADMIN (checked by the server too)
-    { path: 'accommodation/fields', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: TentFieldsComponent },
-    { path: 'accommodation/fields/:id', canActivate: [AuthGuard, AuthPermissionGuard], canDeactivate: [(c: TentFieldComponent) => c.canLeave()], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: TentFieldComponent },
+    { path: 'accommodation/fields', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'tenting:read'], departmentKeys: ['box-office', 'tenting'] }, component: TentFieldsComponent },
+    { path: 'accommodation/fields/:id', canActivate: [AuthGuard, AuthPermissionGuard], canDeactivate: [(c: TentFieldComponent) => c.canLeave()], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'tenting:read'], departmentKeys: ['box-office', 'tenting'] }, component: TentFieldComponent },
     { path: 'admin', canActivate:[AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: AdminComponent, children: [
         { path: 'user', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: UserRegisteryComponent },
         { path: 'departments', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentsComponent },
