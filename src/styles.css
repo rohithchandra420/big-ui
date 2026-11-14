@@ -1919,6 +1919,20 @@ select:focus {
 .vl-search { flex: 1; min-width: 180px; max-width: 420px; }
 @media (max-width: 768px) { .vl-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
+/* List view: Ask location sits in the toolbar, at the end of the search row */
+.vl-ask { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.vl-ask mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+/* List view: round pick button in the first column */
+.vl-pick-col { width: 44px; padding-right: 0 !important; }
+.vl-tickbox { width: 26px; height: 26px; display: grid; place-items: center; padding: 0; cursor: pointer; border-radius: 50%;
+  border: 2px solid var(--border-default); background: #fff; color: transparent; }
+.vl-tickbox mat-icon { font-size: 17px; width: 17px; height: 17px; }
+.vl-tickbox:hover:not(:disabled) { border-color: var(--color-primary); }
+.vl-tickbox.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.vl-tickbox:disabled { opacity: .4; cursor: default; }
+.vl-tbl tbody tr.sel, .vl-tbl tbody tr.sel:hover { background: #e6f4ec; }
+
 /* Location on request (board chip, picked bar, profile panel) */
 .vl-loc { font-size: 14px; width: 14px; height: 14px; color: var(--color-secondary); }
 .vl-dest.ask { flex: none; background: #fff; color: #14261f; }

@@ -38,6 +38,10 @@
         <mat-icon>search</mat-icon>
         <input type="text" [(ngModel)]="search" (ngModelChange)="apply()" placeholder="Search name or phone" aria-label="Search volunteer" />
       </div>
+      <!-- List layout: pick rows, then ask them all (no bar at the bottom here) -->
+      <button type="button" class="btn-cta vl-ask" *ngIf="canManage && layout === 'list'" [disabled]="busy || !selected.size" (click)="askSelected()">
+        <mat-icon>location_searching</mat-icon> Ask location<ng-container *ngIf="selected.size"> ({{ selected.size }})</ng-container>
+      </button>
     </div>
 
     <p class="vl-muted" *ngIf="!board.volunteers.length">No volunteers on this event's staff list yet. Add them in Admin › Users.</p>
@@ -114,13 +118,25 @@
     <!-- List -->
     <div class="vl-tbl-wrap" *ngIf="layout === 'list' && board.volunteers.length">
       <table class="vl-tbl">
-        <thead><tr><th>Volunteer</th><th>Department</th><th>Today</th><th class="vl-wide">Phone</th><th class="vl-wide">Joined</th></tr></thead>
+        <thead><tr>
+          <th class="vl-pick-col" *ngIf="canManage">
+            <button type="button" class="vl-tickbox" [class.on]="allShownPicked" [disabled]="!view.rows.length" (click)="toggleAllShown()"
+                    [attr.aria-pressed]="allShownPicked" [attr.aria-label]="allShownPicked ? 'Unpick everyone shown' : 'Pick everyone shown'"><mat-icon>check</mat-icon></button>
+          </th>
+          <th>Volunteer</th><th>Department</th><th>Today</th><th class="vl-wide">Phone</th><th class="vl-wide">Joined</th>
+        </tr></thead>
         <tbody>
-          <tr *ngFor="let r of view.rows; trackBy: trackRow" (click)="openProfile(r.v)">
+          <tr *ngFor="let r of view.rows; trackBy: trackRow" [class.sel]="selected.has(r.v._id)" (click)="openProfile(r.v)">
+            <!-- Pick for a bulk location request; the rest of the row opens the profile -->
+            <td class="vl-pick-col" *ngIf="canManage">
+              <button type="button" class="vl-tickbox" [class.on]="selected.has(r.v._id)" (click)="$event.stopPropagation(); toggle(r.v)"
+                      [attr.aria-pressed]="selected.has(r.v._id)" [attr.aria-label]="'Pick ' + r.v.name"><mat-icon>check</mat-icon></button>
+            </td>
             <td>
               <span class="vl-cell-who">
                 <app-user-avatar [userId]="r.v._id" [name]="r.v.name" [version]="r.v.avatarVersion" [size]="26"></app-user-avatar>
                 <b>{{ r.v.name }}</b>
+                <mat-icon class="vl-loc" *ngIf="r.v.sharing" title="Shares their location when asked" aria-label="Shares their location when asked">location_on</mat-icon>
               </span>
             </td>
             <td><ng-container *ngIf="r.deptName; else un">{{ r.deptName }}</ng-container><ng-template #un><span class="vl-pill un">Unassigned</span></ng-template></td>
@@ -128,13 +144,13 @@
             <td class="vl-wide">{{ r.v.phone || '—' }}</td>
             <td class="vl-wide">{{ r.v.dateOfJoining ? (r.v.dateOfJoining | date: 'd MMM') : '—' }}</td>
           </tr>
-          <tr *ngIf="!view.rows.length"><td colspan="5">No volunteers match.</td></tr>
+          <tr *ngIf="!view.rows.length"><td [attr.colspan]="canManage ? 6 : 5">No volunteers match.</td></tr>
         </tbody>
       </table>
     </div>
 
-    <!-- Picked volunteers: choose where they go -->
-    <div class="vl-bar-wrap" *ngIf="selected.size">
+    <!-- Board: picked volunteers, choose where they go -->
+    <div class="vl-bar-wrap" *ngIf="selected.size && layout === 'board'">
       <div class="vl-selbar" role="region" aria-label="Move the picked volunteers">
         <b>{{ selected.size }} picked · move to</b>
         <div class="vl-dests">

@@ -113,7 +113,11 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  askSelected() { this.askLocation([...this.selected]); }
+  /** Asks everyone picked, then drops the picks. */
+  async askSelected() {
+    await this.askLocation([...this.selected]);
+    this.selected.clear();
+  }
 
   async loadLocation(v: Volunteer) {
     if (!this.event || !this.canManage) return;
@@ -207,6 +211,18 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   clearSelection() { this.selected.clear(); }
+
+  /** List view: everyone left after search and filters is picked. */
+  get allShownPicked(): boolean {
+    return this.view.rows.length > 0 && this.view.rows.every(r => this.selected.has(r.v._id));
+  }
+
+  /** List view header: pick everyone shown, or unpick them when they all are. */
+  toggleAllShown() {
+    if (!this.canManage) return;
+    const all = this.allShownPicked;
+    this.view.rows.forEach(r => (all ? this.selected.delete(r.v._id) : this.selected.add(r.v._id)));
+  }
 
   /** `deptId` null = free to the Unassigned pool. */
   async move(ids: string[], deptId: string | null) {

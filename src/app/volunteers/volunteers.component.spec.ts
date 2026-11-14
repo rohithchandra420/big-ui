@@ -168,6 +168,41 @@ describe('VolunteersComponent', () => {
     expect(component.panel).toBe('closed');
   }));
 
+  it('List view: pick rows or everyone shown, then ask them all for their location', fakeAsync(() => {
+    start();
+    component.board = { ...component.board!, canManage: true };
+    component.layout = 'list';
+    component.search = 'a';            // Anil, Bela, Chand all contain an "a"
+    component.apply();
+    fixture.detectChanges();
+    const boxes = el().querySelectorAll<HTMLButtonElement>('.vl-tbl tbody .vl-tickbox');
+    expect(boxes.length).toBe(3);
+    boxes[1].click();
+    expect([...component.selected]).toEqual(['2']);
+    expect(service.profile).not.toHaveBeenCalled();   // picking does not open the profile
+
+    el().querySelector<HTMLButtonElement>('.vl-tbl thead .vl-tickbox')!.click();
+    fixture.detectChanges();
+    expect(component.selected.size).toBe(3);
+    expect(component.allShownPicked).toBeTrue();
+    expect(el().querySelector('.vl-selbar')).toBeNull();            // no bar in the List layout
+    const askBtn = el().querySelector<HTMLButtonElement>('.vl-ask')!;
+    expect(askBtn.textContent).toContain('Ask location (3)');
+
+    service.askLocation.and.returnValue(Promise.resolve({ asked: 2, notSharing: 1, alreadyAsked: 0, skipped: 0 }));
+    askBtn.click();
+    flushMicrotasks();
+    fixture.detectChanges();
+    expect(service.askLocation).toHaveBeenCalledWith('e1', jasmine.arrayWithExactContents(['1', '2', '3']));
+    expect(notify.openSucessSnackBar).toHaveBeenCalledWith("Asked 2 · 1 doesn't share their location");
+    expect(component.selected.size).toBe(0);                       // picks are dropped after asking
+    expect(el().querySelector<HTMLButtonElement>('.vl-ask')!.disabled).toBeTrue();
+
+    component.toggleAllShown();
+    component.toggleAllShown();       // again = unpick
+    expect(component.selected.size).toBe(0);
+  }));
+
   it('filters from the stat cards and the list layout shows everyone', fakeAsync(() => {
     start();
     component.setStat('unassigned');
