@@ -6,7 +6,7 @@
  * (Main — Dashboard, Billboard, SOS, Venue Map, My Department — stays a
  * sidebar group and is not listed here.)
  */
-export type SectionKey = 'box-office' | 'accommodation' | 'workshops' | 'hospitality' | 'medical' | 'wash' | 'admin';
+export type SectionKey = 'box-office' | 'accommodation' | 'workshops' | 'hospitality' | 'medical' | 'wash' | 'volunteers' | 'admin';
 
 export interface NavTab {
   /** The route; also the tab's identity. */
@@ -87,6 +87,13 @@ export const NAV_SECTIONS: NavSection[] = [
       { path: '/wash/stock', label: 'Stock' },
       { path: '/wash/report', label: 'Report' },
       { path: '/wash/setup', label: 'Setup' },
+    ],
+    details: [],
+  },
+  {
+    key: 'volunteers', label: 'Volunteers', icon: 'diversity_3', prefix: '/volunteers',
+    tabs: [
+      { path: '/volunteers', label: 'Volunteers', exact: true },
     ],
     details: [],
   },

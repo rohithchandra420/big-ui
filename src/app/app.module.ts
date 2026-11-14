@@ -114,6 +114,8 @@ import { WashMonitorComponent } from './wash/monitor/wash-monitor.component';
 import { WashSetupComponent } from './wash/setup/wash-setup.component';
 import { WashStockComponent } from './wash/stock/wash-stock.component';
 import { WashReportComponent } from './wash/report/wash-report.component';
+import { VolunteersComponent } from './volunteers/volunteers.component';
+import { VolunteerNeedComponent } from './volunteers/volunteer-need/volunteer-need.component';
 import { BillboardComponent } from './billboard/billboard.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
@@ -209,7 +211,9 @@ LOAD_WASM().subscribe()
     WashMonitorComponent,
     WashSetupComponent,
     WashStockComponent,
-    WashReportComponent
+    WashReportComponent,
+    VolunteersComponent,
+    VolunteerNeedComponent
   ],
   imports: [
     BrowserModule,

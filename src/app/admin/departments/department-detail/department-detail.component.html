@@ -100,6 +100,13 @@
         <label>Description</label>
         <textarea formControlName="description" rows="3" placeholder="What does this department handle?"></textarea>
       </div>
+
+      <div class="field need-field" *ngIf="showNeeded">
+        <label for="dd-needed">Volunteers needed for {{ eventName || 'this event' }}</label>
+        <input id="dd-needed" type="number" min="0" max="1000" step="1" inputmode="numeric" formControlName="needed" placeholder="No number">
+        <span class="field-error" *ngIf="neededInvalid">A whole number from 0 to 1000.</span>
+        <span class="field-hint">Optional. The Volunteers page shows it next to how many the department has. Its Team Lead can change it in My Department.</span>
+      </div>
     </form>
 
     <!-- TL Section -->
@@ -132,45 +139,13 @@
       </mat-autocomplete>
     </section>
 
-    <!-- VOL Section -->
+    <!-- Volunteers are assigned on the Volunteers page, not here -->
     <section class="section">
       <h3 class="section-title">
         <mat-icon class="section-icon pink">group</mat-icon>
-        Volunteers <span class="count">{{ editedVolunteers.length }}</span>
+        Volunteers <span class="count" *ngIf="detail">{{ detail.volunteers.length }}</span>
       </h3>
-      <p class="empty-text" *ngIf="editedVolunteers.length === 0">No volunteers yet</p>
-      <div class="chip-row" *ngIf="editedVolunteers.length > 0">
-        <span class="chip chip-vol removable" *ngFor="let v of editedVolunteers">
-          <app-user-avatar [userId]="v._id" [name]="v.name" [version]="v.avatarVersion" [size]="18"></app-user-avatar>
-          {{ v.name }}
-          <button class="chip-remove" (click)="removeVol(v._id)" title="Remove">×</button>
-        </span>
-      </div>
-      <label class="search-field add-member" matAutocompleteOrigin #volOrigin="matAutocompleteOrigin">
-        <mat-icon>person_add</mat-icon>
-        <input type="text" [formControl]="volSearchCtrl" [matAutocomplete]="volAuto"
-          [matAutocompleteConnectedTo]="volOrigin" placeholder="Add a volunteer — search by name" aria-label="Add a volunteer — search by name" />
-      </label>
-      <mat-autocomplete #volAuto="matAutocomplete" class="app-ac-panel" (optionSelected)="onVolSelected($event.option.value)">
-        <mat-option *ngFor="let u of filteredVolOptions" [value]="u">
-          <app-user-avatar [userId]="u._id" [name]="u.name" [version]="u.avatarVersion" [size]="20"></app-user-avatar>
-          <span>{{ u.name }}</span>
-        </mat-option>
-        <mat-option *ngIf="filteredVolOptions.length === 0 && volSearchCtrl.value" disabled>
-          No matching volunteers
-        </mat-option>
-      </mat-autocomplete>
-
-      <!-- Reassignment warning banner -->
-      <div class="warning-banner" *ngIf="warningList.length > 0">
-        <mat-icon class="warn-icon">info</mat-icon>
-        <div>
-          <div *ngFor="let w of warningList" class="warning-line">
-            <strong>{{ w.name }}</strong> is currently in <em>{{ w.fromDept }}</em>.
-            Saving will move them to this department.
-          </div>
-        </div>
-      </div>
+      <p class="empty-text">Volunteers are assigned, moved and freed on the Volunteers page.</p>
     </section>
   </div>
 

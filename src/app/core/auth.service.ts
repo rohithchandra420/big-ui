@@ -139,6 +139,22 @@ export class AuthService {
         return this.canLogWash(user) || (user.permissions || []).some(p => p.startsWith('wash:'));
     }
 
+    /** Volunteers page, same rule as big-api utils/volunteerAccess.js. The Volunteer
+     *  department is the Unassigned pool, so being a MEMBER gives nothing.
+     *  Assign (move / free): DEV/DIR/ADMIN, the Volunteer department's TL, volunteer:write and up. */
+    canAssignVolunteers(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        if (user.role === 'TL' && this.inDepartmentKey(user, 'volunteer')) return true;
+        return (user.permissions || []).some(p => p === 'volunteer:write' || p === 'volunteer:manage');
+    }
+
+    /** View (the page and profiles): the Assign group and volunteer:read. */
+    canViewVolunteers(user: User | null): boolean {
+        if (!user) return false;
+        return this.canAssignVolunteers(user) || (user.permissions || []).includes('volunteer:read');
+    }
+
     /** Accommodation (key `tenting`), same rule as big-api utils/tentingAccess.js —
      *  Read (see Setup, Inventory, Fields): DEV/DIR/ADMIN, every Tenting member, tenting:read and up. */
     canReadTenting(user: User | null): boolean {

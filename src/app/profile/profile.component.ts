@@ -9,6 +9,7 @@ import { deptShortCode } from '../core/department.utils';
 import { AvatarService } from '../core/avatar.service';
 import { ConfirmationService } from '../shared/confirm-dialog/confirmation.service';
 import { EventService } from '../core/event.service';
+import { PHONE_PATTERN } from '../core/phone';
 
 interface PermissionEntry {
   moduleKey: string;
@@ -37,6 +38,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   savingFood = false;
   savingGender = false;
+  savingPhone = false;
+  /** What is typed in the Phone box; null until the person types (the saved number shows). */
+  phoneDraft: string | null = null;
   readonly genders = ['Male', 'Female', 'Prefer not to say'];
   myStays: { _id: string; from: string; to: string; unit: string; type: string; icon: string; area: { _id: string; name: string } | null; movedInAt: string | null; movedOutAt: string | null }[] = [];
   private eventSub?: Subscription;
@@ -133,6 +137,19 @@ export class ProfileComponent implements OnInit, OnDestroy {
         next: r => { this.mealQr = r.image; this.mealQrBusy = false; this.notificationService.openSucessSnackBar('New meal QR ready'); },
         error: () => { this.mealQrBusy = false; this.notificationService.openErrorSnackBar('Could not make a new meal QR'); }
       });
+    });
+  }
+
+  get phoneText(): string { return this.phoneDraft ?? this.profileData?.phone ?? ''; }
+  get phoneChanged(): boolean { return this.phoneDraft !== null && this.phoneDraft.trim() !== (this.profileData?.phone || ''); }
+  get phoneValid(): boolean { const p = this.phoneText.trim(); return !p || PHONE_PATTERN.test(p); }
+
+  savePhone() {
+    if (!this.phoneChanged || !this.phoneValid || this.savingPhone) return;
+    this.savingPhone = true;
+    this.profileService.setPhone(this.phoneText.trim()).subscribe({
+      next: res => { this.profileData = { ...this.profileData, phone: res.phone }; this.phoneDraft = null; this.savingPhone = false; this.notificationService.openSucessSnackBar('Saved'); },
+      error: () => { this.savingPhone = false; this.notificationService.openErrorSnackBar('Could not save your phone number'); }
     });
   }
 

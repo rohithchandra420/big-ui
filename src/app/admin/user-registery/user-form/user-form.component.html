@@ -60,6 +60,12 @@
   </div>
 
   <div class="field">
+    <label for="uf-phone">Phone</label>
+    <input id="uf-phone" type="tel" formControlName="phone" maxlength="24" inputmode="tel" autocomplete="off" placeholder="e.g. +91 90000 00000">
+    <div class="field-error" *ngIf="form.controls.phone.invalid">7 to 15 digits. A leading + is allowed.</div>
+  </div>
+
+  <div class="field">
     <label>Gender</label>
     <div class="food-opts" role="radiogroup" aria-label="Gender">
       <button type="button" class="toggle-chip" role="radio" *ngFor="let g of genders"

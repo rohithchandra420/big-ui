@@ -1,0 +1,225 @@
+<div class="page-ph" #head>
+  <div>
+    <div class="page-ph-title">Volunteers</div>
+    <div class="page-ph-sub">{{ event?.name || 'No event selected' }} staff list · assign, free and look up volunteers</div>
+  </div>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
+</div>
+
+<div class="vl-page" [style.--vl-head.px]="headHeight">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+  <p class="vl-muted" *ngIf="loading">Loading…</p>
+
+  <ng-container *ngIf="event && board">
+    <!-- Stat cards (tap to filter) -->
+    <div class="vl-stats">
+      <button type="button" class="vl-stat" [class.on]="stat === 'all' && !notMarked" (click)="stat = 'all'; notMarked = false; apply()">
+        <mat-icon>groups</mat-icon><span><b>{{ view.stats.all }}</b><small>On this event</small></span>
+      </button>
+      <button type="button" class="vl-stat" [class.on]="stat === 'unassigned'" (click)="setStat('unassigned')">
+        <mat-icon>person_search</mat-icon><span><b>{{ view.stats.unassigned }}</b><small>Unassigned</small></span>
+      </button>
+      <button type="button" class="vl-stat" [class.on]="stat === 'short'" [class.warn]="view.stats.stillNeeded > 0" (click)="setStat('short')">
+        <mat-icon>group_add</mat-icon><span><b>{{ view.stats.stillNeeded }}</b><small>Still needed</small></span>
+      </button>
+      <button type="button" class="vl-stat" [class.on]="notMarked" (click)="toggleNotMarked()">
+        <mat-icon>event_busy</mat-icon><span><b>{{ view.stats.notMarked }}</b><small>Not marked today</small></span>
+      </button>
+    </div>
+
+    <div class="vl-tools">
+      <div class="vl-seg" role="group" aria-label="Layout">
+        <button type="button" [class.on]="layout === 'board'" (click)="layout = 'board'"><mat-icon>view_kanban</mat-icon>Board</button>
+        <button type="button" [class.on]="layout === 'list'" (click)="layout = 'list'"><mat-icon>table_rows</mat-icon>List</button>
+      </div>
+      <div class="search-field vl-search">
+        <mat-icon>search</mat-icon>
+        <input type="text" [(ngModel)]="search" (ngModelChange)="apply()" placeholder="Search name or phone" aria-label="Search volunteer" />
+      </div>
+    </div>
+
+    <p class="vl-muted" *ngIf="!board.volunteers.length">No volunteers on this event's staff list yet. Add them in Admin › Users.</p>
+    <p class="vl-muted" *ngIf="!board.pool">
+      There is no Volunteer department yet, so freed volunteers have no department. Create one in Admin › Departments with the key "Volunteers".
+    </p>
+
+    <!-- A volunteer chip, shared by the pool and the cards -->
+    <ng-template #chip let-v>
+      <div class="vl-chip" [class.sel]="selected.has(v._id)" [attr.draggable]="canAssign ? 'true' : null"
+           (dragstart)="dragStart($event, v)" (dragend)="dragEnd()">
+        <button type="button" class="vl-pick" (click)="toggle(v)" [attr.aria-pressed]="canAssign ? selected.has(v._id) : null"
+                [attr.aria-label]="(canAssign ? 'Pick ' : 'Open ') + v.name">
+          <span class="vl-av">
+            <app-user-avatar [userId]="v._id" [name]="v.name" [version]="v.avatarVersion" [size]="32"></app-user-avatar>
+            <mat-icon class="vl-tick" *ngIf="selected.has(v._id)">check</mat-icon>
+          </span>
+          <span class="vl-who">
+            <b>{{ v.name }}</b>
+            <small><i class="vl-dot" [class.no]="!v.marked"></i>{{ v.marked ? 'Marked today' : 'Not marked today' }}</small>
+          </span>
+        </button>
+        <button type="button" class="vl-info" (click)="openProfile(v)" [attr.aria-label]="'Profile of ' + v.name"><mat-icon>info</mat-icon></button>
+      </div>
+    </ng-template>
+
+    <!-- Board -->
+    <div class="vl-board" *ngIf="layout === 'board' && board.volunteers.length">
+      <section class="vl-pool" [class.drop]="dropOn === ''"
+               (dragover)="dragOver($event, '')" (dragleave)="dragLeave($event, '')" (drop)="drop($event, '')">
+        <header class="vl-pool-h">
+          <mat-icon>person_search</mat-icon>
+          <div><h3>Unassigned</h3><p>{{ board.pool?.name || 'No department' }} pool</p></div>
+          <span class="vl-count">{{ view.poolTotal }}</span>
+        </header>
+        <div class="vl-pool-list">
+          <ng-container *ngFor="let v of view.pool; trackBy: trackVol">
+            <ng-container *ngTemplateOutlet="chip; context: { $implicit: v }"></ng-container>
+          </ng-container>
+          <p class="vl-empty" *ngIf="!view.pool.length">
+            {{ view.poolTotal ? 'No match.' : (canAssign ? 'Nobody waiting. Drop a volunteer here to free them.' : 'Nobody waiting.') }}
+          </p>
+        </div>
+      </section>
+
+      <div class="vl-lanes">
+        <section class="vl-lane" *ngFor="let l of view.lanes; trackBy: trackLane" [style.--lc]="l.colour" [class.drop]="dropOn === l.dept._id"
+                 (dragover)="dragOver($event, l.dept._id)" (dragleave)="dragLeave($event, l.dept._id)" (drop)="drop($event, l.dept._id)">
+          <header class="vl-lane-h">
+            <mat-icon>{{ l.icon }}</mat-icon>
+            <div>
+              <h3>{{ l.dept.name }}</h3>
+              <p>{{ l.dept.tls.length ? 'TL: ' + l.dept.tls.join(', ') : 'No Team Lead on this event' }}</p>
+            </div>
+            <span class="vl-count">{{ l.have }}<ng-container *ngIf="l.dept.needed"> / {{ l.dept.needed }}</ng-container></span>
+          </header>
+          <div class="vl-need" [ngClass]="l.need.kind">
+            <span class="vl-bar" *ngIf="l.need.kind !== 'none'" aria-hidden="true"><i [style.width.%]="l.need.pct"></i></span>
+            <span class="vl-pill">{{ l.need.text }}</span>
+            <button type="button" class="vl-edit" *ngIf="l.dept.canSetNeed" (click)="openNeed(l.dept)"
+                    [attr.aria-label]="'Set volunteers needed in ' + l.dept.name"><mat-icon>edit</mat-icon></button>
+          </div>
+          <div class="vl-lane-b">
+            <ng-container *ngFor="let v of l.shown; trackBy: trackVol">
+              <ng-container *ngTemplateOutlet="chip; context: { $implicit: v }"></ng-container>
+            </ng-container>
+            <p class="vl-empty" *ngIf="!l.shown.length">{{ l.have ? 'No match.' : 'No volunteers yet.' }}</p>
+          </div>
+        </section>
+        <p class="vl-muted" *ngIf="stat === 'short' && !view.lanes.length">Every department with a number has enough volunteers.</p>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div class="vl-tbl-wrap" *ngIf="layout === 'list' && board.volunteers.length">
+      <table class="vl-tbl">
+        <thead><tr><th>Volunteer</th><th>Department</th><th>Today</th><th class="vl-wide">Phone</th><th class="vl-wide">Joined</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let r of view.rows; trackBy: trackRow" (click)="openProfile(r.v)">
+            <td>
+              <span class="vl-cell-who">
+                <app-user-avatar [userId]="r.v._id" [name]="r.v.name" [version]="r.v.avatarVersion" [size]="26"></app-user-avatar>
+                <b>{{ r.v.name }}</b>
+              </span>
+            </td>
+            <td><ng-container *ngIf="r.deptName; else un">{{ r.deptName }}</ng-container><ng-template #un><span class="vl-pill un">Unassigned</span></ng-template></td>
+            <td><span class="vl-pill" [class.ok]="r.v.marked" [class.no]="!r.v.marked">{{ r.v.marked ? 'Marked' : 'Not marked' }}</span></td>
+            <td class="vl-wide">{{ r.v.phone || '—' }}</td>
+            <td class="vl-wide">{{ r.v.dateOfJoining ? (r.v.dateOfJoining | date: 'd MMM') : '—' }}</td>
+          </tr>
+          <tr *ngIf="!view.rows.length"><td colspan="5">No volunteers match.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Picked volunteers: choose where they go -->
+    <div class="vl-bar-wrap" *ngIf="selected.size">
+      <div class="vl-selbar" role="region" aria-label="Move the picked volunteers">
+        <b>{{ selected.size }} picked · move to</b>
+        <div class="vl-dests">
+          <button type="button" class="vl-dest" *ngFor="let d of destinations; trackBy: trackDest" [class.free]="d.id === null"
+                  [disabled]="busy" (click)="moveSelected(d.id)"><mat-icon>{{ d.icon }}</mat-icon>{{ d.name }}</button>
+        </div>
+        <button type="button" class="vl-x" aria-label="Clear picks" (click)="clearSelection()"><mat-icon>close</mat-icon></button>
+      </div>
+    </div>
+  </ng-container>
+
+  <app-slide-panel [open]="panel !== 'closed'" [icon]="panel === 'need' ? 'group_add' : 'person'" [title]="panelTitle" [subtitle]="panelSubtitle" (closed)="closePanel()">
+    <!-- Volunteers needed -->
+    <div class="vl-form" *ngIf="panel === 'need' && needOf as d">
+      <div class="field">
+        <label for="vl-need">How many volunteers does {{ d.name }} need for this event?</label>
+        <input id="vl-need" type="number" min="0" max="1000" step="1" inputmode="numeric" [(ngModel)]="needValue" />
+      </div>
+      <p class="vl-muted">0 removes the number. The board shows how many are assigned against it.</p>
+      <div class="field-error" *ngIf="needError">{{ needError }}</div>
+      <div class="vl-btns">
+        <button type="button" class="btn-ghost" (click)="closePanel()">Cancel</button>
+        <button type="button" class="btn-cta" [disabled]="busy" (click)="saveNeed()">Save</button>
+      </div>
+    </div>
+
+    <!-- Profile -->
+    <ng-container *ngIf="panel === 'profile'">
+      <p class="vl-muted" *ngIf="profileLoading">Loading…</p>
+      <div class="alert alert-danger" *ngIf="profileError">{{ profileError }}</div>
+      <div class="vl-prof" *ngIf="profile as p">
+        <div class="vl-prof-top">
+          <app-user-avatar [userId]="p._id" [name]="p.name" [version]="p.avatarVersion" [size]="56"></app-user-avatar>
+          <div>
+            <b>{{ p.name }}</b>
+            <small>{{ p.unassigned ? 'Unassigned' : p.department?.name }}</small>
+          </div>
+        </div>
+
+        <div class="vl-facts">
+          <div class="vl-fact"><mat-icon>{{ profileOf?.marked ? 'event_available' : 'event_busy' }}</mat-icon>
+            <b>{{ profileOf?.marked ? 'Marked' : 'Not marked' }}</b><small>Attendance today</small></div>
+          <div class="vl-fact"><mat-icon>restaurant</mat-icon><b>{{ p.meals }} meal{{ p.meals === 1 ? '' : 's' }}</b><small>Served so far</small></div>
+          <div class="vl-fact"><mat-icon>{{ p.stay ? 'bed' : 'no_meeting_room' }}</mat-icon><b>{{ p.stay ? 'Has a bed' : 'No bed' }}</b><small>Stay</small></div>
+        </div>
+
+        <div>
+          <p class="section-lbl">Contact</p>
+          <dl class="vl-kv">
+            <dt>Phone</dt><dd><a *ngIf="p.phone; else noPhone" [href]="'tel:' + p.phone">{{ p.phone }}</a><ng-template #noPhone>Not given</ng-template></dd>
+            <dt>Email</dt><dd><a [href]="'mailto:' + p.email">{{ p.email }}</a></dd>
+          </dl>
+        </div>
+
+        <div>
+          <p class="section-lbl">Details</p>
+          <dl class="vl-kv">
+            <dt>Department</dt><dd>{{ p.unassigned ? 'Unassigned (Volunteer pool)' : p.department?.name }}</dd>
+            <dt>Date of joining</dt><dd>{{ p.dateOfJoining ? (p.dateOfJoining | date: 'd MMM y') : 'Not given' }}</dd>
+            <dt>Food</dt><dd>{{ p.foodPreference === 'non-veg' ? 'Non-veg' : 'Veg' }}</dd>
+            <dt>Gender</dt><dd>{{ p.gender || 'Not given' }}</dd>
+            <dt>Stay</dt><dd>{{ p.stay ? (p.stay.unit + (p.stay.type ? ' · ' + p.stay.type : '') + (p.stay.movedIn ? '' : ' · not moved in yet')) : 'No bed given yet' }}</dd>
+            <dt>Staff band</dt><dd>{{ p.band ? 'Linked' : 'Not linked' }}</dd>
+          </dl>
+        </div>
+
+        <div>
+          <p class="section-lbl">Attendance · last {{ p.attendance.length }} days</p>
+          <div class="vl-att" [style.--days]="p.attendance.length">
+            <span></span><span class="vl-att-d" *ngFor="let d of p.attendance">{{ d.date | date: 'EEE' }}</span>
+            <span class="vl-att-r">Morning</span><i *ngFor="let d of p.attendance" [class.y]="d.morning"></i>
+            <span class="vl-att-r">Afternoon</span><i *ngFor="let d of p.attendance" [class.y]="d.afternoon"></i>
+            <span class="vl-att-r">Night</span><i *ngFor="let d of p.attendance" [class.y]="d.night"></i>
+          </div>
+          <p class="vl-muted">Green = marked. Marking stays in My Department.</p>
+        </div>
+
+        <div *ngIf="canAssign">
+          <p class="section-lbl">Move to</p>
+          <div class="vl-move">
+            <button type="button" class="pill-btn" *ngFor="let d of destinations; trackBy: trackDest" [class.cur]="isCurrent(d)" [class.free]="d.id === null"
+                    [disabled]="busy || isCurrent(d)" (click)="moveFromProfile(d.id)"><mat-icon>{{ d.icon }}</mat-icon>{{ d.name }}</button>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </app-slide-panel>
+</div>

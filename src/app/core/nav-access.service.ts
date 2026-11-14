@@ -111,6 +111,9 @@ export class NavAccessService implements OnDestroy {
   /** WASH › Setup: DEV/DIR/ADMIN, the WASH TL, wash:manage. */
   get canSeeWashSetup(): boolean { return this.authService.canManageWash(this.user); }
 
+  /** Volunteers: DEV/DIR/ADMIN, the Volunteer department's TL, volunteer grants — never by membership. */
+  get canSeeVolunteers(): boolean { return this.authService.canViewVolunteers(this.user); }
+
   get canSeeAdminMenu(): boolean { return ADMIN_MENU_ROLES.includes(this.role); }
 
   /** Departments, Events, Announcements, Public Page. */
@@ -142,6 +145,7 @@ export class NavAccessService implements OnDestroy {
       case '/wash/stock':
       case '/wash/report': return this.canSeeWash;
       case '/wash/setup': return this.canSeeWashSetup;
+      case '/volunteers': return this.canSeeVolunteers;
       case '/admin/user': return this.canSeeAdminMenu;
       case '/admin/departments':
       case '/admin/events':

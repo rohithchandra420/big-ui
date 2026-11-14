@@ -1890,3 +1890,67 @@ select:focus {
 .md-panel .panel-body .field { margin-top: 10px; }
 .md-panel .md-audit-row { grid-template-columns: 96px minmax(0, 1fr); }
 .md-p0 { margin: 0; }
+
+/* ── Volunteers page (volunteers/): pills, list, picked bar, forms and the profile panel.
+   Kept here so the component's own stylesheet stays under the 6 kB budget. ── */
+.vl-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px;
+  white-space: nowrap; background: var(--border-subtle); color: var(--text-secondary); }
+.vl-pill.ok { background: #e6f4ec; color: #2f855a; }
+.vl-pill.no { background: #fdf3e1; color: #b7791f; }
+.vl-pill.un { background: #f1f6f3; color: var(--color-primary); border: 1px dashed var(--color-secondary); }
+
+.vl-tbl-wrap { overflow-x: auto; background: #fff; border: 1px solid var(--border-default); border-radius: 12px; }
+.vl-tbl { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--text-primary); }
+.vl-tbl th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; padding: 9px 12px;
+  background: var(--border-subtle); color: var(--text-secondary); }
+.vl-tbl td { padding: 8px 12px; border-top: 1px solid var(--border-default); vertical-align: middle; color: var(--text-primary); }
+.vl-tbl tbody tr { cursor: pointer; }
+.vl-tbl tbody tr:hover { background: #f7faf8; }
+.vl-cell-who { display: flex; align-items: center; gap: 8px; }
+.vl-cell-who b { font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+
+.vl-bar-wrap { position: sticky; bottom: 12px; z-index: 5; display: flex; justify-content: center; margin-top: 16px; pointer-events: none; }
+.vl-selbar { pointer-events: auto; display: flex; align-items: center; gap: 10px; width: min(760px, 100%); padding: 10px 12px; border-radius: 16px;
+  background: #14261f; color: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, .3); }
+.vl-selbar b { font-size: 13.5px; white-space: nowrap; color: #fff; }
+.vl-dests { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.vl-dest { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 12.5px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  padding: 6px 11px; border-radius: 99px; border: 1px solid rgba(255, 255, 255, .25); background: rgba(255, 255, 255, .08); color: #fff; }
+.vl-dest:hover:not(:disabled) { background: #fff; color: #14261f; }
+.vl-dest:disabled { opacity: .5; cursor: default; }
+.vl-dest.free { border-style: dashed; }
+.vl-dest mat-icon { font-size: 17px; width: 17px; height: 17px; }
+.vl-x { flex: none; display: grid; place-items: center; border: 0; background: none; cursor: pointer; color: #fff; }
+
+.vl-form { display: flex; flex-direction: column; gap: 12px; color: var(--text-primary); }
+.vl-btns { display: flex; gap: 8px; justify-content: flex-end; }
+
+.vl-prof { display: flex; flex-direction: column; gap: 16px; color: var(--text-primary); }
+.vl-prof-top { display: flex; align-items: center; gap: 12px; }
+.vl-prof-top b { display: block; font-size: 17px; color: var(--text-primary); overflow-wrap: anywhere; }
+.vl-prof-top small { font-size: 12.5px; color: var(--text-secondary); }
+.vl-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.vl-fact { background: var(--border-subtle); border-radius: 10px; padding: 8px; text-align: center; color: var(--text-primary); }
+.vl-fact mat-icon { color: var(--color-secondary); }
+.vl-fact b { display: block; font-size: 13px; color: var(--text-primary); }
+.vl-fact small { font-size: 11px; color: var(--text-secondary); }
+.vl-kv { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 6px 10px; margin: 0; font-size: 13px; }
+.vl-kv dt { font-weight: 600; color: var(--text-secondary); }
+.vl-kv dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
+.vl-kv a { color: var(--color-primary); }
+.vl-att { display: grid; grid-template-columns: 76px repeat(var(--days, 7), minmax(0, 1fr)); gap: 4px; align-items: center; text-align: center; }
+.vl-att-d { font-size: 11px; color: var(--text-secondary); }
+.vl-att-r { text-align: left; font-size: 11.5px; font-weight: 600; color: var(--text-secondary); }
+.vl-att i { display: block; height: 18px; border-radius: 5px; background: #f3c9a5; }
+.vl-att i.y { background: #2f855a; }
+.vl-move { display: flex; flex-wrap: wrap; gap: 6px; }
+.vl-move .pill-btn.cur { background: var(--color-primary); border-color: var(--color-primary); color: #fff; opacity: 1; }
+.vl-move .pill-btn.cur mat-icon { color: #fff; }
+.vl-move .pill-btn.free { border-style: dashed; }
+
+@media (max-width: 768px) {
+  .vl-wide { display: none; }
+  .vl-selbar { flex-wrap: wrap; }
+  .vl-dests { flex-basis: 100%; order: 3; }
+  .vl-x { margin-left: auto; }
+}

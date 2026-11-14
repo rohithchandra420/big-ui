@@ -147,6 +147,9 @@
 .section .empty-text { margin: 0 0 10px; }
 
 /* Warning banner (reassignment notice) */
+/* Volunteers needed: a short number box */
+.need-field input { max-width: 140px; }
+
 .warning-banner {
   display: flex;
   align-items: flex-start;

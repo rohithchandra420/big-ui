@@ -114,6 +114,18 @@
     </div>
 
     <div class="profile-section" *ngIf="profileData">
+      <div class="section-label">Phone</div>
+      <div class="phone-row">
+        <div class="field">
+          <input type="tel" inputmode="tel" maxlength="24" autocomplete="tel" aria-label="Phone number" placeholder="e.g. +91 90000 00000"
+                 [ngModel]="phoneText" (ngModelChange)="phoneDraft = $event" (keydown.enter)="savePhone()">
+        </div>
+        <button type="button" class="btn-cta" [disabled]="!phoneChanged || !phoneValid || savingPhone" (click)="savePhone()">Save</button>
+      </div>
+      <div class="field-error" *ngIf="!phoneValid">7 to 15 digits. A leading + is allowed.</div>
+    </div>
+
+    <div class="profile-section" *ngIf="profileData">
       <div class="section-label">Gender</div>
       <div class="food-opts" role="radiogroup" aria-label="Gender">
         <button type="button" class="toggle-chip" role="radio" *ngFor="let g of genders" [disabled]="savingGender"

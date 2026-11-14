@@ -27,6 +27,8 @@ export interface AccessKey {
   tiers: AccessKeyTier[];
   /** The page treats every tier alike: an old grant of any tier shows as the one listed tier. */
   anyTier?: boolean;
+  /** Being a member gives nothing, so picking it as a home department picks no Read by default (Volunteers). */
+  noHomeRead?: boolean;
 }
 
 export const DEFAULT_ACCESS_KEY = 'general';
@@ -86,6 +88,16 @@ export const ACCESS_KEYS: AccessKey[] = [
       { tier: 'read', label: 'Read', gives: 'See the Monitor' },
       { tier: 'write', label: 'Write', gives: 'Also log Refilled / Cleaned / Empty / Out of order' },
       { tier: 'manage', label: 'Manage', gives: 'Also Setup, stickers and stock' }
+    ]
+  },
+  {
+    key: 'volunteer', label: 'Volunteers',
+    about: 'The Unassigned pool: new volunteers start here. Only its Team Lead opens the Volunteers page.',
+    noHomeRead: true,
+    tiers: [
+      { tier: 'read', label: 'Read', gives: 'See the Volunteers page and volunteer profiles' },
+      { tier: 'write', label: 'Write', gives: 'Also assign, reassign and free volunteers' },
+      { tier: 'manage', label: 'Manage', gives: 'Also deposits and location requests (coming)' }
     ]
   }
 ];
