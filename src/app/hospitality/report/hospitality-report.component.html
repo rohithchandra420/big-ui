@@ -64,7 +64,7 @@
                 <td class="num" *ngIf="!filtered">{{ m.asked ?? '—' }}</td>
                 <td class="num" *ngIf="!filtered">
                   <ng-container *ngIf="m.hasFigures">{{ m.prepared }}</ng-container>
-                  <button type="button" class="hr-add" *ngIf="!m.hasFigures && m.closed" (click)="$event.stopPropagation(); startFigures(d.date, m)">Add kitchen figures</button>
+                  <button type="button" class="hr-add" *ngIf="!readOnly && (!m.hasFigures && m.closed)" (click)="$event.stopPropagation(); startFigures(d.date, m)">Add kitchen figures</button>
                   <span class="hx-muted" *ngIf="!m.hasFigures && !m.closed">—</span>
                 </td>
                 <td class="num">{{ m.served }}</td>
@@ -152,7 +152,7 @@
         <div>{{ o.meal.guests }} guest plates · {{ o.meal.flagged }} without attendance · {{ o.meal.refused }} refused</div>
         <div *ngIf="o.meal.hasFigures">Prepared {{ o.meal.vegPrepared }} Veg · {{ o.meal.nonVegPrepared }} Non-veg<ng-container *ngIf="o.meal.leftoverKg !== null"> · {{ o.meal.leftoverKg }} kg left</ng-container></div>
         <div *ngIf="o.meal.note" class="hx-muted">“{{ o.meal.note }}”</div>
-        <button type="button" class="pill-btn" *ngIf="!filtered && (o.meal.hasFigures || o.meal.closed)" (click)="editFromPanel(o.date, o.meal)">
+        <button type="button" class="pill-btn" *ngIf="!readOnly && (!filtered && (o.meal.hasFigures || o.meal.closed))" (click)="editFromPanel(o.date, o.meal)">
           <mat-icon>{{ o.meal.hasFigures ? 'edit' : 'add' }}</mat-icon>{{ o.meal.hasFigures ? 'Edit kitchen figures' : 'Add kitchen figures' }}
         </button>
       </div>

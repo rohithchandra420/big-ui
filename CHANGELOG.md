@@ -13,6 +13,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.57.0] - 2026-11-14
+
+### Added
+- **Helpdesk read-only access (Helpdesk story 2).** Helpdesk people see these sections in the sidebar and can open them to look things up. Buttons that change something are hidden for them.
+  - Box Office: Bookings, Registration and a booking's page, without Export, Bulk Upload, Edit, Spot Registration, Admit, bands or tents.
+  - Accommodation: Setup, Inventory and Fields.
+  - Workshops: Planner, a session's lists and Reports.
+  - WASH: Monitor, Stock and Report.
+  - Volunteers: the board, profiles and deposit status.
+  - Hospitality: Today, Guests, Report and Stay. No Serving desk or Setup tab.
+  - Dashboard: the festival overview, without revenue.
+  - Admin: Users (view only) next to Announcements.
+- A session's lists also open, read-only, for people who could already see Workshop Reports.
+
+---
+
 ## [1.56.0] - 2026-11-14
 
 ### Added

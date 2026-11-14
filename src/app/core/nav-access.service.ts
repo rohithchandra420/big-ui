@@ -79,7 +79,8 @@ export class NavAccessService implements OnDestroy {
     if (!this.user) return false;
     if (TOP_ROLES.includes(this.role)) return true;
     return this.authService.hasPermission(this.user, 'box-office:read') ||
-           this.authService.inDepartmentKey(this.user, 'box-office');
+           this.authService.inDepartmentKey(this.user, 'box-office') ||
+           this.isHelpdesk;   // HD2: read-only
   }
 
   /** Accommodation Setup: DEV/DIR/ADMIN and the Tenting team (key `tenting`, Read and up) —
@@ -98,6 +99,12 @@ export class NavAccessService implements OnDestroy {
 
   /** Workshops › Reports: the Workshop team and workshop:read. */
   get canSeeWorkshopReports(): boolean { return this.authService.canReadWorkshops(this.user); }
+
+  /** Helpdesk (HD2): sees the other sections read-only. */
+  private get isHelpdesk(): boolean { return !!this.authService.isHelpdesk?.(this.user); }
+
+  /** Hospitality Today / Guests / Report / Stay: the Manage group, and Helpdesk read-only. */
+  get canSeeHospitalityView(): boolean { return this.canSeeHospitality || this.isHelpdesk; }
 
   /** Hospitality: DEV/DIR/ADMIN, the Hospitality TL, hospitality:manage. */
   get canSeeHospitality(): boolean { return this.authService.canManageHospitality(this.user); }
@@ -136,10 +143,10 @@ export class NavAccessService implements OnDestroy {
       case '/workshops/reports': return this.canSeeWorkshopReports;
       case '/workshops/setup': return this.canSeeWorkshopSetup;
       case '/hospitality':
-      case '/hospitality/desk':
       case '/hospitality/guests':
       case '/hospitality/report':
-      case '/hospitality/stay':
+      case '/hospitality/stay': return this.canSeeHospitalityView;
+      case '/hospitality/desk':
       case '/hospitality/setup': return this.canSeeHospitality;
       case '/medical':
       case '/medical/records':
@@ -150,7 +157,7 @@ export class NavAccessService implements OnDestroy {
       case '/wash/setup': return this.canSeeWashSetup;
       case '/volunteers':
       case '/volunteers/deposits': return this.canSeeVolunteers;
-      case '/admin/user': return this.canSeeAdminMenu;
+      case '/admin/user': return this.canSeeAdminMenu || this.isHelpdesk;   // Helpdesk: view only
       case '/admin/departments':
       case '/admin/events':
       case '/admin/public-page': return this.canSeeAdminTopPages;

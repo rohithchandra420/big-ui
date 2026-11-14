@@ -49,6 +49,19 @@ describe('HospitalityGuestsComponent', () => {
 
   const start = () => { fixture.detectChanges(); flushMicrotasks(); fixture.detectChanges(); };
 
+  it('is read-only when the server says so (Helpdesk, HD2): no Add, Issue, Edit, Delete or pass buttons', fakeAsync(() => {
+    service.getGuests.and.callFake(() => Promise.resolve({ today: '2026-11-12', guests: guests(), canManage: false } as any));
+    start();
+    expect(component.readOnly).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.page-ph .btn-cta')).toBeNull();
+    component.open(component.guests[0]);
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Sound crew');
+    expect(text).not.toContain('Issue pass');
+    expect(fixture.nativeElement.querySelector('.hg-ic')).toBeNull();
+  }));
+
   it('lists guests with counts for the filters', fakeAsync(() => {
     start();
     expect(fixture.nativeElement.querySelectorAll('.hg-row').length).toBe(3);

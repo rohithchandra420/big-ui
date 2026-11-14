@@ -11,6 +11,7 @@ import { delay } from 'rxjs/operators';
 import { BookingsComponent } from './bookings.component';
 import { BoxOfficeService } from '../box-office.service';
 import { EventService } from '../../core/event.service';
+import { AuthService } from '../../core/auth.service';
 import { Ticket } from '../../models/ticket.model';
 import { EventItem } from '../../models/event.model';
 import { EmailBatch } from '../../models/email.model';
@@ -70,6 +71,7 @@ describe('BookingsComponent', () => {
       imports: [FormsModule, MatMenuModule, NoopAnimationsModule],
       providers: [
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },
+        { provide: AuthService, useValue: { currentUser: null } },
         { provide: Router, useValue: routerSpy },
         { provide: MatDialog, useValue: dialogSpy },
         { provide: EventService, useValue: eventServiceStub },

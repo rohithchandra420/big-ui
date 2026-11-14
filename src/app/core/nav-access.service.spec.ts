@@ -29,6 +29,10 @@ describe('NavAccessService', () => {
       canManageHospitality: jasmine.createSpy('canManageHospitality').and.returnValue(false),
       canUseMedical: jasmine.createSpy('canUseMedical').and.returnValue(false),
       // Announcements: top roles by default, like the real service; Helpdesk in its own test.
+      isHelpdesk: jasmine.createSpy('isHelpdesk').and.returnValue(false),
+      canViewWash: jasmine.createSpy('canViewWash').and.returnValue(false),
+      canManageWash: jasmine.createSpy('canManageWash').and.returnValue(false),
+      canViewVolunteers: jasmine.createSpy('canViewVolunteers').and.returnValue(false),
       canAnnounce: jasmine.createSpy('canAnnounce').and.callFake((u: any) => ['DEV', 'DIR', 'ADMIN'].includes(u?.role)),
       // Accommodation (key `tenting`): top roles by default, like the real service.
       canReadTenting: jasmine.createSpy('canReadTenting').and.callFake((u: any) => ['DEV', 'DIR', 'ADMIN'].includes(u?.role)),
@@ -92,6 +96,16 @@ describe('NavAccessService', () => {
     expect(labels('admin')).toEqual(['Announcements']);
     user$.next({ _id: 'u7', role: 'TL' });
     expect(labels('admin')).toEqual(['Users', 'Announcements']);
+  });
+
+  it('Helpdesk (HD2) sees the read-only tabs: no Serving desk, no Hospitality Setup, Users under Admin', () => {
+    auth.isHelpdesk.and.returnValue(true);
+    auth.canAnnounce.and.returnValue(true);
+    user$.next({ _id: 'u8', role: 'VOL' });
+    expect(labels('box-office').length).toBe(2);
+    expect(svc.visibleTabs(section('hospitality')).map(t => t.path)).toEqual(['/hospitality', '/hospitality/guests', '/hospitality/report', '/hospitality/stay']);
+    expect(labels('admin')).toEqual(['Users', 'Announcements']);
+    expect(svc.canSeeSection('medical')).toBeFalse();
   });
 
   it('never shows UAT Reset to anyone but a Developer', () => {

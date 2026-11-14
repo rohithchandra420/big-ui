@@ -199,6 +199,11 @@ export class AttendeeListComponent implements OnChanges {
     });
   }
 
+  /** Helpdesk looking at a booking (HD2): no Admit, bands, tents or edits. */
+  get readOnly(): boolean {
+    return !!this.authService.boxOfficeReadOnly?.(this.authService.currentUser);
+  }
+
   /** Same rule as big-api's middleware/bandAuth.js — the server checks again. */
   get canReplaceBand(): boolean {
     const user = this.authService.currentUser;

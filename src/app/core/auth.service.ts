@@ -96,7 +96,7 @@ export class AuthService {
     /** Reports (with names): the Run group and workshop:read (any tier). */
     canReadWorkshops(user: User | null): boolean {
         if (!user) return false;
-        return this.canRunWorkshops(user) || (user.permissions || []).some(p => p.startsWith('workshop:'));
+        return this.canRunWorkshops(user) || (user.permissions || []).some(p => p.startsWith('workshop:')) || this.isHelpdesk(user);
     }
 
     /** Hospitality (H1), same rule as big-api utils/hospitalityAccess.js —
@@ -136,7 +136,7 @@ export class AuthService {
     /** View (Monitor, no buttons): the Log group and wash:read (any tier). */
     canViewWash(user: User | null): boolean {
         if (!user) return false;
-        return this.canLogWash(user) || (user.permissions || []).some(p => p.startsWith('wash:'));
+        return this.canLogWash(user) || (user.permissions || []).some(p => p.startsWith('wash:')) || this.isHelpdesk(user);
     }
 
     /** Volunteers page, same rule as big-api utils/volunteerAccess.js. The Volunteer
@@ -154,13 +154,38 @@ export class AuthService {
     canAnnounce(user: User | null): boolean {
         if (!user) return false;
         if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.isHelpdesk(user);
+    }
+
+    /** Helpdesk: every member of a Helpdesk department (key `helpdesk`), or helpdesk:manage.
+     *  HD2: Helpdesk sees the other sections read-only (same rule as big-api isHelpdeskUser);
+     *  never Medical Desk, revenue, Email Report or UAT Reset. */
+    isHelpdesk(user: User | null): boolean {
+        if (!user) return false;
         return this.inDepartmentKey(user, 'helpdesk') || (user.permissions || []).includes('helpdesk:manage');
+    }
+
+    /** Box Office staff: DEV/DIR/ADMIN, Box Office members, any box-office grant. */
+    isBoxOfficeStaff(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.inDepartmentKey(user, 'box-office') || this.hasPermission(user, 'box-office:read');
+    }
+
+    /** Helpdesk looking at Box Office without being Box Office staff: sees, changes nothing. */
+    boxOfficeReadOnly(user: User | null): boolean {
+        return this.isHelpdesk(user) && !this.isBoxOfficeStaff(user);
+    }
+
+    /** Hospitality's read-only pages (Today, Guests, Report, Stay): the Manage group and Helpdesk. */
+    canViewHospitality(user: User | null): boolean {
+        return this.canManageHospitality(user) || this.isHelpdesk(user);
     }
 
     /** View (the page and profiles): the Assign group and volunteer:read. */
     canViewVolunteers(user: User | null): boolean {
         if (!user) return false;
-        return this.canAssignVolunteers(user) || (user.permissions || []).includes('volunteer:read');
+        return this.canAssignVolunteers(user) || (user.permissions || []).includes('volunteer:read') || this.isHelpdesk(user);
     }
 
     /** Accommodation (key `tenting`), same rule as big-api utils/tentingAccess.js —
@@ -168,7 +193,7 @@ export class AuthService {
     canReadTenting(user: User | null): boolean {
         if (!user) return false;
         if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
-        return this.inDepartmentKey(user, 'tenting') || this.hasPermission(user, 'tenting:read');
+        return this.inDepartmentKey(user, 'tenting') || this.hasPermission(user, 'tenting:read') || this.isHelpdesk(user);
     }
 
     /** Write (create / edit / delete units, vacate): DEV/DIR/ADMIN, the Tenting TL, tenting:write and up.

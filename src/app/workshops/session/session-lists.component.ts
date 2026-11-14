@@ -42,6 +42,8 @@ interface Outcome {
 export class SessionListsComponent implements OnInit, OnDestroy {
   sessionId = '';
   data: SessionLists | null = null;
+  /** A reader (Reports access, Helpdesk): sees the lists, changes nothing. */
+  readOnly = false;
   loading = false;
   loadError = '';
   tab: Tab = 'list';
@@ -87,6 +89,7 @@ export class SessionListsComponent implements OnInit, OnDestroy {
     this.loadError = '';
     try {
       this.data = await this.workshops.getLists(this.sessionId);
+      this.readOnly = (this.data as any)?.canRun === false;
       const e = this.data.entries;
       this.pre = e.filter(x => x.list === 'pre');
       this.wait = e.filter(x => x.list === 'wait');

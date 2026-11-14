@@ -4,8 +4,8 @@
     <div class="page-ph-sub">{{ totalBookings }} booking{{ totalBookings === 1 ? '' : 's' }}</div>
   </div>
   <div style="display: flex; gap: 8px;">
-    <button class="btn-ghost" (click)="exportBookings()" [disabled]="!bookings.length">Export</button>
-    <button class="btn-cta" (click)="openBulkUpload()">Bulk Upload</button>
+    <button *ngIf="!readOnly" class="btn-ghost" (click)="exportBookings()" [disabled]="!bookings.length">Export</button>
+    <button *ngIf="!readOnly" class="btn-cta" (click)="openBulkUpload()">Bulk Upload</button>
   </div>
   <!-- Navigation Tabs: Back + this section's pages -->
   <app-section-header></app-section-header>
@@ -163,7 +163,7 @@
       </div>
 
       <div class="btn-row" style="margin-top: 8px;">
-        <button class="btn-secondary" (click)="editingTicket = true">Edit Ticket</button>
+        <button *ngIf="!readOnly" class="btn-secondary" (click)="editingTicket = true">Edit Ticket</button>
       </div>
       <app-email-actions [ticket]="activeBooking" (sent)="onPanelEmailStarted()"></app-email-actions>
 
@@ -172,7 +172,7 @@
       <app-attendee-list [ticket]="activeBooking" [allowEdit]="true"></app-attendee-list>
 
       <div class="divider"></div>
-      <app-email-history [ticketId]="activeBooking._id"></app-email-history>
+      <app-email-history *ngIf="!readOnly" [ticketId]="activeBooking._id"></app-email-history>
     </ng-container>
 
     <ng-template #editForm>

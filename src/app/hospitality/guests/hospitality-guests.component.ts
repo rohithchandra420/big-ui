@@ -24,6 +24,8 @@ export class HospitalityGuestsComponent implements OnInit, OnDestroy {
   event: EventItem | null = null;
   today = '';
   guests: Guest[] = [];
+  /** Helpdesk's read-only view (HD2): the server says this person may look but not change. */
+  readOnly = false;
   /** Filtered, stored list for the *ngFor (never built in a getter). */
   shown: Guest[] = [];
   loading = false;
@@ -73,6 +75,7 @@ export class HospitalityGuestsComponent implements OnInit, OnDestroy {
     this.loadError = '';
     try {
       const res = await this.hospitality.getGuests(this.event._id);
+      this.readOnly = (res as any)?.canManage === false;
       this.today = res.today;
       this.guests = res.guests;
       if (this.selected) this.selected = this.guests.find(g => g._id === this.selected!._id) || null;

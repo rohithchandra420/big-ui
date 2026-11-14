@@ -32,6 +32,8 @@ const REFRESH_MS = 60 * 1000;
 export class HospitalityTodayComponent implements OnInit, OnDestroy {
   event: EventItem | null = null;
   day: MessDay | null = null;
+  /** Helpdesk's read-only view (HD2): the server says this person may look but not change. */
+  readOnly = false;
   loading = false;
   loadError = '';
   busy = '';
@@ -81,6 +83,7 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
     this.loadError = '';
     try {
       this.day = await this.hospitality.getDay(this.event._id, this.date || undefined);
+      this.readOnly = (this.day as any)?.canManage === false;
       if (pickMeal) this.selectedKey = this.defaultMeal();
       this.apply();
       if (this.whoOpen) this.loadWho();

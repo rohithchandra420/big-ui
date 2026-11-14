@@ -7,6 +7,7 @@ import { BoxOfficeService } from '../box-office.service';
 import { BoxOfficeQrscannerPopupComponent } from './qrscanner-popup/qrscanner-popup.component';
 import { isSpotRegistration, lookupErrorMessage, passChipsTyped as buildPassChips, PassChip } from '../box-office.utils';
 import { EventService } from '../../core/event.service';
+import { AuthService } from '../../core/auth.service';
 import { GateFeedbackService } from '../../core/gate-feedback.service';
 
 @Component({
@@ -40,8 +41,14 @@ export class RegistrationComponent implements OnInit {
     private router: Router,
     private dialog: MatDialog,
     private eventService: EventService,
-    public gateFeedback: GateFeedbackService
+    public gateFeedback: GateFeedbackService,
+    private auth: AuthService
   ) { }
+
+  /** Helpdesk (HD2): looks bookings up, changes nothing — no Spot Registration. */
+  get readOnly(): boolean {
+    return !!this.auth.boxOfficeReadOnly?.(this.auth.currentUser);
+  }
 
   ngOnInit() {
     this.eventService.activeEvent.subscribe(event => {
