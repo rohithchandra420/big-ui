@@ -33,6 +33,11 @@ export class ProfileService {
     return this.http.post<{ image: string }>(this.url + '/user/me/meal-qr/reset', {});
   }
 
+  /** Volunteers V3: own "share my location when asked" switch. */
+  setLocationSharing(on: boolean) {
+    return this.http.patch<{ locationSharing: boolean }>(this.url + '/user/me/location-sharing', { on });
+  }
+
   /** Own phone number; an empty value clears it. The answer is the number as stored. */
   setPhone(phone: string) {
     return this.http.patch<{ phone: string }>(this.url + '/user/me/phone', { phone });

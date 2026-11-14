@@ -117,6 +117,7 @@ import { WashReportComponent } from './wash/report/wash-report.component';
 import { VolunteersComponent } from './volunteers/volunteers.component';
 import { VolunteerNeedComponent } from './volunteers/volunteer-need/volunteer-need.component';
 import { VolunteerDepositsComponent } from './volunteers/deposits/volunteer-deposits.component';
+import { LocationPromptComponent } from './volunteers/location-prompt/location-prompt.component';
 import { BillboardComponent } from './billboard/billboard.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
@@ -215,7 +216,8 @@ LOAD_WASM().subscribe()
     WashReportComponent,
     VolunteersComponent,
     VolunteerNeedComponent,
-    VolunteerDepositsComponent
+    VolunteerDepositsComponent,
+    LocationPromptComponent
   ],
   imports: [
     BrowserModule,

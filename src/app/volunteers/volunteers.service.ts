@@ -2,7 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { DepositList, DepositMode, DepositRow, MoveResult, NeedInfo, VolBoard, VolProfile } from './volunteers.model';
+import {
+  AskResult, DepositList, DepositMode, DepositRow, LocationInfo, MoveResult, MyLocationRequest, NeedInfo, VolBoard, VolProfile
+} from './volunteers.model';
 
 /** Volunteers page: the board, assign / free, volunteers needed and profiles. */
 @Injectable({ providedIn: 'root' })
@@ -53,6 +55,31 @@ export class VolunteersService {
   /** The event's standard deposit (pre-fills the form). 0 = none. */
   setDefaultDeposit(eventId: string, amount: number): Promise<{ defaultAmount: number }> {
     return firstValueFrom(this.http.put<{ defaultAmount: number }>(this.url + '/deposits/settings', { event: eventId, amount }));
+  }
+
+  // ── Location on request (V3) ──
+
+  /** Ask one or many volunteers where they are. Only those who share are asked. */
+  askLocation(eventId: string, userIds: string[]): Promise<AskResult> {
+    return firstValueFrom(this.http.post<AskResult>(this.url + '/location/ask', { event: eventId, userIds }));
+  }
+
+  /** One volunteer's sharing state, last answer and request log. */
+  location(eventId: string, userId: string): Promise<LocationInfo> {
+    return firstValueFrom(this.http.get<LocationInfo>(`${this.url}/${userId}/location`, { params: { event: eventId } }));
+  }
+
+  /** The signed-in person's own open requests. */
+  myLocationRequests(): Promise<MyLocationRequest[]> {
+    return firstValueFrom(this.http.get<MyLocationRequest[]>(this.url + '/location/mine'));
+  }
+
+  answerLocation(requestId: string, lat: number, lng: number): Promise<{ ok: boolean }> {
+    return firstValueFrom(this.http.post<{ ok: boolean }>(`${this.url}/location/${requestId}/answer`, { lat, lng }));
+  }
+
+  declineLocation(requestId: string): Promise<{ ok: boolean }> {
+    return firstValueFrom(this.http.post<{ ok: boolean }>(`${this.url}/location/${requestId}/decline`, {}));
   }
 
   /** 0 = no number. */

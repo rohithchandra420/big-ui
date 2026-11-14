@@ -39,6 +39,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   savingFood = false;
   savingGender = false;
   savingPhone = false;
+  savingLocation = false;
   /** What is typed in the Phone box; null until the person types (the saved number shows). */
   phoneDraft: string | null = null;
   readonly genders = ['Male', 'Female', 'Prefer not to say'];
@@ -137,6 +138,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
         next: r => { this.mealQr = r.image; this.mealQrBusy = false; this.notificationService.openSucessSnackBar('New meal QR ready'); },
         error: () => { this.mealQrBusy = false; this.notificationService.openErrorSnackBar('Could not make a new meal QR'); }
       });
+    });
+  }
+
+  /** Volunteers V3: opt in or out of being asked for a location. */
+  setLocationSharing(on: boolean) {
+    if (on === !!this.profileData?.locationSharing || this.savingLocation) return;
+    this.savingLocation = true;
+    this.profileService.setLocationSharing(on).subscribe({
+      next: res => { this.profileData = { ...this.profileData, locationSharing: res.locationSharing }; this.savingLocation = false; this.notificationService.openSucessSnackBar(res.locationSharing ? 'Location sharing is on' : 'Location sharing is off'); },
+      error: () => { this.savingLocation = false; this.notificationService.openErrorSnackBar('Could not save that'); }
     });
   }
 

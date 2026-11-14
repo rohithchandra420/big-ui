@@ -106,6 +106,16 @@ export function buildBoard(board: VolBoard | null, f: BoardFilter): BoardView {
   };
 }
 
+export const LOCATION_LABEL: Record<string, string> = { asked: 'Waiting for an answer', answered: 'Answered', declined: 'Declined', expired: 'No answer (expired)' };
+
+/** "Asked 3 · 2 don't share their location · 1 already asked" */
+export function askMessage(r: { asked: number; notSharing: number; alreadyAsked: number }): string {
+  const parts = [r.asked ? `Asked ${r.asked}` : 'Nobody asked'];
+  if (r.notSharing) parts.push(`${r.notSharing} ${r.notSharing === 1 ? "doesn't" : "don't"} share their location`);
+  if (r.alreadyAsked) parts.push(`${r.alreadyAsked} already asked`);
+  return parts.join(' · ');
+}
+
 export const MODE_LABEL: Record<string, string> = { cash: 'Cash', upi: 'UPI', bank: 'Bank transfer', other: 'Other' };
 export const DEPOSIT_LABEL: Record<string, string> = { held: 'Collected', none: 'Not collected', refunded: 'Refunded' };
 

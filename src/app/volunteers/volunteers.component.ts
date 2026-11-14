@@ -4,8 +4,9 @@ import { EventService } from '../core/event.service';
 import { NotificationService } from '../core/notification.service';
 import { EventItem } from '../models/event.model';
 import { VolunteersService } from './volunteers.service';
-import { VolBoard, VolDepartment, VolProfile, Volunteer } from './volunteers.model';
-import { BoardView, DEPOSIT_LABEL, Lane, StatFilter, buildBoard, money, moveMessage } from './volunteers.utils';
+import type * as Leaflet from 'leaflet';
+import { LocationInfo, VolBoard, VolDepartment, VolProfile, Volunteer } from './volunteers.model';
+import { BoardView, DEPOSIT_LABEL, LOCATION_LABEL, Lane, StatFilter, askMessage, buildBoard, money, moveMessage } from './volunteers.utils';
 
 type Panel = 'closed' | 'profile' | 'need';
 interface Destination { id: string | null; name: string; icon: string }
@@ -82,9 +83,77 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.sub.unsubscribe();
     this.resize?.disconnect();
+    this.map?.remove();
   }
 
   get canAssign(): boolean { return !!this.board?.canAssign; }
+  /** V3: may ask for locations and read the answers. */
+  get canManage(): boolean { return !!this.board?.canManage; }
+
+  // ── location on request (V3) ──
+  location: LocationInfo | null = null;
+  locationLoading = false;
+  locationLabel = LOCATION_LABEL;
+  @ViewChild('locMap') locMap?: ElementRef<HTMLDivElement>;
+  private map?: Leaflet.Map;
+
+  /** Only volunteers who share are asked; the answer says how many were not. */
+  async askLocation(ids: string[]) {
+    if (!this.event || !this.canManage || this.busy || !ids.length) return;
+    this.busy = true;
+    try {
+      const res = await this.volunteers.askLocation(this.event._id, ids);
+      const text = askMessage(res);
+      res.asked ? this.notify.openSucessSnackBar(text) : this.notify.openErrorSnackBar(text);
+      if (this.profileOf && ids.includes(this.profileOf._id)) await this.loadLocation(this.profileOf);
+    } catch (err: any) {
+      this.notify.openErrorSnackBar(err?.error?.message || 'Could not send the request.');
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  askSelected() { this.askLocation([...this.selected]); }
+
+  async loadLocation(v: Volunteer) {
+    if (!this.event || !this.canManage) return;
+    this.locationLoading = !this.location;
+    try {
+      const info = await this.volunteers.location(this.event._id, v._id);
+      if (this.profileOf?._id !== v._id) return;
+      this.location = info;
+      // The map box appears with the answer; draw once it is on the page
+      setTimeout(() => this.drawMap());
+    } catch {
+      this.location = null;
+    } finally {
+      this.locationLoading = false;
+    }
+  }
+
+  mapsLink(lat?: number, lng?: number): string {
+    return `https://www.google.com/maps/search/?api=1&query=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`;
+  }
+
+  /** Small map of the last answer (Leaflet is loaded on first use, like the SOS page). */
+  private async drawMap() {
+    const at = this.location?.latest;
+    const el = this.locMap?.nativeElement;
+    if (!at || !el || typeof at.lat !== 'number' || typeof at.lng !== 'number') return;
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css'; link.rel = 'stylesheet'; link.href = 'assets/leaflet/leaflet.css';
+      document.head.appendChild(link);
+    }
+    const mod: any = await import('leaflet');
+    const L: typeof Leaflet = mod.default || mod;
+    if (this.locMap?.nativeElement !== el) return;   // the panel changed meanwhile
+    this.map?.remove();
+    this.map = L.map(el, { zoomControl: true, attributionControl: true }).setView([at.lat, at.lng], 17);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(this.map);
+    L.circleMarker([at.lat, at.lng], { radius: 9, color: '#fff', weight: 3, fillColor: '#1E4638', fillOpacity: 1 }).addTo(this.map);
+    setTimeout(() => this.map?.invalidateSize());
+  }
 
   async load() {
     if (!this.event) { this.board = null; this.apply(); return; }
@@ -198,6 +267,7 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       const p = await this.volunteers.profile(this.event._id, v._id);
       if (this.profileOf?._id === v._id) this.profile = p;
+      if (this.canManage) this.loadLocation(v);
     } catch (err: any) {
       this.profileError = err?.error?.message || 'Could not load the profile.';
     } finally {
@@ -250,6 +320,9 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     this.profile = null;
     this.profileOf = null;
     this.needOf = null;
+    this.location = null;
+    this.map?.remove();
+    this.map = undefined;
   }
 
   get panelTitle(): string {

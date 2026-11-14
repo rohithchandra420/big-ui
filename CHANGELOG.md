@@ -13,6 +13,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.55.0] - 2026-11-14
+
+### Added
+- **Location on request** for volunteers.
+  - My Profile: a "Location sharing" switch (off by default) with a plain explanation. Nobody is tracked.
+  - When someone on the Volunteer team asks, a card appears at the bottom of BiG (and a notification arrives): **Share location** sends the phone's position once; **Decline** closes the request.
+  - Volunteers page, for people with Manage access: a pin on volunteers who share, **Ask location** in the picked-volunteers bar (many at once) and in the profile panel, the last answer on a small map with an Open in Maps link, and the request log.
+
+---
+
 ## [1.54.0] - 2026-11-14
 
 ### Added

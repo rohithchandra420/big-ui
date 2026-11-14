@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, flush, flushMicrotasks } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
@@ -39,7 +39,7 @@ describe('VolunteersComponent', () => {
 
   beforeEach(async () => {
     canAssign = true;
-    service = jasmine.createSpyObj('VolunteersService', ['board', 'assign', 'profile', 'setNeed']);
+    service = jasmine.createSpyObj('VolunteersService', ['board', 'assign', 'profile', 'setNeed', 'askLocation', 'location']);
     service.board.and.callFake(() => Promise.resolve(board()));
     service.profile.and.returnValue(Promise.resolve(profile));
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
@@ -116,6 +116,37 @@ describe('VolunteersComponent', () => {
     expect(el().querySelector('.vl-move')).toBeNull();
     component.move(['1'], 'd2');
     expect(service.assign).not.toHaveBeenCalled();
+  }));
+
+  it('asks the picked volunteers for their location (Manage only) and says who was not asked', fakeAsync(() => {
+    start();
+    component.toggle(component.board!.volunteers[0]);
+    fixture.detectChanges();
+    expect(el().querySelector('.vl-dest.ask')).toBeNull();          // this person may assign, not ask
+    component.askSelected();
+    expect(service.askLocation).not.toHaveBeenCalled();
+
+    component.board = { ...component.board!, canManage: true };
+    fixture.detectChanges();
+    expect(el().querySelector('.vl-dest.ask')).not.toBeNull();
+    service.askLocation.and.returnValue(Promise.resolve({ asked: 0, notSharing: 1, alreadyAsked: 0, skipped: 0 }));
+    component.askSelected();
+    flushMicrotasks();
+    expect(service.askLocation).toHaveBeenCalledWith('e1', ['1']);
+    expect(notify.openErrorSnackBar).toHaveBeenCalledWith("Nobody asked · 1 doesn't share their location");
+  }));
+
+  it('shows a volunteer who does not share that they cannot be asked', fakeAsync(() => {
+    start();
+    component.board = { ...component.board!, canManage: true };
+    service.location.and.returnValue(Promise.resolve({ sharing: false, waiting: false, latest: null, requestHours: 2, log: [] }));
+    component.openProfile(component.board!.volunteers[0]);
+    flushMicrotasks();
+    flush();
+    fixture.detectChanges();
+    expect(service.location).toHaveBeenCalledWith('e1', '1');
+    expect(el().querySelector('.vl-prof')!.textContent).toContain('has not turned on location sharing');
+    expect(el().querySelector('.vl-loc-row')).toBeNull();
   }));
 
   it('saves the volunteers needed number and rejects a bad one', fakeAsync(() => {

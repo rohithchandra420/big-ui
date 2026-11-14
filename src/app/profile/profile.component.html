@@ -114,6 +114,17 @@
     </div>
 
     <div class="profile-section" *ngIf="profileData">
+      <div class="section-label">Location sharing</div>
+      <div class="food-opts" role="radiogroup" aria-label="Share my location when asked">
+        <button type="button" class="toggle-chip" role="radio" [disabled]="savingLocation"
+                [class.on]="!profileData.locationSharing" [attr.aria-checked]="!profileData.locationSharing" (click)="setLocationSharing(false)"><mat-icon>location_off</mat-icon>Off</button>
+        <button type="button" class="toggle-chip" role="radio" [disabled]="savingLocation"
+                [class.on]="!!profileData.locationSharing" [attr.aria-checked]="!!profileData.locationSharing" (click)="setLocationSharing(true)"><mat-icon>location_on</mat-icon>Share when asked</button>
+      </div>
+      <p class="loc-note">You are never tracked. When this is on, the Volunteer team can ask where you are. You get a notification and choose to share or decline each time. Only your position at that moment is sent, and it is deleted 30 days after the event.</p>
+    </div>
+
+    <div class="profile-section" *ngIf="profileData">
       <div class="section-label">Phone</div>
       <div class="phone-row">
         <div class="field">

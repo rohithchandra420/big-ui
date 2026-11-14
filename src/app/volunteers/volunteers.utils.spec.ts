@@ -1,5 +1,5 @@
 import { VolBoard, Volunteer } from './volunteers.model';
-import { buildBoard, money, moveMessage, needStatus } from './volunteers.utils';
+import { askMessage, buildBoard, money, moveMessage, needStatus } from './volunteers.utils';
 
 const vol = (id: string, name: string, department: string | null, marked = true): Volunteer => ({
   _id: id, name, avatarVersion: 0, department, unassigned: !department, phone: '900000' + id, dateOfJoining: null,
@@ -59,6 +59,11 @@ describe('volunteers utils', () => {
     expect(money(150000)).toBe('₹1,50,000');
     expect(money(0)).toBe('₹0');
     expect(money(undefined)).toBe('');
+  });
+
+  it('words the result of asking for locations', () => {
+    expect(askMessage({ asked: 3, notSharing: 2, alreadyAsked: 1 })).toBe("Asked 3 · 2 don't share their location · 1 already asked");
+    expect(askMessage({ asked: 0, notSharing: 1, alreadyAsked: 0 })).toBe("Nobody asked · 1 doesn't share their location");
   });
 
   it('words the move message', () => {

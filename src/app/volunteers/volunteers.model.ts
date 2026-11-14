@@ -13,6 +13,8 @@ export interface Volunteer {
   today: VolSlots;
   /** Marked in any slot today. Shown only — marking stays in My Department. */
   marked: boolean;
+  /** V3: shares their location when asked. Sent only to people who may ask (Manage). */
+  sharing?: boolean;
 }
 
 export interface VolDepartment {
@@ -29,6 +31,8 @@ export interface VolDepartment {
 export interface VolBoard {
   today: string;
   canAssign: boolean;
+  /** V3: may ask volunteers for their location and read the answers. */
+  canManage?: boolean;
   pool: { _id: string; name: string } | null;
   departments: VolDepartment[];
   volunteers: Volunteer[];
@@ -75,6 +79,34 @@ export interface DepositList {
   totals: { held: number; none: number; refunded: number; heldAmount?: number; refundedAmount?: number };
   rows: DepositRow[];
 }
+
+// ── Location on request (V3) ──
+export type LocationState = 'asked' | 'answered' | 'declined' | 'expired';
+
+export interface LocationEntry {
+  _id: string;
+  status: LocationState;
+  askedBy: string;
+  askedAt: string;
+  expiresAt: string;
+  answeredAt: string | null;
+  lat?: number;
+  lng?: number;
+}
+
+export interface LocationInfo {
+  sharing: boolean;
+  /** A request is open and not answered yet. */
+  waiting: boolean;
+  latest: LocationEntry | null;
+  requestHours: number;
+  log: LocationEntry[];
+}
+
+export interface AskResult { asked: number; notSharing: number; alreadyAsked: number; skipped: number }
+
+/** A request waiting for the signed-in person's own answer. */
+export interface MyLocationRequest { _id: string; askedBy: string; event: string; askedAt: string; expiresAt: string }
 
 export interface NeedInfo { needed: number; have: number; canSet: boolean }
 

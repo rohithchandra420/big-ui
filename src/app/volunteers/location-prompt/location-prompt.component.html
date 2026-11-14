@@ -1,0 +1,12 @@
+<div class="lp" *ngIf="request as r" role="alertdialog" aria-label="Location request">
+  <mat-icon class="ms-fill lp-ic">location_on</mat-icon>
+  <div class="lp-text">
+    <b>{{ r.askedBy || 'The Volunteer team' }} asked where you are</b>
+    <small>Asked {{ r.askedAt | date: 'h:mm a' }}<ng-container *ngIf="r.event"> · {{ r.event }}</ng-container>. Only your position right now is sent, once.</small>
+    <span class="lp-err" *ngIf="error">{{ error }}</span>
+  </div>
+  <div class="lp-btns">
+    <button type="button" class="btn-ghost" [disabled]="busy" (click)="decline()">Decline</button>
+    <button type="button" class="btn-cta" [disabled]="busy" (click)="share()">{{ busy ? 'Finding…' : 'Share location' }}</button>
+  </div>
+</div>

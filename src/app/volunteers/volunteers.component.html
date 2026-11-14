@@ -57,7 +57,7 @@
           </span>
           <span class="vl-who">
             <b>{{ v.name }}</b>
-            <small><i class="vl-dot" [class.no]="!v.marked"></i>{{ v.marked ? 'Marked today' : 'Not marked today' }}</small>
+            <small><i class="vl-dot" [class.no]="!v.marked"></i>{{ v.marked ? 'Marked today' : 'Not marked today' }}<mat-icon class="vl-loc" *ngIf="v.sharing" title="Shares their location when asked" aria-label="Shares their location when asked">location_on</mat-icon></small>
           </span>
         </button>
         <button type="button" class="vl-info" (click)="openProfile(v)" [attr.aria-label]="'Profile of ' + v.name"><mat-icon>info</mat-icon></button>
@@ -141,6 +141,7 @@
           <button type="button" class="vl-dest" *ngFor="let d of destinations; trackBy: trackDest" [class.free]="d.id === null"
                   [disabled]="busy" (click)="moveSelected(d.id)"><mat-icon>{{ d.icon }}</mat-icon>{{ d.name }}</button>
         </div>
+        <button type="button" class="vl-dest ask" *ngIf="canManage" [disabled]="busy" (click)="askSelected()"><mat-icon>location_searching</mat-icon>Ask location</button>
         <button type="button" class="vl-x" aria-label="Clear picks" (click)="clearSelection()"><mat-icon>close</mat-icon></button>
       </div>
     </div>
@@ -211,6 +212,30 @@
             <span class="vl-att-r">Night</span><i *ngFor="let d of p.attendance" [class.y]="d.night"></i>
           </div>
           <p class="vl-muted">Green = marked. Marking stays in My Department.</p>
+        </div>
+
+        <!-- Location on request (V3): only for people who may ask -->
+        <div *ngIf="canManage">
+          <p class="section-lbl">Location</p>
+          <p class="vl-muted" *ngIf="locationLoading">Loading…</p>
+          <ng-container *ngIf="location as loc">
+            <p class="vl-muted" *ngIf="!loc.sharing">{{ p.name }} has not turned on location sharing in their profile, so they cannot be asked.</p>
+            <div class="vl-loc-row" *ngIf="loc.sharing">
+              <span class="vl-pill" [class.no]="loc.waiting" [class.ok]="!loc.waiting">{{ loc.waiting ? 'Waiting for an answer' : 'Shares when asked' }}</span>
+              <button type="button" class="pill-btn" [disabled]="busy || loc.waiting" (click)="askLocation([p._id])"><mat-icon>location_searching</mat-icon>Ask location</button>
+              <button type="button" class="pill-btn" *ngIf="loc.waiting" [disabled]="locationLoading" (click)="loadLocation(profileOf!)"><mat-icon>refresh</mat-icon>Check</button>
+            </div>
+            <p class="vl-muted" *ngIf="loc.sharing && loc.waiting">They get a notification and a prompt in BiG. A request with no answer ends after {{ loc.requestHours }} hours.</p>
+            <ng-container *ngIf="loc.latest as at">
+              <div class="vl-map" #locMap></div>
+              <p class="vl-muted">Last answer {{ at.answeredAt | date: 'd MMM, h:mm a' }} · asked by {{ at.askedBy }} ·
+                <a [href]="mapsLink(at.lat, at.lng)" target="_blank" rel="noopener">Open in Maps</a></p>
+            </ng-container>
+            <ul class="vl-log" *ngIf="loc.log.length">
+              <li *ngFor="let l of loc.log">{{ locationLabel[l.status] }}<small>Asked {{ l.askedAt | date: 'd MMM, h:mm a' }} · {{ l.askedBy }}</small></li>
+            </ul>
+            <p class="vl-muted" *ngIf="loc.sharing && !loc.log.length">Never asked yet.</p>
+          </ng-container>
         </div>
 
         <div *ngIf="canAssign">
