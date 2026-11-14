@@ -4,6 +4,7 @@ import { AdminService, DeptDetail } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
 import { AuthService } from '../../../core/auth.service';
 import { ACCESS_KEYS, AccessKey, DEFAULT_ACCESS_KEY, accessKey, isAccessKey } from '../../../core/access-keys';
+import { VolunteersService } from '../../../volunteers/volunteers.service';
 
 interface UserChip { _id: string; name: string; avatarVersion?: number; departments?: any[]; }
 
@@ -39,8 +40,40 @@ export class DepartmentDetailComponent implements OnChanges {
     // Create only — fixed after creation (permission grants use it). One of
     // the built-in keys (core/access-keys.ts), picked from a dropdown.
     key: new FormControl(DEFAULT_ACCESS_KEY),
-    description: new FormControl('')
+    description: new FormControl(''),
+    // Volunteers needed for the sidebar event (optional; empty or 0 = no number).
+    needed: new FormControl<number | null>(null)
   });
+
+  /** The number the server holds for this department and event (0 = none). */
+  private savedNeeded = 0;
+
+  /** Volunteers needed is per event, and the Volunteer department (the Unassigned pool) has none. */
+  get showNeeded(): boolean {
+    const key = this.mode === 'create' ? this.editForm.get('key')?.value : this.detail?.key;
+    return !!this.eventId && key !== 'volunteer';
+  }
+
+  get neededInvalid(): boolean {
+    const v = this.editForm.get('needed')?.value;
+    if (!this.showNeeded || v === null || v === undefined || (v as any) === '') return false;
+    const n = Number(v);
+    return !Number.isInteger(n) || n < 0 || n > 1000;
+  }
+
+  /** The number to send after the department is saved; null when it has not changed. */
+  private neededToSave(): number | null {
+    if (!this.showNeeded) return null;
+    const n = Number(this.editForm.get('needed')?.value ?? 0) || 0;
+    return n === this.savedNeeded ? null : n;
+  }
+
+  /** Saves the number when it changed, then calls `done` (false = the number could not be saved). */
+  private withNeeded(deptId: string, done: (ok: boolean) => void) {
+    const n = this.neededToSave();
+    if (n === null) { done(true); return; }
+    this.volunteers.setNeed(this.eventId, deptId, n).then(() => done(true), () => done(false));
+  }
 
   /** The built-in keys for the Create form's dropdown (a stored list: stable identities for *ngFor). */
   readonly accessKeys: AccessKey[] = ACCESS_KEYS;
@@ -55,8 +88,8 @@ export class DepartmentDetailComponent implements OnChanges {
   }
 
   // Working sets during edit / create — changes are not persisted until Save is clicked
+  // Volunteers are not edited here: they are assigned on the Volunteers page.
   editedTls: UserChip[] = [];
-  editedVolunteers: UserChip[] = [];
 
   // All users for autocomplete dropdowns — loaded once, on first Edit / Create
   allUsers: any[] = [];
@@ -64,17 +97,13 @@ export class DepartmentDetailComponent implements OnChanges {
 
   // Autocomplete search inputs
   tlSearchCtrl = new FormControl('');
-  volSearchCtrl = new FormControl('');
   filteredTlOptions: UserChip[] = [];
-  filteredVolOptions: UserChip[] = [];
-
-  // Maps userId → old dept name for volunteers being moved from another dept
-  volWarnings: { [userId: string]: string } = {};
 
   constructor(
     private adminService: AdminService,
     private notificationService: NotificationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private volunteers: VolunteersService
   ) { }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -84,8 +113,8 @@ export class DepartmentDetailComponent implements OnChanges {
   /** Start over for the current deptId: view an existing department, or a blank Create form. */
   reset() {
     this.clearSearch();
-    this.volWarnings = {};
     this.saving = false;
+    this.savedNeeded = 0;
     if (this.deptId) {
       this.mode = 'view';
       this.detail = null;
@@ -95,7 +124,6 @@ export class DepartmentDetailComponent implements OnChanges {
       this.detail = null;
       this.editForm.reset({ name: '', key: DEFAULT_ACCESS_KEY, description: '' });
       this.editedTls = [];
-      this.editedVolunteers = [];
       if (!this.usersLoaded) this.loadAllUsers();
       this.loadExistingKeys();
     }
@@ -136,10 +164,21 @@ export class DepartmentDetailComponent implements OnChanges {
     if (!this.detail) return;
     this.editForm.reset({ name: this.detail.name, key: this.detail.key || '', description: this.detail.description || '' });
     this.editedTls = this.detail.tls.map(t => ({ ...t }));
-    this.editedVolunteers = this.detail.volunteers.map(v => ({ ...v }));
-    this.volWarnings = {};
     this.mode = 'edit';
+    this.loadNeeded(this.detail._id);
     if (!this.usersLoaded) this.loadAllUsers();
+  }
+
+  /** Edit: show the number already given for this event (left empty when it can't be read). */
+  private loadNeeded(deptId: string) {
+    this.savedNeeded = 0;
+    if (!this.showNeeded) return;
+    this.volunteers.need(this.eventId, deptId).then(info => {
+      if (this.mode !== 'edit' || this.detail?._id !== deptId) return;
+      this.savedNeeded = info.needed;
+      const ctrl = this.editForm.get('needed')!;
+      if (ctrl.pristine) ctrl.setValue(info.needed || null);
+    }, () => { /* no number shown */ });
   }
 
   // Esc: leave Edit for the details, otherwise close the panel
@@ -153,7 +192,6 @@ export class DepartmentDetailComponent implements OnChanges {
     if (this.mode === 'edit') {
       this.mode = 'view';
       this.clearSearch();
-      this.volWarnings = {};
     } else {
       this.close();
     }
@@ -165,9 +203,7 @@ export class DepartmentDetailComponent implements OnChanges {
 
   private clearSearch() {
     this.tlSearchCtrl.setValue('', { emitEvent: false });
-    this.volSearchCtrl.setValue('', { emitEvent: false });
     this.filteredTlOptions = [];
-    this.filteredVolOptions = [];
   }
 
   // Load all platform users once; wire up autocomplete subscriptions after load
@@ -187,9 +223,6 @@ export class DepartmentDetailComponent implements OnChanges {
     this.tlSearchCtrl.valueChanges.subscribe(val => {
       this.filteredTlOptions = this.filterTlUsers(val || '');
     });
-    this.volSearchCtrl.valueChanges.subscribe(val => {
-      this.filteredVolOptions = this.filterVolUsers(val || '');
-    });
   }
 
   // Return TL-eligible users (DIR/ADMIN/TL) that match search and are not already added
@@ -203,40 +236,11 @@ export class DepartmentDetailComponent implements OnChanges {
       .map(u => ({ _id: u._id, name: u.name, avatarVersion: u.avatarVersion }));
   }
 
-  // Return VOL users that match search and are not already added
-  private filterVolUsers(search: string): UserChip[] {
-    const s = search.toLowerCase();
-    const existingIds = new Set(this.editedVolunteers.map(v => v._id));
-    return this.allUsers
-      .filter(u => u.role?.name === 'VOL')
-      .filter(u => !existingIds.has(u._id))
-      .filter(u => u.name.toLowerCase().includes(s))
-      .map(u => ({ _id: u._id, name: u.name, avatarVersion: u.avatarVersion, departments: u.departments }));
-  }
-
   // Add a TL chip and refresh the filtered options list
   onTlSelected(user: UserChip) {
     this.editedTls.push({ _id: user._id, name: user.name, avatarVersion: user.avatarVersion });
     this.tlSearchCtrl.setValue('');
     this.filteredTlOptions = this.filterTlUsers('');
-  }
-
-  // Add a VOL chip; if they belong to a different dept, record a reassignment warning
-  onVolSelected(user: UserChip) {
-    const fullUser = this.allUsers.find(u => u._id === user._id);
-    this.editedVolunteers.push({ _id: user._id, name: user.name, avatarVersion: fullUser?.avatarVersion, departments: fullUser?.departments });
-
-    const depts: any[] = fullUser?.departments || [];
-    const otherDept = depts.find(da => {
-      const deptId = da.department?._id || da.department;
-      return deptId?.toString() !== this.detail?._id?.toString();
-    });
-    if (otherDept) {
-      this.volWarnings[user._id] = otherDept.department?.name || 'another department';
-    }
-
-    this.volSearchCtrl.setValue('');
-    this.filteredVolOptions = this.filterVolUsers('');
   }
 
   // Remove a TL chip and re-run autocomplete filter so they reappear as an option
@@ -245,23 +249,9 @@ export class DepartmentDetailComponent implements OnChanges {
     this.filteredTlOptions = this.filterTlUsers(this.tlSearchCtrl.value || '');
   }
 
-  // Remove a VOL chip, clear any reassignment warning for that user
-  removeVol(id: string) {
-    this.editedVolunteers = this.editedVolunteers.filter(v => v._id !== id);
-    delete this.volWarnings[id];
-    this.filteredVolOptions = this.filterVolUsers(this.volSearchCtrl.value || '');
-  }
-
-  // Returns the list of active reassignment warnings for the warning banner
-  get warningList(): { name: string; fromDept: string }[] {
-    return Object.entries(this.volWarnings).map(([id, fromDept]) => {
-      const vol = this.editedVolunteers.find(v => v._id === id);
-      return { name: vol?.name || '', fromDept };
-    });
-  }
-
   get formInvalid(): boolean {
     if (this.editForm.get('name')!.invalid) return true;
+    if (this.neededInvalid) return true;
     if (this.mode === 'create') return !isAccessKey(this.editForm.get('key')!.value);
     return false;
   }
@@ -275,7 +265,7 @@ export class DepartmentDetailComponent implements OnChanges {
   private create() {
     this.saving = true;
     const { name, key, description } = this.editForm.value;
-    const memberIds = [...this.editedTls, ...this.editedVolunteers].map(u => u._id);
+    const memberIds = this.editedTls.map(u => u._id);
     this.adminService.createDepartment({ name: name!.trim(), key: key || DEFAULT_ACCESS_KEY, description: description || '' }).subscribe({
       next: (dept) => {
         if (!memberIds.length) return this.created(dept._id);
@@ -295,9 +285,12 @@ export class DepartmentDetailComponent implements OnChanges {
   }
 
   private created(id: string, ok = true) {
-    this.saving = false;
-    if (ok) this.notificationService.openSucessSnackBar('Department created');
-    this.changed.emit(id);
+    this.withNeeded(id, needOk => {
+      this.saving = false;
+      if (!needOk) this.notificationService.openErrorSnackBar('Department created, but the volunteers needed number was not saved — set it with Edit');
+      else if (ok) this.notificationService.openSucessSnackBar('Department created');
+      this.changed.emit(id);
+    });
   }
 
   // Diff edited vs original sets to produce addUserIds / removeUserIds, then PATCH the department
@@ -305,14 +298,9 @@ export class DepartmentDetailComponent implements OnChanges {
     if (!this.detail) return;
     this.saving = true;
 
-    const originalAllIds = new Set([
-      ...this.detail.tls.map(t => t._id),
-      ...this.detail.volunteers.map(v => v._id)
-    ]);
-    const editedAllIds = new Set([
-      ...this.editedTls.map(t => t._id),
-      ...this.editedVolunteers.map(v => v._id)
-    ]);
+    // Team Leads only — volunteers are assigned on the Volunteers page.
+    const originalAllIds = new Set(this.detail.tls.map(t => t._id));
+    const editedAllIds = new Set(this.editedTls.map(t => t._id));
 
     const addUserIds = [...editedAllIds].filter(id => !originalAllIds.has(id));
     const removeUserIds = [...originalAllIds].filter(id => !editedAllIds.has(id));
@@ -324,14 +312,14 @@ export class DepartmentDetailComponent implements OnChanges {
       addUserIds,
       removeUserIds
     }).subscribe({
-      next: () => {
+      next: () => this.withNeeded(this.detail!._id, needOk => {
         this.saving = false;
         this.mode = 'view';
-        this.volWarnings = {};
-        this.notificationService.openSucessSnackBar('Department updated');
+        if (needOk) this.notificationService.openSucessSnackBar('Department updated');
+        else this.notificationService.openErrorSnackBar('Department updated, but the volunteers needed number was not saved');
         this.loadDetail(this.detail!._id);
         this.changed.emit(this.detail!._id);
-      },
+      }),
       error: (err) => {
         this.saving = false;
         this.notificationService.openErrorSnackBar(err?.error?.message || 'Error saving department');

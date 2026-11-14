@@ -13,6 +13,49 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.55.0] - 2026-11-14
+
+### Added
+- **Location on request** for volunteers.
+  - My Profile: a "Location sharing" switch (off by default) with a plain explanation. Nobody is tracked.
+  - When someone on the Volunteer team asks, a card appears at the bottom of BiG (and a notification arrives): **Share location** sends the phone's position once; **Decline** closes the request.
+  - Volunteers page, for people with Manage access: a pin on volunteers who share, **Ask location** in the picked-volunteers bar (many at once) and in the profile panel. In the List layout, pick volunteers one by one or everyone shown at once and press **Ask location** next to the search box; the last answer on a small map with an Open in Maps link, and the request log.
+
+---
+
+## [1.54.0] - 2026-11-14
+
+### Added
+- **Volunteers › Deposits tab.** The security deposit of every volunteer on the event.
+  - Stat cards (Collected, Not collected, Refunded, with money totals) filter the table; search by name or phone.
+  - Tap a volunteer to record a deposit (amount, Cash / UPI / Bank transfer / Other, date, note), correct it, refund it in full, or remove an entry made by mistake. Each deposit keeps its history.
+  - A standard deposit amount for the event pre-fills the form and can be changed per volunteer.
+  - People who left the event or were deactivated while a deposit is held stay on the list, flagged, until refunded.
+  - Export to Excel of what is on screen.
+  - Who sees what: the status for everyone who opens Volunteers; amounts and the export need Volunteers Write access; changes need Manage. The Volunteer Team Lead and DEV / DIR / ADMIN have all of it.
+- The volunteer profile panel shows the deposit status.
+
+---
+
+## [1.53.0] - 2026-11-14
+
+### Added
+- **Volunteers section** (sidebar). A board of every volunteer on the event's staff list: department cards next to an **Unassigned** pool that stays in view.
+  - Opens for DEV / DIR / ADMIN, the Volunteer department's Team Lead, and people granted Volunteers access. Being in the Volunteer department does not open it (it is the pool every unassigned volunteer sits in).
+  - Assign, reassign or free: drag a volunteer onto a department or back onto the pool (desktop), or pick one or more and choose the destination in the bar at the bottom (any device). For people with Write access or higher.
+  - Each volunteer shows marked / not marked today. Attendance is view only here; marking stays in My Department.
+  - The (i) button opens the complete profile in a side panel: contact, department, date of joining, food, gender, bed, staff band, meals served and seven days of attendance. No medical information.
+  - Stat cards filter the page (Unassigned, Still needed, Not marked today); search by name or phone; Board or List layout.
+- **Volunteers needed.** A department's own Team Lead sets how many volunteers the department needs for the event, in My Department or on its card. DEV / DIR / ADMIN can set it too, including while creating or editing a department in Admin › Departments. The board shows have / needed with "2 short" or "Met", and a Still needed total.
+- **Phone number** for users: on the user form, on My Profile (people set their own), in the Users side panel, and as an optional `phone` column in Bulk Add.
+- New built-in access key **Volunteers** (Read: see the page and profiles; Write: also assign; Manage: for the coming deposits and location stories).
+
+### Changed
+- **Admin › Departments no longer adds or removes volunteers.** The panel still lists them; assigning moved to the Volunteers page. Team Leads are managed there as before.
+- Picking the Volunteer department as a home department on the user form no longer picks Read access by default.
+
+---
+
 ## [1.52.0] - 2026-11-14
 
 ### Changed

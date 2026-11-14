@@ -267,6 +267,10 @@
         <div class="section-lbl">Details</div>
         <div class="detail-list">
           <div class="detail-row">
+            <span class="detail-l">Phone</span>
+            <span class="detail-v">{{ activeUser.phone || '—' }}</span>
+          </div>
+          <div class="detail-row">
             <span class="detail-l">Date of Joining</span>
             <span class="detail-v">{{ activeUser.dateOfJoining ? (activeUser.dateOfJoining | date:'mediumDate') : '—' }}</span>
           </div>

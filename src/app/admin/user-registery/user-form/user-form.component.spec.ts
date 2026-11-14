@@ -30,7 +30,7 @@ describe('UserFormComponent', () => {
   let notificationSpy: jasmine.SpyObj<NotificationService>;
 
   const authStub = {
-    deptKeyOf: (d: any) => (['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash'].includes(d?.key) ? d.key : (d ? 'general' : ''))
+    deptKeyOf: (d: any) => (['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer'].includes(d?.key) ? d.key : (d ? 'general' : ''))
   };
 
   const create = async (inputs: Partial<UserFormComponent>) => {
@@ -123,7 +123,7 @@ describe('UserFormComponent', () => {
     });
 
     it('shows one row per built-in key that gives something — even with no department on it yet', () => {
-      expect(component.accessKeys.map(k => k.key)).toEqual(['box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash']);
+      expect(component.accessKeys.map(k => k.key)).toEqual(['box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer']);
       expect(component.accessKeys.find(k => k.key === 'box-office')!.names).toBe('Box Office');
       expect(component.accessKeys.find(k => k.key === 'wash')!.names).toBe('');
     });
@@ -134,7 +134,7 @@ describe('UserFormComponent', () => {
       expect(tiers('medical')).toEqual(['read']);
       expect(tiers('wash')).toEqual(['read', 'write', 'manage']);
       const rows = fixture.nativeElement.querySelectorAll('.dept-row');
-      expect(rows.length).toBe(6);
+      expect(rows.length).toBe(7);
       const hospitality = Array.from(rows as NodeListOf<HTMLElement>).find(r => r.textContent!.includes('Hospitality'))!;
       expect(hospitality.querySelectorAll('.access-chip').length).toBe(1);
     });
@@ -167,6 +167,20 @@ describe('UserFormComponent', () => {
       expect(component.buildPermissions()).toEqual([]);
       component.form.controls.homeDepartment.setValue('d-mess');      // Hospitality has no Read tier
       expect(component.keySelections['hospitality']).toBe('none');
+    });
+
+    it('the Volunteer home department (the Unassigned pool) picks no Read; a phone is sent when typed', () => {
+      const pool = { _id: 'd-pool', name: 'Volunteer', key: 'volunteer' };
+      component.departments = [general, box, pool];
+      component.ngOnChanges({ departments: { previousValue: [], currentValue: component.departments, firstChange: false, isFirstChange: () => false } } as any);
+      component.form.controls.homeDepartment.setValue('d-pool');
+      expect(component.keySelections['volunteer']).toBe('none');
+      expect(component.buildPermissions()).toEqual([]);
+
+      component.form.controls.phone.setValue('call me');
+      expect(component.form.controls.phone.invalid).toBeTrue();
+      component.form.controls.phone.setValue('+91 90000 00123');
+      expect(component.form.controls.phone.valid).toBeTrue();
     });
 
     it('the default never lowers or removes a level someone picked', () => {

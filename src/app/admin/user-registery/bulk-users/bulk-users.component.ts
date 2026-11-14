@@ -8,7 +8,7 @@ import { EventService } from '../../../core/event.service';
 /** Columns of the template, in order. The first five are required. */
 export const BULK_USER_COLUMNS = [
   'name', 'email', 'password', 'role', 'home_department',
-  'food_preference', 'gender', 'date_of_joining'
+  'food_preference', 'gender', 'date_of_joining', 'phone'
 ] as const;
 
 export const BULK_USER_MAX_ROWS = 500;
@@ -111,7 +111,8 @@ export class BulkUsersComponent {
         ['home_department', 'For VOL and TL', 'Department name exactly as in Admin › Departments'],
         ['food_preference', 'No', 'veg or non-veg'],
         ['gender', 'No', 'Male, Female or Prefer not to say'],
-        ['date_of_joining', 'No', 'A date, e.g. 2026-11-07. Leave empty if not known']
+        ['date_of_joining', 'No', 'A date, e.g. 2026-11-07. Leave empty if not known'],
+        ['phone', 'No', '7 to 15 digits; a leading + is allowed. Format the column as Text so the + and leading zeros stay']
       ]);
       const book = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(book, users, 'Users');

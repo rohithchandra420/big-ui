@@ -6,6 +6,7 @@ import { NotificationService } from '../../../core/notification.service';
 import { AuthService } from '../../../core/auth.service';
 import { Subscription } from 'rxjs';
 import { ACCESS_KEYS, AccessKey, AccessKeyTier, grantTier } from '../../../core/access-keys';
+import { PHONE_PATTERN } from '../../../core/phone';
 
 export type PermLevel = 'none' | 'read' | 'write' | 'manage';
 export type UserFormMode = 'create' | 'edit';
@@ -69,7 +70,9 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
     // Hospitality: what the kitchen counts them as (missing = Veg on the server).
     foodPreference: new FormControl<'veg' | 'non-veg'>('veg', { nonNullable: true }),
     // Hospitality H6: needed before giving them a bed (optional here).
-    gender: new FormControl<string>('', { nonNullable: true })
+    gender: new FormControl<string>('', { nonNullable: true }),
+    // Contact number (optional): 7 to 15 digits, spaces and a leading + allowed.
+    phone: new FormControl<string>('', { nonNullable: true, validators: Validators.pattern(PHONE_PATTERN) })
   }, { validators: passwordsMatch });
 
   constructor(
@@ -161,7 +164,8 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
     this.defaultedKey = '';
     const dept = this.departments.find(d => d._id === deptId);
     const row = dept && this.accessKeys.find(k => k.key === this.authService.deptKeyOf(dept));
-    if (!row || !row.tiers.some(t => t.tier === 'read') || this.keySelections[row.key] !== 'none') return;
+    // Not for a key where membership gives nothing (Volunteers — the Unassigned pool).
+    if (!row || row.noHomeRead || !row.tiers.some(t => t.tier === 'read') || this.keySelections[row.key] !== 'none') return;
     this.keySelections[row.key] = 'read';
     this.defaultedKey = row.key;
   }
@@ -200,7 +204,8 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
       homeDepartment: homeDeptId || '',
       dateOfJoining: u.dateOfJoining ? u.dateOfJoining.substring(0, 10) : null,
       foodPreference: u.foodPreference === 'non-veg' ? 'non-veg' : 'veg',
-      gender: u.gender || ''
+      gender: u.gender || '',
+      phone: u.phone || ''
     }, { emitEvent: false });
 
     // Only grants that do something (built-in key, a tier it uses) show as picked.
@@ -238,6 +243,7 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
       dateOfJoining: raw.dateOfJoining,
       foodPreference: raw.foodPreference,
       ...(raw.gender ? { gender: raw.gender } : {}),
+      ...(raw.phone.trim() ? { phone: raw.phone.trim() } : {}),
       ...(this.eventId ? { eventId: this.eventId } : {})
     };
 
@@ -264,7 +270,8 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
       roleName: raw.role,
       permissions: this.buildPermissions(),
       foodPreference: raw.foodPreference,
-      ...(raw.gender ? { gender: raw.gender } : {})
+      ...(raw.gender ? { gender: raw.gender } : {}),
+      phone: raw.phone.trim()   // empty clears it
     };
 
     if (this.isTopLevel) {

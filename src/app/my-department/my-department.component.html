@@ -179,6 +179,8 @@
         </span>
       </div>
       <div class="meta-row"><span class="meta-label">Volunteers</span><span class="meta-value">{{ deptInfo.volunteerCount }}</span></div>
+      <!-- Volunteers needed for the sidebar event: set by this department's Team Lead, read on the Volunteers page -->
+      <app-volunteer-need [departmentId]="selectedDeptId" [eventId]="staffEvent?._id || ''"></app-volunteer-need>
     </div>
 
     <div class="view-tabs">

@@ -34,6 +34,7 @@ export interface BulkUserRow {
   food_preference?: string;
   gender?: string;
   date_of_joining?: string;
+  phone?: string;
 }
 
 export type BulkUserStatus = 'ready' | 'created' | 'problem' | 'duplicate';
