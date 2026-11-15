@@ -37,6 +37,11 @@ describe('AnnouncementsComponent', () => {
     sentBy: { _id: 'u', name: 'Maya' }, recipients: 3, devices: 2, delivered: 2, createdAt: '2026-10-30T10:00:00Z'
   };
   const depts = [{ _id: 'd-ops', name: 'Operations' }, { _id: 'd-bo', name: 'Box Office' }];
+  const places = [
+    { kind: 'pin', _id: 'p1', name: 'Water Station C', type: 'water', wash: true },
+    { kind: 'pin', _id: 'p2', name: 'Main Stage', type: 'stage', wash: false },
+    { kind: 'area', _id: 'ar1', name: 'Washroom North', type: 'washroom', wash: false }
+  ];
   const el = () => fixture.nativeElement as HTMLElement;
 
   beforeEach(async () => {
@@ -46,6 +51,7 @@ describe('AnnouncementsComponent', () => {
         Promise.resolve({ ...past, _id: 'a2', ...b, departments: depts.filter(d => b.departments.includes(d._id)), delivered: 5 })),
       resendAnnouncement: jasmine.createSpy('resendAnnouncement').and.resolveTo({ ...past, _id: 'a3', resentFrom: 'a1', delivered: 1 }),
       publicSessions: jasmine.createSpy('publicSessions').and.resolveTo([]),
+      taskPlaces: jasmine.createSpy('taskPlaces').and.resolveTo({ places, washDepartment: 'd-wash' }),
       announcementDepartments: () => of(depts)
     };
     auth = { currentUser: { role: 'DIR' } };
@@ -267,7 +273,7 @@ describe('AnnouncementsComponent', () => {
   describe('public page (PH3)', () => {
     it('can be the only audience; Task / Reminder are not allowed then', () => {
       component.title = 'Gates open'; component.message = 'At 2 pm';
-      component.type = 'task';
+      component.type = 'reminder';
       component.setPublic(true);
       expect(component.type).toBe('general');
       expect(component.canSend).toBeTrue();
@@ -342,5 +348,78 @@ describe('AnnouncementsComponent', () => {
     const preview = el().querySelector('.ann-phone-note')!.textContent!;
     expect(preview).toContain('Reminder: Attendance');
     expect(preview).toContain('Closes at 9');
+  });
+
+  describe('Task: place and options (HD3)', () => {
+    beforeEach(() => { component.departmentOptions = [...component.departmentOptions, { _id: 'd-wash', name: 'WASH' }]; });
+    const pickTask = async () => {
+      component.setType('task');
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+
+    it('a Task switches the public page card off', async () => {
+      await pickTask();
+      const card = el().querySelector('.ann-public')!;
+      expect(card.classList).toContain('ann-off');
+      expect((card.querySelector('input') as HTMLInputElement).disabled).toBeTrue();
+      expect(card.textContent).toContain('Not for Tasks');
+      component.setPublic(true);
+      expect(component.publicPost).toBeFalse();
+      expect(component.type).toBe('task');
+      expect(component.audiencePreview).toBe('Pick at least one role or department');
+
+      component.setType('general'); fixture.detectChanges();
+      expect(el().querySelector('.ann-public')!.classList).not.toContain('ann-off');
+    });
+
+    it('offers the sidebar event\'s pins and areas only for a Task', async () => {
+      expect(el().querySelector('.ann-place')).toBeNull();
+      expect(push.taskPlaces).not.toHaveBeenCalled();
+      await pickTask();
+      expect(push.taskPlaces).toHaveBeenCalledOnceWith('e1');
+      expect(el().querySelector('.ann-place')).not.toBeNull();
+      expect(component.placeOptions.map(o => o.id)).toEqual(['pin:p1', 'pin:p2', 'area:ar1']);
+      expect(component.placeOptions[0].label).toContain('Water Station C');
+    });
+
+    it('a WASH facility pre-selects the WASH department, which can be taken off again', async () => {
+      await pickTask();
+      component.onPlace('pin:p2');
+      expect(component.departments.has('d-wash')).toBeFalse();
+      component.onPlace('pin:p1');
+      expect(component.departments.has('d-wash')).toBeTrue();
+      expect(component.washPreselected).toBeTrue();
+      component.toggleDepartment('d-wash', false);
+      expect(component.departments.has('d-wash')).toBeFalse();
+      expect(component.place).toBe('pin:p1');
+    });
+
+    it('sends the place with a Task, and never with another type', async () => {
+      await pickTask();
+      component.title = 'Station is empty'; component.message = 'Please refill.';
+      component.onPlace('area:ar1');
+      component.toggleDepartment('d-ops', true);
+      await component.send();
+      expect(push.sendAnnouncement).toHaveBeenCalledWith(jasmine.objectContaining({ type: 'task', place: { kind: 'area', id: 'ar1' } }));
+      expect(component.place).toBe('');   // form reset
+
+      await pickTask();
+      component.onPlace('pin:p1');
+      component.setType('general');
+      expect(component.place).toBe('');
+      component.title = 'Gates open'; component.message = 'At 2 pm';
+      component.toggleRole('VOL', true);
+      await component.send();
+      expect(push.sendAnnouncement.calls.mostRecent().args[0].place).toBeUndefined();
+    });
+
+    it('a Task without a place sends none', async () => {
+      await pickTask();
+      component.title = 'Check the gate'; component.message = 'Now.';
+      component.toggleRole('TL', true);
+      await component.send();
+      expect(push.sendAnnouncement.calls.mostRecent().args[0].place).toBeUndefined();
+    });
   });
 });

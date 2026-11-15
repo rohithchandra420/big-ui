@@ -27,6 +27,23 @@ export const taskStatusMeta = (status: TaskStatus | null | undefined): TaskStatu
 
 export const TASK_NOTE_MAX = 200;
 
+/** HD3: the Venue Map pin or area a Task is about. `id` is null once that pin / area was deleted. */
+export interface TaskPlace {
+  kind: 'pin' | 'area';
+  id: string | null;
+  event: string | null;
+  name: string;
+}
+
+/** The Venue Map's query for "Show on map" (?pin=<id> or ?area=<id>). */
+export const placeQuery = (p: TaskPlace): Record<string, string> =>
+  p.id ? (p.kind === 'area' ? { area: p.id } : { pin: p.id }) : {};
+
+/** Of several open tasks, the one status to show: the worst first. */
+const WORST_FIRST: TaskStatus[] = ['blocked', 'new', 'acknowledged', 'in_progress', 'closed'];
+export const worstTaskStatus = (statuses: TaskStatus[]): TaskStatus =>
+  [...statuses].sort((a, b) => WORST_FIRST.indexOf(a) - WORST_FIRST.indexOf(b))[0] || 'new';
+
 export interface TaskChange {
   status: TaskStatus;
   note: string;
@@ -43,6 +60,8 @@ export interface Task {
   roles: string[];
   departments: { _id: string; name: string }[];
   status: TaskStatus;
+  /** HD3: where the task is about; null when no place was picked. */
+  place?: TaskPlace | null;
   /** Oldest first; the last entry is the current status. */
   history: TaskChange[];
   /** May the signed-in person change the status now? (The server checks again.) */

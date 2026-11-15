@@ -34,7 +34,13 @@ export interface AnnouncementInput {
   publicSession?: string | null;
   /** Staff list (R2): only this event's staff (DEV/DIR/ADMIN always kept); null = BiG-wide. */
   staffEvent?: string | null;
+  /** HD3: the Venue Map pin / area a Task is about (Tasks only). */
+  place?: { kind: 'pin' | 'area'; id: string } | null;
 }
+
+/** HD3: a place a Task can be about. `wash`: set up as a WASH facility. */
+export interface TaskPlaceOption { kind: 'pin' | 'area'; _id: string; name: string; type: string; wash: boolean }
+export interface TaskPlaceList { places: TaskPlaceOption[]; washDepartment: string | null }
 
 export interface Announcement {
   _id: string;
@@ -60,6 +66,8 @@ export interface Announcement {
   publicDelivered?: number;
   /** A Task's shared status (Helpdesk, HD1); null on every other type. */
   status?: string | null;
+  /** HD3: where a Task is about (`ref` null once the pin / area is deleted). */
+  place?: { kind: 'pin' | 'area'; ref: string | null; name: string } | null;
 }
 
 /**
@@ -166,6 +174,11 @@ export class PushService {
   /** The departments an announcement can go to (for everyone who may announce). */
   announcementDepartments() {
     return this.http.get<{ _id: string; name: string }[]>(this.url + '/push/departments');
+  }
+
+  /** HD3: the event's Venue Map pins and areas a Task can be about. */
+  taskPlaces(eventId: string) {
+    return firstValueFrom(this.http.get<TaskPlaceList>(`${this.url}/push/places?event=${encodeURIComponent(eventId)}`));
   }
 
   /** PH5: the public event's sessions (from the public API), for "phones that starred a session". */

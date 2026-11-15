@@ -48,6 +48,8 @@ export interface MapStatus {
   areas: Record<string, { kind: string; open: boolean; label: string; fieldId?: string; state?: string }>;
   /** The Box Office pin (open / closed + note); WASH facilities (kind 'wash', with `state`). */
   locations: Record<string, { kind: string; open: boolean; label: string; state?: string }>;
+  /** Helpdesk HD3: open tasks per pin / area id — a count and the worst status only. */
+  tasks?: Record<string, { open: number; worst: string }>;
 }
 
 export interface LocationList {

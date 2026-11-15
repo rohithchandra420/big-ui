@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { TASK_NOTE_MAX, TASK_STATUSES, Task, TaskChange, TaskService, TaskStatus, TaskStatusMeta, taskStatusMeta } from '../../core/task.service';
+import { Router } from '@angular/router';
+import { TASK_NOTE_MAX, TASK_STATUSES, Task, TaskChange, TaskPlace, TaskService, TaskStatus, TaskStatusMeta, placeQuery, taskStatusMeta } from '../../core/task.service';
 
 interface TimelineRow extends TaskChange { meta: TaskStatusMeta; }
 
@@ -29,7 +30,12 @@ export class TaskSheetComponent implements OnChanges {
   note = '';
   error = '';
 
-  constructor(private tasks: TaskService) {}
+  constructor(private tasks: TaskService, private router: Router) {}
+
+  /** HD3: opens the Venue Map on the task's pin / area. */
+  showOnMap(p: TaskPlace): void {
+    if (p.id) this.router.navigate(['/venue-map'], { queryParams: placeQuery(p) });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['taskId']) this.load();

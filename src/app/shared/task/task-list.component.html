@@ -19,6 +19,7 @@
       <b>{{ r.task.title }}</b>
       <app-task-pill [status]="r.task.status"></app-task-pill>
       <small>{{ r.line }}, {{ r.task.history[r.task.history.length - 1]?.at | date:'d MMM, h:mm a' }}</small>
+      <small class="tk-row-place" *ngIf="r.task.place as p"><mat-icon class="ms-fill" aria-hidden="true">location_on</mat-icon>{{ p.name }}</small>
     </button>
   </div>
 </div>

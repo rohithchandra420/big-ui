@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { TaskSheetComponent } from './task-sheet.component';
 import { TaskPillComponent } from './task-pill.component';
+import { Router } from '@angular/router';
 import { Task, TaskService } from '../../core/task.service';
 
 describe('TaskSheetComponent', () => {
@@ -122,5 +123,34 @@ describe('TaskSheetComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(el().querySelector('.tk-error')!.textContent).toContain('Could not load this task');
+  });
+
+  describe('place (HD3)', () => {
+    it('shows the place and opens the Venue Map on it', async () => {
+      const nav = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+      await open(task({ place: { kind: 'pin', id: 'p1', event: 'e1', name: 'Water Station C' } }));
+      expect(el().querySelector('.tk-place')!.textContent).toContain('Water Station C');
+      (el().querySelector('.tk-place-go') as HTMLElement).click();
+      expect(nav).toHaveBeenCalledWith(['/venue-map'], { queryParams: { pin: 'p1' } });
+    });
+
+    it('an area opens by ?area', async () => {
+      const nav = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+      await open(task({ place: { kind: 'area', id: 'ar1', event: 'e1', name: 'Washroom North' } }));
+      (el().querySelector('.tk-place-go') as HTMLElement).click();
+      expect(nav).toHaveBeenCalledWith(['/venue-map'], { queryParams: { area: 'ar1' } });
+    });
+
+    it('a deleted place stays as text, without the map button', async () => {
+      await open(task({ place: { kind: 'pin', id: null, event: 'e1', name: 'Main Stage' } }));
+      expect(el().querySelector('.tk-place')!.textContent).toContain('Main Stage');
+      expect(el().querySelector('.tk-place')!.textContent).toContain('no longer on the map');
+      expect(el().querySelector('.tk-place-go')).toBeNull();
+    });
+
+    it('no place, no line', async () => {
+      await open(task());
+      expect(el().querySelector('.tk-place')).toBeNull();
+    });
   });
 });

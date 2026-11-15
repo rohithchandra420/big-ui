@@ -13,6 +13,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.58.0] - 2026-11-15
+
+### Added
+- **A Task can be about a place (Helpdesk story 3).**
+  - Announcements: a Task gets an optional Place picker with the sidebar event's Venue Map pins and areas. Picking a WASH facility selects the WASH department as the receiver; it can be taken off again.
+  - The place shows on the task panel and the Billboard note with a "Show on map" button, and on task rows. A place that was deleted from the map stays as text.
+  - Venue Map: a pin or area with open tasks shows their count, in the colour of the worst status, on the map, in its tooltip and in its side panel. The map opens on a pin from a task's "Show on map".
+  - WASH Monitor: a facility's card and panel show its open tasks next to its own state. Refilled / Cleaned does not close them.
+
+### Changed
+- Announcements: with Task picked, the Public page card is switched off (a Task goes to staff only).
+
+---
+
 ## [1.57.0] - 2026-11-14
 
 ### Added

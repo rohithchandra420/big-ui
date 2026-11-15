@@ -568,4 +568,33 @@ describe('VenueMapComponent', () => {
       try { localStorage.removeItem('venueMapFolded'); } catch { /* */ }
     }));
   });
+
+  describe('open tasks on the map (HD3)', () => {
+    it('keeps the count per pin / area from the status call and shows it in the panel', fakeAsync(() => {
+      setup({ areas: [area('z1', { kind: 'washroom', name: 'Washroom North' })] }); settle();
+      svc.status = jasmine.createSpy('status').and.resolveTo({ areas: {}, locations: {}, tasks: { b: { open: 2, worst: 'blocked' }, z1: { open: 1, worst: 'new' } } });
+      component.loadStatus(); settle();
+      expect(component.taskText('b')).toBe('2 open tasks');
+      expect(component.taskText('z1')).toBe('1 open task');
+      expect(component.taskText('a')).toBe('');
+      expect((component as any).taskBadge('b')).toBe('<b class="vm-task tk-s-blocked">2</b>');
+
+      component.select(component.locations[1]); fixture.detectChanges();
+      const pill = el().querySelector('.vm-panel .tk-pill')!;
+      expect(pill.textContent).toContain('2 open tasks');
+      expect(pill.classList).toContain('tk-s-blocked');
+    }));
+
+    it('?pin=<id> selects that pin, even when its type is filtered away', fakeAsync(() => {
+      setup({ qp: { pin: 'b' } }); settle();
+      expect(component.selected?._id).toBe('b');
+      expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith([], jasmine.objectContaining({ queryParams: { pin: null } }));
+    }));
+
+    it('?pin of another event says so', fakeAsync(() => {
+      setup({ qp: { pin: 'zzz' } }); settle();
+      expect(component.selected).toBeNull();
+      expect(snack.openErrorSnackBar).toHaveBeenCalledWith(jasmine.stringMatching('not on this event'));
+    }));
+  });
 });

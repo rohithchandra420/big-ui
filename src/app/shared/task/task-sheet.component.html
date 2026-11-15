@@ -8,6 +8,13 @@
       <span class="tk-note tk-shared" *ngIf="sharedWith">Shared with everyone in {{ sharedWith }}</span>
     </div>
 
+    <!-- HD3: where the task is about -->
+    <div class="tk-place" *ngIf="t.place as p">
+      <mat-icon class="ms-fill" aria-hidden="true">location_on</mat-icon>
+      <span class="tk-place-name"><b>{{ p.name }}</b><small *ngIf="!p.id"> · no longer on the map</small></span>
+      <button type="button" class="tk-place-go" *ngIf="p.id" (click)="showOnMap(p)"><mat-icon aria-hidden="true">map</mat-icon>Show on map</button>
+    </div>
+
     <div class="tk-acts" *ngIf="next.length && !blocking">
       <button type="button" class="tk-act tk-s-{{ s.value }}" *ngFor="let s of next; trackBy: trackByValue" [disabled]="saving" (click)="pick(s.value)">
         <mat-icon aria-hidden="true">{{ s.icon }}</mat-icon>{{ label(s) }}

@@ -1305,6 +1305,9 @@ select:focus {
 /* Mess Hall open / closed dot (Hospitality) — sits on the pin's top-right. */
 .vm-status { position: absolute; right: -4px; top: -4px; width: 12px; height: 12px; border-radius: 50%; background: #9ca3af; border: 2px solid #fff; }
 .vm-status.open { background: #16a34a; }
+/* HD3: open tasks at a pin / area — the count, in the worst status's colour (.tk-s-*) */
+.vm-task { position: absolute; left: -7px; top: -7px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 99px; background: var(--sc, #1d4ed8); color: #fff; box-shadow: 0 0 0 2px #fff; font: 700 10px/16px system-ui, sans-serif; text-align: center; }
+.vm-pin .vm-task { transform: rotate(45deg); }
 /* WASH facility pins (WASH WA1): dot colour by state */
 .vm-status.wash-ok { background: #2f855a; }
 .vm-status.wash-due_soon { background: #d69e2e; }
@@ -1579,7 +1582,7 @@ select:focus {
 .ann-public-txt small { font-size: 12px; color: #555; }
 .ann-public-check { color: #b5b5ae; flex-shrink: 0; }
 .ann-public.on .ann-public-check { color: #e2467b; }
-.ann-type.ann-off { opacity: .4; cursor: not-allowed; }
+.ann-type.ann-off, .ann-public.ann-off { opacity: .4; cursor: not-allowed; }
 .ann-badge.ann-pub { background: #fdf0f5; color: #b0245a; }
 .ann-badge.ann-pub-off { background: #f0f0ee; color: #666; }
 
@@ -2058,6 +2061,17 @@ select:focus {
 .tk-tl b { color: #1a1a1a; }
 .tk-tl small { display: block; font-size: 12px; color: #666; }
 .tk-tl q { display: block; font-size: 12.5px; color: #7c2d12; quotes: "\201C" "\201D"; }
+
+/* HD3: a task's place (task panel, Billboard note, task rows) */
+.tk-place { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px; border-radius: 10px; background: #f3f6f4; color: #1a1a1a; font-size: 13px; }
+.tk-place > .mat-icon { flex: none; font-size: 18px; width: 18px; height: 18px; color: #c2410c; }
+.tk-place-name { min-width: 0; overflow-wrap: anywhere; color: #1a1a1a; }
+.tk-place-name b { color: #1a1a1a; }
+.tk-place-name small { font-size: 12px; color: #666; }
+.tk-place-go { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 12.5px; font-weight: 700; padding: 5px 11px; border-radius: 99px; border: 1.5px solid var(--color-primary); background: #fff; color: var(--color-primary); cursor: pointer; }
+.tk-place-go .mat-icon { font-size: 16px; width: 16px; height: 16px; color: var(--color-primary); }
+.tk-row .tk-row-place { display: inline-flex; align-items: center; gap: 3px; color: #666; }
+.tk-row-place .mat-icon { font-size: 14px; width: 14px; height: 14px; color: #c2410c; }
 
 .tk-card { flex-direction: column; gap: 10px; padding: 14px; color: var(--color-text, #1a1a1a); }
 .tk-card-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

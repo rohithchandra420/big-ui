@@ -1,11 +1,12 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { Announcement, AnnouncementType, PushService } from '../../core/push.service';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
 import { TaskListComponent } from '../../shared/task/task-list.component';
 import { AuthService } from '../../core/auth.service';
 import { EventService } from '../../core/event.service';
+import { areaInfo, typeInfo } from '../../venue-map/venue-map.utils';
 
 export const TITLE_MAX = 60;
 export const MESSAGE_MAX = 240;
@@ -35,7 +36,7 @@ export interface TypeOption {
   templateUrl: './announcements.component.html',
   styleUrls: ['./announcements.component.css']
 })
-export class AnnouncementsComponent implements OnInit {
+export class AnnouncementsComponent implements OnInit, OnDestroy {
   private readonly allRoles = [
     { value: 'VOL', label: 'Volunteers' },
     { value: 'TL', label: 'Team Leads' },
@@ -81,6 +82,18 @@ export class AnnouncementsComponent implements OnInit {
   /** Stored list (stable identities for *ngFor). */
   departmentOptions: { _id: string; name: string }[] = [];
 
+  // ── HD3: the Venue Map pin / area a Task is about (optional) ──
+  /** '' = no place, else '<kind>:<id>'. */
+  place = '';
+  /** The sidebar event's pins and areas (stored list for the picker). */
+  placeOptions: { id: string; label: string; wash: boolean }[] = [];
+  /** The WASH department was picked as receiver because the place is a WASH facility. */
+  washPreselected = false;
+  private washDepartment: string | null = null;
+  /** The event whose places are loaded ('' = none yet). */
+  private placesFor = '';
+  private subs = new Subscription();
+
   history: Announcement[] = [];
   /** history after search + filters — a stored list, rebuilt by applyFilters(). */
   visibleHistory: Announcement[] = [];
@@ -114,6 +127,59 @@ export class AnnouncementsComponent implements OnInit {
       next: d => this.departmentOptions = [...d].sort((a, b) => a.name.localeCompare(b.name)),
       error: () => this.departmentOptions = []
     });
+    // Another event in the sidebar: its own places.
+    this.subs.add(this.events.activeEvent.subscribe(() => {
+      this.place = '';
+      this.washPreselected = false;
+      this.placeOptions = [];
+      this.placesFor = '';
+      if (this.isTask) this.loadPlaces();
+    }));
+  }
+
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
+  }
+
+  get isTask(): boolean {
+    return this.type === 'task';
+  }
+
+  /** The sidebar event's pins and areas, loaded when Task is first picked. */
+  async loadPlaces(): Promise<void> {
+    const eventId = this.staffEvent?._id || '';
+    if (!eventId || this.placesFor === eventId) return;
+    this.placesFor = eventId;
+    try {
+      const res = await this.push.taskPlaces(eventId);
+      if (this.placesFor !== eventId) return;
+      this.washDepartment = res.washDepartment;
+      this.placeOptions = res.places.map(p => ({
+        id: `${p.kind}:${p._id}`,
+        label: `${p.name} · ${p.kind === 'area' ? areaInfo(p.type).label : typeInfo(p.type).label}`,
+        wash: p.wash
+      }));
+    } catch {
+      if (this.placesFor === eventId) { this.placeOptions = []; this.placesFor = ''; }
+    }
+  }
+
+  /** A WASH facility pre-selects the WASH department as receiver (it can be taken off again). */
+  onPlace(value: string): void {
+    this.place = value || '';
+    this.washPreselected = false;
+    const dept = this.washDepartment;
+    if (!this.place || !dept || !this.placeOptions.find(o => o.id === this.place)?.wash) return;
+    if (!this.departmentOptions.some(d => d._id === dept) || this.departments.has(dept)) return;
+    this.departments.add(dept);
+    this.washPreselected = true;
+  }
+
+  /** { kind, id } for the server; null when no (known) place is picked. */
+  private get placeInput(): { kind: 'pin' | 'area'; id: string } | null {
+    if (!this.isTask || !this.placeOptions.some(o => o.id === this.place)) return null;
+    const [kind, id] = this.place.split(':');
+    return { kind: kind as 'pin' | 'area', id };
   }
 
   async loadHistory(): Promise<void> {
@@ -181,8 +247,9 @@ export class AnnouncementsComponent implements OnInit {
     return PUBLIC_TYPES.includes(type);
   }
 
-  /** Task / Reminder can't go public: picking the public page moves them to General. */
+  /** A Task never goes public (the card is off). A Reminder can't either: picking the public page moves it to General. */
   setPublic(on: boolean): void {
+    if (on && this.isTask) return;
     this.publicPost = on;
     if (on && !this.isPublicType(this.type)) this.type = 'general';
     if (on && !this.publicSessions.length) this.loadPublicSessions();
@@ -208,6 +275,12 @@ export class AnnouncementsComponent implements OnInit {
   setType(type: AnnouncementType): void {
     if (this.publicPost && !this.isPublicType(type)) return;
     this.type = type;
+    if (this.isTask) {
+      this.loadPlaces();
+    } else {
+      this.place = '';
+      this.washPreselected = false;
+    }
   }
 
   typeIcon(type: AnnouncementType): string {
@@ -253,7 +326,7 @@ export class AnnouncementsComponent implements OnInit {
   }
 
   get audiencePreview(): string {
-    if (!this.hasAudience) return 'Pick at least one role, department or the public page';
+    if (!this.hasAudience) return this.isTask ? 'Pick at least one role or department' : 'Pick at least one role, department or the public page';
     if (!this.hasStaffAudience) return 'the public page only (no staff)';
     const names = this.departmentOptions.filter(d => this.departments.has(d._id)).map(d => d.name);
     const staff = this.audienceText(this.orderedRoles(this.roles), names) + this.staffNote(this.sendStaffEventName);
@@ -314,6 +387,7 @@ export class AnnouncementsComponent implements OnInit {
         type: this.type, title: this.title.trim(), message: this.message.trim(),
         roles, departments: [...this.departments], public: this.publicPost,
         staffEvent: this.onlyEventStaff && this.staffEvent ? this.staffEvent._id : null,
+        ...(this.placeInput ? { place: this.placeInput } : {}),
         ...(this.publicPost ? { publicAlert: this.publicAlert, publicSession: this.publicAlert === 'session' ? this.publicSession : null } : {})
       });
       this.reportSent(sent);
@@ -385,6 +459,13 @@ export class AnnouncementsComponent implements OnInit {
     // Keep only roles this person can pick (Developers drops out for non-Developers).
     this.roles = new Set((a.roles || []).filter(r => this.roleOptions.some(o => o.value === r)));
     this.departments = new Set((a.departments || []).map(d => d._id));
+    // The place comes along when it is still on this event's map.
+    this.place = '';
+    this.washPreselected = false;
+    if (this.isTask) {
+      const wanted = a.place?.ref ? `${a.place.kind}:${a.place.ref}` : '';
+      this.loadPlaces().then(() => { if (this.isTask && this.placeOptions.some(o => o.id === wanted)) this.place = wanted; });
+    }
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -398,6 +479,8 @@ export class AnnouncementsComponent implements OnInit {
     this.publicAlert = 'none';
     this.publicSession = '';
     this.onlyEventStaff = true;
+    this.place = '';
+    this.washPreselected = false;
   }
 
   private reportSent(sent: Announcement): void {

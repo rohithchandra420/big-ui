@@ -171,6 +171,7 @@
         <ng-container *ngIf="ps.kind !== 'wash'"><b>{{ ps.open ? 'Open' : 'Closed' }}</b> · </ng-container>{{ ps.label }}
         <a *ngIf="ps.kind === 'wash'" routerLink="/wash"> · WASH</a>
       </div>
+      <div class="vm-row" *ngIf="tasksByPlace.get(selected._id) as tk"><b>Tasks:</b> <span class="tk-pill tk-s-{{ tk.worst }}">{{ taskText(selected._id) }}</span></div>
       <div class="vm-warn" *ngIf="locInfo.get(selected._id)?.outside"><mat-icon>warning</mat-icon>Outside the festival boundary</div>
       <div class="vm-row" *ngIf="locInfo.get(selected._id)?.zones?.length"><b>In:</b> {{ locInfo.get(selected._id)!.zones.join(', ') }}</div>
       <div class="vm-row" *ngIf="selected.department"><b>Department:</b> {{ selected.department.name }}</div>
@@ -225,6 +226,7 @@
           </li>
         </ol>
       </div>
+      <div class="vm-row" *ngIf="tasksByPlace.get(selectedArea._id) as tk"><b>Tasks:</b> <span class="tk-pill tk-s-{{ tk.worst }}">{{ taskText(selectedArea._id) }}</span></div>
       <div class="vm-row" *ngIf="areaSize.get(selectedArea._id)"><b>Size:</b> {{ areaSize.get(selectedArea._id) }}</div>
       <div class="vm-row" *ngIf="selectedArea.department"><b>Department:</b> {{ selectedArea.department.name }}</div>
       <div class="vm-row vm-notes" *ngIf="selectedArea.notes">{{ selectedArea.notes }}</div>
