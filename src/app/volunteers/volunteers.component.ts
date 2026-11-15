@@ -1,5 +1,7 @@
 import { AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { BulkUsersComponent } from '../admin/user-registery/bulk-users/bulk-users.component';
 import { EventService } from '../core/event.service';
 import { NotificationService } from '../core/notification.service';
 import { EventItem } from '../models/event.model';
@@ -8,7 +10,9 @@ import type * as Leaflet from 'leaflet';
 import { LocationInfo, VolBoard, VolDepartment, VolProfile, Volunteer } from './volunteers.model';
 import { BoardView, DEPOSIT_LABEL, LOCATION_LABEL, Lane, StatFilter, askMessage, buildBoard, money, moveMessage } from './volunteers.utils';
 
-type Panel = 'closed' | 'profile' | 'need';
+type Panel = 'closed' | 'profile' | 'need' | 'add';
+/** A home department a new volunteer may get (Add users). */
+interface AddDepartment { _id: string; name: string; key: string }
 interface Destination { id: string | null; name: string; icon: string }
 
 /**
@@ -62,7 +66,8 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     private events: EventService,
     private volunteers: VolunteersService,
     private notify: NotificationService,
-    private zone: NgZone
+    private zone: NgZone,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit() {
@@ -89,6 +94,44 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   get canAssign(): boolean { return !!this.board?.canAssign; }
   /** V3: may ask for locations and read the answers. */
   get canManage(): boolean { return !!this.board?.canManage; }
+
+  // ── add users (1.60.0): Manage only; the server makes them Volunteers with no extra access ──
+
+  /**
+   * Home departments for a new volunteer: the Unassigned pool first, then every
+   * department except Medical (matched by key). A stored list — replaced only
+   * when it really changes, so the form's options keep their identities.
+   */
+  addDepartments: AddDepartment[] = [];
+
+  private buildAddDepartments() {
+    const b = this.board;
+    const next: AddDepartment[] = !b ? [] : [
+      ...(b.pool ? [{ _id: b.pool._id, name: `${b.pool.name} (Unassigned)`, key: 'volunteer' }] : []),
+      ...b.departments.filter(d => d.key !== 'medical').map(d => ({ _id: d._id, name: d.name, key: d.key }))
+    ];
+    const same = next.length === this.addDepartments.length &&
+      next.every((d, i) => d._id === this.addDepartments[i]._id && d.name === this.addDepartments[i].name);
+    if (!same) this.addDepartments = next;
+  }
+
+  openAdd() {
+    if (!this.event || !this.canManage) return;
+    this.closePanel();
+    this.panel = 'add';
+  }
+
+  /** The form saved a new volunteer: close it and show them on the board. */
+  onUserAdded() {
+    this.closePanel();
+    this.load();
+  }
+
+  openBulk() {
+    if (!this.event || !this.canManage) return;
+    this.dialog.open(BulkUsersComponent, { width: '920px', maxWidth: '95vw', disableClose: true, data: { volunteersMode: true } })
+      .afterClosed().subscribe(added => { if (added) this.load(); });
+  }
 
   // ── location on request (V3) ──
   location: LocationInfo | null = null;
@@ -172,6 +215,7 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
       this.loadError = err?.error?.message || 'Could not load the volunteers.';
     } finally {
       this.loading = false;
+      this.buildAddDepartments();
       this.apply();
     }
   }
@@ -342,9 +386,14 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get panelTitle(): string {
+    if (this.panel === 'add') return 'New volunteer';
     return this.panel === 'need' ? 'Volunteers needed' : (this.profileOf?.name || '');
   }
+  get panelIcon(): string {
+    return this.panel === 'add' ? 'person_add' : this.panel === 'need' ? 'group_add' : 'person';
+  }
   get panelSubtitle(): string {
+    if (this.panel === 'add') return `Joins ${this.event?.name || 'the event'}'s staff list`;
     if (this.panel === 'need') return this.needOf?.name || '';
     const p = this.profile;
     return p ? `Volunteer · ${p.unassigned ? 'Unassigned' : p.department?.name || ''}` : 'Volunteer';

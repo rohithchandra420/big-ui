@@ -3,6 +3,11 @@
     <div class="page-ph-title">Volunteers</div>
     <div class="page-ph-sub">{{ event?.name || 'No event selected' }} staff list · assign, free and look up volunteers</div>
   </div>
+  <!-- Add users (Manage only): they become Volunteers on this event's staff list -->
+  <div class="ph-actions" *ngIf="canManage && event">
+    <button type="button" class="btn-ghost" (click)="openBulk()"><mat-icon>group_add</mat-icon>Bulk Add</button>
+    <button type="button" class="btn-cta" (click)="openAdd()">+ New User</button>
+  </div>
   <!-- Navigation Tabs: Back + this section's pages -->
   <app-section-header></app-section-header>
 </div>
@@ -44,7 +49,7 @@
       </button>
     </div>
 
-    <p class="vl-muted" *ngIf="!board.volunteers.length">No volunteers on this event's staff list yet. Add them in Admin › Users.</p>
+    <p class="vl-muted" *ngIf="!board.volunteers.length">No volunteers on this event's staff list yet. {{ canManage ? 'Add them with “+ New User” or “Bulk Add”.' : 'Add them in Admin › Users.' }}</p>
     <p class="vl-muted" *ngIf="!board.pool">
       There is no Volunteer department yet, so freed volunteers have no department. Create one in Admin › Departments with the key "Volunteers".
     </p>
@@ -163,7 +168,12 @@
     </div>
   </ng-container>
 
-  <app-slide-panel [open]="panel !== 'closed'" [icon]="panel === 'need' ? 'group_add' : 'person'" [title]="panelTitle" [subtitle]="panelSubtitle" (closed)="closePanel()">
+  <app-slide-panel [open]="panel !== 'closed'" [icon]="panelIcon" [title]="panelTitle" [subtitle]="panelSubtitle" (closed)="closePanel()">
+    <!-- New volunteer (Manage only): the shared user form in its Volunteers mode -->
+    <app-user-form *ngIf="panel === 'add' && event" mode="create" [volunteersMode]="true"
+                   [eventId]="event._id" [departments]="addDepartments" [defaultDepartment]="board?.pool?._id || ''"
+                   (saved)="onUserAdded()" (cancelled)="closePanel()"></app-user-form>
+
     <!-- Volunteers needed -->
     <div class="vl-form" *ngIf="panel === 'need' && needOf as d">
       <div class="field">
