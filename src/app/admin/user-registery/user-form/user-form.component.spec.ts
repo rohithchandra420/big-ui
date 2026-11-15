@@ -7,6 +7,7 @@ import { UserFormComponent } from './user-form.component';
 import { AdminService } from '../../admin.service';
 import { AuthService } from '../../../core/auth.service';
 import { NotificationService } from '../../../core/notification.service';
+import { VolunteersService } from '../../../volunteers/volunteers.service';
 import { AppSelectComponent } from '../../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../../shared/app-select/app-option.component';
 
@@ -28,6 +29,7 @@ describe('UserFormComponent', () => {
   let fixture: ComponentFixture<UserFormComponent>;
   let adminSpy: jasmine.SpyObj<AdminService>;
   let notificationSpy: jasmine.SpyObj<NotificationService>;
+  let volunteersSpy: jasmine.SpyObj<VolunteersService>;
 
   const authStub = {
     deptKeyOf: (d: any) => (['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk'].includes(d?.key) ? d.key : (d ? 'general' : ''))
@@ -36,6 +38,7 @@ describe('UserFormComponent', () => {
   const create = async (inputs: Partial<UserFormComponent>) => {
     adminSpy = jasmine.createSpyObj('AdminService', ['createUser', 'updateUser']);
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
+    volunteersSpy = jasmine.createSpyObj('VolunteersService', ['createUser']);
 
     await TestBed.configureTestingModule({
       declarations: [UserFormComponent, AppSelectComponent, AppOptionComponent],
@@ -44,6 +47,7 @@ describe('UserFormComponent', () => {
         { provide: AdminService, useValue: adminSpy },
         { provide: AuthService, useValue: authStub },
         { provide: NotificationService, useValue: notificationSpy },
+        { provide: VolunteersService, useValue: volunteersSpy },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -62,6 +66,62 @@ describe('UserFormComponent', () => {
     role: 'VOL',
     homeDepartment: 'd-box',
     dateOfJoining: '2026-10-01'
+  });
+
+  describe('Volunteers mode (added from the Volunteers page)', () => {
+    const pool = { _id: 'd-pool', name: 'Volunteer (Unassigned)', key: 'volunteer' };
+    beforeEach(async () => await create({
+      mode: 'create', volunteersMode: true, eventId: 'e1', defaultDepartment: 'd-pool',
+      departments: [pool, box], isTopLevel: false
+    }));
+    const fill = () => component.form.patchValue({
+      userName: 'New Person', email: 'new@test.com', password: 'Secure@123', confirmPassword: 'Secure@123', dateOfJoining: '2026-11-20'
+    });
+
+    it('fixes the role to Volunteer, starts in the pool and keeps department and date open', () => {
+      expect(component.form.getRawValue().role).toBe('VOL');
+      expect(component.form.controls.role.disabled).toBeTrue();
+      expect(component.roleOptions.map(r => r.name)).toEqual(['VOL']);
+      expect(component.roleOptions).toBe(component.roleOptions);   // a stored list
+      expect(component.form.controls.homeDepartment.value).toBe('d-pool');
+      expect(component.form.controls.homeDepartment.enabled).toBeTrue();
+      expect(component.form.controls.dateOfJoining.enabled).toBeTrue();
+    });
+
+    it('shows no access chips', () => {
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('.access-chip')).toBeNull();
+      expect(el.querySelector('.dept-access-table')).toBeNull();
+      expect(el.textContent).toContain('They join as a Volunteer');
+    });
+
+    it('saves through the Volunteers route, with no grants, and emits the new user', async () => {
+      const created = { _id: 'new9', name: 'New Person' };
+      volunteersSpy.createUser.and.returnValue(Promise.resolve(created));
+      const savedSpy = spyOn(component.saved, 'emit');
+      fill();
+      component.form.controls.homeDepartment.setValue('d-box');
+      component.setKeyLevel('box-office', 'manage');   // even if something were picked
+      component.submit();
+      await fixture.whenStable();
+
+      expect(adminSpy.createUser).not.toHaveBeenCalled();
+      const [eventId, payload] = volunteersSpy.createUser.calls.mostRecent().args;
+      expect(eventId).toBe('e1');
+      expect(payload['roleName']).toBe('VOL');
+      expect(payload['departmentIds']).toEqual(['d-box']);
+      expect('permissions' in payload).toBeFalse();
+      expect(savedSpy).toHaveBeenCalledWith(created);
+    });
+
+    it('shows the reason the server gives when it fails', async () => {
+      volunteersSpy.createUser.and.returnValue(Promise.reject({ error: { msg: 'A user with this email already exists' } }));
+      fill();
+      component.submit();
+      await fixture.whenStable();
+      expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('A user with this email already exists');
+      expect(component.saving).toBeFalse();
+    });
   });
 
   describe('create mode', () => {

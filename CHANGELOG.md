@@ -13,6 +13,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.60.0] - 2026-11-15
+
+### Added
+- **Add users from the Volunteers page.** The Volunteer Team Lead, people with the Volunteers Manage grant and top roles get “+ New User” and “Bulk Add” in the page header.
+  - Everyone added here is a Volunteer. The form has no role choice and no access chips: the new person gets the access their home department gives, nothing more.
+  - Home department: the Unassigned pool by default, or any department except Medical.
+  - New people go on the sidebar event's staff list and show on the board straight away.
+  - Bulk Add here uses its own template with no role column; an empty home department means Unassigned.
+  - Editing, deleting and reactivating users stay on Admin › Users.
+
+---
+
 ## [1.59.0] - 2026-11-15
 
 ### Changed

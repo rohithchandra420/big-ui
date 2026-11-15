@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed, fakeAsync, flush, flushMicrotasks } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { BulkUsersComponent } from '../admin/user-registery/bulk-users/bulk-users.component';
 import { VolunteersComponent } from './volunteers.component';
 import { SlidePanelComponent } from '../shared/slide-panel/slide-panel.component';
 import { EventService } from '../core/event.service';
@@ -26,6 +28,7 @@ describe('VolunteersComponent', () => {
   let service: jasmine.SpyObj<VolunteersService>;
   let notify: jasmine.SpyObj<NotificationService>;
   let canAssign: boolean;
+  let dialog: jasmine.SpyObj<MatDialog>;
   const el = () => fixture.nativeElement as HTMLElement;
 
   const board = (): VolBoard => ({
@@ -43,13 +46,15 @@ describe('VolunteersComponent', () => {
     service.board.and.callFake(() => Promise.resolve(board()));
     service.profile.and.returnValue(Promise.resolve(profile));
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
+    dialog = jasmine.createSpyObj('MatDialog', ['open']);
     await TestBed.configureTestingModule({
       declarations: [VolunteersComponent, SlidePanelComponent],
       imports: [FormsModule],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
         { provide: NotificationService, useValue: notify },
-        { provide: VolunteersService, useValue: service }
+        { provide: VolunteersService, useValue: service },
+        { provide: MatDialog, useValue: dialog }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -201,6 +206,61 @@ describe('VolunteersComponent', () => {
     component.toggleAllShown();
     component.toggleAllShown();       // again = unpick
     expect(component.selected.size).toBe(0);
+  }));
+
+  it('Add users: the header buttons are for Manage only', fakeAsync(() => {
+    start();
+    expect(el().querySelector('.ph-actions')).toBeNull();          // may assign, not manage
+    component.openAdd();
+    component.openBulk();
+    expect(component.panel).toBe('closed');
+    expect(dialog.open).not.toHaveBeenCalled();
+
+    component.board = { ...component.board!, canManage: true };
+    fixture.detectChanges();
+    const buttons = el().querySelectorAll<HTMLButtonElement>('.ph-actions button');
+    expect(buttons.length).toBe(2);
+    buttons[1].click();
+    fixture.detectChanges();
+    expect(component.panel).toBe('add');
+    expect(component.panelTitle).toBe('New volunteer');
+    expect(el().querySelector('app-user-form')).not.toBeNull();
+  }));
+
+  it('Add users: offers the pool and every department except Medical, as a stored list', fakeAsync(() => {
+    service.board.and.callFake(() => Promise.resolve({
+      ...board(), canManage: true,
+      departments: [...board().departments, { _id: 'd3', name: 'First Aid', key: 'medical', tls: [], needed: 0, canSetNeed: false }]
+    }));
+    start();
+    expect(component.addDepartments.map(d => d.name)).toEqual(['Volunteer (Unassigned)', 'Decor', 'WASH']);
+    const list = component.addDepartments;
+    component.load();
+    flushMicrotasks();
+    expect(component.addDepartments).toBe(list);                  // same list after a reload
+  }));
+
+  it('Add users: a saved volunteer closes the form and reloads; Bulk Add reloads when someone was added', fakeAsync(() => {
+    start();
+    component.board = { ...component.board!, canManage: true };
+    component.openAdd();
+    component.onUserAdded();
+    flushMicrotasks();
+    expect(component.panel).toBe('closed');
+    expect(service.board).toHaveBeenCalledTimes(2);
+
+    component.board = { ...component.board!, canManage: true };
+    dialog.open.and.returnValue({ afterClosed: () => of(true) } as any);
+    component.openBulk();
+    flushMicrotasks();
+    expect(dialog.open).toHaveBeenCalledWith(BulkUsersComponent, jasmine.objectContaining({ data: { volunteersMode: true } }));
+    expect(service.board).toHaveBeenCalledTimes(3);
+
+    component.board = { ...component.board!, canManage: true };
+    dialog.open.and.returnValue({ afterClosed: () => of(false) } as any);
+    component.openBulk();
+    flushMicrotasks();
+    expect(service.board).toHaveBeenCalledTimes(3);
   }));
 
   it('filters from the stat cards and the list layout shows everyone', fakeAsync(() => {

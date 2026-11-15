@@ -4,7 +4,8 @@ import { AbstractControl, FormControl, FormGroup, ValidationErrors, Validators }
 import { AdminService } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
 import { AuthService } from '../../../core/auth.service';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription, from } from 'rxjs';
+import { VolunteersService } from '../../../volunteers/volunteers.service';
 import { ACCESS_KEYS, AccessKey, AccessKeyTier, grantTier } from '../../../core/access-keys';
 import { PHONE_PATTERN } from '../../../core/phone';
 
@@ -42,6 +43,15 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
   @Input() isTopLevel = false;
   /** Staff list: a new user is also put on this event (the one picked in the sidebar). */
   @Input() eventId = '';
+  /**
+   * Volunteers page (1.60.0): the form adds a volunteer through the Volunteers
+   * routes. The role is fixed to Volunteer, there are no access chips (the new
+   * user gets Read on the home department's key only) and the parent leaves
+   * Medical out of `departments`. Create only. The server enforces all of it.
+   */
+  @Input() volunteersMode = false;
+  /** The home department picked when the form opens (Volunteers page: the Unassigned pool). */
+  @Input() defaultDepartment = '';
 
   /** Emits the created/updated user as returned by the backend. */
   @Output() saved = new EventEmitter<any>();
@@ -78,7 +88,8 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
   constructor(
     private adminService: AdminService,
     private notificationService: NotificationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private volunteersService: VolunteersService
   ) { }
 
   get isEdit(): boolean {
@@ -91,6 +102,7 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
    *  fresh array/object each change-detection pass made *ngFor re-create the
    *  <app-option> every pass, the same freeze as the Users page filters. */
   get roleOptions(): { _id: string; name: string }[] {
+    if (this.volunteersMode) return this.volunteerRoleOptions;   // stored list, never rebuilt
     if (this.roles.length) return this.roles;
     const own = this.user?.role?.name || this.user?.role || '';
     if (own !== this.fallbackRoleName) {
@@ -101,6 +113,11 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
   }
   private fallbackRoleName = '';
   private fallbackRoleOptions: { _id: string; name: string }[] = [];
+  private readonly volunteerRoleOptions: { _id: string; name: string }[] = [{ _id: '', name: 'VOL' }];
+
+  trackDept(_: number, d: { _id: string }): string {
+    return d._id;
+  }
 
   trackRole(_: number, r: { name: string }): string {
     return r.name;
@@ -184,7 +201,12 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
       this.populateFromUser();
     }
 
-    if (!this.isTopLevel) {
+    if (this.volunteersMode) {
+      // Always a Volunteer; the department and the date stay open to whoever may add.
+      this.form.controls.role.setValue('VOL');
+      this.form.controls.role.disable();
+      if (this.defaultDepartment) this.form.controls.homeDepartment.setValue(this.defaultDepartment);
+    } else if (!this.isTopLevel) {
       this.form.controls.role.disable();
       this.form.controls.homeDepartment.disable();
       this.form.controls.dateOfJoining.disable();
@@ -239,7 +261,8 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
       password: raw.password,
       roleName: raw.role,
       departmentIds: raw.homeDepartment ? [raw.homeDepartment] : [],
-      permissions: this.buildPermissions(),
+      // Volunteers page: no grants are sent — the server gives Read on the home key only.
+      ...(this.volunteersMode ? {} : { permissions: this.buildPermissions() }),
       dateOfJoining: raw.dateOfJoining,
       foodPreference: raw.foodPreference,
       ...(raw.gender ? { gender: raw.gender } : {}),
@@ -247,16 +270,21 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
       ...(this.eventId ? { eventId: this.eventId } : {})
     };
 
+    const call: Observable<any> = this.volunteersMode
+      ? from(this.volunteersService.createUser(this.eventId, userDetails))
+      : this.adminService.createUser(userDetails);
+
     this.saving = true;
-    this.adminService.createUser(userDetails).subscribe({
+    call.subscribe({
       next: res => {
         this.saving = false;
         this.notificationService.openSucessSnackBar('User ' + res.name + ' created successfully');
         this.saved.emit(res);
       },
-      error: () => {
+      error: err => {
         this.saving = false;
-        this.notificationService.openErrorSnackBar('Could not create user');
+        // The Volunteers routes say why (email taken, weak password…).
+        this.notificationService.openErrorSnackBar((this.volunteersMode && err?.error?.msg) || 'Could not create user');
       }
     });
   }

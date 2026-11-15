@@ -1,8 +1,13 @@
-<h2 mat-dialog-title>Bulk Add Users</h2>
+<h2 mat-dialog-title>{{ volunteersMode ? 'Bulk Add Volunteers' : 'Bulk Add Users' }}</h2>
 
 <mat-dialog-content>
   <div class="bk-intro">
-    <p>One user per row, up to {{ maxRows }} per file. Required:
+    <p *ngIf="volunteersMode">One volunteer per row, up to {{ maxRows }} per file. Required:
+      <span class="mono">name</span>, <span class="mono">email</span> and <span class="mono">password</span>.
+      Optional: <span class="mono">home_department</span> (empty = Unassigned), <span class="mono">food_preference</span>,
+      <span class="mono">gender</span>, <span class="mono">date_of_joining</span>, <span class="mono">phone</span>.
+      Everyone is added as a Volunteer<ng-container *ngIf="event"> on <strong>{{ event.name }}</strong>'s staff list</ng-container>, with read access to their home department.</p>
+    <p *ngIf="!volunteersMode">One user per row, up to {{ maxRows }} per file. Required:
       <span class="mono">name</span>, <span class="mono">email</span>, <span class="mono">password</span>,
       <span class="mono">role</span> and <span class="mono">home_department</span> (for VOL and TL).
       Optional: <span class="mono">food_preference</span>, <span class="mono">gender</span>,
@@ -60,7 +65,7 @@
     </div>
   </ng-container>
 
-  <label class="bk-event" *ngIf="event && phase !== 'done'">
+  <label class="bk-event" *ngIf="event && phase !== 'done' && !volunteersMode">
     <input type="checkbox" [(ngModel)]="addToEvent" [disabled]="phase === 'adding'">
     Also add them to <strong>{{ event.name }}</strong>'s staff list
   </label>

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
+import type { BulkUserRow, BulkUsersResponse } from '../admin/admin.service';
 import {
   AskResult, DepositList, DepositMode, DepositRow, LocationInfo, MoveResult, MyLocationRequest, NeedInfo, VolBoard, VolProfile
 } from './volunteers.model';
@@ -80,6 +81,19 @@ export class VolunteersService {
 
   declineLocation(requestId: string): Promise<{ ok: boolean }> {
     return firstValueFrom(this.http.post<{ ok: boolean }>(`${this.url}/location/${requestId}/decline`, {}));
+  }
+
+  // ── Add users (1.60.0) — Manage only; the server makes them Volunteers with no extra access ──
+
+  /** One new volunteer, put on the event's staff list. Answers the created user. */
+  createUser(eventId: string, details: { [field: string]: any }): Promise<any> {
+    const { eventId: _dropped, permissions: _none, ...rest } = details;
+    return firstValueFrom(this.http.post<any>(this.url + '/users', { ...rest, event: eventId }));
+  }
+
+  /** Many from a file. dryRun only checks the rows (the preview). */
+  bulkUsers(eventId: string, rows: BulkUserRow[], dryRun: boolean): Promise<BulkUsersResponse> {
+    return firstValueFrom(this.http.post<BulkUsersResponse>(this.url + '/users/bulk', { event: eventId, rows, dryRun }));
   }
 
   /** 0 = no number. */

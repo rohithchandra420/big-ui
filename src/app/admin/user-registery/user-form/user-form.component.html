@@ -36,7 +36,7 @@
       <label>Home Department *</label>
       <app-select formControlName="homeDepartment">
         <app-option value="" [disabled]="true">Select a department</app-option>
-        <app-option *ngFor="let d of departments" [value]="d._id">{{ d.name }}</app-option>
+        <app-option *ngFor="let d of departments; trackBy: trackDept" [value]="d._id">{{ d.name }}</app-option>
       </app-select>
     </div>
   </div>
@@ -74,6 +74,9 @@
     </div>
   </div>
 
+  <!-- Volunteers page: no access chips — a new volunteer gets what their department gives, nothing more -->
+  <p class="key-none" *ngIf="volunteersMode">They join as a Volunteer with the access their department gives. Extra access is set in Admin › Users.</p>
+  <ng-container *ngIf="!volunteersMode">
   <div class="section-lbl">Extra access <span class="key-note">(on top of what their own department gives)</span></div>
   <div class="dept-access-table" *ngIf="accessKeys.length">
     <div *ngFor="let k of accessKeys; trackBy: trackKey" class="dept-row">
@@ -99,6 +102,7 @@
     </div>
   </div>
   <p class="key-none" *ngIf="!accessKeys.length">Your department's key gives no extra access to set.</p>
+  </ng-container>
 
   <div class="btn-row form-actions">
     <button class="btn-ghost" type="button" (click)="cancelled.emit()">Cancel</button>
