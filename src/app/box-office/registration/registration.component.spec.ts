@@ -7,6 +7,7 @@ import { BehaviorSubject, of, throwError } from 'rxjs';
 import { RegistrationComponent } from './registration.component';
 import { BoxOfficeService } from '../box-office.service';
 import { EventService } from '../../core/event.service';
+import { AuthService } from '../../core/auth.service';
 import { GateFeedbackService } from '../../core/gate-feedback.service';
 import { Ticket } from '../../models/ticket.model';
 import { EventItem } from '../../models/event.model';
@@ -49,6 +50,7 @@ describe('RegistrationComponent', () => {
       declarations: [RegistrationComponent],
       providers: [
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },
+        { provide: AuthService, useValue: { currentUser: null } },
         { provide: Router, useValue: routerSpy },
         { provide: MatDialog, useValue: dialogSpy },
         { provide: EventService, useValue: eventServiceStub },

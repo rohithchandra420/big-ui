@@ -51,11 +51,11 @@
           <small>{{ time(s.start) }} – {{ time(s.end) }}<ng-container *ngIf="closesIn"> · {{ closesIn }}</ng-container><ng-container *ngIf="s.status !== 'upcoming'"> · {{ s.served }} served</ng-container></small>
         </div>
         <ng-container *ngIf="!editingTime">
-          <button type="button" class="pill-btn" *ngIf="s.status === 'upcoming'" (click)="startEditTime()"><mat-icon>schedule</mat-icon>Change time</button>
+          <button type="button" class="pill-btn" *ngIf="!readOnly && (s.status === 'upcoming')" (click)="startEditTime()"><mat-icon>schedule</mat-icon>Change time</button>
           <a class="pill-btn" *ngIf="s.status === 'open'" routerLink="/hospitality/desk"><mat-icon>qr_code_scanner</mat-icon>Serving desk</a>
-          <button type="button" class="pill-btn ht-danger" *ngIf="s.status === 'open'" [disabled]="!!busy" (click)="closeMess()"><mat-icon>door_front</mat-icon>Close Mess Hall</button>
-          <button type="button" class="pill-btn" *ngIf="s.status === 'closed' && !figOpen" (click)="openFigures()"><mat-icon>{{ s.figures ? 'edit' : 'add' }}</mat-icon>{{ s.figures ? 'Edit kitchen figures' : 'Add kitchen figures' }}</button>
-          <button type="button" class="pill-btn" *ngIf="s.closedEarly && s.status === 'closed'" [disabled]="!!busy" (click)="reopenMess()"><mat-icon>door_open</mat-icon>Reopen</button>
+          <button type="button" class="pill-btn ht-danger" *ngIf="!readOnly && (s.status === 'open')" [disabled]="!!busy" (click)="closeMess()"><mat-icon>door_front</mat-icon>Close Mess Hall</button>
+          <button type="button" class="pill-btn" *ngIf="!readOnly && (s.status === 'closed' && !figOpen)" (click)="openFigures()"><mat-icon>{{ s.figures ? 'edit' : 'add' }}</mat-icon>{{ s.figures ? 'Edit kitchen figures' : 'Add kitchen figures' }}</button>
+          <button type="button" class="pill-btn" *ngIf="!readOnly && (s.closedEarly && s.status === 'closed')" [disabled]="!!busy" (click)="reopenMess()"><mat-icon>door_open</mat-icon>Reopen</button>
         </ng-container>
         <div class="ht-time" *ngIf="editingTime">
           <input type="time" [(ngModel)]="newTime" aria-label="New opening time" />
@@ -117,7 +117,7 @@
             </div>
 
             <div class="ht-acts">
-              <button type="button" class="pill-btn hx-primary" [disabled]="!!busy" (click)="sendCount()"><mat-icon>save</mat-icon>{{ s.count ? 'Save updated count' : 'Save count' }}</button>
+              <button *ngIf="!readOnly" type="button" class="pill-btn hx-primary" [disabled]="!!busy" (click)="sendCount()"><mat-icon>save</mat-icon>{{ s.count ? 'Save updated count' : 'Save count' }}</button>
               <button type="button" class="pill-btn hx-wa" (click)="copyWhatsapp()"><mat-icon>chat</mat-icon>Copy for WhatsApp</button>
             </div>
             <pre class="hx-wa-prev" *ngIf="whatsapp">{{ whatsapp }}</pre>
@@ -138,7 +138,7 @@
           <div class="hx-hd">
             <h2><mat-icon class="ms-fill hx-amber">how_to_reg</mat-icon>Not marked yet</h2>
             <span class="grow"></span>
-            <button type="button" class="pill-btn hx-warn" [disabled]="!!busy || !s.notMarkedTotal" (click)="remindTls()"><mat-icon>notifications_active</mat-icon>Remind TLs</button>
+            <button *ngIf="!readOnly" type="button" class="pill-btn hx-warn" [disabled]="!!busy || !s.notMarkedTotal" (click)="remindTls()"><mat-icon>notifications_active</mat-icon>Remind TLs</button>
           </div>
           <div class="hx-bd">
             <div class="ht-dept" *ngFor="let r of notMarked; trackBy: trackDept">
@@ -155,7 +155,7 @@
     </ng-container>
 
     <!-- Meal alert -->
-    <section class="hx-card ht-alert">
+    <section *ngIf="!readOnly" class="hx-card ht-alert">
       <div class="hx-hd"><h2><mat-icon class="ms-fill">campaign</mat-icon>Meal alert</h2></div>
       <div class="hx-bd">
         <div class="field">

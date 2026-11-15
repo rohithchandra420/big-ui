@@ -29,6 +29,8 @@ const plusDays = (d: string, n: number) => localDate(new Date(new Date(d + 'T00:
 export class HospitalityStayComponent implements OnInit, OnDestroy {
   event: EventItem | null = null;
   data: StayOverview | null = null;
+  /** Helpdesk's read-only view (HD2): the server says this person may look but not change. */
+  readOnly = false;
   loading = false;
   loadError = '';
   busy = false;
@@ -100,6 +102,7 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     try {
       this.data = await this.hospitality.getStay(this.event._id, undefined, undefined, this.statsNight || undefined);
       this.statsNight = this.data.nightStats.date;
+      this.readOnly = (this.data as any)?.canManage === false;
       if (!this.calFrom) this.calFrom = this.data.today >= this.data.messDates.opensOn && this.data.today <= this.data.messDates.closesOn ? this.data.today : this.data.messDates.opensOn;
       this.buildCalendar();
       this.buildStays();

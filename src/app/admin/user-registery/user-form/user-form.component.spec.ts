@@ -30,7 +30,7 @@ describe('UserFormComponent', () => {
   let notificationSpy: jasmine.SpyObj<NotificationService>;
 
   const authStub = {
-    deptKeyOf: (d: any) => (['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer'].includes(d?.key) ? d.key : (d ? 'general' : ''))
+    deptKeyOf: (d: any) => (['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk'].includes(d?.key) ? d.key : (d ? 'general' : ''))
   };
 
   const create = async (inputs: Partial<UserFormComponent>) => {
@@ -123,7 +123,7 @@ describe('UserFormComponent', () => {
     });
 
     it('shows one row per built-in key that gives something — even with no department on it yet', () => {
-      expect(component.accessKeys.map(k => k.key)).toEqual(['box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer']);
+      expect(component.accessKeys.map(k => k.key)).toEqual(['box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk']);
       expect(component.accessKeys.find(k => k.key === 'box-office')!.names).toBe('Box Office');
       expect(component.accessKeys.find(k => k.key === 'wash')!.names).toBe('');
     });
@@ -134,7 +134,7 @@ describe('UserFormComponent', () => {
       expect(tiers('medical')).toEqual(['read']);
       expect(tiers('wash')).toEqual(['read', 'write', 'manage']);
       const rows = fixture.nativeElement.querySelectorAll('.dept-row');
-      expect(rows.length).toBe(7);
+      expect(rows.length).toBe(8);
       const hospitality = Array.from(rows as NodeListOf<HTMLElement>).find(r => r.textContent!.includes('Hospitality'))!;
       expect(hospitality.querySelectorAll('.access-chip').length).toBe(1);
     });

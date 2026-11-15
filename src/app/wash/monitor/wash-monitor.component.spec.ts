@@ -198,4 +198,19 @@ describe('WashMonitorComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.wm-acts').length).toBe(0);
     discardPeriodicTasks();
   }));
+
+  it('shows a facility\'s open tasks next to its state (HD3)', fakeAsync(() => {
+    list[0].tasks = [{ _id: 't1', title: 'Tap is leaking', status: 'in_progress' }];
+    list[1].tasks = [{ _id: 't2', title: 'Empty', status: 'in_progress' }, { _id: 't3', title: 'Dirty', status: 'blocked' }];
+    start();
+    const a = component.cards.find(c => c.f._id === 'a')!;
+    expect(a.taskLine).toBe('Open task: Tap is leaking');
+    expect(a.taskStatus).toBe('in_progress');
+    const b = component.cards.find(c => c.f._id === 'b')!;
+    expect(b.taskLine).toBe('2 open tasks');
+    expect(b.taskStatus).toBe('blocked');
+    expect(component.cards.find(c => c.f._id === 'd')!.taskLine).toBe('');
+    expect(fixture.nativeElement.querySelectorAll('.wm-task').length).toBe(2);
+    discardPeriodicTasks();
+  }));
 });

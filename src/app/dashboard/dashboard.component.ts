@@ -75,7 +75,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subs.add(this.auth.user.subscribe(user => {
       this.isAuthenticated = !!user;
-      this.isTop = TOP_ROLES.includes(user?.role || '');
+      // Helpdesk (HD2) sees the festival overview too; revenue stays with the Director.
+      this.isTop = TOP_ROLES.includes(user?.role || '') || !!this.auth.isHelpdesk?.(user);
       this.isDirector = user?.role === 'DIR';
       this.canOpenMedical = this.auth.canUseMedical(user);
       if (!user) this.clear();

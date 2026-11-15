@@ -13,6 +13,7 @@ import {
 import { Shopcart } from '../../models/ticket.model';
 import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
 import { EventService } from '../../core/event.service';
+import { AuthService } from '../../core/auth.service';
 import { EmailService } from '../../core/email.service';
 import { EmailBatchTrackerService } from '../../core/email-batch-tracker.service';
 import { EmailDialogsService } from '../email/email-dialogs.service';
@@ -63,8 +64,14 @@ export class BookingsComponent implements OnInit, OnDestroy {
     private eventService: EventService,
     private emailService: EmailService,
     private emailDialogs: EmailDialogsService,
-    private emailTracker: EmailBatchTrackerService
+    private emailTracker: EmailBatchTrackerService,
+    private auth: AuthService
   ) { }
+
+  /** Helpdesk (HD2): sees bookings, changes nothing — no Export, Bulk Upload or Edit. */
+  get readOnly(): boolean {
+    return !!this.auth.boxOfficeReadOnly?.(this.auth.currentUser);
+  }
 
   ngOnInit() {
     // Reload whenever the active event changes, not just on page load —

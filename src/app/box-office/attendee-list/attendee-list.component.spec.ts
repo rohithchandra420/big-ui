@@ -76,6 +76,15 @@ describe('AttendeeListComponent', () => {
     configureWith(mockTicket);
   });
 
+  it('shows no action buttons to Helpdesk (read-only, HD2)', () => {
+    configureWith(mockTicket);
+    expect(fixture.nativeElement.querySelector('.att-actions')).not.toBeNull();
+    (authSpy as any).boxOfficeReadOnly = () => true;
+    fixture.detectChanges();
+    expect(component.readOnly).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.att-actions')).toBeNull();
+  });
+
   it('loads tent details for any allocatedTentId on the input ticket', () => {
     // TestBed.createComponent() doesn't run through a parent template binding,
     // so plain property assignment doesn't trigger ngOnChanges the way the real

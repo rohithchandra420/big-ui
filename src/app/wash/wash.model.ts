@@ -24,7 +24,11 @@ export interface WashFacility {
   dueAt: string | null;
   state: WashState;
   logCount?: number;
+  /** Helpdesk HD3: open tasks about this facility. Separate from the log: Refilled / Cleaned never closes them. */
+  tasks?: WashTask[];
 }
+
+export interface WashTask { _id: string; title: string; status: 'new' | 'acknowledged' | 'in_progress' | 'blocked' | 'closed' }
 
 export interface WashList {
   facilities: WashFacility[];

@@ -81,6 +81,9 @@ import { EmailProgressComponent } from './box-office/email/email-progress/email-
 import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
 import { SectionHeaderComponent } from './shared/section-header/section-header.component';
 import { SlidePanelComponent } from './shared/slide-panel/slide-panel.component';
+import { TaskPillComponent } from './shared/task/task-pill.component';
+import { TaskSheetComponent } from './shared/task/task-sheet.component';
+import { TaskListComponent } from './shared/task/task-list.component';
 import { TentFieldsComponent } from './accommodation/fields/tent-fields.component';
 import { TentFieldComponent } from './accommodation/fields/tent-field.component';
 import { FieldGridComponent } from './accommodation/fields/field-grid.component';
@@ -180,6 +183,9 @@ LOAD_WASM().subscribe()
     PwaStatusComponent,
     SectionHeaderComponent,
     SlidePanelComponent,
+    TaskPillComponent,
+    TaskSheetComponent,
+    TaskListComponent,
     TentFieldsComponent,
     TentFieldComponent,
     FieldGridComponent,

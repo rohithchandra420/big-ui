@@ -1,3 +1,12 @@
+/* Right panel: Announcements / Tasks toggle (same look as Stay's Units / Calendar) */
+.ann-tabs { display: flex; box-sizing: border-box; min-height: 40px; margin: 0 0 12px; border: 1px solid var(--border-default); border-radius: 999px; padding: 3px; background: #fff; flex: 0 0 auto; }
+.ann-tabs button { flex: 1; border: 0; background: none; border-radius: 999px; padding: 6px 10px; font: inherit; font-size: 13px; color: var(--text-muted); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; justify-content: center; }
+.ann-tabs button.on { background: var(--color-primary); color: #fff; font-weight: 600; }
+.ann-tabs mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.ann-tabs button.on .ann-history-count { background: #fff; color: var(--color-primary); }
+/* Tasks: the panel's full height, scrolling inside it */
+.ann-tasks { display: block; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+
 /* Full width (like Bookings / Users). Desktop: form left ~62%, history right
    in its own scrolling column, sticky under the page header. */
 .ann-page {
@@ -220,6 +229,7 @@
 @media (max-width: 1024px) {
   .ann-page { grid-template-columns: minmax(0, 1fr); }
   .ann-side { position: static; height: auto; }
+  .ann-tasks { overflow: visible; }
   .ann-list { overflow: visible; padding: 0; }
 }
 @media (max-width: 700px) {
@@ -232,3 +242,8 @@
   .ann-item-actions { justify-content: stretch; }
   .ann-action { flex: 1 1 auto; justify-content: center; }
 }
+
+/* The sticky panel is its own stacking layer, which would keep an opened task's
+   side panel underneath the sticky page header. On the Tasks view the panel is
+   lifted just above the header (z-index 5) so the task panel covers the page. */
+.ann-side.ann-side-tasks { z-index: 6; }

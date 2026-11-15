@@ -6,9 +6,10 @@ import { NotificationService } from '../../core/notification.service';
 import { EventItem } from '../../models/event.model';
 import { WashService } from '../wash.service';
 import {
-  ACTION_INFO, KIND_INFO, STATE_INFO, STATE_ORDER, StateInfo, WashAction, WashFacility, WashKind, WashLogEntry, WashState
+  ACTION_INFO, KIND_INFO, STATE_INFO, STATE_ORDER, StateInfo, WashAction, WashFacility, WashKind, WashLogEntry, WashState, WashTask
 } from '../wash.model';
 import { agoText, clockText, dueAtOf, parseWashQr, stateOf, usedPercent } from '../wash.utils';
+import { taskStatusMeta, worstTaskStatus } from '../../core/task.service';
 
 /** One card, built in apply() — never in a getter (stable identities for *ngFor). */
 interface Card {
@@ -20,6 +21,9 @@ interface Card {
   sub: string;
   doneLabel: string;
   doneIcon: string;
+  /** HD3: "Open task: …" / "3 open tasks" ('' when none) and the worst status, for its colour. */
+  taskLine: string;
+  taskStatus: string;
 }
 
 const REFRESH_MS = 60 * 1000;
@@ -160,7 +164,10 @@ export class WashMonitorComponent implements OnInit, OnDestroy {
     else if (state === 'not_started') sub = `Every ${f.intervalHours} h, from the first one`;
     else sub = `Next due ${clockText(due)}`;
     const back = state === 'out_of_order';
+    const tasks = f.tasks || [];
     return {
+      taskLine: tasks.length === 1 ? `Open task: ${tasks[0].title}` : tasks.length ? `${tasks.length} open tasks` : '',
+      taskStatus: tasks.length ? worstTaskStatus(tasks.map(t => t.status)) : '',
       f, state, info: STATE_INFO[state], pct: usedPercent(f, now),
       last: f.lastDoneAt ? `${k.doneLabel} ${agoText(f.lastDoneAt, now)} · every ${f.intervalHours} h` : `Never ${k.doneLabel.toLowerCase()} yet · every ${f.intervalHours} h`,
       sub,
@@ -174,6 +181,8 @@ export class WashMonitorComponent implements OnInit, OnDestroy {
   trackCard = (_: number, c: Card) => c.f._id;
   trackState = (_: number, s: WashState) => s;
   trackLog = (_: number, l: WashLogEntry) => l._id;
+  trackTask = (_: number, t: WashTask) => t._id;
+  taskLabel = (t: WashTask) => taskStatusMeta(t.status).label;
   clock = clockText;
 
   // ── actions ──

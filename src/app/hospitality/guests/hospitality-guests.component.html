@@ -3,7 +3,7 @@
     <div class="page-ph-title">Guests</div>
     <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · Meal Passes for people without a BiG account</div>
   </div>
-  <button type="button" class="btn-cta" [disabled]="!event" (click)="newGuest()">Add guest</button>
+  <button *ngIf="!readOnly" type="button" class="btn-cta" [disabled]="!event" (click)="newGuest()">Add guest</button>
   <!-- Navigation Tabs: Back + this section's pages -->
   <app-section-header></app-section-header>
 </div>
@@ -62,9 +62,9 @@
       <ng-container *ngIf="mode === 'view' && selected as g">
         <div>
           <div class="hg-acts">
-            <button type="button" class="pill-btn hx-primary" *ngIf="!issuing" (click)="startPass()"><mat-icon>confirmation_number</mat-icon>Issue pass</button>
-            <button type="button" class="pill-btn" (click)="editGuest()"><mat-icon>edit</mat-icon>Edit</button>
-            <button type="button" class="pill-btn hg-danger" (click)="deleteGuest()"><mat-icon>delete</mat-icon>Delete</button>
+            <button type="button" class="pill-btn hx-primary" *ngIf="!readOnly && (!issuing)" (click)="startPass()"><mat-icon>confirmation_number</mat-icon>Issue pass</button>
+            <button *ngIf="!readOnly" type="button" class="pill-btn" (click)="editGuest()"><mat-icon>edit</mat-icon>Edit</button>
+            <button *ngIf="!readOnly" type="button" class="pill-btn hg-danger" (click)="deleteGuest()"><mat-icon>delete</mat-icon>Delete</button>
           </div>
 
           <!-- Issue pass -->
@@ -101,7 +101,7 @@
               <b>{{ p.label }}</b>
               <small>{{ platesText(p) }} · <span [class.ok]="p.validToday">{{ passState(p) }}</span></small>
             </div>
-            <ng-container *ngIf="!p.revoked">
+            <ng-container *ngIf="!readOnly && (!p.revoked)">
               <button type="button" class="hg-ic" title="Download" aria-label="Download pass" (click)="share(p, 'download')"><mat-icon>download</mat-icon></button>
               <button type="button" class="hg-ic" title="Share" aria-label="Share pass" (click)="share(p, 'share')"><mat-icon>share</mat-icon></button>
               <button type="button" class="hg-ic" title="Print" aria-label="Print pass" (click)="share(p, 'print')"><mat-icon>print</mat-icon></button>

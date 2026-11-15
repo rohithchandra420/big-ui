@@ -110,8 +110,13 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     return this.isTopLevel;
   }
 
+  /** Helpdesk (HD2): sees the list and a user's details — no add, edit or delete. */
+  get isHelpdesk(): boolean {
+    return !!this.authService.isHelpdesk?.(this.user);
+  }
+
   get canViewPage(): boolean {
-    return this.isTopLevel || this.isTL;
+    return this.isTopLevel || this.isTL || this.isHelpdesk;
   }
 
   /** Only DEV/DIR can see (and reactivate) deactivated users. */

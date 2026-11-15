@@ -56,6 +56,7 @@
             <b>{{ c.f.name }}</b>
             <small>{{ c.last }}</small>
             <small><span class="wm-pill"><mat-icon>{{ c.info.icon }}</mat-icon>{{ c.info.label }}</span> {{ c.sub }}</small>
+            <small class="wm-task tk-s-{{ c.taskStatus }}" *ngIf="c.taskLine"><mat-icon aria-hidden="true">task_alt</mat-icon>{{ c.taskLine }}</small>
           </span>
         </button>
         <div class="wm-acts" *ngIf="canLog">
@@ -116,6 +117,18 @@
         <ng-container *ngIf="f.statusNote"><dt>Note</dt><dd>{{ f.statusNote }}</dd></ng-container>
         <dt>Public map</dt><dd>{{ publicText }}</dd>
       </dl>
+
+      <!-- Helpdesk HD3: tasks about this facility, next to (never mixed with) its log -->
+      <ng-container *ngIf="f.tasks?.length">
+        <p class="section-lbl">Open tasks</p>
+        <ul class="wm-tasks">
+          <li *ngFor="let t of f.tasks; trackBy: trackTask">
+            <span>{{ t.title }}</span>
+            <span class="tk-pill tk-s-{{ t.status }}">{{ taskLabel(t) }}</span>
+          </li>
+        </ul>
+        <p class="wm-muted">Tasks are separate from the log: {{ kindInfo[f.kind].doneLabel }} does not close them. Change a task on the Billboard or in My Department.</p>
+      </ng-container>
 
       <p class="section-lbl">History</p>
       <p class="wm-muted" *ngIf="historyLoading">Loading…</p>

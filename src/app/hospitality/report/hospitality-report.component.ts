@@ -29,6 +29,8 @@ const DECISION_LABELS: Record<string, string> = {
 export class HospitalityReportComponent implements OnInit, OnDestroy {
   event: EventItem | null = null;
   report: MessReport | null = null;
+  /** Helpdesk's read-only view (HD2): the server says this person may look but not change. */
+  readOnly = false;
   loading = false;
   loadError = '';
   busy = false;
@@ -75,6 +77,7 @@ export class HospitalityReportComponent implements OnInit, OnDestroy {
     this.loadError = '';
     try {
       this.report = await this.hospitality.getReport(this.event._id, this.query());
+      this.readOnly = (this.report as any)?.canManage === false;
       this.from = this.report.from;
       this.to = this.report.to;
       this.departments = this.report.departments;

@@ -152,6 +152,8 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
   statusByArea = new Map<string, { kind: string; open: boolean; label: string; fieldId?: string; state?: string }>();
   /** Live statuses of pins from GET /map/status (the Box Office), by location id. */
   statusByLocation = new Map<string, { kind: string; open: boolean; label: string; state?: string }>();
+  /** Helpdesk HD3: open tasks per pin / area id (count + worst status), from the same call. */
+  tasksByPlace = new Map<string, { open: number; worst: string }>();
   /**
    * A touch screen: hover tooltips close straight after a tap there, so the
    * same one-line info opens as a small popup on tap instead (2026-11-04).
@@ -174,6 +176,8 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private wantBoundary = false;
   /** ?area=<id> (Workshops › Setup "Show on map"): select that area once loaded. */
   private wantArea: string | null = null;
+  /** ?pin=<id> (a Task's "Show on map"): select that pin once loaded. */
+  private wantPin: string | null = null;
   /**
    * ?focus=workshop (Workshops › Setup, from a venue form): Workshop areas only.
    * Only they can be drawn, changed or removed; everything else is view-only.
@@ -219,6 +223,7 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     // From Admin › Events › "Draw / edit on Venue Map": open ready for the boundary.
     this.wantBoundary = this.route.snapshot?.queryParamMap?.get('draw') === 'boundary';
     this.wantArea = this.route.snapshot?.queryParamMap?.get('area') || null;
+    this.wantPin = this.route.snapshot?.queryParamMap?.get('pin') || null;
     try {
       await this.initMap();
     } catch {
@@ -229,7 +234,7 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.event = ev;
       if (changed) {
         this.closePanels(); this.fittedFor = ''; this.workshopSchedule = null;
-        this.workshopStatus = new Map(); this.statusByArea = new Map(); this.statusByLocation = new Map();
+        this.workshopStatus = new Map(); this.statusByArea = new Map(); this.statusByLocation = new Map(); this.tasksByPlace = new Map();
       }
       this.load();
       this.loadWorkshops();
@@ -296,7 +301,7 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private pin(type: string, isSel = false, draft = false, status?: { open: boolean; state?: string }): Leaflet.DivIcon {
+  private pin(type: string, isSel = false, draft = false, status?: { open: boolean; state?: string }, placeId = ''): Leaflet.DivIcon {
     const t = typeInfo(type);
     // WASH facilities colour the dot by their state (wash-<state>); others: open green / closed grey.
     const stClass = status?.state ? ` wash-${status.state.replace(/[^a-z_]/g, '')}` : (status?.open ? ' open' : '');
@@ -304,8 +309,25 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
       className: 'vm-pin-wrap', iconSize: [34, 34], iconAnchor: [17, 34], tooltipAnchor: [0, -30], popupAnchor: [0, -30],
       html: `<div class="vm-pin${isSel ? ' sel' : ''}${draft ? ' draft' : ''}" style="background:${t.color}">` +
             `<span class="material-symbols-rounded">${draft ? 'add_location' : t.icon}</span>` +
-            (status ? `<i class="vm-status${stClass}"></i>` : '') + '</div>'
+            (status ? `<i class="vm-status${stClass}"></i>` : '') + this.taskBadge(placeId) + '</div>'
     });
+  }
+
+  /** HD3: the count of open tasks at a pin / area, coloured by the worst status. '' when none. */
+  private taskBadge(placeId: string): string {
+    const t = this.tasksByPlace.get(placeId);
+    return t ? `<b class="vm-task tk-s-${String(t.worst).replace(/[^a-z_]/g, '')}">${Number(t.open) || 0}</b>` : '';
+  }
+
+  /** "2 open tasks" for a pin / area; '' when none. */
+  taskText(placeId: string): string {
+    const n = this.tasksByPlace.get(placeId)?.open || 0;
+    return n ? `${n} open task${n === 1 ? '' : 's'}` : '';
+  }
+
+  private taskLine(placeId: string): string {
+    const text = this.taskText(placeId);
+    return text ? `<br><i>${text}</i>` : '';
   }
 
   /** The one-line info of a pin or area: a hover tooltip, or on touch screens a popup opened by a tap. */
@@ -322,12 +344,12 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
       const editingThis = this.form?._id === loc._id;
       const st = this.statusByLocation.get(loc._id);
       const m = L.marker([loc.lat, loc.lng], {
-        icon: this.pin(loc.type, this.selected?._id === loc._id || editingThis, false, st),
+        icon: this.pin(loc.type, this.selected?._id === loc._id || editingThis, false, st, loc._id),
         draggable: this.canDragPin(loc), title: loc.name, keyboard: true
       });
       const outside = this.locInfo.get(loc._id)?.outside ? '<br><i>Outside the festival boundary</i>' : '';
       // One status line: the pin's live status (Box Office), otherwise its type.
-      this.bindInfo(m, `<b>${escapeHtml(loc.name)}</b><br>${st ? escapeHtml(st.label) : typeInfo(loc.type).label}${outside}`);
+      this.bindInfo(m, `<b>${escapeHtml(loc.name)}</b><br>${st ? escapeHtml(st.label) : typeInfo(loc.type).label}${outside}${this.taskLine(loc._id)}`);
       m.on('click', () => this.zone.run(() => this.select(loc)));
       m.on('dragend', () => this.zone.run(() => { const p = m.getLatLng(); this.onDragEnd(loc, p.lat, p.lng); }));
       return m.addTo(this.map!);
@@ -369,7 +391,7 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
       icon: L.divIcon({
         className: 'vm-pin-wrap', iconSize: [28, 28], iconAnchor: [14, 14],
         html: `<div class="vm-area-ic${sel ? ' sel' : ''}" style="background:${info.color}">` +
-              `<span class="material-symbols-rounded">${info.icon}</span>` + this.liveBadge(a) + '</div>'
+              `<span class="material-symbols-rounded">${info.icon}</span>` + this.liveBadge(a) + this.taskBadge(a._id) + '</div>'
       }),
       title: a.name, keyboard: false, zIndexOffset: -500   // below location pins
     });
@@ -395,7 +417,7 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     const line = this.statusByArea.get(a._id)?.label ??
       (a.kind === 'workshop_area' && this.areaHasSessions(a) ? 'No session running' : areaInfo(a.kind).label);
-    return `${name}<br>${escapeHtml(line)}`;
+    return `${name}<br>${escapeHtml(line)}${this.taskLine(a._id)}`;
   }
 
   private areaHasSessions(a: VenueArea): boolean {
@@ -471,10 +493,13 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
       const locations = new Map(Object.entries(res.locations || {}));
       const areasChanged = !sameStatuses(areas, this.statusByArea);
       const pinsChanged = !sameStatuses(locations, this.statusByLocation);
+      const tasks = new Map(Object.entries(res.tasks || {}));
+      const tasksChanged = JSON.stringify([...tasks]) !== JSON.stringify([...this.tasksByPlace]);
       this.statusByArea = areas;
       this.statusByLocation = locations;
-      if (this.map && areasChanged) this.drawAreas();
-      if (this.map && pinsChanged) this.drawMarkers();
+      this.tasksByPlace = tasks;
+      if (this.map && (areasChanged || tasksChanged)) this.drawAreas();
+      if (this.map && (pinsChanged || tasksChanged)) this.drawMarkers();
     } catch { /* keep the last status */ }
   }
 
@@ -590,6 +615,7 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.fittedFor !== eventId) { this.fittedFor = eventId; this.fitToContent(); }
       if (this.wantBoundary) this.openBoundary();
       if (this.wantArea) this.openArea(this.wantArea);
+      if (this.wantPin) this.openPin(this.wantPin);
       if (this.wantDrawNew) this.openDrawNew();
     } catch {
       this.loadError = 'Could not load the venue map.';
@@ -645,6 +671,17 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     // From a venue form's "Change this area on the map": go straight to editing it.
     if (a && this.wantEdit && this.canChangeArea(a)) this.startEditArea(a);
     this.wantEdit = false;
+  }
+
+  /** ?pin=<id> (a Task's "Show on map"): show that pin (if it is in this event), then drop the param. */
+  private openPin(id: string): void {
+    this.wantPin = null;
+    this.router.navigate([], { relativeTo: this.route, queryParams: { pin: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    const loc = this.locations.find(l => l._id === id);
+    if (!loc) { this.snack.openErrorSnackBar('That place is not on this event\'s map. Check the event picked in the sidebar.'); return; }
+    // Its type may be filtered away: bring it back so the pin is drawn.
+    if (!this.typeFilter.has(loc.type)) { this.typeFilter.add(loc.type); this.refreshVisible(); }
+    this.select(loc, true);
   }
 
   /** From a venue form's "Draw a new Workshop area": start drawing once the map is ready. */

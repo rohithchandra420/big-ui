@@ -13,6 +13,52 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.58.0] - 2026-11-15
+
+### Added
+- **A Task can be about a place (Helpdesk story 3).**
+  - Announcements: a Task gets an optional Place picker with the sidebar event's Venue Map pins and areas. Picking a WASH facility selects the WASH department as the receiver; it can be taken off again.
+  - The place shows on the task panel and the Billboard note with a "Show on map" button, and on task rows. A place that was deleted from the map stays as text.
+  - Venue Map: a pin or area with open tasks shows their count, in the colour of the worst status, on the map, in its tooltip and in its side panel. The map opens on a pin from a task's "Show on map".
+  - WASH Monitor: a facility's card and panel show its open tasks next to its own state. Refilled / Cleaned does not close them.
+
+### Changed
+- Announcements: with Task picked, the Public page card is switched off (a Task goes to staff only).
+
+---
+
+## [1.57.0] - 2026-11-14
+
+### Added
+- **Helpdesk read-only access (Helpdesk story 2).** Helpdesk people see these sections in the sidebar and can open them to look things up. Buttons that change something are hidden for them.
+  - Box Office: Bookings, Registration and a booking's page, without Export, Bulk Upload, Edit, Spot Registration, Admit, bands or tents.
+  - Accommodation: Setup, Inventory and Fields.
+  - Workshops: Planner, a session's lists and Reports.
+  - WASH: Monitor, Stock and Report.
+  - Volunteers: the board, profiles and deposit status.
+  - Hospitality: Today, Guests, Report and Stay. No Serving desk or Setup tab.
+  - Dashboard: the festival overview, without revenue.
+  - Admin: Users (view only) next to Announcements.
+- A session's lists also open, read-only, for people who could already see Workshop Reports.
+
+---
+
+## [1.56.0] - 2026-11-14
+
+### Added
+- **Helpdesk on Announcements (Helpdesk story 1).** Members of a Helpdesk department, and people granted Helpdesk Manage, see Admin › Announcements (and only that tab of Admin) and can use all of it.
+  - New built-in access key Helpdesk in Create Department and the user form.
+- **Tasks with a shared status and a timeline.**
+  - Announcements: the right panel now switches between Announcements (the Sent list) and Tasks, each using the panel's full height. Tasks load when that view is opened, with status chips (Open, New, Acknowledged, In Progress, Blocked, Closed, All). A task opens in a side panel with its timeline.
+  - Billboard: a Task note shows its status; the opened note shows the status, the buttons that move it on, and the timeline. Blocked asks for a reason.
+  - My Department: a "Tasks for <department>" card with the same list, shown once the department has a task.
+  - Only Helpdesk and DEV / DIR / ADMIN see Reopen on a Closed task.
+
+### Changed
+- Announcements page subtitle and the Task type's hint.
+
+---
+
 ## [1.55.0] - 2026-11-14
 
 ### Added

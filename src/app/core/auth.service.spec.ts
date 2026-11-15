@@ -229,6 +229,62 @@ describe('AuthService', () => {
         });
     });
 
+    describe('Announcements access (Helpdesk, by department key)', () => {
+        const desk = { _id: 'd1', name: 'Front Desk', key: 'helpdesk' };
+        const mk = (role: string, depts: any[] = [], perms: string[] = []) =>
+            new User('Test', 'a@b.com', '', role, '', '', '123', undefined, depts.map(d => ({ department: d, access: ['read'] })), perms);
+
+        it('top roles, every Helpdesk member and helpdesk:manage only', () => {
+            expect(service.canAnnounce(mk('ADMIN'))).toBeTrue();
+            expect(service.canAnnounce(mk('VOL', [desk]))).toBeTrue();
+            expect(service.canAnnounce(mk('TL', [desk]))).toBeTrue();
+            expect(service.canAnnounce(mk('VOL', [], ['helpdesk:manage']))).toBeTrue();
+            expect(service.canAnnounce(mk('TL', [{ _id: 'd2', name: 'Helpdesk', key: 'general' }]))).toBeFalse();
+            expect(service.canAnnounce(mk('VOL', [], ['wash:manage']))).toBeFalse();
+            expect(service.canAnnounce(null)).toBeFalse();
+        });
+    });
+
+    describe('Helpdesk read-only access (HD2)', () => {
+        const desk = { _id: 'd1', name: 'Front Desk', key: 'helpdesk' };
+        const box = { _id: 'd2', name: 'Gate', key: 'box-office' };
+        const mk = (role: string, depts: any[] = [], perms: string[] = []) =>
+            new User('Test', 'a@b.com', '', role, '', '', '123', undefined, depts.map(d => ({ department: d, access: ['read'] })), perms);
+
+        it('gives Helpdesk the view tier of the other sections, never a write', () => {
+            const h = mk('VOL', [desk]);
+            expect(service.isHelpdesk(h)).toBeTrue();
+            expect(service.canViewWash(h)).toBeTrue();
+            expect(service.canLogWash(h)).toBeFalse();
+            expect(service.canReadWorkshops(h)).toBeTrue();
+            expect(service.canRunWorkshops(h)).toBeFalse();
+            expect(service.canViewVolunteers(h)).toBeTrue();
+            expect(service.canAssignVolunteers(h)).toBeFalse();
+            expect(service.canReadTenting(h)).toBeTrue();
+            expect(service.canWriteTenting(h)).toBeFalse();
+            expect(service.canVacateTents(h)).toBeFalse();
+            expect(service.canViewHospitality(h)).toBeTrue();
+            expect(service.canManageHospitality(h)).toBeFalse();
+            expect(service.canUseMedical(h)).toBeFalse();
+        });
+
+        it('Box Office is read-only for Helpdesk unless they are Box Office staff too', () => {
+            expect(service.boxOfficeReadOnly(mk('VOL', [desk]))).toBeTrue();
+            expect(service.boxOfficeReadOnly(mk('VOL', [], ['helpdesk:manage']))).toBeTrue();
+            expect(service.boxOfficeReadOnly(mk('VOL', [desk, box]))).toBeFalse();
+            expect(service.boxOfficeReadOnly(mk('VOL', [box]))).toBeFalse();
+            expect(service.boxOfficeReadOnly(mk('ADMIN'))).toBeFalse();
+            expect(service.boxOfficeReadOnly(null)).toBeFalse();
+        });
+
+        it('nobody else gains anything', () => {
+            const v = mk('VOL', [{ _id: 'd3', name: 'Helpdesk', key: 'general' }]);
+            expect(service.isHelpdesk(v)).toBeFalse();
+            expect(service.canViewWash(v)).toBeFalse();
+            expect(service.canViewHospitality(v)).toBeFalse();
+        });
+    });
+
     describe('deptKeyOf', () => {
         it('returns the stored built-in key, else "general" — the name is never used', () => {
             expect(service.deptKeyOf({ name: 'Front Gate', key: 'box-office' })).toBe('box-office');

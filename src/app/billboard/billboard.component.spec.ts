@@ -3,7 +3,14 @@ import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { BehaviorSubject } from 'rxjs';
 import { BillboardComponent } from './billboard.component';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { BillboardNote, BillboardService } from '../core/billboard.service';
+
+/** Helpdesk (HD1): the task pieces are tested on their own. */
+@Component({ selector: 'app-task-pill', template: '{{ status }}' })
+class TaskPillStubComponent { @Input() status: any; }
+@Component({ selector: 'app-task-sheet', template: '' })
+class TaskSheetStubComponent { @Input() taskId = ''; @Output() changed = new EventEmitter<any>(); }
 
 describe('BillboardComponent', () => {
   let fixture: ComponentFixture<BillboardComponent>;
@@ -33,7 +40,7 @@ describe('BillboardComponent', () => {
     if (failList) billboard.list.and.rejectWith(new Error('offline'));
     router = jasmine.createSpyObj('Router', ['navigate']);
     TestBed.configureTestingModule({
-      declarations: [BillboardComponent],
+      declarations: [BillboardComponent, TaskPillStubComponent, TaskSheetStubComponent],
       imports: [MatIconModule],
       providers: [
         { provide: BillboardService, useValue: billboard },
