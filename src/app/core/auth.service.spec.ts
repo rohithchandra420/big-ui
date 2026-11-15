@@ -275,6 +275,18 @@ describe('AuthService', () => {
             expect(service.boxOfficeReadOnly(mk('VOL', [box]))).toBeFalse();
             expect(service.boxOfficeReadOnly(mk('ADMIN'))).toBeFalse();
             expect(service.boxOfficeReadOnly(null)).toBeFalse();
+            // A read grant alone is view-only; write or higher works the desk.
+            expect(service.boxOfficeReadOnly(mk('VOL', [], ['box-office:read']))).toBeTrue();
+            expect(service.boxOfficeReadOnly(mk('VOL', [], ['box-office:write']))).toBeFalse();
+            expect(service.canWorkBoxOffice(mk('VOL', [], ['box-office:manage']))).toBeTrue();
+            expect(service.canWorkBoxOffice(mk('VOL', [desk]))).toBeFalse();
+            // Bulk Upload: top roles, the Box Office Team Lead, the manage grant.
+            expect(service.canManageBoxOffice(mk('ADMIN'))).toBeTrue();
+            expect(service.canManageBoxOffice(mk('TL', [box]))).toBeTrue();
+            expect(service.canManageBoxOffice(mk('VOL', [], ['box-office:manage']))).toBeTrue();
+            expect(service.canManageBoxOffice(mk('VOL', [box]))).toBeFalse();
+            expect(service.canManageBoxOffice(mk('VOL', [], ['box-office:write']))).toBeFalse();
+            expect(service.canManageBoxOffice(null)).toBeFalse();
         });
 
         it('nobody else gains anything', () => {

@@ -172,9 +172,28 @@ export class AuthService {
         return this.inDepartmentKey(user, 'box-office') || this.hasPermission(user, 'box-office:read');
     }
 
-    /** Helpdesk looking at Box Office without being Box Office staff: sees, changes nothing. */
+    /**
+     * Box Office desk work (Spot Registration, edit, Admit, bands, tents) — same
+     * rule as big-api's middleware/bandAuth.js (user-approved 2026-11-15):
+     * DEV/DIR/ADMIN, Box Office members, "box-office:write" or higher.
+     */
+    canWorkBoxOffice(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.inDepartmentKey(user, 'box-office') || this.hasPermission(user, 'box-office:write');
+    }
+
+    /** Bulk Upload: DEV/DIR/ADMIN, the Box Office Team Lead, "box-office:manage". */
+    canManageBoxOffice(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        if ((user.permissions || []).includes('box-office:manage')) return true;
+        return user.role === 'TL' && this.inDepartmentKey(user, 'box-office');
+    }
+
+    /** Sees Box Office but changes nothing: Helpdesk, or a "box-office:read" grant alone. */
     boxOfficeReadOnly(user: User | null): boolean {
-        return this.isHelpdesk(user) && !this.isBoxOfficeStaff(user);
+        return !!user && !this.canWorkBoxOffice(user);
     }
 
     /** Hospitality's read-only pages (Today, Guests, Report, Stay): the Manage group and Helpdesk. */

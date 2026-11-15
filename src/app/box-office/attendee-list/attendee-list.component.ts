@@ -199,7 +199,7 @@ export class AttendeeListComponent implements OnChanges {
     });
   }
 
-  /** Helpdesk looking at a booking (HD2): no Admit, bands, tents or edits. */
+  /** View-only people (Helpdesk, a "box-office:read" grant alone): no Admit, bands, tents or edits. */
   get readOnly(): boolean {
     return !!this.authService.boxOfficeReadOnly?.(this.authService.currentUser);
   }

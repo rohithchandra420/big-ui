@@ -5,7 +5,7 @@
   </div>
   <div style="display: flex; gap: 8px;">
     <button *ngIf="!readOnly" class="btn-ghost" (click)="exportBookings()" [disabled]="!bookings.length">Export</button>
-    <button *ngIf="!readOnly" class="btn-cta" (click)="openBulkUpload()">Bulk Upload</button>
+    <button *ngIf="canBulkUpload" class="btn-cta" (click)="openBulkUpload()">Bulk Upload</button>
   </div>
   <!-- Navigation Tabs: Back + this section's pages -->
   <app-section-header></app-section-header>

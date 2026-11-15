@@ -45,7 +45,7 @@ export class RegistrationComponent implements OnInit {
     private auth: AuthService
   ) { }
 
-  /** Helpdesk (HD2): looks bookings up, changes nothing — no Spot Registration. */
+  /** View-only people (Helpdesk, a "box-office:read" grant alone): look bookings up, no Spot Registration. */
   get readOnly(): boolean {
     return !!this.auth.boxOfficeReadOnly?.(this.auth.currentUser);
   }

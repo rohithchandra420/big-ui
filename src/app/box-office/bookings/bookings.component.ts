@@ -68,9 +68,14 @@ export class BookingsComponent implements OnInit, OnDestroy {
     private auth: AuthService
   ) { }
 
-  /** Helpdesk (HD2): sees bookings, changes nothing — no Export, Bulk Upload or Edit. */
+  /** View-only people (Helpdesk, a "box-office:read" grant alone): no Export, Bulk Upload or Edit. */
   get readOnly(): boolean {
     return !!this.auth.boxOfficeReadOnly?.(this.auth.currentUser);
+  }
+
+  /** Bulk Upload: top roles, the Box Office Team Lead, "box-office:manage" (the server checks again). */
+  get canBulkUpload(): boolean {
+    return !this.readOnly && (this.auth.canManageBoxOffice?.(this.auth.currentUser) ?? true);
   }
 
   ngOnInit() {
