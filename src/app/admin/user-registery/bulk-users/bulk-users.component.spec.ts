@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { of, throwError } from 'rxjs';
 
-import { BulkUsersComponent, cellText, headerKey, toBulkRows } from './bulk-users.component';
+import { BULK_VOLUNTEER_COLUMNS, BulkUsersComponent, cellText, headerKey, toBulkRows } from './bulk-users.component';
+import { VolunteersService } from '../../../volunteers/volunteers.service';
 import { AdminService, BulkUsersResponse } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventService } from '../../../core/event.service';
@@ -42,6 +43,8 @@ describe('BulkUsersComponent', () => {
   let component: BulkUsersComponent;
   let admin: jasmine.SpyObj<AdminService>;
   let dialogRef: jasmine.SpyObj<MatDialogRef<BulkUsersComponent>>;
+  let volunteers: jasmine.SpyObj<VolunteersService>;
+  let dialogData: any = null;
 
   const row = (n: number) => ({ row: n, name: 'P' + n, email: `p${n}@x.com`, password: 'Strong@123', role: 'VOL', home_department: 'Box Office' });
   const preview: BulkUsersResponse = {
@@ -55,6 +58,7 @@ describe('BulkUsersComponent', () => {
 
   beforeEach(async () => {
     admin = jasmine.createSpyObj('AdminService', ['bulkUsers']);
+    volunteers = jasmine.createSpyObj('VolunteersService', ['bulkUsers']);
     dialogRef = jasmine.createSpyObj('MatDialogRef', ['close']);
     await TestBed.configureTestingModule({
       declarations: [BulkUsersComponent, AppSelectComponent, AppOptionComponent],
@@ -62,6 +66,8 @@ describe('BulkUsersComponent', () => {
       providers: [
         { provide: AdminService, useValue: admin },
         { provide: MatDialogRef, useValue: dialogRef },
+        { provide: VolunteersService, useValue: volunteers },
+        { provide: MAT_DIALOG_DATA, useFactory: () => dialogData },
         { provide: EventService, useValue: { currentActiveEvent: { _id: 'ev1', name: 'BiG 7.0' } } },
         { provide: NotificationService, useValue: jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']) }
       ]
@@ -136,6 +142,54 @@ describe('BulkUsersComponent', () => {
   it('closes with false when nobody was added', () => {
     component.close();
     expect(dialogRef.close).toHaveBeenCalledWith(false);
+  });
+
+  describe('Volunteers mode (opened from the Volunteers page)', () => {
+    beforeAll(() => { dialogData = { volunteersMode: true }; });
+    afterAll(() => { dialogData = null; });
+
+    const make = () => {
+      fixture = TestBed.createComponent(BulkUsersComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+    };
+
+    it('has no role column, no staff-list checkbox and its own title', () => {
+      make();
+      expect(component.volunteersMode).toBeTrue();
+      expect(component.columns).toEqual(BULK_VOLUNTEER_COLUMNS);
+      expect(component.columns).not.toContain('role');
+      expect(el().querySelector('.bk-event')).toBeNull();
+      expect(el().textContent).toContain('Bulk Add Volunteers');
+      expect(el().textContent).toContain('Everyone is added as a Volunteer');
+    });
+
+    it('checks and adds through the Volunteers route, always for the sidebar event', async () => {
+      make();
+      volunteers.bulkUsers.and.returnValues(Promise.resolve(preview), Promise.resolve({
+        results: [{ ...preview.results[0], status: 'created' }, preview.results[1]], counts: { created: 1, duplicate: 1 }
+      } as BulkUsersResponse));
+      check([row(2), row(3)]);
+      await fixture.whenStable();
+      expect(volunteers.bulkUsers).toHaveBeenCalledWith('ev1', [row(2), row(3)] as any, true);
+      expect(component.phase).toBe('preview');
+
+      component.addToEvent = false;   // has no say here
+      component.add();
+      await fixture.whenStable();
+      expect(volunteers.bulkUsers.calls.mostRecent().args).toEqual(['ev1', [row(2), row(3)] as any, false]);
+      expect(admin.bulkUsers).not.toHaveBeenCalled();
+      expect(component.added).toBe(1);
+    });
+
+    it('shows the server reason when the check is refused', async () => {
+      make();
+      volunteers.bulkUsers.and.returnValue(Promise.reject({ error: { msg: 'You cannot add users here' } }));
+      check([row(2)]);
+      await fixture.whenStable();
+      expect(component.error).toBe('You cannot add users here');
+      expect(component.phase).toBe('pick');
+    });
   });
 
   it('rejects files that are not .xlsx', () => {

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, Router, UrlTree } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivate, Router, UrlTree } from '@angular/router';
 import { Observable, map, take } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 
@@ -11,10 +11,12 @@ import { AuthService } from '../core/auth.service';
 export class HospitalityGuard implements CanActivate {
   constructor(private auth: AuthService, private router: Router) {}
 
-  canActivate(): Observable<boolean | UrlTree> {
+  canActivate(route?: ActivatedRouteSnapshot): Observable<boolean | UrlTree> {
     return this.auth.user.pipe(take(1), map(user => {
       if (!user) return this.router.parseUrl('/login');
-      return this.auth.canManageHospitality(user) ? true : this.router.parseUrl('/');
+      // `hospitalityView` pages (Today, Guests, Report, Stay) also open read-only for Helpdesk (HD2).
+      const ok = route?.data?.['hospitalityView'] ? this.auth.canViewHospitality(user) : this.auth.canManageHospitality(user);
+      return ok ? true : this.router.parseUrl('/');
     }));
   }
 }

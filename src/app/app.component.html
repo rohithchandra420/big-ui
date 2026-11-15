@@ -39,5 +39,8 @@
 <!-- Email epic — background send progress, visible on every page -->
 <app-email-progress *ngIf="isAuthenticated"></app-email-progress>
 
+<!-- Volunteers V3 — "where are you?" request waiting for this person's answer -->
+<app-location-prompt *ngIf="isAuthenticated"></app-location-prompt>
+
 <!-- PWA — offline, new version, install prompts (signed in or not) -->
 <app-pwa-status [belowTopbar]="isAuthenticated && isMobile"></app-pwa-status>

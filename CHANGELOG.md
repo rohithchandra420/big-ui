@@ -13,6 +13,173 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.60.0] - 2026-11-15
+
+### Added
+- **Add users from the Volunteers page.** The Volunteer Team Lead, people with the Volunteers Manage grant and top roles get “+ New User” and “Bulk Add” in the page header.
+  - Everyone added here is a Volunteer. The form has no role choice and no access chips: the new person gets the access their home department gives, nothing more.
+  - Home department: the Unassigned pool by default, or any department except Medical.
+  - New people go on the sidebar event's staff list and show on the board straight away.
+  - Bulk Add here uses its own template with no role column; an empty home department means Unassigned.
+  - Editing, deleting and reactivating users stay on Admin › Users.
+
+---
+
+## [1.59.0] - 2026-11-15
+
+### Changed
+- **Box Office buttons follow the new access rule.**
+  - A person with only the Box Office Read grant now sees Bookings and Registration without Export, Edit, Spot Registration, Admit, bands or tents (as Helpdesk does).
+  - Bulk Upload shows for the Box Office Team Lead, people with the Manage grant and top roles. Box Office volunteers keep everything else.
+
+---
+
+## [1.58.0] - 2026-11-15
+
+### Added
+- **A Task can be about a place (Helpdesk story 3).**
+  - Announcements: a Task gets an optional Place picker with the sidebar event's Venue Map pins and areas. Picking a WASH facility selects the WASH department as the receiver; it can be taken off again.
+  - The place shows on the task panel and the Billboard note with a "Show on map" button, and on task rows. A place that was deleted from the map stays as text.
+  - Venue Map: a pin or area with open tasks shows their count, in the colour of the worst status, on the map, in its tooltip and in its side panel. The map opens on a pin from a task's "Show on map".
+  - WASH Monitor: a facility's card and panel show its open tasks next to its own state. Refilled / Cleaned does not close them.
+
+### Changed
+- Announcements: with Task picked, the Public page card is switched off (a Task goes to staff only).
+
+---
+
+## [1.57.0] - 2026-11-14
+
+### Added
+- **Helpdesk read-only access (Helpdesk story 2).** Helpdesk people see these sections in the sidebar and can open them to look things up. Buttons that change something are hidden for them.
+  - Box Office: Bookings, Registration and a booking's page, without Export, Bulk Upload, Edit, Spot Registration, Admit, bands or tents.
+  - Accommodation: Setup, Inventory and Fields.
+  - Workshops: Planner, a session's lists and Reports.
+  - WASH: Monitor, Stock and Report.
+  - Volunteers: the board, profiles and deposit status.
+  - Hospitality: Today, Guests, Report and Stay. No Serving desk or Setup tab.
+  - Dashboard: the festival overview, without revenue.
+  - Admin: Users (view only) next to Announcements.
+- A session's lists also open, read-only, for people who could already see Workshop Reports.
+
+---
+
+## [1.56.0] - 2026-11-14
+
+### Added
+- **Helpdesk on Announcements (Helpdesk story 1).** Members of a Helpdesk department, and people granted Helpdesk Manage, see Admin › Announcements (and only that tab of Admin) and can use all of it.
+  - New built-in access key Helpdesk in Create Department and the user form.
+- **Tasks with a shared status and a timeline.**
+  - Announcements: the right panel now switches between Announcements (the Sent list) and Tasks, each using the panel's full height. Tasks load when that view is opened, with status chips (Open, New, Acknowledged, In Progress, Blocked, Closed, All). A task opens in a side panel with its timeline.
+  - Billboard: a Task note shows its status; the opened note shows the status, the buttons that move it on, and the timeline. Blocked asks for a reason.
+  - My Department: a "Tasks for <department>" card with the same list, shown once the department has a task.
+  - Only Helpdesk and DEV / DIR / ADMIN see Reopen on a Closed task.
+
+### Changed
+- Announcements page subtitle and the Task type's hint.
+
+---
+
+## [1.55.0] - 2026-11-14
+
+### Added
+- **Location on request** for volunteers.
+  - My Profile: a "Location sharing" switch (off by default) with a plain explanation. Nobody is tracked.
+  - When someone on the Volunteer team asks, a card appears at the bottom of BiG (and a notification arrives): **Share location** sends the phone's position once; **Decline** closes the request.
+  - Volunteers page, for people with Manage access: a pin on volunteers who share, **Ask location** in the picked-volunteers bar (many at once) and in the profile panel. In the List layout, pick volunteers one by one or everyone shown at once and press **Ask location** next to the search box; the last answer on a small map with an Open in Maps link, and the request log.
+
+---
+
+## [1.54.0] - 2026-11-14
+
+### Added
+- **Volunteers › Deposits tab.** The security deposit of every volunteer on the event.
+  - Stat cards (Collected, Not collected, Refunded, with money totals) filter the table; search by name or phone.
+  - Tap a volunteer to record a deposit (amount, Cash / UPI / Bank transfer / Other, date, note), correct it, refund it in full, or remove an entry made by mistake. Each deposit keeps its history.
+  - A standard deposit amount for the event pre-fills the form and can be changed per volunteer.
+  - People who left the event or were deactivated while a deposit is held stay on the list, flagged, until refunded.
+  - Export to Excel of what is on screen.
+  - Who sees what: the status for everyone who opens Volunteers; amounts and the export need Volunteers Write access; changes need Manage. The Volunteer Team Lead and DEV / DIR / ADMIN have all of it.
+- The volunteer profile panel shows the deposit status.
+
+---
+
+## [1.53.0] - 2026-11-14
+
+### Added
+- **Volunteers section** (sidebar). A board of every volunteer on the event's staff list: department cards next to an **Unassigned** pool that stays in view.
+  - Opens for DEV / DIR / ADMIN, the Volunteer department's Team Lead, and people granted Volunteers access. Being in the Volunteer department does not open it (it is the pool every unassigned volunteer sits in).
+  - Assign, reassign or free: drag a volunteer onto a department or back onto the pool (desktop), or pick one or more and choose the destination in the bar at the bottom (any device). For people with Write access or higher.
+  - Each volunteer shows marked / not marked today. Attendance is view only here; marking stays in My Department.
+  - The (i) button opens the complete profile in a side panel: contact, department, date of joining, food, gender, bed, staff band, meals served and seven days of attendance. No medical information.
+  - Stat cards filter the page (Unassigned, Still needed, Not marked today); search by name or phone; Board or List layout.
+- **Volunteers needed.** A department's own Team Lead sets how many volunteers the department needs for the event, in My Department or on its card. DEV / DIR / ADMIN can set it too, including while creating or editing a department in Admin › Departments. The board shows have / needed with "2 short" or "Met", and a Still needed total.
+- **Phone number** for users: on the user form, on My Profile (people set their own), in the Users side panel, and as an optional `phone` column in Bulk Add.
+- New built-in access key **Volunteers** (Read: see the page and profiles; Write: also assign; Manage: for the coming deposits and location stories).
+
+### Changed
+- **Admin › Departments no longer adds or removes volunteers.** The panel still lists them; assigning moved to the Volunteers page. Team Leads are managed there as before.
+- Picking the Volunteer department as a home department on the user form no longer picks Read access by default.
+
+---
+
+## [1.52.0] - 2026-11-14
+
+### Changed
+- **Access keys are now a built-in list.** A key only does something when a page uses it, so keys are no longer typed in: General (no page access), Box Office, Accommodation, Workshops, Hospitality, Medical Desk and WASH. A new key arrives together with its page.
+  - **Admin › Departments › Create:** the key is picked from a dropdown, with a line saying what that key gives the department's members. It starts on General. As before, the key can't be changed later, and several departments can share one.
+  - **Admin › Users › user form:** "Extra access" shows one row per key, always — even before a department uses it — and only the levels that key really has (Hospitality: Manage only; Medical Desk: Use). The picked level says what it gives. General has no row, since it gives nothing.
+  - Picking a user's home department picks **Read** on that department's key by default (when the key has a Read level); the rest is extra access. Changing the department moves that default.
+  - A new user no longer gets a "General: Read" entry. It gave nothing.
+- **Box Office staff are recognised by their department's key, not its name.** The Box Office menu, its pages, Accommodation › Inventory and Fields, and Replace band used to look for a department called "Box Office"; renaming it would have hidden them. A renamed (or second) Box Office department now keeps its access, and a department that is only named "Box Office" gets none.
+- **Accommodation has its own key ("tenting").** Until now Setup was for DEV / DIR / ADMIN only and nobody else could change inventory.
+  - **Read** — every member of a Tenting department, and Accommodation Read: see Setup, Inventory and Fields.
+  - **Write** — the Tenting Team Lead, and Accommodation Write: also create units in Setup, edit and delete units and vacate occupants in Inventory.
+  - **Manage** — the Tenting Team Lead, and Accommodation Manage: also create, change and lay out tent fields.
+  - Setup shows the summary cards to everyone who can open it; the create form only with Write. A pass type without a code still needs a Director or Admin to set it under Admin › Events.
+  - Box Office keeps what it had: Inventory, Fields and Vacate (with Box Office Write). Edit and Delete of units in Inventory now follow the Accommodation rule, where they belong.
+- A department is read by its key only. A department without a built-in key counts as General until its key is set.
+
+### Development
+- The e2e sample data gives departments built-in keys.
+
+---
+
+## [1.51.0] - 2026-11-13
+
+### Added
+- **WASH — Water, Sanitation & Hygiene** (new sidebar section, story WA1). For the WASH team, DEV / DIR / ADMIN and anyone given WASH access.
+  - **Monitor:** every water station and toilet block of the event with its state — Not started, OK, Due soon, Overdue, Empty (water) or Out of order. A ring on each card shows how much of the refill / cleaning time has gone. Tap a count to filter; filter by Water / Toilets; search.
+  - **Refilled / Cleaned any time:** the moment it is done becomes the last one, and the next one is due that many hours later. **Empty** (water) and **Out of order** (with a note) are marked by hand; **Back in service** ends Out of order. Each facility's history opens in the side panel.
+  - **Setup** (WASH Team Lead, DEV / DIR / ADMIN): pick a Water or Toilets pin or a Washroom area from the Venue Map (washrooms can be either), or drop a new pin here, and set how often it is refilled / cleaned (every 1–24 hours) and, for water, its capacity in litres. Remove takes it out of WASH; the pin stays on the map.
+  - **QR stickers:** Setup prints one sticker per facility. Scanning it — with the phone's camera or the **Scan QR** button on Monitor — opens that facility, and what is logged then is marked "via QR" in its history. **Require a QR scan** (per event, off by default) makes Refilled / Cleaned ask for the facility's sticker first; Empty and Out of order can still be reported from anywhere.
+  - **Stock:** the event's central store — toilet paper, soap, sanitiser and so on. Each item shows what is in store, a level bar and a Low / Out mark once it reaches its "Low at" number; low items come first. The WASH Team Lead (and DEV / DIR / ADMIN) record **Received** and **Used** and manage the items; everyone else with WASH access views. Using more than the store holds is allowed with a warning — the item goes to 0. Each item keeps its history.
+  - **Alerts:** the WASH team on the event (Team Leads and Volunteers) and DEV / DIR / ADMIN get a notification, and a note on their Billboard, when a facility goes overdue, is marked Empty or Out of order, or a stock item starts running low. Tapping it opens that facility (or Stock). Mute them under My Profile › Notifications › **WASH alerts**.
+  - **Report:** one festival day at a time (India time), with a day stepper and Back to today — refills, cleanings, how many facilities went overdue, problems reported and logs made via QR; per facility how often it was done and how long it stood overdue or empty / out of order, with that day's log in the side panel; stock used and received. **Export** saves the day as an Excel file (Facilities, Log, Stock).
+- **Dashboard** (DEV / DIR / ADMIN): a WASH card — facilities working, overdue, empty / out of order and stock items running low — and a line in the attention strip when a facility needs attention or stock is low.
+- **Public page map:** toilets and washrooms the WASH team looks after show **Open** or **Closed**; water stations show **Refilled** or **Empty**.
+- **Venue Map:** WASH facilities show their state as a coloured dot on the pin or the Washroom area, with the last and next refill / cleaning in the tooltip.
+
+---
+
+## [1.50.1] - 2026-11-13
+
+### Changed
+- **Details slide in instead of opening inside the page.** On desktop a panel slides in from the right; on phones it slides up from the bottom. Close it with ✕, Esc or a tap outside.
+  - **Hospitality › Stay:** tapping a unit shows its availability, notes, the people staying and Edit / Delete / On the map. **One unit**, **Many at once** and **Edit** open their form in the panel too.
+  - **Hospitality › Report:** tapping a meal row shows its Veg / Non-veg split, guests, people without attendance, refused plates, the kitchen figures and the breakdown by department, with Add or Edit kitchen figures.
+  - **Hospitality › Today:** Who's counted opens the expected list in the panel.
+  - **Hospitality › Guests:** Add guest and a guest's details (passes, Issue pass, Edit, Delete) open in the panel; the guest list now uses the full width.
+- **Hospitality › Serving desk › Expected:** the day is picked with the same ‹ date › stepper as the Report (starting on today) instead of a date box. On phones the four meals share one row.
+- **Back to today** on every day stepper that is away from today: Today, Report, Serving desk, and Stay's night counts and calendar.
+
+### Fixed
+- **Phones: the tab row under the page title flickered** while scrolling (seen on real phones, not in a desktop browser's phone view). It now hides only after a steady scroll down, comes back after a steady scroll up, ignores the bounce at the end of a page, and stays put on pages that barely scroll.
+- **Phones: the date steppers were misaligned** on Hospitality › Today, Report and Stay. ‹ date › now stays together on one centred row; on Report the Day / Date range switch, the dates and the other filters each get their own row.
+- **Phones: Hospitality › Stay filters** — the Type and Night filters now share one row under the search.
+
+---
+
 ## [1.50.0] - 2026-11-12
 
 ### Added

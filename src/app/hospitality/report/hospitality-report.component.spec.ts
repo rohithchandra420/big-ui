@@ -10,6 +10,7 @@ import { HospitalityService } from '../hospitality.service';
 import { MessReport, ReportMeal } from '../hospitality.model';
 import { AppSelectComponent } from '../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../shared/app-select/app-option.component';
+import { SlidePanelComponent } from '../../shared/slide-panel/slide-panel.component';
 
 const side = { staff: 3, guests: 3, veg: 4, nonVeg: 2, flagged: 1, refused: 1, blocked: 0, extra: 0 };
 const meal = (key: any, label: string, extra: Partial<ReportMeal> = {}): ReportMeal => ({
@@ -40,7 +41,7 @@ describe('HospitalityReportComponent', () => {
     service.getReport.and.callFake(() => Promise.resolve(report()));
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     await TestBed.configureTestingModule({
-      declarations: [HospitalityReportComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [HospitalityReportComponent, AppSelectComponent, AppOptionComponent, SlidePanelComponent],
       imports: [FormsModule],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
@@ -64,6 +65,35 @@ describe('HospitalityReportComponent', () => {
     expect(text()).toContain('86');
     expect(text()).toContain('Add kitchen figures');   // Lunch has none yet
     expect(fixture.nativeElement.querySelectorAll('.hr-total').length).toBe(1);
+  }));
+
+  it('a meal row opens its details in the slide panel (not inline)', fakeAsync(() => {
+    start();
+    expect(fixture.nativeElement.querySelector('.sp-panel')).toBeNull();
+    (fixture.nativeElement.querySelector('.hr-row') as HTMLElement).click();
+    fixture.detectChanges();
+    const panel = fixture.nativeElement.querySelector('.sp-panel') as HTMLElement;
+    expect(panel.querySelector('.sp-title')!.textContent!.trim()).toBe('Breakfast');
+    expect(panel.textContent).toContain('By department (staff)');
+    expect(panel.textContent).toContain('Edit kitchen figures');
+    expect(fixture.nativeElement.querySelector('.hr-row.sel')).toBeTruthy();
+    (panel.querySelector('.pill-btn') as HTMLButtonElement).click();   // Edit kitchen figures
+    fixture.detectChanges();
+    expect(component.openKey).toBe('');
+    expect(component.editing).toBe('2026-11-12|breakfast');
+    expect(fixture.nativeElement.querySelector('.sp-panel')).toBeNull();
+  }));
+
+  it('Back to today shows only away from today and jumps back', fakeAsync(() => {
+    start();
+    expect(fixture.nativeElement.querySelector('.day-nav-today')).toBeNull();   // the report is for today
+    service.getReport.and.returnValue(Promise.resolve({ ...report(), from: '2026-11-11', to: '2026-11-11' }));
+    component.shiftDay(-1); flushMicrotasks(); fixture.detectChanges();
+    const back = fixture.nativeElement.querySelector('.day-nav-today') as HTMLButtonElement;
+    expect(back.textContent).toContain('Back to today');
+    service.getReport.and.callFake(() => Promise.resolve(report()));
+    back.click(); flushMicrotasks();
+    expect(service.getReport.calls.mostRecent().args[1]).toEqual({ from: '2026-11-12', to: '2026-11-12', department: null });
   }));
 
   it('a range shows a total per day and a grand total', fakeAsync(() => {

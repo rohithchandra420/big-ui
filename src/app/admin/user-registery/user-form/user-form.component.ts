@@ -1,9 +1,13 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
 import { AbstractControl, FormControl, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 
 import { AdminService } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
 import { AuthService } from '../../../core/auth.service';
+import { Observable, Subscription, from } from 'rxjs';
+import { VolunteersService } from '../../../volunteers/volunteers.service';
+import { ACCESS_KEYS, AccessKey, AccessKeyTier, grantTier } from '../../../core/access-keys';
+import { PHONE_PATTERN } from '../../../core/phone';
 
 export type PermLevel = 'none' | 'read' | 'write' | 'manage';
 export type UserFormMode = 'create' | 'edit';
@@ -28,7 +32,7 @@ const passwordsMatch = (group: AbstractControl): ValidationErrors | null => {
   templateUrl: './user-form.component.html',
   styleUrls: ['./user-form.component.css']
 })
-export class UserFormComponent implements OnInit, OnChanges {
+export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
 
   @Input() mode: UserFormMode = 'create';
   /** The user being edited (edit mode only). */
@@ -39,19 +43,29 @@ export class UserFormComponent implements OnInit, OnChanges {
   @Input() isTopLevel = false;
   /** Staff list: a new user is also put on this event (the one picked in the sidebar). */
   @Input() eventId = '';
+  /**
+   * Volunteers page (1.60.0): the form adds a volunteer through the Volunteers
+   * routes. The role is fixed to Volunteer, there are no access chips (the new
+   * user gets Read on the home department's key only) and the parent leaves
+   * Medical out of `departments`. Create only. The server enforces all of it.
+   */
+  @Input() volunteersMode = false;
+  /** The home department picked when the form opens (Volunteers page: the Unassigned pool). */
+  @Input() defaultDepartment = '';
 
   /** Emits the created/updated user as returned by the backend. */
   @Output() saved = new EventEmitter<any>();
   @Output() cancelled = new EventEmitter<void>();
 
-  readonly permLevels: PermLevel[] = ['read', 'write', 'manage'];
   readonly genders = ['Male', 'Female', 'Prefer not to say'];
   /**
-   * Shared department keys (2026-11-06): access is granted per department KEY,
-   * so departments sharing a key ("music": Music Stage A, Music Stage B) are
-   * one row with one level. Stored list (stable identities for *ngFor).
+   * Built-in access keys (2026-11-14): one row per key that gives something
+   * (core/access-keys.ts) — always shown, even before any department uses the
+   * key — with only the tiers that key really has. `names` = the departments
+   * carrying the key (the tooltip). A TL sees only their own department's key.
+   * Stored list (stable identities for *ngFor).
    */
-  accessKeys: { key: string; names: string }[] = [];
+  accessKeys: (AccessKey & { names: string })[] = [];
   keySelections: { [key: string]: PermLevel } = {};
   saving = false;
 
@@ -66,13 +80,16 @@ export class UserFormComponent implements OnInit, OnChanges {
     // Hospitality: what the kitchen counts them as (missing = Veg on the server).
     foodPreference: new FormControl<'veg' | 'non-veg'>('veg', { nonNullable: true }),
     // Hospitality H6: needed before giving them a bed (optional here).
-    gender: new FormControl<string>('', { nonNullable: true })
+    gender: new FormControl<string>('', { nonNullable: true }),
+    // Contact number (optional): 7 to 15 digits, spaces and a leading + allowed.
+    phone: new FormControl<string>('', { nonNullable: true, validators: Validators.pattern(PHONE_PATTERN) })
   }, { validators: passwordsMatch });
 
   constructor(
     private adminService: AdminService,
     private notificationService: NotificationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private volunteersService: VolunteersService
   ) { }
 
   get isEdit(): boolean {
@@ -85,6 +102,7 @@ export class UserFormComponent implements OnInit, OnChanges {
    *  fresh array/object each change-detection pass made *ngFor re-create the
    *  <app-option> every pass, the same freeze as the Users page filters. */
   get roleOptions(): { _id: string; name: string }[] {
+    if (this.volunteersMode) return this.volunteerRoleOptions;   // stored list, never rebuilt
     if (this.roles.length) return this.roles;
     const own = this.user?.role?.name || this.user?.role || '';
     if (own !== this.fallbackRoleName) {
@@ -95,6 +113,11 @@ export class UserFormComponent implements OnInit, OnChanges {
   }
   private fallbackRoleName = '';
   private fallbackRoleOptions: { _id: string; name: string }[] = [];
+  private readonly volunteerRoleOptions: { _id: string; name: string }[] = [{ _id: '', name: 'VOL' }];
+
+  trackDept(_: number, d: { _id: string }): string {
+    return d._id;
+  }
 
   trackRole(_: number, r: { name: string }): string {
     return r.name;
@@ -104,6 +127,15 @@ export class UserFormComponent implements OnInit, OnChanges {
     return k.key;
   }
 
+  trackTier(_: number, t: AccessKeyTier): string {
+    return t.tier;
+  }
+
+  /** What the picked tier of this key gives (the line under the chips). */
+  givesOf(k: AccessKey): string {
+    return k.tiers.find(t => t.tier === this.keySelections[k.key])?.gives || '';
+  }
+
   /** The department list can arrive after the form opens: rebuild the rows, keeping picks. */
   ngOnChanges(changes: SimpleChanges) {
     if (changes['departments'] && !changes['departments'].firstChange) {
@@ -111,13 +143,12 @@ export class UserFormComponent implements OnInit, OnChanges {
       this.buildAccessKeys();
       Object.keys(kept).forEach(k => { if (k in this.keySelections) this.keySelections[k] = kept[k]; });
       if (this.isEdit && this.user) this.populateFromUser();
-      const general = this.departments.find(d => d.name.toLowerCase() === 'general');
-      const gKey = general ? this.authService.deptKeyOf(general) : '';
-      if (!this.isEdit && gKey && !(gKey in kept)) this.keySelections[gKey] = 'read';
+      // Create: the department may have been picked before its list arrived.
+      else if (!this.defaultedKey) this.defaultHomeRead(this.form.controls.homeDepartment.value);
     }
   }
 
-  /** One row per key, with the names of the departments that share it. */
+  /** One row per built-in key that has tiers, with the names of the departments carrying it. */
   private buildAccessKeys() {
     const byKey = new Map<string, string[]>();
     this.departments.forEach(d => {
@@ -126,24 +157,56 @@ export class UserFormComponent implements OnInit, OnChanges {
       if (!byKey.has(key)) byKey.set(key, []);
       byKey.get(key)!.push(d.name);
     });
-    this.accessKeys = [...byKey].map(([key, names]) => ({ key, names: names.sort((a, b) => a.localeCompare(b)).join(', ') }))
-      .sort((a, b) => a.key.localeCompare(b.key));
+    this.accessKeys = ACCESS_KEYS
+      .filter(k => k.tiers.length > 0)
+      // A TL only gets their own department(s) in `departments`, so only that key.
+      .filter(k => this.isTopLevel || byKey.has(k.key))
+      .map(k => ({ ...k, names: (byKey.get(k.key) || []).sort((a, b) => a.localeCompare(b)).join(', ') }));
+    this.keySelections = {};
     this.accessKeys.forEach(k => { this.keySelections[k.key] = 'none'; });
+  }
+
+  /** The key whose Read was picked by default for the current home department (see defaultHomeRead). */
+  private defaultedKey = '';
+  private homeSub?: Subscription;
+
+  /**
+   * Picking a home department picks Read on that department's key by default
+   * (user, 2026-11-14) — the rest is extra access. Only when the key has a Read
+   * tier and nothing is picked on it yet. Changing the department takes that
+   * default back off the old key, unless it was raised or was there before.
+   */
+  private defaultHomeRead(deptId: string | null) {
+    if (this.defaultedKey && this.keySelections[this.defaultedKey] === 'read') this.keySelections[this.defaultedKey] = 'none';
+    this.defaultedKey = '';
+    const dept = this.departments.find(d => d._id === deptId);
+    const row = dept && this.accessKeys.find(k => k.key === this.authService.deptKeyOf(dept));
+    // Not for a key where membership gives nothing (Volunteers — the Unassigned pool).
+    if (!row || row.noHomeRead || !row.tiers.some(t => t.tier === 'read') || this.keySelections[row.key] !== 'none') return;
+    this.keySelections[row.key] = 'read';
+    this.defaultedKey = row.key;
+  }
+
+  ngOnDestroy() {
+    this.homeSub?.unsubscribe();
   }
 
   ngOnInit() {
     this.buildAccessKeys();
+    this.homeSub = this.form.controls.homeDepartment.valueChanges.subscribe(id => this.defaultHomeRead(id));
 
     if (this.isEdit) {
       this.form.controls.password.disable();
       this.form.controls.confirmPassword.disable();
       this.populateFromUser();
-    } else {
-      const general = this.departments.find(d => d.name.toLowerCase() === 'general');
-      if (general) this.keySelections[this.authService.deptKeyOf(general)] = 'read';
     }
 
-    if (!this.isTopLevel) {
+    if (this.volunteersMode) {
+      // Always a Volunteer; the department and the date stay open to whoever may add.
+      this.form.controls.role.setValue('VOL');
+      this.form.controls.role.disable();
+      if (this.defaultDepartment) this.form.controls.homeDepartment.setValue(this.defaultDepartment);
+    } else if (!this.isTopLevel) {
       this.form.controls.role.disable();
       this.form.controls.homeDepartment.disable();
       this.form.controls.dateOfJoining.disable();
@@ -155,6 +218,7 @@ export class UserFormComponent implements OnInit, OnChanges {
     const homeDept = u.departments?.[0]?.department;
     const homeDeptId = homeDept && typeof homeDept !== 'string' ? homeDept._id : homeDept;
 
+    // Loading the user is not "picking" a department: no default Read on top of their saved grants.
     this.form.patchValue({
       userName: u.name,
       email: u.email,
@@ -162,14 +226,14 @@ export class UserFormComponent implements OnInit, OnChanges {
       homeDepartment: homeDeptId || '',
       dateOfJoining: u.dateOfJoining ? u.dateOfJoining.substring(0, 10) : null,
       foodPreference: u.foodPreference === 'non-veg' ? 'non-veg' : 'veg',
-      gender: u.gender || ''
-    });
+      gender: u.gender || '',
+      phone: u.phone || ''
+    }, { emitEvent: false });
 
+    // Only grants that do something (built-in key, a tier it uses) show as picked.
     (u.permissions || []).forEach((perm: string) => {
-      const [key, action] = perm.split(':');
-      if (key in this.keySelections && this.permLevels.includes(action as PermLevel)) {
-        this.keySelections[key] = action as PermLevel;
-      }
+      const g = grantTier(perm);
+      if (g && g.key in this.keySelections) this.keySelections[g.key] = g.tier;
     });
   }
 
@@ -197,23 +261,30 @@ export class UserFormComponent implements OnInit, OnChanges {
       password: raw.password,
       roleName: raw.role,
       departmentIds: raw.homeDepartment ? [raw.homeDepartment] : [],
-      permissions: this.buildPermissions(),
+      // Volunteers page: no grants are sent — the server gives Read on the home key only.
+      ...(this.volunteersMode ? {} : { permissions: this.buildPermissions() }),
       dateOfJoining: raw.dateOfJoining,
       foodPreference: raw.foodPreference,
       ...(raw.gender ? { gender: raw.gender } : {}),
+      ...(raw.phone.trim() ? { phone: raw.phone.trim() } : {}),
       ...(this.eventId ? { eventId: this.eventId } : {})
     };
 
+    const call: Observable<any> = this.volunteersMode
+      ? from(this.volunteersService.createUser(this.eventId, userDetails))
+      : this.adminService.createUser(userDetails);
+
     this.saving = true;
-    this.adminService.createUser(userDetails).subscribe({
+    call.subscribe({
       next: res => {
         this.saving = false;
         this.notificationService.openSucessSnackBar('User ' + res.name + ' created successfully');
         this.saved.emit(res);
       },
-      error: () => {
+      error: err => {
         this.saving = false;
-        this.notificationService.openErrorSnackBar('Could not create user');
+        // The Volunteers routes say why (email taken, weak password…).
+        this.notificationService.openErrorSnackBar((this.volunteersMode && err?.error?.msg) || 'Could not create user');
       }
     });
   }
@@ -227,7 +298,8 @@ export class UserFormComponent implements OnInit, OnChanges {
       roleName: raw.role,
       permissions: this.buildPermissions(),
       foodPreference: raw.foodPreference,
-      ...(raw.gender ? { gender: raw.gender } : {})
+      ...(raw.gender ? { gender: raw.gender } : {}),
+      phone: raw.phone.trim()   // empty clears it
     };
 
     if (this.isTopLevel) {

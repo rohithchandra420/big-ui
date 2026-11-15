@@ -1,0 +1,33 @@
+<div class="card tk-card" *ngIf="!hidden">
+  <div class="tk-card-h">
+    <span class="tk-card-title"><mat-icon class="ms-fill" aria-hidden="true">task_alt</mat-icon>{{ heading }}</span>
+    <button type="button" class="tk-refresh" aria-label="Refresh the tasks" [disabled]="loading" (click)="reload()"><mat-icon aria-hidden="true">refresh</mat-icon></button>
+  </div>
+  <p class="tk-note" *ngIf="hint">{{ hint }}</p>
+
+  <div class="tk-chips" role="group" aria-label="Filter by status">
+    <button type="button" class="tk-chip" *ngFor="let c of chips; trackBy: trackByValue" [class.on]="filter === c.value"
+            [attr.aria-pressed]="filter === c.value" (click)="setFilter(c.value)">{{ c.label }} <b>{{ c.count }}</b></button>
+  </div>
+
+  <p class="tk-error" *ngIf="loadError" role="alert">Could not load the tasks. Check your connection and refresh.</p>
+  <p class="tk-note tk-empty" *ngIf="loading && !tasks.length">Loading…</p>
+  <p class="tk-note tk-empty" *ngIf="!loading && !loadError && !rows.length">Nothing here.</p>
+
+  <div class="tk-rows" *ngIf="rows.length">
+    <button type="button" class="tk-row tk-s-{{ r.task.status }}" *ngFor="let r of rows; trackBy: trackById" (click)="open = r.task">
+      <b>{{ r.task.title }}</b>
+      <app-task-pill [status]="r.task.status"></app-task-pill>
+      <small>{{ r.line }}, {{ r.task.history[r.task.history.length - 1]?.at | date:'d MMM, h:mm a' }}</small>
+      <small class="tk-row-place" *ngIf="r.task.place as p"><mat-icon class="ms-fill" aria-hidden="true">location_on</mat-icon>{{ p.name }}</small>
+    </button>
+  </div>
+</div>
+
+<app-slide-panel [open]="!!open" [title]="open?.title || ''" [subtitle]="open ? subtitle(open) : ''" icon="task_alt" (closed)="open = null">
+  <ng-container *ngIf="open as t">
+    <p class="tk-msg">{{ t.message }}</p>
+    <p class="tk-note">Sent {{ t.createdAt | date:'d MMM y, h:mm a' }}</p>
+    <app-task-sheet [taskId]="t._id" (changed)="onChanged($event)"></app-task-sheet>
+  </ng-container>
+</app-slide-panel>

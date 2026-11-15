@@ -1,0 +1,122 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">WASH Setup</div>
+    <div class="page-ph-sub">Water, Sanitation &amp; Hygiene · {{ event?.name || 'No event selected' }}</div>
+  </div>
+  <button type="button" class="btn-cta" [disabled]="!event" (click)="startAdd()">Add facility</button>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
+</div>
+
+<div class="ws-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <ng-container *ngIf="event">
+    <p class="ws-muted" *ngIf="!loading && !facilities.length">
+      No facilities yet. Add the event's water stations and toilets: pick their Venue Map pin or washroom area, or drop a new pin.
+    </p>
+
+    <div class="tbl-container ws-tbl" *ngIf="facilities.length">
+      <table>
+        <thead>
+          <tr><th>Facility</th><th>Every</th><th class="ws-hide">Capacity</th><th class="ws-hide">Logged</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let f of facilities; trackBy: trackFacility" (click)="edit(f)" class="ws-row">
+            <td>
+              <span class="ws-name">
+                <mat-icon class="ms-fill" [class.k-water]="f.kind === 'water'">{{ kindInfo[f.kind].icon }}</mat-icon>
+                <span><b>{{ f.name }}</b><small>{{ kindInfo[f.kind].label }} · {{ f.place === 'area' ? 'area on the map' : 'pin' }}</small></span>
+              </span>
+            </td>
+            <td>{{ f.intervalHours }} h</td>
+            <td class="ws-hide">{{ f.capacityLitres ? f.capacityLitres + ' L' : '—' }}</td>
+            <td class="ws-hide">{{ f.logCount || 0 }}</td>
+            <td class="ws-end"><mat-icon>chevron_right</mat-icon></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- QR stickers (WA2) -->
+    <section class="ws-qr" *ngIf="facilities.length">
+      <div class="ws-qr-txt">
+        <b><mat-icon>qr_code_2</mat-icon>QR stickers</b>
+        <small>One sticker per facility. Scanning it opens that facility, and the log is marked "via QR".</small>
+      </div>
+      <button type="button" class="btn-ghost ws-print" [disabled]="printing" (click)="printStickers()"><mat-icon>print</mat-icon>Print QR stickers</button>
+      <button type="button" class="ws-switch" role="switch" [attr.aria-checked]="requireQr" [disabled]="savingQr" (click)="toggleRequireQr()">
+        <span class="ws-sw" [class.on]="requireQr"></span>
+        <span><b>Require a QR scan</b><small>Refilled / Cleaned only after scanning the facility's sticker. Empty and Out of order stay open to report from anywhere.</small></span>
+      </button>
+    </section>
+
+    <p class="ws-muted">Move, redraw or rename a facility's pin / area on the <a routerLink="/venue-map">Venue Map</a>.</p>
+  </ng-container>
+
+  <app-slide-panel [open]="mode !== 'closed'" [icon]="mode === 'edit' ? kindInfo[formKind].icon : 'add_location_alt'"
+                   [title]="panelTitle" [subtitle]="panelSubtitle" (closed)="close()">
+    <div class="ws-form" *ngIf="mode !== 'closed'">
+      <!-- Add: from an existing pin, or a new one -->
+      <ng-container *ngIf="mode === 'add'">
+        <div class="ws-two" role="radiogroup" aria-label="Where is it?">
+          <button type="button" class="choice-tile" role="radio" [class.selected]="source === 'pin'" [attr.aria-checked]="source === 'pin'"
+                  [disabled]="!pins.length" (click)="source = 'pin'">
+            <span class="choice-tile-ic"><mat-icon class="ms-fill">push_pin</mat-icon></span>
+            <span class="choice-tile-name">From the map</span>
+            <span class="choice-tile-short">{{ pins.length ? pins.length + ' pins / washroom areas not set up' : 'None left on the map' }}</span>
+          </button>
+          <button type="button" class="choice-tile" role="radio" [class.selected]="source === 'new'" [attr.aria-checked]="source === 'new'"
+                  (click)="source = 'new'">
+            <span class="choice-tile-ic"><mat-icon class="ms-fill">add_location_alt</mat-icon></span>
+            <span class="choice-tile-name">New pin</span>
+            <span class="choice-tile-short">Added to the Venue Map</span>
+          </button>
+        </div>
+
+        <div class="field" *ngIf="source === 'pin'">
+          <label>Place on the map *</label>
+          <app-select [(ngModel)]="form.pin" placeholder="Pick a pin or a washroom area">
+            <app-option *ngFor="let p of pins; trackBy: trackPin" [value]="p._id">{{ pinLabel(p) }}</app-option>
+          </app-select>
+        </div>
+
+        <ng-container *ngIf="source === 'new'">
+          <div class="field">
+            <label>Type *</label>
+            <div class="ws-chips" role="radiogroup" aria-label="Type">
+              <button type="button" class="toggle-chip" role="radio" *ngFor="let k of kinds" [class.on]="form.type === k"
+                      [attr.aria-checked]="form.type === k" (click)="form.type = k">
+                <mat-icon>{{ kindInfo[k].icon }}</mat-icon>{{ kindInfo[k].label }}
+              </button>
+            </div>
+          </div>
+          <div class="field"><label for="ws-name">Name *</label>
+            <input id="ws-name" type="text" maxlength="60" [(ngModel)]="form.name" placeholder="e.g. Water Station A — Main Gate" /></div>
+          <div class="field"><label for="ws-coords">Location *</label>
+            <div class="ws-loc">
+              <input id="ws-coords" type="text" [(ngModel)]="form.coords" placeholder="Paste coordinates, e.g. 20.98, 79.35" />
+              <button type="button" class="btn-ghost" (click)="useMyLocation()"><mat-icon>my_location</mat-icon>Use my location</button>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <div class="ws-two">
+        <div class="field"><label for="ws-int">{{ formKind === 'water' ? 'Refill' : 'Clean' }} every (hours) *</label>
+          <input id="ws-int" type="number" min="1" max="24" step="1" [(ngModel)]="form.intervalHours" /></div>
+        <div class="field" *ngIf="formKind === 'water'"><label for="ws-cap">Capacity (litres)</label>
+          <input id="ws-cap" type="number" min="1" step="1" [(ngModel)]="form.capacityLitres" placeholder="Optional" /></div>
+      </div>
+      <p class="ws-muted">Refills and cleanings can happen any time; the next one is due this many hours after the last.</p>
+
+      <div class="field-error" *ngIf="formError">{{ formError }}</div>
+      <div class="ws-acts">
+        <button type="button" class="btn-danger" *ngIf="mode === 'edit' && editing" (click)="remove(editing)">Remove</button>
+        <span class="ws-grow"></span>
+        <button type="button" class="btn-ghost" (click)="close()">Cancel</button>
+        <button type="button" class="btn-cta" [disabled]="busy" (click)="save()">{{ mode === 'add' ? 'Add facility' : 'Save' }}</button>
+      </div>
+    </div>
+  </app-slide-panel>
+</div>

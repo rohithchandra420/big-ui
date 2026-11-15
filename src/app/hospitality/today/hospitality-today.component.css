@@ -2,7 +2,7 @@
 .ht-page { padding: 0; }   /* the app shell pads every page (like Bookings) */
 .grow { flex: 1; }
 .ht-daybar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-.ht-dname { min-width: 130px; text-align: center; }
+.ht-dname { min-width: 130px; }
 .ht-dname b { display: block; font-size: 15px; color: var(--text-primary); }
 .ht-dname small { display: block; font-size: 12px; color: var(--text-muted); }
 
@@ -73,6 +73,7 @@
   .ht-page { padding: 0; }
   .ht-big { font-size: 32px; }
   .ht-meter { flex-basis: 50px; }
+  .ht-dname { min-width: 0; }
 }
 .ht-alert { margin-top: 16px; }
 .ht-fig { margin-bottom: 16px; }

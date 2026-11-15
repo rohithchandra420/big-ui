@@ -1,7 +1,7 @@
 <div class="page-ph">
   <div>
     <div class="page-ph-title">Accommodation</div>
-    <div class="page-ph-sub">Setup — create tent inventory</div>
+    <div class="page-ph-sub">{{ canWrite ? 'Setup — create tent inventory' : 'Setup — tent inventory at a glance' }}</div>
   </div>
   <!-- Navigation Tabs: Back + this section's pages -->
   <app-section-header></app-section-header>
@@ -13,7 +13,7 @@
     No event selected. Choose one from the Event picker in the sidebar first.
   </div>
 
-  <form class="setup-form" *ngIf="!noActiveEvent" [formGroup]="form" (ngSubmit)="submit()">
+  <form class="setup-form" *ngIf="!noActiveEvent && canWrite" [formGroup]="form" (ngSubmit)="submit()">
 
     <div class="field">
       <label>Tent Pass Type *</label>
@@ -26,7 +26,11 @@
       </p>
     </div>
 
-    <div class="field" *ngIf="needsCode">
+    <div class="warn-banner" *ngIf="needsCode && !canSetCode">
+      "{{ selectedPassType?.name }}" has no code yet. Ask a Director or Admin to set it under Admin &gt; Events, then create the units.
+    </div>
+
+    <div class="field" *ngIf="needsCode && canSetCode">
       <label>Code *</label>
       <input type="text" formControlName="code" maxlength="4" placeholder="e.g. SO">
       <p class="field-hint">
@@ -48,7 +52,7 @@
     </div>
 
     <div class="form-actions">
-      <button type="submit" class="btn-cta" [disabled]="form.invalid || creating">
+      <button type="submit" class="btn-cta" [disabled]="form.invalid || creating || (needsCode && !canSetCode)">
         {{ creating ? 'Creating…' : 'Create Units' }}
       </button>
     </div>

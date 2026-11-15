@@ -95,16 +95,15 @@ export class AccommodationInventoryComponent implements OnInit, OnDestroy {
     this.eventSub?.unsubscribe();
   }
 
-  /** Edit/delete need write-tier access (or an admin role) — separate from
-   *  page visibility, which is broader. See ACCOMMODATION_CONTEXT.md
-   *  decision #9. Reuses the Box Office permission/department, same as this
-   *  page's own visibility gate in header.component.ts, rather than
-   *  inventing a standalone "Accommodation" department. */
+  /** Edit / delete a unit: DEV/DIR/ADMIN, the Tenting TL, Tenting Write and up
+   *  (key `tenting`, 2026-11-14 — same rule as the server). Page visibility is broader. */
   get canManage(): boolean {
-    const user = this.authService.currentUser;
-    if (!user) return false;
-    if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
-    return this.authService.hasPermission(user, 'box-office:write');
+    return this.authService.canWriteTenting(this.authService.currentUser);
+  }
+
+  /** Vacate an occupant: the same group, and Box Office Write as before. */
+  get canVacate(): boolean {
+    return this.authService.canVacateTents(this.authService.currentUser);
   }
 
   fetchTents(eventId: string) {

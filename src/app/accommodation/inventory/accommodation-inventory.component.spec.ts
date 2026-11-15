@@ -51,7 +51,7 @@ describe('AccommodationInventoryComponent', () => {
   let accomodationServiceSpy: jasmine.SpyObj<AccomodationService>;
   let activeEventSubject: BehaviorSubject<EventItem | null>;
   let eventServiceStub: { activeEvent: BehaviorSubject<EventItem | null>; currentActiveEvent: EventItem | null };
-  let authServiceStub: { currentUser: User | null; hasPermission: jasmine.Spy };
+  let authServiceStub: { currentUser: User | null; canWriteTenting: jasmine.Spy; canVacateTents: jasmine.Spy };
   let notificationSpy: jasmine.SpyObj<NotificationService>;
   let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
 
@@ -64,7 +64,11 @@ describe('AccommodationInventoryComponent', () => {
       activeEvent: activeEventSubject,
       get currentActiveEvent() { return activeEventSubject.value; },
     } as any;
-    authServiceStub = { currentUser: { role: 'ADMIN' } as User, hasPermission: jasmine.createSpy('hasPermission').and.returnValue(false) };
+    authServiceStub = {
+      currentUser: { role: 'ADMIN' } as User,
+      canWriteTenting: jasmine.createSpy('canWriteTenting').and.returnValue(true),
+      canVacateTents: jasmine.createSpy('canVacateTents').and.returnValue(true)
+    };
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     confirmationServiceSpy = jasmine.createSpyObj('ConfirmationService', ['confirm']);
 
@@ -134,20 +138,28 @@ describe('AccommodationInventoryComponent', () => {
     });
   });
 
-  describe('canManage', () => {
-    it('is true for an admin role regardless of permissions', () => {
+  describe('canManage / canVacate (key `tenting`)', () => {
+    it('Edit / Delete follow Tenting Write; Vacate follows its own rule', () => {
       expect(component.canManage).toBeTrue();
+      expect(component.canVacate).toBeTrue();
+      expect(authServiceStub.canWriteTenting).toHaveBeenCalledWith(authServiceStub.currentUser);
     });
 
-    it('is false for a non-admin without box-office:write', () => {
+    it('Box Office Write: Vacate only — no Edit / Delete buttons', () => {
       authServiceStub.currentUser = { role: 'VOL' } as User;
+      authServiceStub.canWriteTenting.and.returnValue(false);
+      fixture.detectChanges();
       expect(component.canManage).toBeFalse();
+      expect(component.canVacate).toBeTrue();
+      expect(fixture.nativeElement.querySelector('.tbl-actions')).toBeNull();
     });
 
-    it('is true for a non-admin with box-office:write', () => {
-      authServiceStub.currentUser = { role: 'TL' } as User;
-      authServiceStub.hasPermission.and.returnValue(true);
-      expect(component.canManage).toBeTrue();
+    it('Tenting Read: sees the table, no buttons', () => {
+      authServiceStub.canWriteTenting.and.returnValue(false);
+      authServiceStub.canVacateTents.and.returnValue(false);
+      fixture.detectChanges();
+      expect(component.canManage).toBeFalse();
+      expect(component.canVacate).toBeFalse();
     });
   });
 

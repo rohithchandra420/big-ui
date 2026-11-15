@@ -11,6 +11,7 @@ import { delay } from 'rxjs/operators';
 import { BookingsComponent } from './bookings.component';
 import { BoxOfficeService } from '../box-office.service';
 import { EventService } from '../../core/event.service';
+import { AuthService } from '../../core/auth.service';
 import { Ticket } from '../../models/ticket.model';
 import { EventItem } from '../../models/event.model';
 import { EmailBatch } from '../../models/email.model';
@@ -70,6 +71,7 @@ describe('BookingsComponent', () => {
       imports: [FormsModule, MatMenuModule, NoopAnimationsModule],
       providers: [
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },
+        { provide: AuthService, useValue: { currentUser: null } },
         { provide: Router, useValue: routerSpy },
         { provide: MatDialog, useValue: dialogSpy },
         { provide: EventService, useValue: eventServiceStub },
@@ -476,6 +478,37 @@ describe('BookingsComponent', () => {
       expect(component.emailStatusLabel(mockBookings[0])).toBe('Sent');
       expect(component.emailStatusError(mockBookings[0])).toBe('');
       expect(component.emailStatusLabel({ ticketEmail: undefined } as any)).toBe('Not sent');
+    });
+  });
+
+  describe('who sees Bulk Upload (Box Office access rule)', () => {
+    const bulkButton = () => Array.from(fixture.nativeElement.querySelectorAll('.page-ph button') as NodeListOf<HTMLElement>)
+      .find(b => b.textContent!.includes('Bulk Upload'));
+
+    it('a Box Office volunteer works bookings but has no Bulk Upload', () => {
+      const auth = TestBed.inject(AuthService) as any;
+      auth.boxOfficeReadOnly = () => false;
+      auth.canManageBoxOffice = () => false;
+      fixture.detectChanges();
+      expect(component.readOnly).toBeFalse();
+      expect(bulkButton()).toBeUndefined();
+    });
+
+    it('the Box Office Team Lead has Bulk Upload', () => {
+      const auth = TestBed.inject(AuthService) as any;
+      auth.boxOfficeReadOnly = () => false;
+      auth.canManageBoxOffice = () => true;
+      fixture.detectChanges();
+      expect(bulkButton()).toBeDefined();
+    });
+
+    it('a view-only person has neither Bulk Upload nor Export', () => {
+      const auth = TestBed.inject(AuthService) as any;
+      auth.boxOfficeReadOnly = () => true;
+      auth.canManageBoxOffice = () => true;
+      fixture.detectChanges();
+      expect(component.canBulkUpload).toBeFalse();
+      expect(bulkButton()).toBeUndefined();
     });
   });
 });

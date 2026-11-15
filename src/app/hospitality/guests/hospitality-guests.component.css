@@ -1,7 +1,7 @@
 /* Guests (H3): list + side panel, full width like the other Hospitality pages. Card shell: .hx-card in styles.css. */
 .hg-page { padding: 0; }   /* the app shell pads every page (like Bookings) */
 .grow { flex: 1; min-width: 0; }
-.hg-grid { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; align-items: start; }
+.hg-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 
 .hg-tools { gap: 10px; }
 .hg-tools .search-field { flex: 1 1 240px; }
@@ -19,9 +19,6 @@
 .hg-badge.ok { background: #ecfdf3; color: #15803d; }
 .hg-empty { padding: 14px; margin: 0; }
 
-.hg-panel { position: sticky; top: 104px; }
-.hg-panel h2 { font-size: 16px; margin: 0; color: var(--text-primary); }
-.hg-x { border: 0; background: none; cursor: pointer; color: var(--text-muted); display: grid; place-items: center; }
 .hg-form { display: grid; gap: 12px; }
 .hg-acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .pill-btn.hg-danger { color: #dc2626; border-color: #fecaca; }
@@ -46,10 +43,6 @@
 .hg-ic mat-icon { font-size: 17px; width: 17px; height: 17px; }
 .hg-ic.danger { color: #dc2626; }
 
-@media (max-width: 1000px) {
-  .hg-grid { grid-template-columns: minmax(0, 1fr); }
-  .hg-panel { position: static; }
-}
 @media (max-width: 520px) {
   .hg-page { padding: 0; }
   .hg-kinds, .hg-two { grid-template-columns: 1fr; }

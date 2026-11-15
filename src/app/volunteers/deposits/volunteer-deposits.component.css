@@ -1,0 +1,9 @@
+/* Volunteers › Deposits. The shared page, stat-card, table and panel styles are global (styles.css, .vl-*). Every text rule sets its colour. */
+.vd-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.vd-big { margin: 0; font-size: 15px; color: var(--text-primary); }
+.vd-big b { color: var(--color-primary); }
+.vd-flag { font-size: 13px; color: #7c2d12; }
+
+@media (max-width: 768px) {
+  .vd-stats { grid-template-columns: minmax(0, 1fr); }
+}

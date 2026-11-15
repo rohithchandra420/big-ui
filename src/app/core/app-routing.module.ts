@@ -46,6 +46,14 @@ import { MedicalDeskComponent } from "../medical/desk/medical-desk.component";
 import { MedicalRecordsComponent } from "../medical/records/medical-records.component";
 import { MedicalPatientComponent } from "../medical/patient/medical-patient.component";
 import { MedicalReportComponent } from "../medical/report/medical-report.component";
+import { WashGuard } from "../wash/wash.guard";
+import { WashMonitorComponent } from "../wash/monitor/wash-monitor.component";
+import { WashSetupComponent } from "../wash/setup/wash-setup.component";
+import { WashStockComponent } from "../wash/stock/wash-stock.component";
+import { WashReportComponent } from "../wash/report/wash-report.component";
+import { VolunteersGuard } from "../volunteers/volunteers.guard";
+import { VolunteersComponent } from "../volunteers/volunteers.component";
+import { VolunteerDepositsComponent } from "../volunteers/deposits/volunteer-deposits.component";
 import { EmailAccessGuard } from "./email-access.guard";
 import { AccommodationSetupComponent } from "../accommodation/setup/accommodation-setup.component";
 import { AccommodationInventoryComponent } from "../accommodation/inventory/accommodation-inventory.component";
@@ -100,47 +108,57 @@ const appRoutes: Routes = [
     { path: 'sos', canActivate: [AuthGuard, SosGuard], component: SosComponent },
     { path: 'venue-map', canActivate: [AuthGuard], component: VenueMapComponent },
     // Workshops planner — everyone signed in (changes are checked per action, server-side too).
-    { path: 'hospitality', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityTodayComponent },
+    // Helpdesk (HD2) sees Today, Guests, Report and Stay read-only; Serving desk and Setup stay with the Manage group.
+    { path: 'hospitality', canActivate: [AuthGuard, HospitalityGuard], data: { hospitalityView: true }, component: HospitalityTodayComponent },
     { path: 'hospitality/desk', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityDeskComponent },
-    { path: 'hospitality/guests', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityGuestsComponent },
-    { path: 'hospitality/report', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityReportComponent },
-    { path: 'hospitality/stay', canActivate: [AuthGuard, HospitalityGuard], component: HospitalityStayComponent },
+    { path: 'hospitality/guests', canActivate: [AuthGuard, HospitalityGuard], data: { hospitalityView: true }, component: HospitalityGuestsComponent },
+    { path: 'hospitality/report', canActivate: [AuthGuard, HospitalityGuard], data: { hospitalityView: true }, component: HospitalityReportComponent },
+    { path: 'hospitality/stay', canActivate: [AuthGuard, HospitalityGuard], data: { hospitalityView: true }, component: HospitalityStayComponent },
     { path: 'hospitality/setup', canActivate: [AuthGuard, HospitalityGuard], component: HospitalitySetupComponent },
     // Medical Desk (MEDICAL_CONTEXT.md): DEV, DIR, the Medical department, medical grants — never ADMIN.
     { path: 'medical', canActivate: [AuthGuard, MedicalGuard], component: MedicalDeskComponent },
     { path: 'medical/records', canActivate: [AuthGuard, MedicalGuard], component: MedicalRecordsComponent },
     { path: 'medical/report', canActivate: [AuthGuard, MedicalGuard], component: MedicalReportComponent },
     { path: 'medical/patients/:id', canActivate: [AuthGuard, MedicalGuard], component: MedicalPatientComponent },
+    // WASH (WASH_CONTEXT.md): Monitor = the WASH team + wash grants; Setup = DEV/DIR/ADMIN, WASH TL, wash:manage.
+    { path: 'wash', canActivate: [AuthGuard, WashGuard], component: WashMonitorComponent },
+    { path: 'wash/stock', canActivate: [AuthGuard, WashGuard], component: WashStockComponent },
+    { path: 'wash/report', canActivate: [AuthGuard, WashGuard], component: WashReportComponent },
+    { path: 'wash/setup', canActivate: [AuthGuard, WashGuard], component: WashSetupComponent, data: { washManage: true } },
+    // Volunteers (V1): DEV/DIR/ADMIN, the Volunteer department's TL, volunteer grants.
+    { path: 'volunteers', canActivate: [AuthGuard, VolunteersGuard], component: VolunteersComponent },
+    { path: 'volunteers/deposits', canActivate: [AuthGuard, VolunteersGuard], component: VolunteerDepositsComponent },
     { path: 'workshops', canActivate: [AuthGuard], component: WorkshopPlannerComponent },
     // A session's lists and door — the Workshop team (members, workshop:write, the Plan group).
-    { path: 'workshops/sessions/:id', canActivate: [AuthGuard, WorkshopRunGuard], component: SessionListsComponent },
+    { path: 'workshops/sessions/:id', canActivate: [AuthGuard, WorkshopReadGuard], component: SessionListsComponent }, // readers (Reports access, Helpdesk) see the lists; the page hides the actions
     // Reports (with names) — the Workshop team and workshop:read.
     { path: 'workshops/reports', canActivate: [AuthGuard, WorkshopReadGuard], component: WorkshopReportsComponent },
     // Workshops setup — the Plan group: DEV/DIR/ADMIN, the Workshop TL (automatic
     // workshop:manage via the department key), anyone granted workshop:manage.
     { path: 'workshops/setup', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['workshop:manage'] }, component: WorkshopSetupComponent },
     { path: 'my-department', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL', 'VOL'] }, component: MyDepartmentComponent },
-    { path: 'box-office/bookings', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BookingsComponent },
-    { path: 'box-office/registration', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: RegistrationComponent },
-    { path: 'box-office/registration/:id', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: BookingFoundComponent },
+    { path: 'box-office/bookings', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'helpdesk:manage'], departmentKeys: ['box-office', 'helpdesk'] }, component: BookingsComponent },
+    { path: 'box-office/registration', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'helpdesk:manage'], departmentKeys: ['box-office', 'helpdesk'] }, component: RegistrationComponent },
+    { path: 'box-office/registration/:id', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'helpdesk:manage'], departmentKeys: ['box-office', 'helpdesk'] }, component: BookingFoundComponent },
     // Old spelling, kept as a redirect for anyone with the URL bookmarked —
     // see ACCOMMODATION_CONTEXT.md decision #10. AccomodationComponent
     // itself was deleted in v1.13.0 (legacy cleanup).
     { path: 'accomodation', redirectTo: 'accommodation/inventory', pathMatch: 'full' },
-    { path: 'accommodation/setup', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: AccommodationSetupComponent },
-    { path: 'accommodation/inventory', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: AccommodationInventoryComponent },
+    { path: 'accommodation/setup', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['tenting:read', 'helpdesk:manage'], departmentKeys: ['tenting', 'helpdesk'] }, component: AccommodationSetupComponent },
+    { path: 'accommodation/inventory', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'tenting:read', 'helpdesk:manage'], departmentKeys: ['box-office', 'tenting', 'helpdesk'] }, component: AccommodationInventoryComponent },
     // Tent Fields (Epic B): seen by the Inventory rule; editing is DEV/DIR/ADMIN (checked by the server too)
-    { path: 'accommodation/fields', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: TentFieldsComponent },
-    { path: 'accommodation/fields/:id', canActivate: [AuthGuard, AuthPermissionGuard], canDeactivate: [(c: TentFieldComponent) => c.canLeave()], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read'], departments: ['Box Office'] }, component: TentFieldComponent },
-    { path: 'admin', canActivate:[AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: AdminComponent, children: [
-        { path: 'user', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'] }, component: UserRegisteryComponent },
+    { path: 'accommodation/fields', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'tenting:read', 'helpdesk:manage'], departmentKeys: ['box-office', 'tenting', 'helpdesk'] }, component: TentFieldsComponent },
+    { path: 'accommodation/fields/:id', canActivate: [AuthGuard, AuthPermissionGuard], canDeactivate: [(c: TentFieldComponent) => c.canLeave()], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'tenting:read', 'helpdesk:manage'], departmentKeys: ['box-office', 'tenting', 'helpdesk'] }, component: TentFieldComponent },
+    // Helpdesk (key `helpdesk`) comes in for Announcements only; every child keeps its own guard.
+    { path: 'admin', canActivate:[AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'], permissions: ['helpdesk:manage'], departmentKeys: ['helpdesk'] }, component: AdminComponent, children: [
+        { path: 'user', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL'], permissions: ['helpdesk:manage'], departmentKeys: ['helpdesk'] }, component: UserRegisteryComponent }, // Helpdesk: view only
         { path: 'departments', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentsComponent },
         { path: 'departments/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: DepartmentsComponent }, // opens that department's panel
         { path: 'events', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventsComponent },
         { path: 'events/:id', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: EventDetailComponent },
         // DEV/DIR/ADMIN only (decided by the backend via /emails/config)
         { path: 'email-report', canActivate: [EmailAccessGuard], component: EmailReportComponent },
-        { path: 'announcements', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: AnnouncementsComponent },
+        { path: 'announcements', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['helpdesk:manage'], departmentKeys: ['helpdesk'] }, component: AnnouncementsComponent },
         { path: 'public-page', canActivate: [AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'] }, component: PublicPageComponent },
         { path: 'uat-reset', canActivate: [AuthPermissionGuard], data: { roles: ['DEV'] }, component: UatResetComponent } // UAT-RESET: remove before Production
     ]},

@@ -15,6 +15,11 @@
     </app-select>
   </div>
 
+  <!-- Tasks sent to this department (Helpdesk, HD1): one shared status for everyone in it -->
+  <app-task-list *ngIf="!isAllView && selectedDeptId" [department]="selectedDeptId" [hideWhenEmpty]="true"
+                 [heading]="'Tasks for ' + (deptInfo?.name || 'your department')"
+                 hint="Everyone in the department sees the same status. Tap a task to open it."></app-task-list>
+
   <!-- ── ALL view: cross-department reporting only ─────────── -->
   <ng-container *ngIf="isAllView">
 
@@ -179,6 +184,8 @@
         </span>
       </div>
       <div class="meta-row"><span class="meta-label">Volunteers</span><span class="meta-value">{{ deptInfo.volunteerCount }}</span></div>
+      <!-- Volunteers needed for the sidebar event: set by this department's Team Lead, read on the Volunteers page -->
+      <app-volunteer-need [departmentId]="selectedDeptId" [eventId]="staffEvent?._id || ''"></app-volunteer-need>
     </div>
 
     <div class="view-tabs">

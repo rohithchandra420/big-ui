@@ -1,17 +1,25 @@
-import { Component } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
+import { Component, Inject, Optional } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Observable, from } from 'rxjs';
 
 import { AdminService, BulkUserResult, BulkUserRow, BulkUsersResponse, BulkUserStatus } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventService } from '../../../core/event.service';
+import { VolunteersService } from '../../../volunteers/volunteers.service';
 
 /** Columns of the template, in order. The first five are required. */
 export const BULK_USER_COLUMNS = [
   'name', 'email', 'password', 'role', 'home_department',
-  'food_preference', 'gender', 'date_of_joining'
+  'food_preference', 'gender', 'date_of_joining', 'phone'
 ] as const;
 
 export const BULK_USER_MAX_ROWS = 500;
+
+/** Volunteers page: everyone is a Volunteer, so its template has no role column. */
+export const BULK_VOLUNTEER_COLUMNS = BULK_USER_COLUMNS.filter(c => c !== 'role');
+
+/** Dialog data. `volunteersMode` = opened from the Volunteers page (1.60.0). */
+export interface BulkUsersData { volunteersMode?: boolean }
 
 type Phase = 'pick' | 'checking' | 'preview' | 'adding' | 'done';
 
@@ -55,6 +63,11 @@ export function toBulkRows(sheetRows: any[]): BulkUserRow[] {
  * the server checks every row (dry run) → preview with Ready / Problem /
  * Duplicate → "Add N users" creates only the ready ones → result with a
  * download (never containing passwords). Same access as creating one user.
+ *
+ * Volunteers mode (1.60.0, opened from the Volunteers page): the rows go to the
+ * Volunteers routes, every row is a Volunteer (no role column), an empty
+ * home_department means the Unassigned pool, Medical is refused and the new
+ * users always go on the sidebar event's staff list. The server enforces it.
  */
 @Component({
   selector: 'app-bulk-users',
@@ -63,7 +76,8 @@ export function toBulkRows(sheetRows: any[]): BulkUserRow[] {
 })
 export class BulkUsersComponent {
 
-  readonly columns = BULK_USER_COLUMNS;
+  readonly columns: readonly string[];
+  readonly volunteersMode: boolean;
   readonly maxRows = BULK_USER_MAX_ROWS;
 
   phase: Phase = 'pick';
@@ -85,8 +99,20 @@ export class BulkUsersComponent {
     private dialogRef: MatDialogRef<BulkUsersComponent>,
     private adminService: AdminService,
     private notificationService: NotificationService,
-    private eventService: EventService
-  ) { }
+    private eventService: EventService,
+    private volunteersService: VolunteersService,
+    @Optional() @Inject(MAT_DIALOG_DATA) data: BulkUsersData | null
+  ) {
+    this.volunteersMode = !!data?.volunteersMode;
+    this.columns = this.volunteersMode ? BULK_VOLUNTEER_COLUMNS : BULK_USER_COLUMNS;
+  }
+
+  /** The server call for this mode. Volunteers: always for the sidebar event. */
+  private send(rows: BulkUserRow[], dryRun: boolean, eventId = ''): Observable<BulkUsersResponse> {
+    return this.volunteersMode
+      ? from(this.volunteersService.bulkUsers(this.event?._id || '', rows, dryRun))
+      : this.adminService.bulkUsers(rows, dryRun, eventId);
+  }
 
   get event() { return this.eventService.currentActiveEvent; }
 
@@ -101,8 +127,19 @@ export class BulkUsersComponent {
   // ── Template ────────────────────────────────────────────────
   downloadTemplate(): void {
     import('xlsx').then(XLSX => {
-      const users = XLSX.utils.aoa_to_sheet([[...BULK_USER_COLUMNS]]);
-      const help = XLSX.utils.aoa_to_sheet([
+      const users = XLSX.utils.aoa_to_sheet([[...this.columns]]);
+      const help = XLSX.utils.aoa_to_sheet(this.volunteersMode ? [
+        ['Column', 'Required', 'What to put'],
+        ['name', 'Yes', 'Full name'],
+        ['email', 'Yes', 'Used to sign in. Must be new — existing emails are skipped'],
+        ['password', 'Yes', '8+ characters with upper and lower case, a number and a symbol'],
+        ['home_department', 'No', 'Department name exactly as on the Volunteers page. Leave empty for Unassigned. Medical cannot be used here'],
+        ['food_preference', 'No', 'veg or non-veg'],
+        ['gender', 'No', 'Male, Female or Prefer not to say'],
+        ['date_of_joining', 'No', 'A date, e.g. 2026-11-07. Leave empty if not known'],
+        ['phone', 'No', '7 to 15 digits; a leading + is allowed. Format the column as Text so the + and leading zeros stay'],
+        ['', '', 'Everyone in this file is added as a Volunteer']
+      ] : [
         ['Column', 'Required', 'What to put'],
         ['name', 'Yes', 'Full name'],
         ['email', 'Yes', 'Used to sign in. Must be new — existing emails are skipped'],
@@ -111,12 +148,13 @@ export class BulkUsersComponent {
         ['home_department', 'For VOL and TL', 'Department name exactly as in Admin › Departments'],
         ['food_preference', 'No', 'veg or non-veg'],
         ['gender', 'No', 'Male, Female or Prefer not to say'],
-        ['date_of_joining', 'No', 'A date, e.g. 2026-11-07. Leave empty if not known']
+        ['date_of_joining', 'No', 'A date, e.g. 2026-11-07. Leave empty if not known'],
+        ['phone', 'No', '7 to 15 digits; a leading + is allowed. Format the column as Text so the + and leading zeros stay']
       ]);
       const book = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(book, users, 'Users');
       XLSX.utils.book_append_sheet(book, help, 'How to fill');
-      XLSX.writeFile(book, 'bulk-users-template.xlsx');
+      XLSX.writeFile(book, this.volunteersMode ? 'bulk-volunteers-template.xlsx' : 'bulk-users-template.xlsx');
     });
   }
 
@@ -181,8 +219,9 @@ export class BulkUsersComponent {
       this.phase = 'pick';
       return;
     }
+    if (this.volunteersMode && !this.event) { this.error = 'Pick an event in the sidebar first.'; this.phase = 'pick'; return; }
     this.phase = 'checking';
-    this.adminService.bulkUsers(rows, true).subscribe({
+    (this.volunteersMode ? this.send(rows, true) : this.adminService.bulkUsers(rows, true)).subscribe({
       next: (res) => { this.results = res.results; this.counts = res.counts; this.phase = 'preview'; },
       error: (err) => { this.error = err?.error?.msg || 'The rows could not be checked. Try again.'; this.phase = 'pick'; }
     });
@@ -193,7 +232,7 @@ export class BulkUsersComponent {
     if (this.phase !== 'preview' || !this.readyCount) return;
     this.phase = 'adding';
     const eventId = this.addToEvent && this.event ? this.event._id : '';
-    this.adminService.bulkUsers(this.rows, false, eventId).subscribe({
+    this.send(this.rows, false, eventId).subscribe({
       next: (res) => {
         this.results = res.results;
         this.counts = res.counts;

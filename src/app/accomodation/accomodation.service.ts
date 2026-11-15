@@ -26,6 +26,11 @@ export class AccomodationService {
         return this.http.post<Tent[]>(this.url + '/createTents', payload);
     }
 
+    /** The event's Tent-category pass types (for Setup — the full event detail is DEV/DIR/ADMIN only). */
+    getTentPassTypes(eventId: string) {
+        return this.http.get<any[]>(this.url + '/tentPassTypes', { params: new HttpParams().set('eventId', eventId) });
+    }
+
     getAllTents(eventId: string) {
         return this.http.get<Tent[]>(this.url + '/getAllTents', { params: new HttpParams().set('eventId', eventId) });
     }

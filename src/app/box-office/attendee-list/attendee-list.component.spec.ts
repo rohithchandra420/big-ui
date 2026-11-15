@@ -41,11 +41,11 @@ describe('AttendeeListComponent', () => {
   const configureWith = (ticket: Ticket) => {
     TestBed.resetTestingModule();
     boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['checkIn', 'linkBand', 'replaceBand', 'bandHistory']);
-    authSpy = jasmine.createSpyObj('AuthService', ['hasPermission', 'hasDepartmentAccess'], {
+    authSpy = jasmine.createSpyObj('AuthService', ['hasPermission', 'inDepartmentKey'], {
       currentUser: { role: 'VOL', departments: [], permissions: [] }
     });
     authSpy.hasPermission.and.returnValue(false);
-    authSpy.hasDepartmentAccess.and.callFake(() => canReplace);
+    authSpy.inDepartmentKey.and.callFake(() => canReplace);
     accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', ['getTentById', 'vacateTentSlot']);
     accomodationServiceSpy.getTentById.and.returnValue(of({} as Tent));
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
@@ -74,6 +74,15 @@ describe('AttendeeListComponent', () => {
   beforeEach(() => {
     canReplace = true;
     configureWith(mockTicket);
+  });
+
+  it('shows no action buttons to Helpdesk (read-only, HD2)', () => {
+    configureWith(mockTicket);
+    expect(fixture.nativeElement.querySelector('.att-actions')).not.toBeNull();
+    (authSpy as any).boxOfficeReadOnly = () => true;
+    fixture.detectChanges();
+    expect(component.readOnly).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.att-actions')).toBeNull();
   });
 
   it('loads tent details for any allocatedTentId on the input ticket', () => {

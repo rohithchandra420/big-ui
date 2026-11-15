@@ -24,6 +24,8 @@ export class HospitalityGuestsComponent implements OnInit, OnDestroy {
   event: EventItem | null = null;
   today = '';
   guests: Guest[] = [];
+  /** Helpdesk's read-only view (HD2): the server says this person may look but not change. */
+  readOnly = false;
   /** Filtered, stored list for the *ngFor (never built in a getter). */
   shown: Guest[] = [];
   loading = false;
@@ -73,6 +75,7 @@ export class HospitalityGuestsComponent implements OnInit, OnDestroy {
     this.loadError = '';
     try {
       const res = await this.hospitality.getGuests(this.event._id);
+      this.readOnly = (res as any)?.canManage === false;
       this.today = res.today;
       this.guests = res.guests;
       if (this.selected) this.selected = this.guests.find(g => g._id === this.selected!._id) || null;
@@ -126,6 +129,22 @@ export class HospitalityGuestsComponent implements OnInit, OnDestroy {
     this.formError = '';
   }
   closePanel() { this.selected = null; this.mode = 'view'; this.issuing = false; }
+  /** ✕ / Esc / tap outside: an edit goes back to the guest, anything else closes. */
+  panelClosed() {
+    if (this.mode === 'edit' && this.selected) this.mode = 'view';
+    else this.closePanel();
+  }
+  get panelTitle(): string {
+    if (this.mode === 'new') return 'Add guest';
+    if (this.mode === 'edit') return 'Edit guest';
+    return this.selected?.name || '';
+  }
+  get panelSubtitle(): string {
+    const g = this.selected;
+    if (!g || this.mode === 'new') return '';
+    return [g.note, g.phone].filter(Boolean).join(' · ');
+  }
+  get panelIcon(): string { return this.mode === 'view' ? 'badge' : 'person_add'; }
 
   async saveGuest() {
     if (!this.event || this.busy) return;

@@ -13,6 +13,7 @@ import {
 import { Shopcart } from '../../models/ticket.model';
 import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
 import { EventService } from '../../core/event.service';
+import { AuthService } from '../../core/auth.service';
 import { EmailService } from '../../core/email.service';
 import { EmailBatchTrackerService } from '../../core/email-batch-tracker.service';
 import { EmailDialogsService } from '../email/email-dialogs.service';
@@ -63,8 +64,19 @@ export class BookingsComponent implements OnInit, OnDestroy {
     private eventService: EventService,
     private emailService: EmailService,
     private emailDialogs: EmailDialogsService,
-    private emailTracker: EmailBatchTrackerService
+    private emailTracker: EmailBatchTrackerService,
+    private auth: AuthService
   ) { }
+
+  /** View-only people (Helpdesk, a "box-office:read" grant alone): no Export, Bulk Upload or Edit. */
+  get readOnly(): boolean {
+    return !!this.auth.boxOfficeReadOnly?.(this.auth.currentUser);
+  }
+
+  /** Bulk Upload: top roles, the Box Office Team Lead, "box-office:manage" (the server checks again). */
+  get canBulkUpload(): boolean {
+    return !this.readOnly && (this.auth.canManageBoxOffice?.(this.auth.currentUser) ?? true);
+  }
 
   ngOnInit() {
     // Reload whenever the active event changes, not just on page load —

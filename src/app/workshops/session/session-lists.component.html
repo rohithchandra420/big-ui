@@ -48,7 +48,7 @@
   </div>
 
   <!-- Find a person: scan or search -->
-  <div class="sl-find">
+  <div *ngIf="!readOnly" class="sl-find">
     <button type="button" class="btn-cta sl-scan" (click)="scan()"
             [disabled]="busy || (tab === 'list' && !d.registrationOpen) || (tab === 'door' && doorClosed)">
       <mat-icon>qr_code_scanner</mat-icon>Scan wrist band
@@ -107,8 +107,8 @@
                   <ng-template #waiting><span class="muted">{{ grp.key === 'pre' ? 'Not here yet' : 'Waiting' }}</span></ng-template>
                 </td>
                 <td class="acts">
-                  <button type="button" class="pill-btn primary" *ngIf="!e.attendedAt && grp.key !== 'pre'" (click)="letIn(e)" [disabled]="busy || doorClosed">Let in</button>
-                  <button type="button" class="pill-btn" *ngIf="!e.attendedAt" (click)="remove(e)" [disabled]="busy">Remove</button>
+                  <button type="button" class="pill-btn primary" *ngIf="!readOnly && (!e.attendedAt && grp.key !== 'pre')" (click)="letIn(e)" [disabled]="busy || doorClosed">Let in</button>
+                  <button type="button" class="pill-btn" *ngIf="!readOnly && (!e.attendedAt)" (click)="remove(e)" [disabled]="busy">Remove</button>
                 </td>
               </tr>
             </tbody>

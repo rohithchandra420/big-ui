@@ -11,7 +11,8 @@ export class AuthPermissionGuard implements CanActivate {
     canActivate(route: ActivatedRouteSnapshot): boolean | UrlTree | Observable<boolean | UrlTree> | Promise<boolean | UrlTree> {
         const requiredRoles: string[] = route.data['roles'] || [];
         const requiredPermissions: string[] = route.data['permissions'] || [];
-        const requiredDepts: string[] = route.data['departments'] || [];
+        // Members of a department with one of these built-in KEYS (never matched by name).
+        const requiredDeptKeys: string[] = route.data['departmentKeys'] || [];
 
         return this.authService.user.pipe(take(1), map(user => {
             if (!user) return this.router.parseUrl('/login');
@@ -19,8 +20,8 @@ export class AuthPermissionGuard implements CanActivate {
             const hasRole = requiredRoles.length === 0 || requiredRoles.includes(user.role);
             const hasPerm = requiredPermissions.length > 0 &&
                 requiredPermissions.some(p => this.authService.hasPermission(user, p));
-            const hasDept = requiredDepts.length > 0 &&
-                requiredDepts.some(d => this.authService.hasDepartmentAccess(user, d));
+            const hasDept = requiredDeptKeys.length > 0 &&
+                requiredDeptKeys.some(k => this.authService.inDepartmentKey(user, k));
 
             if (hasRole || hasPerm || hasDept) return true;
             return this.router.parseUrl('');

@@ -440,12 +440,9 @@ export class TentFieldComponent implements OnInit, AfterViewInit, OnDestroy {
     return [...n.entries()].map(([g, c]) => c + ' ' + g).join(' · ');
   }
 
-  /** Same rule as Inventory's Vacate: admin roles or Box Office write access (the server checks too). */
+  /** Same rule as Inventory's Vacate: DEV/DIR/ADMIN, Tenting Write and up, or Box Office Write (the server checks too). */
   get canManage(): boolean {
-    const user = this.auth.currentUser;
-    if (!user) return false;
-    if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
-    return this.auth.hasPermission(user, 'box-office:write');
+    return this.auth.canVacateTents(this.auth.currentUser);
   }
 
   vacating = '';

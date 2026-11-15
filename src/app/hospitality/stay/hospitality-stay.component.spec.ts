@@ -10,6 +10,7 @@ import { HospitalityService } from '../hospitality.service';
 import { StayOverview, StayUnitItem } from '../hospitality.model';
 import { AppSelectComponent } from '../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../shared/app-select/app-option.component';
+import { SlidePanelComponent } from '../../shared/slide-panel/slide-panel.component';
 
 const night = (date: string, taken = 0, open = true) => ({ date, taken, open });
 const unit = (name: string, beds: number, nights: { date: string; taken: number; open: boolean }[], extra: Partial<StayUnitItem> = {}): StayUnitItem => ({
@@ -39,7 +40,7 @@ describe('HospitalityStayComponent', () => {
     service.getStay.and.callFake(() => Promise.resolve(overview()));
     confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
     await TestBed.configureTestingModule({
-      declarations: [HospitalityStayComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [HospitalityStayComponent, AppSelectComponent, AppOptionComponent, SlidePanelComponent],
       imports: [FormsModule],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
@@ -62,6 +63,43 @@ describe('HospitalityStayComponent', () => {
     expect(component.calFrom).toBe('2026-10-21');           // today, inside the mess dates
     expect(component.calDates[0]).toBe('2026-10-21');
     expect(component.calDates[component.calDates.length - 1]).toBe('2026-10-25');
+  }));
+
+  it('a unit opens its details in the slide panel, with its stays and actions', fakeAsync(() => {
+    start();
+    const heads = fixture.nativeElement.querySelectorAll('.hy-uhead');
+    (heads[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const panel = fixture.nativeElement.querySelector('.sp-panel') as HTMLElement;
+    expect(panel.querySelector('.sp-title')!.textContent!.trim()).toBe('A-02');
+    expect(panel.querySelector('.sp-sub')!.textContent!.trim()).toBe('Dorm · 2 beds');
+    expect(panel.textContent).toContain('Nila Das');
+    expect(panel.textContent).not.toContain('Delete');           // has a stay
+    expect(heads[1].classList).toContain('sel');
+    (panel.querySelector('.sp-x') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(component.expanded).toBe('');
+    expect(fixture.nativeElement.querySelector('.sp-panel')).toBeNull();
+  }));
+
+  it('One unit opens its form in the slide panel; Back to today on the night and calendar steppers', fakeAsync(() => {
+    start();
+    component.newUnit(false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.sp-title').textContent.trim()).toBe('New unit');
+    expect(fixture.nativeElement.querySelector('.sp-panel #hy-b')).toBeTruthy();
+    (fixture.nativeElement.querySelector('.sp-x') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(component.form).toBeNull();
+
+    expect(fixture.nativeElement.querySelector('.hy-night .day-nav-today')).toBeNull();   // tonight already
+    component.shiftCal(1);
+    expect(component.calFrom).toBe('2026-10-22');
+    component.calToToday();
+    expect(component.calFrom).toBe('2026-10-21');
+    component.statsNight = '2026-10-23';
+    component.statsToToday();
+    expect(component.statsNight).toBe('2026-10-21');
   }));
 
   it('free units: a bed every night, open nights only; a different gender sorts last with a warning', fakeAsync(() => {

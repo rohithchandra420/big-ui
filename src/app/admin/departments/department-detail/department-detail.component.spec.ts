@@ -1,5 +1,5 @@
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of, throwError } from 'rxjs';
@@ -7,6 +7,9 @@ import { DepartmentDetailComponent } from './department-detail.component';
 import { AdminService, DeptDetail } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
 import { AuthService } from '../../../core/auth.service';
+import { VolunteersService } from '../../../volunteers/volunteers.service';
+import { AppSelectComponent } from '../../../shared/app-select/app-select.component';
+import { AppOptionComponent } from '../../../shared/app-select/app-option.component';
 
 const mockDetail: DeptDetail = {
   _id: 'd1',
@@ -30,30 +33,34 @@ describe('DepartmentDetailComponent', () => {
   let fixture: ComponentFixture<DepartmentDetailComponent>;
   let adminServiceSpy: jasmine.SpyObj<AdminService>;
   let notificationSpy: jasmine.SpyObj<NotificationService>;
+  let volunteersSpy: jasmine.SpyObj<VolunteersService>;
 
   beforeEach(async () => {
+    volunteersSpy = jasmine.createSpyObj('VolunteersService', ['need', 'setNeed']);
+    volunteersSpy.need.and.returnValue(Promise.resolve({ needed: 4, have: 1, canSet: true }));
+    volunteersSpy.setNeed.and.returnValue(Promise.resolve({ needed: 6, have: 1, canSet: true }));
     adminServiceSpy = jasmine.createSpyObj('AdminService', [
       'getDepartmentDetail', 'getAllUsers', 'updateDepartment', 'createDepartment', 'getDepartments'
     ]);
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
 
     adminServiceSpy.getDepartments.and.returnValue(of([
-      { _id: 'd-m1', name: 'Music Stage A', key: 'music' }, { _id: 'd-x', name: 'Operations', key: 'operations' }
+      { _id: 'd-m1', name: 'Workshop Tent A', key: 'workshop' }, { _id: 'd-x', name: 'Operations', key: 'general' }
     ] as any));
     adminServiceSpy.getDepartmentDetail.and.returnValue(of(mockDetail));
     adminServiceSpy.getAllUsers.and.returnValue(of(allUsers));
 
     await TestBed.configureTestingModule({
-      declarations: [DepartmentDetailComponent],
+      declarations: [DepartmentDetailComponent, AppSelectComponent, AppOptionComponent],
       imports: [
         MatAutocompleteModule, ReactiveFormsModule
       ],
       providers: [
         { provide: AdminService, useValue: adminServiceSpy },
         { provide: NotificationService, useValue: notificationSpy },
+        { provide: VolunteersService, useValue: volunteersSpy },
         { provide: AuthService, useValue: {
-          deptNameToKey: (n: string) => (n || '').toLowerCase().replace(/\s+/g, '-'),
-          deptKeyOf: (d: any) => d?.key || (d?.name || '').toLowerCase().replace(/\s+/g, '-')
+          deptKeyOf: (d: any) => (['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash'].includes(d?.key) ? d.key : (d ? 'general' : ''))
         } }
       ],
       schemas: [NO_ERRORS_SCHEMA]
@@ -108,29 +115,31 @@ describe('DepartmentDetailComponent', () => {
       fixture.detectChanges();
     });
 
-    it('suggests existing keys and says when the key is shared (shared keys)', () => {
-      expect(component.existingKeys).toEqual(['music', 'operations']);
-      component.editForm.get('key')!.setValue('music');
-      expect(component.sharedWith).toBe('Music Stage A');
+    it('offers only the built-in keys, and says when the picked key is shared', () => {
+      expect(component.accessKeys.map(k => k.key)).toEqual(['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk']);
+      component.editForm.get('key')!.setValue('workshop');
+      expect(component.sharedWith).toBe('Workshop Tent A');
+      expect(component.keyAbout).toContain('door');
       fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain('Shared with: Music Stage A — same access');
-      component.editForm.get('key')!.setValue('brand-new');
+      expect(fixture.nativeElement.textContent).toContain('Shared with: Workshop Tent A — same access');
+      component.editForm.get('key')!.setValue('wash');
       expect(component.sharedWith).toBe('');
     });
 
-    it('starts blank, with a Key field that follows the name until edited', () => {
+    it('starts on "general" (no page access) and the key never follows the name', () => {
       expect(component.mode).toBe('create');
+      expect(component.editForm.get('key')!.value).toBe('general');
       component.editForm.get('name')!.setValue('Box Office');
-      expect(component.editForm.get('key')!.value).toBe('box-office');
-      component.editForm.get('key')!.setValue('gate');
-      component.onKeyInput();
-      component.editForm.get('name')!.setValue('Front Gate');
-      expect(component.editForm.get('key')!.value).toBe('gate');
+      expect(component.editForm.get('key')!.value).toBe('general');
+      expect(component.sharedWith).toBe('');   // nothing to share on "general"
+      expect(component.formInvalid).toBeFalse();
     });
 
-    it('refuses a bad key', () => {
+    it('refuses a key that is not built-in', () => {
       component.editForm.get('name')!.setValue('Ops');
-      component.editForm.get('key')!.setValue('Ops Team');
+      component.editForm.get('key')!.setValue('finance');
+      expect(component.formInvalid).toBeTrue();
+      component.editForm.get('key')!.setValue('');
       expect(component.formInvalid).toBeTrue();
     });
 
@@ -139,11 +148,11 @@ describe('DepartmentDetailComponent', () => {
       adminServiceSpy.createDepartment.and.returnValue(of({ _id: 'd5', name: 'Finance' }));
       adminServiceSpy.updateDepartment.and.returnValue(of({}));
       component.editForm.get('name')!.setValue('Finance');
+      component.editForm.get('key')!.setValue('wash');   // the picked built-in key is what is sent
       component.editedTls = [{ _id: 'tl2', name: 'Carol DIR' }];
-      component.editedVolunteers = [{ _id: 'v3', name: 'Eve VOL' }];
       component.save();
-      expect(adminServiceSpy.createDepartment).toHaveBeenCalledWith({ name: 'Finance', key: 'finance', description: '' });
-      expect(adminServiceSpy.updateDepartment).toHaveBeenCalledWith('d5', { addUserIds: ['tl2', 'v3'] });
+      expect(adminServiceSpy.createDepartment).toHaveBeenCalledWith({ name: 'Finance', key: 'wash', description: '' });
+      expect(adminServiceSpy.updateDepartment).toHaveBeenCalledWith('d5', { addUserIds: ['tl2'] });
       expect(changed).toHaveBeenCalledWith('d5');
       expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Department created');
     });
@@ -162,12 +171,59 @@ describe('DepartmentDetailComponent', () => {
     });
   });
 
+  describe('volunteers needed (for the sidebar event)', () => {
+    it('is hidden without an event, and nothing is sent', () => {
+      expect(component.showNeeded).toBeFalse();
+      adminServiceSpy.updateDepartment.and.returnValue(of({}));
+      component.enterEditMode();
+      component.save();
+      expect(volunteersSpy.need).not.toHaveBeenCalled();
+      expect(volunteersSpy.setNeed).not.toHaveBeenCalled();
+    });
+
+    it('Edit shows the saved number and sends it only when changed', fakeAsync(() => {
+      component.eventId = 'e1';
+      adminServiceSpy.updateDepartment.and.returnValue(of({}));
+      component.enterEditMode();
+      flushMicrotasks();
+      expect(volunteersSpy.need).toHaveBeenCalledWith('e1', 'd1');
+      expect(component.editForm.get('needed')!.value).toBe(4);
+      component.save();
+      flushMicrotasks();
+      expect(volunteersSpy.setNeed).not.toHaveBeenCalled();
+
+      component.enterEditMode();
+      flushMicrotasks();
+      component.editForm.get('needed')!.setValue(6);
+      component.save();
+      flushMicrotasks();
+      expect(volunteersSpy.setNeed).toHaveBeenCalledWith('e1', 'd1', 6);
+      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Department updated');
+    }));
+
+    it('Create sends the number for the new department; a bad number blocks Save', fakeAsync(() => {
+      component.deptId = null;
+      component.eventId = 'e1';
+      component.reset();
+      adminServiceSpy.createDepartment.and.returnValue(of({ _id: 'd5', name: 'Finance' }));
+      component.editForm.get('name')!.setValue('Finance');
+      component.editForm.get('needed')!.setValue(2.5);
+      expect(component.formInvalid).toBeTrue();
+      component.editForm.get('needed')!.setValue(8);
+      component.save();
+      flushMicrotasks();
+      expect(volunteersSpy.setNeed).toHaveBeenCalledWith('e1', 'd5', 8);
+      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Department created');
+
+      component.editForm.get('key')!.setValue('volunteer');   // the Unassigned pool has no number
+      expect(component.showNeeded).toBeFalse();
+    }));
+  });
+
   describe('enterEditMode()', () => {
-    it('copies TLs and volunteers into working sets', () => {
+    it('copies the Team Leads into the working set', () => {
       component.enterEditMode();
       expect(component.editedTls).toEqual([{ _id: 'tl1', name: 'Alice TL' }]);
-      expect(component.editedVolunteers.length).toBe(1);
-      expect(component.editedVolunteers[0]._id).toBe('v1');
     });
 
     it('populates the edit form with current name and description', () => {
@@ -195,12 +251,10 @@ describe('DepartmentDetailComponent', () => {
   });
 
   describe('cancel()', () => {
-    it('leaves edit for the details and clears warnings', () => {
+    it('leaves edit for the details', () => {
       component.enterEditMode();
-      component.volWarnings = { v2: 'Finance' };
       component.cancel();
       expect(component.mode).toBe('view');
-      expect(component.volWarnings).toEqual({});
     });
   });
 
@@ -211,73 +265,6 @@ describe('DepartmentDetailComponent', () => {
       component.removeTl('tl1');
       expect(component.editedTls.map(t => t._id)).not.toContain('tl1');
       expect(component.editedTls.map(t => t._id)).toContain('tl2');
-    });
-  });
-
-  describe('removeVol()', () => {
-    it('removes the specified volunteer from editedVolunteers', () => {
-      component.enterEditMode();
-      component.editedVolunteers = [
-        { _id: 'v1', name: 'Bob VOL', departments: [] },
-        { _id: 'v3', name: 'Eve VOL', departments: [] }
-      ];
-      component.removeVol('v1');
-      expect(component.editedVolunteers.map(v => v._id)).not.toContain('v1');
-    });
-
-    it('clears the reassignment warning for the removed volunteer', () => {
-      component.enterEditMode();
-      component.editedVolunteers = [{ _id: 'v2', name: 'Dave VOL', departments: [] }];
-      component.volWarnings = { v2: 'Finance' };
-      component.removeVol('v2');
-      expect(component.volWarnings['v2']).toBeUndefined();
-    });
-  });
-
-  describe('onVolSelected()', () => {
-    beforeEach(() => {
-      component.allUsers = allUsers;
-      component.detail = mockDetail;
-      component.editedVolunteers = [];
-      component.volWarnings = {};
-    });
-
-    it('adds selected volunteer to editedVolunteers', () => {
-      component.onVolSelected({ _id: 'v3', name: 'Eve VOL' });
-      expect(component.editedVolunteers.map(v => v._id)).toContain('v3');
-    });
-
-    it('records a warning when VOL is already in a different department', () => {
-      // v2 belongs to Finance (d9), not Box Office (d1)
-      component.onVolSelected({ _id: 'v2', name: 'Dave VOL' });
-      expect(component.volWarnings['v2']).toBe('Finance');
-    });
-
-    it('does not record a warning when VOL belongs to the current department', () => {
-      // v1 belongs to Box Office (d1) — same as current dept
-      component.onVolSelected({ _id: 'v1', name: 'Bob VOL' });
-      expect(component.volWarnings['v1']).toBeUndefined();
-    });
-
-    it('does not record a warning when VOL has no existing departments', () => {
-      component.onVolSelected({ _id: 'v3', name: 'Eve VOL' });
-      expect(component.volWarnings['v3']).toBeUndefined();
-    });
-  });
-
-  describe('warningList', () => {
-    it('returns warning entries for each vol in volWarnings', () => {
-      component.editedVolunteers = [{ _id: 'v2', name: 'Dave VOL', departments: [] }];
-      component.volWarnings = { v2: 'Finance' };
-      const list = component.warningList;
-      expect(list).toHaveSize(1);
-      expect(list[0].name).toBe('Dave VOL');
-      expect(list[0].fromDept).toBe('Finance');
-    });
-
-    it('returns empty array when no warnings', () => {
-      component.volWarnings = {};
-      expect(component.warningList).toHaveSize(0);
     });
   });
 
@@ -302,6 +289,14 @@ describe('DepartmentDetailComponent', () => {
       component.save();
       const payload = adminServiceSpy.updateDepartment.calls.mostRecent().args[1];
       expect(payload.removeUserIds).toContain('tl1');
+    });
+
+    it('never sends volunteers: they are assigned on the Volunteers page', () => {
+      component.editedTls = [];
+      component.save();
+      const payload = adminServiceSpy.updateDepartment.calls.mostRecent().args[1];
+      expect(payload.removeUserIds).toEqual(['tl1']);   // v1 stays out of both lists
+      expect(payload.addUserIds).toEqual([]);
     });
 
     it('sends empty arrays when nothing changed', () => {

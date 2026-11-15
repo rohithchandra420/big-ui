@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import { NotificationSettingsComponent } from './notification-settings.component';
 import { PushService } from '../../core/push.service';
 import { NotificationService } from '../../core/notification.service';
+import { AuthService } from '../../core/auth.service';
 
 describe('NotificationSettingsComponent', () => {
   let fixture: ComponentFixture<NotificationSettingsComponent>;
@@ -11,7 +12,10 @@ describe('NotificationSettingsComponent', () => {
   const el = () => fixture.nativeElement as HTMLElement;
   const button = (label: string) => Array.from(el().querySelectorAll('button')).find(b => b.textContent?.trim() === label) as HTMLButtonElement | undefined;
 
+  let auth: { currentUser: any; canViewWash: jasmine.Spy };
+
   beforeEach(() => {
+    auth = { currentUser: { role: 'VOL' }, canViewWash: jasmine.createSpy('canViewWash').and.returnValue(false) };
     push = {
       state$: new BehaviorSubject('off'),
       config$: new BehaviorSubject({ enabled: true, publicKey: 'k', preferences: { emailBatch: true, announcements: false, meals: true }, canAnnounce: false }),
@@ -24,7 +28,10 @@ describe('NotificationSettingsComponent', () => {
     snack = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     TestBed.configureTestingModule({
       declarations: [NotificationSettingsComponent],
-      providers: [{ provide: PushService, useValue: push }, { provide: NotificationService, useValue: snack }]
+      providers: [
+        { provide: PushService, useValue: push }, { provide: NotificationService, useValue: snack },
+        { provide: AuthService, useValue: auth }
+      ]
     });
     fixture = TestBed.createComponent(NotificationSettingsComponent);
     fixture.detectChanges();
@@ -69,4 +76,13 @@ describe('NotificationSettingsComponent', () => {
     boxes[0].click(); tick();
     expect(push.setPreference).toHaveBeenCalledWith('emailBatch', false);
   }));
+
+  it('adds the WASH alerts switch only for people who get WASH alerts', () => {
+    expect(el().textContent).not.toContain('WASH alerts');
+    auth.canViewWash.and.returnValue(true);
+    const again = TestBed.createComponent(NotificationSettingsComponent);
+    again.detectChanges();
+    expect(again.nativeElement.querySelectorAll('.ns-pref input').length).toBe(4);
+    expect(again.nativeElement.textContent).toContain('WASH alerts');
+  });
 });

@@ -15,7 +15,7 @@
             [attr.aria-label]="gateFeedback.muted ? 'Turn gate sound on' : 'Mute gate sound'">
       <mat-icon>{{ gateFeedback.muted ? 'volume_off' : 'volume_up' }}</mat-icon>
     </button>
-    <button class="btn-cta" *ngIf="!showSpotRegistration" (click)="openSpotRegistration()">+ Spot Registration</button>
+    <button class="btn-cta" *ngIf="!readOnly && (!showSpotRegistration)" (click)="openSpotRegistration()">+ Spot Registration</button>
   </div>
   <!-- Navigation Tabs: Back + this section's pages -->
   <app-section-header></app-section-header>

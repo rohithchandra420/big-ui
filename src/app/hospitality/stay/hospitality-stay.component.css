@@ -23,7 +23,7 @@
 .hy-uic { width: 34px; height: 34px; border-radius: 10px; background: #eef3ef; color: var(--color-primary); display: grid; place-items: center; flex: none; }
 .hy-occ { font-size: 12px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
 .hy-occ.full { color: #b45309; }
-.hy-udet { padding: 0 14px 12px 58px; display: grid; gap: 6px; font-size: 13px; color: var(--text-primary); }
+.hy-udet { display: grid; gap: 8px; font-size: 13px; color: var(--text-primary); }
 
 /* form */
 .hy-form { display: grid; gap: 12px; }
@@ -73,5 +73,4 @@
   .hy-two { grid-template-columns: 1fr; }
   .hy-tabs { width: 100%; }
   .hy-tabs button { flex: 1; justify-content: center; padding: 6px 6px; }
-  .hy-udet { padding-left: 14px; }
 }

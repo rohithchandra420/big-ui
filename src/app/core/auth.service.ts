@@ -8,6 +8,7 @@ import { Router } from "@angular/router";
 import { environment } from "src/environments/environment.development";
 import { NotificationService } from "./notification.service";
 import { PushService } from "./push.service";
+import { DEFAULT_ACCESS_KEY, accessKey, isAccessKey } from "./access-keys";
 
 @Injectable()
 export class AuthService {
@@ -31,15 +32,13 @@ export class AuthService {
         return user.permissions || [];
     }
 
-    deptNameToKey(name: string): string {
-        return (name || '').toLowerCase().replace(/\s+/g, '-');
-    }
-
-    /** A department's permission key: its fixed `key`, or the name-based key
-     *  for departments not migrated yet (same fallback as big-api's deptKeyOf). */
+    /** A department's access key — always one of the built-in keys
+     *  (core/access-keys.ts): its stored `key` when that is a built-in one,
+     *  otherwise "general" (no page access). The NAME is never used — same
+     *  rule as big-api's deptKeyOf. */
     deptKeyOf(dept: { name?: string; key?: string } | null | undefined): string {
         if (!dept) return '';
-        return dept.key || this.deptNameToKey(dept.name || '');
+        return isAccessKey(dept.key) ? dept.key! : DEFAULT_ACCESS_KEY;
     }
 
     // Effective module -> best tier, including a TL's automatic 'manage' over their own department(s)
@@ -58,7 +57,8 @@ export class AuthService {
         if (user.role === 'TL') {
             (user.departments || []).forEach(d => {
                 const key = this.deptKeyOf(d.department);
-                if (key) map[key] = 'manage';
+                // Only keys that give something ("general" has no tiers).
+                if (key && accessKey(key)?.tiers.length) map[key] = 'manage';
             });
         }
         return map;
@@ -96,7 +96,7 @@ export class AuthService {
     /** Reports (with names): the Run group and workshop:read (any tier). */
     canReadWorkshops(user: User | null): boolean {
         if (!user) return false;
-        return this.canRunWorkshops(user) || (user.permissions || []).some(p => p.startsWith('workshop:'));
+        return this.canRunWorkshops(user) || (user.permissions || []).some(p => p.startsWith('workshop:')) || this.isHelpdesk(user);
     }
 
     /** Hospitality (H1), same rule as big-api utils/hospitalityAccess.js —
@@ -117,10 +117,123 @@ export class AuthService {
         return (user.permissions || []).some(p => p.startsWith('medical:'));
     }
 
-    hasDepartmentAccess(user: User, deptName: string): boolean {
-        return (user.departments || []).some(d =>
-            d.department?.name?.toLowerCase() === deptName.toLowerCase()
-        );
+    /** WASH (WASH_CONTEXT.md), same rule as big-api utils/washAccess.js —
+     *  Manage (Setup): DEV/DIR/ADMIN, the WASH department's TL, wash:manage. */
+    canManageWash(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        if (user.role === 'TL' && this.inDepartmentKey(user, 'wash')) return true;
+        return (user.permissions || []).includes('wash:manage');
+    }
+
+    /** Log (Refilled / Cleaned / …): the Manage group, every WASH member, wash:write. */
+    canLogWash(user: User | null): boolean {
+        if (!user) return false;
+        if (this.canManageWash(user) || this.inDepartmentKey(user, 'wash')) return true;
+        return (user.permissions || []).includes('wash:write');
+    }
+
+    /** View (Monitor, no buttons): the Log group and wash:read (any tier). */
+    canViewWash(user: User | null): boolean {
+        if (!user) return false;
+        return this.canLogWash(user) || (user.permissions || []).some(p => p.startsWith('wash:')) || this.isHelpdesk(user);
+    }
+
+    /** Volunteers page, same rule as big-api utils/volunteerAccess.js. The Volunteer
+     *  department is the Unassigned pool, so being a MEMBER gives nothing.
+     *  Assign (move / free): DEV/DIR/ADMIN, the Volunteer department's TL, volunteer:write and up. */
+    canAssignVolunteers(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        if (user.role === 'TL' && this.inDepartmentKey(user, 'volunteer')) return true;
+        return (user.permissions || []).some(p => p === 'volunteer:write' || p === 'volunteer:manage');
+    }
+
+    /** Announcements page and the full Tasks list, same rule as big-api utils/helpdeskAccess.js:
+     *  DEV/DIR/ADMIN, every member of a Helpdesk department (key `helpdesk`), helpdesk:manage. */
+    canAnnounce(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.isHelpdesk(user);
+    }
+
+    /** Helpdesk: every member of a Helpdesk department (key `helpdesk`), or helpdesk:manage.
+     *  HD2: Helpdesk sees the other sections read-only (same rule as big-api isHelpdeskUser);
+     *  never Medical Desk, revenue, Email Report or UAT Reset. */
+    isHelpdesk(user: User | null): boolean {
+        if (!user) return false;
+        return this.inDepartmentKey(user, 'helpdesk') || (user.permissions || []).includes('helpdesk:manage');
+    }
+
+    /** Box Office staff: DEV/DIR/ADMIN, Box Office members, any box-office grant. */
+    isBoxOfficeStaff(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.inDepartmentKey(user, 'box-office') || this.hasPermission(user, 'box-office:read');
+    }
+
+    /**
+     * Box Office desk work (Spot Registration, edit, Admit, bands, tents) — same
+     * rule as big-api's middleware/bandAuth.js (user-approved 2026-11-15):
+     * DEV/DIR/ADMIN, Box Office members, "box-office:write" or higher.
+     */
+    canWorkBoxOffice(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.inDepartmentKey(user, 'box-office') || this.hasPermission(user, 'box-office:write');
+    }
+
+    /** Bulk Upload: DEV/DIR/ADMIN, the Box Office Team Lead, "box-office:manage". */
+    canManageBoxOffice(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        if ((user.permissions || []).includes('box-office:manage')) return true;
+        return user.role === 'TL' && this.inDepartmentKey(user, 'box-office');
+    }
+
+    /** Sees Box Office but changes nothing: Helpdesk, or a "box-office:read" grant alone. */
+    boxOfficeReadOnly(user: User | null): boolean {
+        return !!user && !this.canWorkBoxOffice(user);
+    }
+
+    /** Hospitality's read-only pages (Today, Guests, Report, Stay): the Manage group and Helpdesk. */
+    canViewHospitality(user: User | null): boolean {
+        return this.canManageHospitality(user) || this.isHelpdesk(user);
+    }
+
+    /** View (the page and profiles): the Assign group and volunteer:read. */
+    canViewVolunteers(user: User | null): boolean {
+        if (!user) return false;
+        return this.canAssignVolunteers(user) || (user.permissions || []).includes('volunteer:read') || this.isHelpdesk(user);
+    }
+
+    /** Accommodation (key `tenting`), same rule as big-api utils/tentingAccess.js —
+     *  Read (see Setup, Inventory, Fields): DEV/DIR/ADMIN, every Tenting member, tenting:read and up. */
+    canReadTenting(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.inDepartmentKey(user, 'tenting') || this.hasPermission(user, 'tenting:read') || this.isHelpdesk(user);
+    }
+
+    /** Write (create / edit / delete units, vacate): DEV/DIR/ADMIN, the Tenting TL, tenting:write and up.
+     *  (hasPermission counts a TL's automatic Manage on their own key.) */
+    canWriteTenting(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.hasPermission(user, 'tenting:write');
+    }
+
+    /** Manage (create, change and lay out tent fields): DEV/DIR/ADMIN, the Tenting TL, tenting:manage. */
+    canManageTentFields(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        return this.hasPermission(user, 'tenting:manage');
+    }
+
+    /** Vacate a tent slot: the Tenting Write group, or Box Office Write (as before). */
+    canVacateTents(user: User | null): boolean {
+        if (!user) return false;
+        return this.canWriteTenting(user) || this.hasPermission(user, 'box-office:write');
     }
 
     get currentUser$() { return this.user.asObservable(); }

@@ -79,17 +79,19 @@ export class NavAccessService implements OnDestroy {
     if (!this.user) return false;
     if (TOP_ROLES.includes(this.role)) return true;
     return this.authService.hasPermission(this.user, 'box-office:read') ||
-           this.authService.hasDepartmentAccess(this.user, 'Box Office');
+           this.authService.inDepartmentKey(this.user, 'box-office') ||
+           this.isHelpdesk;   // HD2: read-only
   }
 
-  /** Accommodation Setup creates real inventory — admin roles only (ACCOMMODATION_CONTEXT.md #9). */
+  /** Accommodation Setup: DEV/DIR/ADMIN and the Tenting team (key `tenting`, Read and up) —
+   *  creating units needs Write, the page hides the form otherwise. */
   get canSeeAccommodationSetup(): boolean {
-    return TOP_ROLES.includes(this.role);
+    return this.authService.canReadTenting(this.user);
   }
 
-  /** Inventory (view) uses the Box Office rule: tent inventory is Box Office's concern too. */
+  /** Inventory and Fields (view): the Tenting team, and Box Office as before. */
   get canSeeAccommodationInventory(): boolean {
-    return this.canSeeBoxOffice;
+    return this.canSeeBoxOffice || this.authService.canReadTenting(this.user);
   }
 
   /** Workshops › Setup: the Plan group (same rule as the server). */
@@ -98,15 +100,33 @@ export class NavAccessService implements OnDestroy {
   /** Workshops › Reports: the Workshop team and workshop:read. */
   get canSeeWorkshopReports(): boolean { return this.authService.canReadWorkshops(this.user); }
 
+  /** Helpdesk (HD2): sees the other sections read-only. */
+  private get isHelpdesk(): boolean { return !!this.authService.isHelpdesk?.(this.user); }
+
+  /** Hospitality Today / Guests / Report / Stay: the Manage group, and Helpdesk read-only. */
+  get canSeeHospitalityView(): boolean { return this.canSeeHospitality || this.isHelpdesk; }
+
   /** Hospitality: DEV/DIR/ADMIN, the Hospitality TL, hospitality:manage. */
   get canSeeHospitality(): boolean { return this.authService.canManageHospitality(this.user); }
 
   /** Medical Desk: DEV, DIR, the Medical department, medical grants — never ADMIN. */
   get canSeeMedical(): boolean { return this.authService.canUseMedical(this.user); }
 
+  /** WASH › Monitor: the WASH team and wash grants (any tier). */
+  get canSeeWash(): boolean { return this.authService.canViewWash(this.user); }
+
+  /** WASH › Setup: DEV/DIR/ADMIN, the WASH TL, wash:manage. */
+  get canSeeWashSetup(): boolean { return this.authService.canManageWash(this.user); }
+
+  /** Volunteers: DEV/DIR/ADMIN, the Volunteer department's TL, volunteer grants — never by membership. */
+  get canSeeVolunteers(): boolean { return this.authService.canViewVolunteers(this.user); }
+
   get canSeeAdminMenu(): boolean { return ADMIN_MENU_ROLES.includes(this.role); }
 
-  /** Departments, Events, Announcements, Public Page. */
+  /** Announcements: DEV/DIR/ADMIN and Helpdesk (department key `helpdesk`, helpdesk:manage). */
+  get canSeeAnnouncements(): boolean { return this.authService.canAnnounce(this.user); }
+
+  /** Departments, Events, Public Page. */
   get canSeeAdminTopPages(): boolean { return TOP_ROLES.includes(this.role); }
 
   /** May this person see the tab for this route? */
@@ -123,19 +143,25 @@ export class NavAccessService implements OnDestroy {
       case '/workshops/reports': return this.canSeeWorkshopReports;
       case '/workshops/setup': return this.canSeeWorkshopSetup;
       case '/hospitality':
-      case '/hospitality/desk':
       case '/hospitality/guests':
       case '/hospitality/report':
-      case '/hospitality/stay':
+      case '/hospitality/stay': return this.canSeeHospitalityView;
+      case '/hospitality/desk':
       case '/hospitality/setup': return this.canSeeHospitality;
       case '/medical':
       case '/medical/records':
       case '/medical/report': return this.canSeeMedical;
-      case '/admin/user': return this.canSeeAdminMenu;
+      case '/wash':
+      case '/wash/stock':
+      case '/wash/report': return this.canSeeWash;
+      case '/wash/setup': return this.canSeeWashSetup;
+      case '/volunteers':
+      case '/volunteers/deposits': return this.canSeeVolunteers;
+      case '/admin/user': return this.canSeeAdminMenu || this.isHelpdesk;   // Helpdesk: view only
       case '/admin/departments':
       case '/admin/events':
-      case '/admin/announcements':
       case '/admin/public-page': return this.canSeeAdminTopPages;
+      case '/admin/announcements': return this.canSeeAnnouncements;
       // Both sat inside the Admin group before, so they keep needing an Admin-menu role.
       case '/admin/email-report': return this.canSeeAdminMenu && this.canSeeEmailReport;
       case '/admin/uat-reset': return this.canSeeAdminMenu && this.canSeeUatReset; // UAT-RESET: remove before Production

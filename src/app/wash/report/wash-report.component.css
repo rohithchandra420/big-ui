@@ -1,0 +1,43 @@
+/* WASH › Report. Full width like Bookings; the app shell pads every page — never add page padding. Every text rule sets its colour. */
+.wr-page { padding: 0; color: var(--text-primary); }
+.wr-muted { color: var(--text-secondary); font-size: 13px; margin: 8px 0; }
+.wr-export { display: inline-flex; align-items: center; gap: 6px; }
+.wr-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+.wr-gap { margin-top: 18px; }
+
+.wr-sum { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+.wr-tile { background: #fff; border: 1px solid var(--border-default); border-radius: 12px; padding: 10px 12px; color: var(--text-primary);
+  display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; }
+.wr-tile mat-icon { grid-row: span 2; color: var(--color-secondary); }
+.wr-tile b { font-size: 22px; line-height: 1.1; color: var(--text-primary); }
+.wr-tile small { font-size: 12px; color: var(--text-secondary); }
+.wr-tile.bad { border-color: #c2410c; background: #fdebe2; }
+.wr-tile.bad mat-icon, .wr-tile.bad b { color: #c2410c; }
+.k-water { color: #2b6cb0 !important; }
+.k-toilets { color: #6b46c1 !important; }
+
+.wr-tbl table { width: 100%; border-collapse: collapse; color: var(--text-primary); }
+.wr-tbl th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); padding: 9px 12px; }
+.wr-tbl td { padding: 10px 12px; border-top: 1px solid var(--border-default); color: var(--text-primary); font-size: 13px; vertical-align: middle; }
+.wr-tbl td small { color: var(--text-secondary); }
+.wr-row { cursor: pointer; }
+.wr-row:hover td { background: #f7f8f6; }
+.wr-name { display: flex; align-items: center; gap: 10px; }
+.wr-name b { display: block; color: var(--text-primary); overflow-wrap: anywhere; }
+.wr-name small { font-size: 12px; color: var(--text-secondary); }
+.wr-tbl td.wr-bad { color: #c2410c; font-weight: 600; }
+.wr-end { text-align: right; color: var(--text-muted); width: 40px; }
+
+.wr-kv { display: grid; grid-template-columns: 150px 1fr; gap: 6px 10px; font-size: 13px; margin: 0 0 14px; color: var(--text-primary); }
+.wr-kv dt { color: var(--text-secondary); font-weight: 600; }
+.wr-kv dd { margin: 0; color: var(--text-primary); }
+.wr-tl { list-style: none; margin: 0; padding: 0; }
+.wr-tl li { display: grid; grid-template-columns: 48px 1fr; gap: 8px; font-size: 13px; padding: 8px 0; border-top: 1px solid var(--border-subtle); color: var(--text-primary); }
+.wr-tl li > b { color: var(--color-secondary); }
+.wr-tl small { display: block; font-size: 12px; color: var(--text-secondary); overflow-wrap: anywhere; }
+
+@media (max-width: 900px) { .wr-sum { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 768px) {
+  .wr-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wr-hide { display: none; }
+}

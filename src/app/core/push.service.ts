@@ -8,6 +8,8 @@ export interface NotificationPrefs {
   emailBatch: boolean;
   announcements: boolean;
   meals: boolean;
+  /** WASH alerts: a facility overdue / empty / out of order, stock running low. */
+  wash: boolean;
 }
 
 export interface PushConfig {
@@ -32,7 +34,13 @@ export interface AnnouncementInput {
   publicSession?: string | null;
   /** Staff list (R2): only this event's staff (DEV/DIR/ADMIN always kept); null = BiG-wide. */
   staffEvent?: string | null;
+  /** HD3: the Venue Map pin / area a Task is about (Tasks only). */
+  place?: { kind: 'pin' | 'area'; id: string } | null;
 }
+
+/** HD3: a place a Task can be about. `wash`: set up as a WASH facility. */
+export interface TaskPlaceOption { kind: 'pin' | 'area'; _id: string; name: string; type: string; wash: boolean }
+export interface TaskPlaceList { places: TaskPlaceOption[]; washDepartment: string | null }
 
 export interface Announcement {
   _id: string;
@@ -56,6 +64,10 @@ export interface Announcement {
   publicAlert?: 'none' | 'all' | 'session';
   publicSession?: { _id: string; workshop?: { title: string } } | null;
   publicDelivered?: number;
+  /** A Task's shared status (Helpdesk, HD1); null on every other type. */
+  status?: string | null;
+  /** HD3: where a Task is about (`ref` null once the pin / area is deleted). */
+  place?: { kind: 'pin' | 'area'; ref: string | null; name: string } | null;
 }
 
 /**
@@ -70,7 +82,7 @@ export type PushDeviceState = 'unsupported' | 'ios-needs-install' | 'server-off'
 
 export const PUSH_PROMPT_DISMISSED_KEY = 'pushPromptDismissed';
 
-/** PWA Phase 2 — push notifications on this device, plus announcements (DEV/DIR/ADMIN). */
+/** PWA Phase 2 — push notifications on this device, plus announcements (DEV/DIR/ADMIN and Helpdesk). */
 @Injectable({ providedIn: 'root' })
 export class PushService {
   private url = environment.URL;
@@ -157,6 +169,16 @@ export class PushService {
 
   sendAnnouncement(body: AnnouncementInput) {
     return firstValueFrom(this.http.post<Announcement>(this.url + '/push/announcements', body));
+  }
+
+  /** The departments an announcement can go to (for everyone who may announce). */
+  announcementDepartments() {
+    return this.http.get<{ _id: string; name: string }[]>(this.url + '/push/departments');
+  }
+
+  /** HD3: the event's Venue Map pins and areas a Task can be about. */
+  taskPlaces(eventId: string) {
+    return firstValueFrom(this.http.get<TaskPlaceList>(`${this.url}/push/places?event=${encodeURIComponent(eventId)}`));
   }
 
   /** PH5: the public event's sessions (from the public API), for "phones that starred a session". */

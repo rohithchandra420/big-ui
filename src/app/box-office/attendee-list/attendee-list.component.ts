@@ -199,13 +199,18 @@ export class AttendeeListComponent implements OnChanges {
     });
   }
 
+  /** View-only people (Helpdesk, a "box-office:read" grant alone): no Admit, bands, tents or edits. */
+  get readOnly(): boolean {
+    return !!this.authService.boxOfficeReadOnly?.(this.authService.currentUser);
+  }
+
   /** Same rule as big-api's middleware/bandAuth.js — the server checks again. */
   get canReplaceBand(): boolean {
     const user = this.authService.currentUser;
     if (!user) return false;
     if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
     return this.authService.hasPermission(user, 'box-office:write')
-      || this.authService.hasDepartmentAccess(user, 'Box Office');
+      || this.authService.inDepartmentKey(user, 'box-office');
   }
 
   private bandChanged(updated: Shopcart) {

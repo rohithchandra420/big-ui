@@ -88,6 +88,25 @@ describe('HospitalityDeskComponent', () => {
       discardPeriodicTasks();
     }));
 
+    it('the day stepper moves one day from the shown day and keeps a meal; Back to today resets', fakeAsync(() => {
+      service.getDeskExpected.and.returnValue(Promise.resolve(exp()));
+      start();
+      component.expDate = '2026-11-13';
+      component.shiftExpDay(1); flushMicrotasks();
+      expect(component.expDate).toBe('2026-11-14');
+      expect(component.expPicked).toBeTrue();
+      component.shiftExpDay(-2); flushMicrotasks();
+      expect(service.getDeskExpected.calls.mostRecent().args[1]).toBe('2026-11-12');
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.hx-epick input[type=date]')).toBeNull();
+      const back = fixture.nativeElement.querySelector('.day-nav-today') as HTMLButtonElement;
+      expect(back.textContent).toContain('Back to today');
+      back.click(); flushMicrotasks();
+      expect(component.expPicked).toBeFalse();
+      expect(component.expDate).toBe('');
+      discardPeriodicTasks();
+    }));
+
     it('the desk still works when the list fails', fakeAsync(() => {
       service.getDeskExpected.and.returnValue(Promise.reject(new Error('offline')));
       start();

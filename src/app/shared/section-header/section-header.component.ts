@@ -35,7 +35,18 @@ export class SectionHeaderComponent implements OnInit, OnDestroy {
   private url = '';
   private isMobile = false;
   private lastTop = 0;
+  /** Distance scrolled in one direction since the last turn (+ down, − up). */
+  private travel = 0;
+  /** No flip before this time: the jump caused by the row's own hide/show must not flip it back. */
+  private quietUntil = 0;
   private subs: Subscription[] = [];
+
+  /** Steady scrolling needed before the row hides or comes back (px). */
+  static readonly FLIP_DISTANCE = 48;
+  /** Pause after a flip, longer than the 0.22s slide (ms). */
+  static readonly QUIET_MS = 350;
+  /** Pages that scroll less than this never tuck the row (px). */
+  static readonly MIN_SCROLL_ROOM = 160;
 
   constructor(
     private router: Router,
@@ -55,6 +66,8 @@ export class SectionHeaderComponent implements OnInit, OnDestroy {
         this.url = e.urlAfterRedirects;
         this.tucked = false;
         this.lastTop = 0;
+        this.travel = 0;
+        this.quietUntil = 0;
         this.refresh();
       }),
       this.access.changed$.subscribe(() => this.refresh()),
@@ -106,15 +119,38 @@ export class SectionHeaderComponent implements OnInit, OnDestroy {
     }
   }
 
-  private onScroll(): void {
+  /**
+   * Phones: hide on steady scroll down, show on steady scroll up. Real phones
+   * flickered (1.50.0): hiding the row shrinks the sticky header, the page
+   * jumps under the finger, and momentum / bounce scrolling flipped it back.
+   * So: count distance per direction, ignore bounce past either end, pause
+   * after each flip, and never tuck on pages that barely scroll.
+   */
+  onScroll(now = Date.now()): void {
     if (!this.isMobile || !this.section || !this.scroller) return;
-    const top = this.scroller.measureScrollOffset('top');
-    let next = this.tucked;
-    if (top < 24) next = false;
-    else if (top > this.lastTop + 4) next = true;
-    else if (top < this.lastTop - 4) next = false;
+    const el = this.scroller.getElementRef().nativeElement as HTMLElement;
+    const room = el.scrollHeight - el.clientHeight;
+    // iOS bounce past the bottom reports top > room: count it as resting at the end.
+    const top = Math.min(this.scroller.measureScrollOffset('top'), room);
+    const delta = top - this.lastTop;
     this.lastTop = top;
-    if (next !== this.tucked) this.zone.run(() => { this.tucked = next; this.cdr.markForCheck(); });
+
+    let next = this.tucked;
+    if (top < 24 || room < SectionHeaderComponent.MIN_SCROLL_ROOM) {
+      next = false;                                    // at the top, or nothing to scroll
+      this.travel = 0;
+    } else {
+      if (delta === 0) return;
+      // Keep adding while the direction holds; start again when it turns.
+      this.travel = Math.sign(delta) === Math.sign(this.travel) ? this.travel + delta : delta;
+      if (now < this.quietUntil) return;
+      if (this.travel >= SectionHeaderComponent.FLIP_DISTANCE) next = true;
+      else if (this.travel <= -SectionHeaderComponent.FLIP_DISTANCE) next = false;
+    }
+    if (next === this.tucked) return;
+    this.travel = 0;
+    this.quietUntil = now + SectionHeaderComponent.QUIET_MS;
+    this.zone.run(() => { this.tucked = next; this.cdr.markForCheck(); });
   }
 
   ngOnDestroy(): void {

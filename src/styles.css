@@ -1305,6 +1305,16 @@ select:focus {
 /* Mess Hall open / closed dot (Hospitality) — sits on the pin's top-right. */
 .vm-status { position: absolute; right: -4px; top: -4px; width: 12px; height: 12px; border-radius: 50%; background: #9ca3af; border: 2px solid #fff; }
 .vm-status.open { background: #16a34a; }
+/* HD3: open tasks at a pin / area — the count, in the worst status's colour (.tk-s-*) */
+.vm-task { position: absolute; left: -7px; top: -7px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 99px; background: var(--sc, #1d4ed8); color: #fff; box-shadow: 0 0 0 2px #fff; font: 700 10px/16px system-ui, sans-serif; text-align: center; }
+.vm-pin .vm-task { transform: rotate(45deg); }
+/* WASH facility pins (WASH WA1): dot colour by state */
+.vm-status.wash-ok { background: #2f855a; }
+.vm-status.wash-due_soon { background: #d69e2e; }
+.vm-status.wash-overdue { background: #c2410c; }
+.vm-status.wash-empty { background: #1d4ed8; }
+.vm-status.wash-out_of_order { background: #4b5563; }
+.vm-status.wash-not_started { background: #cbd5e1; }
 .vm-area-ic {
   width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
   border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, .3); opacity: .92;
@@ -1520,11 +1530,44 @@ select:focus {
 @media (max-width: 1000px) {
   .hy-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hy-night { grid-column: 1 / -1; }
+  /* ‹ Night of … › centred between its arrows (was flush left on phones) */
+  .hy-night > div { flex: 1; min-width: 0; text-align: center; }
+}
+/* Stay › Units: a unit row opens its details in the slide panel */
+.hy-uhead.sel { background: #eef3ef; }
+.hy-uopen { flex: none; color: var(--text-muted); font-size: 20px; width: 20px; height: 20px; }
+
+/* Day stepper ‹ label › (Hospitality Today / Report): the three stay together
+   on one line; on phones it takes a full row with the label centred. */
+.day-nav { display: inline-flex; align-items: center; gap: 6px; }
+.day-nav > .pill-btn { flex: none; }
+.day-nav-label { flex: 1; min-width: 110px; text-align: center; color: var(--text-primary); }
+.day-nav-label b { display: block; font-size: 15px; color: var(--text-primary); }
+.day-nav-label small { display: block; font-size: 12px; color: var(--text-muted); }
+@media (max-width: 520px) {
+  .day-nav { display: flex; width: 100%; }
+  .day-nav-label { min-width: 0; }
+  /* "Back to today" under the stepper, full width */
+  .pill-btn.day-nav-today { flex: 1 1 100%; justify-content: center; }
+}
+/* Stay › night stepper: let "Back to today" drop under it on small screens */
+@media (max-width: 1000px) { .hy-night { flex-wrap: wrap; } }
+
+/* Serving desk › Expected: day stepper, then the four meals */
+.hx-emeals { display: flex; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 520px) {
+  .hx-emeals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; }
+  .hx-emeals .toggle-chip { justify-content: center; padding-left: 4px; padding-right: 4px; }
 }
 /* Stay: tabs + search row, and the Stays list scrolls under its fixed header */
 .hy-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 .hy-search { flex: 1 1 240px; max-width: 420px; height: 40px; box-sizing: border-box; }
 .hy-bar app-select { width: 170px; }
+@media (max-width: 520px) {
+  /* Phone: search on its own row, the Type and Night filters share the next one */
+  .hy-search { flex-basis: 100%; max-width: none; }
+  .hy-bar app-select { flex: 1 1 0; min-width: 0; width: auto; }
+}
 .hy-scroll { max-height: min(62vh, 560px); overflow-y: auto; }
 
 /* Announcements › "Public page" audience (public page PH3). Global because the
@@ -1539,7 +1582,7 @@ select:focus {
 .ann-public-txt small { font-size: 12px; color: #555; }
 .ann-public-check { color: #b5b5ae; flex-shrink: 0; }
 .ann-public.on .ann-public-check { color: #e2467b; }
-.ann-type.ann-off { opacity: .4; cursor: not-allowed; }
+.ann-type.ann-off, .ann-public.ann-off { opacity: .4; cursor: not-allowed; }
 .ann-badge.ann-pub { background: #fdf0f5; color: #b0245a; }
 .ann-badge.ann-pub-off { background: #f0f0ee; color: #666; }
 
@@ -1850,3 +1893,201 @@ select:focus {
 .md-panel .panel-body .field { margin-top: 10px; }
 .md-panel .md-audit-row { grid-template-columns: 96px minmax(0, 1fr); }
 .md-p0 { margin: 0; }
+
+/* ── Volunteers page (volunteers/): pills, list, picked bar, forms and the profile panel.
+   Kept here so the component's own stylesheet stays under the 6 kB budget. ── */
+/* Shared by the Volunteers board and the Deposits tab */
+.vl-page { padding: 0; color: var(--text-primary); }
+.vl-muted { color: var(--text-secondary); font-size: 13px; margin: 8px 0; }
+
+.vl-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.vl-stat { display: flex; align-items: center; gap: 10px; text-align: left; font: inherit; cursor: pointer; background: #fff; color: var(--text-primary);
+  border: 1px solid var(--border-default); border-radius: 12px; padding: 10px 12px; }
+.vl-stat mat-icon { width: 38px; height: 38px; font-size: 22px; line-height: 38px; text-align: center; border-radius: 10px; flex: none;
+  background: var(--border-subtle); color: var(--color-primary); }
+.vl-stat b { display: block; font-size: 22px; line-height: 1.1; color: var(--text-primary); }
+.vl-stat small { font-size: 12px; color: var(--text-secondary); }
+/* Selected filter. Not an outline: Bootstrap removes outlines from a button focused by a click. */
+.vl-stat.on { border-color: var(--color-primary); background: #f1f6f3; box-shadow: inset 0 0 0 1px var(--color-primary), 0 0 0 3px rgba(30, 70, 56, .14); }
+.vl-stat.on mat-icon { background: var(--color-primary); color: #fff; }
+.vl-stat:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(30, 70, 56, .3); }
+.vl-stat.warn b { color: #b7791f; }
+
+.vl-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+.vl-seg { display: flex; background: #fff; border: 1px solid var(--border-default); border-radius: 99px; padding: 3px; }
+.vl-seg button { display: flex; align-items: center; gap: 5px; font: inherit; font-size: 13px; border: 0; background: none; cursor: pointer;
+  padding: 5px 12px; border-radius: 99px; color: var(--text-secondary); }
+.vl-seg button.on { background: var(--color-primary); color: #fff; }
+.vl-seg mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.vl-search { flex: 1; min-width: 180px; max-width: 420px; }
+@media (max-width: 768px) { .vl-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* List view: Ask location sits in the toolbar, at the end of the search row */
+.vl-ask { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.vl-ask mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+/* List view: round pick button in the first column */
+.vl-pick-col { width: 44px; padding-right: 0 !important; }
+.vl-tickbox { width: 26px; height: 26px; display: grid; place-items: center; padding: 0; cursor: pointer; border-radius: 50%;
+  border: 2px solid var(--border-default); background: #fff; color: transparent; }
+.vl-tickbox mat-icon { font-size: 17px; width: 17px; height: 17px; }
+.vl-tickbox:hover:not(:disabled) { border-color: var(--color-primary); }
+.vl-tickbox.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.vl-tickbox:disabled { opacity: .4; cursor: default; }
+.vl-tbl tbody tr.sel, .vl-tbl tbody tr.sel:hover { background: #e6f4ec; }
+
+/* Location on request (board chip, picked bar, profile panel) */
+.vl-loc { font-size: 14px; width: 14px; height: 14px; color: var(--color-secondary); }
+.vl-dest.ask { flex: none; background: #fff; color: #14261f; }
+.vl-loc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.vl-map { height: 200px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-default); background: var(--border-subtle); }
+
+/* Deposits tab */
+.vl-money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vl-pill.held { background: #e6f4ec; color: #2f855a; }
+.vl-pill.none { background: #fdf3e1; color: #b7791f; }
+.vl-pill.refunded { background: #e5ecfd; color: #1d4ed8; }
+.vl-pill.flag { background: #fde8e8; color: var(--color-danger); }
+.vl-modes { display: flex; flex-wrap: wrap; gap: 6px; }
+.vl-std { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 13px; color: var(--text-secondary); }
+.vl-std b { color: var(--text-primary); }
+.vl-log { list-style: none; margin: 0; padding: 0; }
+.vl-log li { padding: 8px 0; border-top: 1px solid var(--border-subtle); font-size: 13px; color: var(--text-primary); }
+.vl-log small { display: block; font-size: 12px; color: var(--text-secondary); }
+.vl-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.vl-acts .danger { color: var(--color-danger); }
+
+.vl-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px;
+  white-space: nowrap; background: var(--border-subtle); color: var(--text-secondary); }
+.vl-pill.ok { background: #e6f4ec; color: #2f855a; }
+.vl-pill.no { background: #fdf3e1; color: #b7791f; }
+.vl-pill.un { background: #f1f6f3; color: var(--color-primary); border: 1px dashed var(--color-secondary); }
+
+.vl-tbl-wrap { overflow-x: auto; background: #fff; border: 1px solid var(--border-default); border-radius: 12px; }
+.vl-tbl { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--text-primary); }
+.vl-tbl th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; padding: 9px 12px;
+  background: var(--border-subtle); color: var(--text-secondary); }
+.vl-tbl td { padding: 8px 12px; border-top: 1px solid var(--border-default); vertical-align: middle; color: var(--text-primary); }
+.vl-tbl tbody tr { cursor: pointer; }
+.vl-tbl tbody tr:hover { background: #f7faf8; }
+.vl-cell-who { display: flex; align-items: center; gap: 8px; }
+.vl-cell-who b { font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+
+.vl-bar-wrap { position: sticky; bottom: 12px; z-index: 5; display: flex; justify-content: center; margin-top: 16px; pointer-events: none; }
+.vl-selbar { pointer-events: auto; display: flex; align-items: center; gap: 10px; width: min(760px, 100%); padding: 10px 12px; border-radius: 16px;
+  background: #14261f; color: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, .3); }
+.vl-selbar b { font-size: 13.5px; white-space: nowrap; color: #fff; }
+.vl-dests { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.vl-dest { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 12.5px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  padding: 6px 11px; border-radius: 99px; border: 1px solid rgba(255, 255, 255, .25); background: rgba(255, 255, 255, .08); color: #fff; }
+.vl-dest:hover:not(:disabled) { background: #fff; color: #14261f; }
+.vl-dest:disabled { opacity: .5; cursor: default; }
+.vl-dest.free { border-style: dashed; }
+.vl-dest mat-icon { font-size: 17px; width: 17px; height: 17px; }
+.vl-x { flex: none; display: grid; place-items: center; border: 0; background: none; cursor: pointer; color: #fff; }
+
+.vl-form { display: flex; flex-direction: column; gap: 12px; color: var(--text-primary); }
+.vl-btns { display: flex; gap: 8px; justify-content: flex-end; }
+
+.vl-prof { display: flex; flex-direction: column; gap: 16px; color: var(--text-primary); }
+.vl-prof-top { display: flex; align-items: center; gap: 12px; }
+.vl-prof-top b { display: block; font-size: 17px; color: var(--text-primary); overflow-wrap: anywhere; }
+.vl-prof-top small { font-size: 12.5px; color: var(--text-secondary); }
+.vl-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.vl-fact { background: var(--border-subtle); border-radius: 10px; padding: 8px; text-align: center; color: var(--text-primary); }
+.vl-fact mat-icon { color: var(--color-secondary); }
+.vl-fact b { display: block; font-size: 13px; color: var(--text-primary); }
+.vl-fact small { font-size: 11px; color: var(--text-secondary); }
+.vl-kv { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 6px 10px; margin: 0; font-size: 13px; }
+.vl-kv dt { font-weight: 600; color: var(--text-secondary); }
+.vl-kv dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
+.vl-kv a { color: var(--color-primary); }
+.vl-att { display: grid; grid-template-columns: 76px repeat(var(--days, 7), minmax(0, 1fr)); gap: 4px; align-items: center; text-align: center; }
+.vl-att-d { font-size: 11px; color: var(--text-secondary); }
+.vl-att-r { text-align: left; font-size: 11.5px; font-weight: 600; color: var(--text-secondary); }
+.vl-att i { display: block; height: 18px; border-radius: 5px; background: #f3c9a5; }
+.vl-att i.y { background: #2f855a; }
+.vl-move { display: flex; flex-wrap: wrap; gap: 6px; }
+.vl-move .pill-btn.cur { background: var(--color-primary); border-color: var(--color-primary); color: #fff; opacity: 1; }
+.vl-move .pill-btn.cur mat-icon { color: #fff; }
+.vl-move .pill-btn.free { border-style: dashed; }
+
+@media (max-width: 768px) {
+  .vl-wide { display: none; }
+  .vl-selbar { flex-wrap: wrap; }
+  .vl-dests { flex-basis: 100%; order: 3; }
+  .vl-x { margin-left: auto; }
+}
+
+/* ── Tasks (Helpdesk, HD1): status pill, sheet with timeline, task list.
+      Global so the Billboard note, My Department and Announcements share them. ── */
+.tk-s-new          { --sc: #1d4ed8; --sb: #e5ecfd; }
+.tk-s-acknowledged { --sc: #7c3aed; --sb: #efe7ff; }
+.tk-s-in_progress  { --sc: #b7791f; --sb: #fdf3e1; }
+.tk-s-blocked      { --sc: #c2410c; --sb: #fdebe2; }
+.tk-s-closed       { --sc: #2f855a; --sb: #e6f4ec; }
+
+.tk-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; line-height: 1.5; padding: 2px 9px; border-radius: 99px; white-space: nowrap; background: var(--sb); color: var(--sc); }
+.tk-pill .mat-icon { font-size: 14px; width: 14px; height: 14px; color: var(--sc); }
+
+.tk-note { margin: 0; font-size: 12.5px; color: var(--color-text-secondary, #666); }
+.tk-error { margin: 0; font-size: 12.5px; font-weight: 600; color: #b42318; }
+.tk-msg { margin: 0 0 6px; font-size: 14.5px; color: var(--color-text, #1a1a1a); white-space: pre-line; overflow-wrap: anywhere; }
+.tk-lbl { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #777; }
+
+.tk-sheet { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: #fff; color: #1a1a1a; font-family: inherit; text-align: left; }
+.tk-sheet-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tk-sheet-h b { font-size: 13px; font-weight: 600; color: #666; }
+.tk-shared { margin-left: auto; }
+.tk-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.tk-act { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 12.5px; font-weight: 700; padding: 6px 12px; border-radius: 99px; border: 1.5px solid var(--sc); background: #fff; color: var(--sc); cursor: pointer; }
+.tk-act:hover:not(:disabled) { background: var(--sb); }
+.tk-act:disabled { opacity: .55; cursor: default; }
+.tk-act .mat-icon { font-size: 16px; width: 16px; height: 16px; color: var(--sc); }
+.tk-block { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 10px; background: #fdebe2; }
+.tk-block label { margin: 0; font-size: 12.5px; font-weight: 600; color: #7c2d12; }
+.tk-block input { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid #f0b99d; border-radius: 8px; background: #fff; color: #1a1a1a; width: 100%; }
+.tk-block-acts { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+.tk-block-go { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 8px; border: 1px solid #c2410c; background: #c2410c; color: #fff; cursor: pointer; }
+.tk-block-go:disabled { opacity: .6; cursor: default; }
+
+.tk-tl { list-style: none; margin: 0; padding: 0; }
+.tk-tl li { position: relative; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; padding-bottom: 12px; font-size: 13px; color: #1a1a1a; overflow-wrap: anywhere; }
+.tk-tl li::before { content: ""; position: absolute; left: 12px; top: 24px; bottom: 0; width: 2px; background: #f0f0f0; }
+.tk-tl li:last-child { padding-bottom: 0; }
+.tk-tl li:last-child::before { display: none; }
+.tk-dot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--sb); color: var(--sc); }
+.tk-dot .mat-icon { font-size: 16px; width: 16px; height: 16px; color: var(--sc); }
+.tk-tl b { color: #1a1a1a; }
+.tk-tl small { display: block; font-size: 12px; color: #666; }
+.tk-tl q { display: block; font-size: 12.5px; color: #7c2d12; quotes: "\201C" "\201D"; }
+
+/* HD3: a task's place (task panel, Billboard note, task rows) */
+.tk-place { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px; border-radius: 10px; background: #f3f6f4; color: #1a1a1a; font-size: 13px; }
+.tk-place > .mat-icon { flex: none; font-size: 18px; width: 18px; height: 18px; color: #c2410c; }
+.tk-place-name { min-width: 0; overflow-wrap: anywhere; color: #1a1a1a; }
+.tk-place-name b { color: #1a1a1a; }
+.tk-place-name small { font-size: 12px; color: #666; }
+.tk-place-go { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 12.5px; font-weight: 700; padding: 5px 11px; border-radius: 99px; border: 1.5px solid var(--color-primary); background: #fff; color: var(--color-primary); cursor: pointer; }
+.tk-place-go .mat-icon { font-size: 16px; width: 16px; height: 16px; color: var(--color-primary); }
+.tk-row .tk-row-place { display: inline-flex; align-items: center; gap: 3px; color: #666; }
+.tk-row-place .mat-icon { font-size: 14px; width: 14px; height: 14px; color: #c2410c; }
+
+.tk-card { flex-direction: column; gap: 10px; padding: 14px; color: var(--color-text, #1a1a1a); }
+.tk-card-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tk-card-title { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; color: var(--color-text, #1a1a1a); }
+.tk-card-title .mat-icon { font-size: 20px; width: 20px; height: 20px; color: #7c3aed; }
+.tk-refresh { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--color-border, #e5e5e5); border-radius: 50%; background: #fff; color: #666; cursor: pointer; }
+.tk-refresh .mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.tk-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.tk-chip { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: 99px; border: 1px solid var(--color-border, #e5e5e5); background: #fff; color: #666; cursor: pointer; }
+.tk-chip b { font-weight: 700; color: inherit; }
+.tk-chip.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.tk-rows { display: flex; flex-direction: column; gap: 8px; }
+.tk-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; width: 100%; padding: 10px 12px; font: inherit; text-align: left; border: 1px solid var(--color-border, #e5e5e5); border-left: 4px solid var(--sc); border-radius: 12px; background: #fff; color: #1a1a1a; cursor: pointer; }
+.tk-row:hover { background: #fafbfa; }
+.tk-row b { font-size: 14px; color: #1a1a1a; overflow-wrap: anywhere; }
+.tk-row small { grid-column: 1 / -1; font-size: 12px; color: #666; overflow-wrap: anywhere; }
+@media (max-width: 768px) {
+  .tk-shared { margin-left: 0; flex-basis: 100%; }
+}

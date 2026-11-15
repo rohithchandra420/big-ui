@@ -7,11 +7,12 @@ import { UserFormComponent } from './user-form.component';
 import { AdminService } from '../../admin.service';
 import { AuthService } from '../../../core/auth.service';
 import { NotificationService } from '../../../core/notification.service';
+import { VolunteersService } from '../../../volunteers/volunteers.service';
 import { AppSelectComponent } from '../../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../../shared/app-select/app-option.component';
 
-const general = { _id: 'd-gen', name: 'General' };
-const box = { _id: 'd-box', name: 'Box Office' };
+const general = { _id: 'd-gen', name: 'General', key: 'general' };
+const box = { _id: 'd-box', name: 'Box Office', key: 'box-office' };
 
 const editedUser = {
   _id: 'u1',
@@ -28,15 +29,16 @@ describe('UserFormComponent', () => {
   let fixture: ComponentFixture<UserFormComponent>;
   let adminSpy: jasmine.SpyObj<AdminService>;
   let notificationSpy: jasmine.SpyObj<NotificationService>;
+  let volunteersSpy: jasmine.SpyObj<VolunteersService>;
 
   const authStub = {
-    deptNameToKey: (name: string) => (name || '').toLowerCase().replace(/\s+/g, '-'),
-    deptKeyOf: (d: any) => d?.key || (d?.name || '').toLowerCase().replace(/\s+/g, '-')
+    deptKeyOf: (d: any) => (['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk'].includes(d?.key) ? d.key : (d ? 'general' : ''))
   };
 
   const create = async (inputs: Partial<UserFormComponent>) => {
     adminSpy = jasmine.createSpyObj('AdminService', ['createUser', 'updateUser']);
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
+    volunteersSpy = jasmine.createSpyObj('VolunteersService', ['createUser']);
 
     await TestBed.configureTestingModule({
       declarations: [UserFormComponent, AppSelectComponent, AppOptionComponent],
@@ -45,6 +47,7 @@ describe('UserFormComponent', () => {
         { provide: AdminService, useValue: adminSpy },
         { provide: AuthService, useValue: authStub },
         { provide: NotificationService, useValue: notificationSpy },
+        { provide: VolunteersService, useValue: volunteersSpy },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -65,6 +68,62 @@ describe('UserFormComponent', () => {
     dateOfJoining: '2026-10-01'
   });
 
+  describe('Volunteers mode (added from the Volunteers page)', () => {
+    const pool = { _id: 'd-pool', name: 'Volunteer (Unassigned)', key: 'volunteer' };
+    beforeEach(async () => await create({
+      mode: 'create', volunteersMode: true, eventId: 'e1', defaultDepartment: 'd-pool',
+      departments: [pool, box], isTopLevel: false
+    }));
+    const fill = () => component.form.patchValue({
+      userName: 'New Person', email: 'new@test.com', password: 'Secure@123', confirmPassword: 'Secure@123', dateOfJoining: '2026-11-20'
+    });
+
+    it('fixes the role to Volunteer, starts in the pool and keeps department and date open', () => {
+      expect(component.form.getRawValue().role).toBe('VOL');
+      expect(component.form.controls.role.disabled).toBeTrue();
+      expect(component.roleOptions.map(r => r.name)).toEqual(['VOL']);
+      expect(component.roleOptions).toBe(component.roleOptions);   // a stored list
+      expect(component.form.controls.homeDepartment.value).toBe('d-pool');
+      expect(component.form.controls.homeDepartment.enabled).toBeTrue();
+      expect(component.form.controls.dateOfJoining.enabled).toBeTrue();
+    });
+
+    it('shows no access chips', () => {
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('.access-chip')).toBeNull();
+      expect(el.querySelector('.dept-access-table')).toBeNull();
+      expect(el.textContent).toContain('They join as a Volunteer');
+    });
+
+    it('saves through the Volunteers route, with no grants, and emits the new user', async () => {
+      const created = { _id: 'new9', name: 'New Person' };
+      volunteersSpy.createUser.and.returnValue(Promise.resolve(created));
+      const savedSpy = spyOn(component.saved, 'emit');
+      fill();
+      component.form.controls.homeDepartment.setValue('d-box');
+      component.setKeyLevel('box-office', 'manage');   // even if something were picked
+      component.submit();
+      await fixture.whenStable();
+
+      expect(adminSpy.createUser).not.toHaveBeenCalled();
+      const [eventId, payload] = volunteersSpy.createUser.calls.mostRecent().args;
+      expect(eventId).toBe('e1');
+      expect(payload['roleName']).toBe('VOL');
+      expect(payload['departmentIds']).toEqual(['d-box']);
+      expect('permissions' in payload).toBeFalse();
+      expect(savedSpy).toHaveBeenCalledWith(created);
+    });
+
+    it('shows the reason the server gives when it fails', async () => {
+      volunteersSpy.createUser.and.returnValue(Promise.reject({ error: { msg: 'A user with this email already exists' } }));
+      fill();
+      component.submit();
+      await fixture.whenStable();
+      expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('A user with this email already exists');
+      expect(component.saving).toBeFalse();
+    });
+  });
+
   describe('create mode', () => {
     beforeEach(async () => await create({
       mode: 'create',
@@ -73,9 +132,10 @@ describe('UserFormComponent', () => {
       isTopLevel: true
     }));
 
-    it('defaults General to read access', () => {
-      expect(component.keySelections['general']).toBe('read');
+    it('starts with no extra access, and has no row for "general" (it gives nothing)', () => {
+      expect('general' in component.keySelections).toBeFalse();
       expect(component.keySelections['box-office']).toBe('none');
+      expect(component.buildPermissions()).toEqual([]);
     });
 
     it('is invalid until the passwords match', () => {
@@ -99,7 +159,7 @@ describe('UserFormComponent', () => {
 
       const payload = adminSpy.createUser.calls.mostRecent().args[0];
       expect(payload.departmentIds).toEqual(['d-box']);
-      expect(payload.permissions).toEqual(jasmine.arrayWithExactContents(['general:read', 'box-office:manage']));
+      expect(payload.permissions).toEqual(['box-office:manage']);
       expect(payload.foodPreference).toBe('veg');   // Veg unless changed
       expect(savedSpy).toHaveBeenCalledWith(created);
     });
@@ -122,24 +182,86 @@ describe('UserFormComponent', () => {
       expect(adminSpy.createUser.calls.mostRecent().args[0].foodPreference).toBe('non-veg');
     });
 
-    it('shows one access row per key; departments sharing a key are one row (shared keys)', () => {
-      const music1 = { _id: 'd-m1', name: 'Music Stage B', key: 'music' };
-      const music2 = { _id: 'd-m2', name: 'Music Stage A', key: 'music' };
-      component.departments = [general, box, music1, music2];
+    it('shows one row per built-in key that gives something — even with no department on it yet', () => {
+      expect(component.accessKeys.map(k => k.key)).toEqual(['box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk']);
+      expect(component.accessKeys.find(k => k.key === 'box-office')!.names).toBe('Box Office');
+      expect(component.accessKeys.find(k => k.key === 'wash')!.names).toBe('');
+    });
+
+    it('each row offers only the tiers its key uses', () => {
+      const tiers = (key: string) => component.accessKeys.find(k => k.key === key)!.tiers.map(t => t.tier);
+      expect(tiers('hospitality')).toEqual(['manage']);
+      expect(tiers('medical')).toEqual(['read']);
+      expect(tiers('wash')).toEqual(['read', 'write', 'manage']);
+      const rows = fixture.nativeElement.querySelectorAll('.dept-row');
+      expect(rows.length).toBe(8);
+      const hospitality = Array.from(rows as NodeListOf<HTMLElement>).find(r => r.textContent!.includes('Hospitality'))!;
+      expect(hospitality.querySelectorAll('.access-chip').length).toBe(1);
+    });
+
+    it('departments sharing a key are one row; picks survive the department list arriving late', () => {
+      const tentB = { _id: 'd-w1', name: 'Workshop Tent B', key: 'workshop' };
+      const tentA = { _id: 'd-w2', name: 'Workshop Tent A', key: 'workshop' };
+      component.setKeyLevel('wash', 'write');
+      component.departments = [general, box, tentB, tentA];
       component.ngOnChanges({ departments: { previousValue: [], currentValue: component.departments, firstChange: false, isFirstChange: () => false } } as any);
-      expect(component.accessKeys).toEqual([
-        { key: 'box-office', names: 'Box Office' },
-        { key: 'general', names: 'General' },
-        { key: 'music', names: 'Music Stage A, Music Stage B' }
-      ]);
-      expect(component.keySelections['general']).toBe('read');   // kept
-      component.setKeyLevel('music', 'write');
-      expect(component.buildPermissions()).toEqual(jasmine.arrayWithExactContents(['general:read', 'music:write']));
+      expect(component.accessKeys.find(k => k.key === 'workshop')!.names).toBe('Workshop Tent A, Workshop Tent B');
+      expect(component.keySelections['wash']).toBe('write');   // kept
+      component.setKeyLevel('workshop', 'read');
+      expect(component.buildPermissions()).toEqual(jasmine.arrayWithExactContents(['wash:write', 'workshop:read']));
+    });
+
+    it('picking a home department picks Read on its key by default; changing it moves the default', () => {
+      const camp = { _id: 'd-camp', name: 'Camp Crew', key: 'tenting' };
+      const mess = { _id: 'd-mess', name: 'Mess', key: 'hospitality' };
+      component.departments = [general, box, camp, mess];
+      component.ngOnChanges({ departments: { previousValue: [], currentValue: component.departments, firstChange: false, isFirstChange: () => false } } as any);
+
+      component.form.controls.homeDepartment.setValue('d-camp');
+      expect(component.keySelections['tenting']).toBe('read');
+      component.form.controls.homeDepartment.setValue('d-box');
+      expect(component.keySelections['tenting']).toBe('none');       // the default follows the department
+      expect(component.keySelections['box-office']).toBe('read');
+
+      component.form.controls.homeDepartment.setValue('d-gen');       // "general" gives nothing
+      expect(component.buildPermissions()).toEqual([]);
+      component.form.controls.homeDepartment.setValue('d-mess');      // Hospitality has no Read tier
+      expect(component.keySelections['hospitality']).toBe('none');
+    });
+
+    it('the Volunteer home department (the Unassigned pool) picks no Read; a phone is sent when typed', () => {
+      const pool = { _id: 'd-pool', name: 'Volunteer', key: 'volunteer' };
+      component.departments = [general, box, pool];
+      component.ngOnChanges({ departments: { previousValue: [], currentValue: component.departments, firstChange: false, isFirstChange: () => false } } as any);
+      component.form.controls.homeDepartment.setValue('d-pool');
+      expect(component.keySelections['volunteer']).toBe('none');
+      expect(component.buildPermissions()).toEqual([]);
+
+      component.form.controls.phone.setValue('call me');
+      expect(component.form.controls.phone.invalid).toBeTrue();
+      component.form.controls.phone.setValue('+91 90000 00123');
+      expect(component.form.controls.phone.valid).toBeTrue();
+    });
+
+    it('the default never lowers or removes a level someone picked', () => {
+      component.setKeyLevel('box-office', 'manage');
+      component.form.controls.homeDepartment.setValue('d-box');
+      expect(component.keySelections['box-office']).toBe('manage');
+      component.form.controls.homeDepartment.setValue('d-gen');
+      expect(component.keySelections['box-office']).toBe('manage');
+    });
+
+    it('says what the picked tier gives', () => {
+      const wash = component.accessKeys.find(k => k.key === 'wash')!;
+      expect(component.givesOf(wash)).toBe('');
+      component.setKeyLevel('wash', 'manage');
+      expect(component.givesOf(wash)).toContain('Setup');
     });
 
     it('clicking the active chip level clears it', () => {
-      component.setKeyLevel('general', 'read');
-      expect(component.keySelections['general']).toBe('none');
+      component.setKeyLevel('wash', 'read');
+      component.setKeyLevel('wash', 'read');
+      expect(component.keySelections['wash']).toBe('none');
     });
 
     it('reports a failed create and does not emit', () => {
@@ -168,7 +290,8 @@ describe('UserFormComponent', () => {
       expect(component.form.controls.homeDepartment.value).toBe('d-box');
       expect(component.form.controls.dateOfJoining.value).toBe('2026-03-15');
       expect(component.keySelections['box-office']).toBe('write');
-      expect(component.keySelections['general']).toBe('read');
+      expect('general' in component.keySelections).toBeFalse();   // an old general:read grant is not shown or re-sent
+      expect(component.buildPermissions()).toEqual(['box-office:write']);   // opening Edit adds no default Read
     });
 
     it('does not require the password fields', () => {

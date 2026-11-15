@@ -55,7 +55,7 @@
       </div>
     </div>
 
-    <div class="att-actions">
+    <div *ngIf="!readOnly" class="att-actions">
       <ng-container *ngIf="isFestivalPass(item); else tentActions">
         <ng-container *ngIf="isDetailsComplete(item); else incompleteActions">
           <!-- "Admit", not "Check In": Check In is reserved for the planned

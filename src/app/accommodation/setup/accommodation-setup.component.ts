@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { AccomodationService } from '../../accomodation/accomodation.service';
 import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
+import { AuthService } from '../../core/auth.service';
 import { PassType } from '../../models/event.model';
 import { Tent } from '../../models/tent.model';
 
@@ -122,7 +123,18 @@ export class AccommodationSetupComponent implements OnInit, OnDestroy {
     private accomodationService: AccomodationService,
     private eventService: EventService,
     private notificationService: NotificationService,
+    private authService: AuthService,
   ) { }
+
+  /** Creating units: DEV/DIR/ADMIN, the Tenting TL, Tenting Write and up. Read only sees the cards. */
+  get canWrite(): boolean {
+    return this.authService.canWriteTenting(this.authService.currentUser);
+  }
+
+  /** A pass type's code is set under Admin › Events, so only DEV/DIR/ADMIN can add a missing one here. */
+  get canSetCode(): boolean {
+    return ['DEV', 'DIR', 'ADMIN'].includes(this.authService.currentUser?.role || '');
+  }
 
   // Subscribes to the activeEvent Observable rather than reading
   // currentActiveEvent once — EventService's own event list is still loading
@@ -154,9 +166,9 @@ export class AccommodationSetupComponent implements OnInit, OnDestroy {
 
   loadTentPassTypes(eventId: string) {
     this.loading = true;
-    this.eventService.getEventDetail(eventId).subscribe({
-      next: (detail) => {
-        this.tentPassTypes = detail.passTypes.filter(pt => pt.category === 'tent');
+    this.accomodationService.getTentPassTypes(eventId).subscribe({
+      next: (passTypes) => {
+        this.tentPassTypes = passTypes as PassType[];
         this.loading = false;
         this.refreshSummary(eventId);
       },
@@ -198,7 +210,8 @@ export class AccommodationSetupComponent implements OnInit, OnDestroy {
   submit() {
     const event = this.activeEvent;
     const passType = this.selectedPassType;
-    if (!event || !passType || this.form.invalid || this.creating) return;
+    if (!event || !passType || this.form.invalid || this.creating || !this.canWrite) return;
+    if (this.needsCode && !this.canSetCode) return;
 
     this.creating = true;
     const { capacity, quantity, code } = this.form.value;

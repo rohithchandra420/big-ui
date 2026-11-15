@@ -6,7 +6,7 @@ import { NotificationService } from '../../core/notification.service';
 import { GateFeedbackService } from '../../core/gate-feedback.service';
 import { EventItem } from '../../models/event.model';
 import { BoxOfficeQrscannerPopupComponent, QrScannerData } from '../../box-office/registration/qrscanner-popup/qrscanner-popup.component';
-import { localTime } from '../../workshops/planner.utils';
+import { localDate, localTime } from '../../workshops/planner.utils';
 import { HospitalityService } from '../hospitality.service';
 import { StaffBandService } from '../../core/staff-band.service';
 import { DeskDecision, DeskExpected, DeskGuestHit, DeskPerson, DeskState, GuestOutcome, MealKey, MEALS, ScanOutcome, SLOT_LABELS } from '../hospitality.model';
@@ -113,6 +113,19 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     this.loadExpected();
   }
   resetExpected() { this.expMeal = null; this.expDate = ''; this.loadExpected(); }
+  /** The day the list is for: the picked one, else the desk's meal day, else today. */
+  get expDay(): string { return this.expDate || this.expected?.meal?.date || localDate(new Date()); }
+  get expIsToday(): boolean { return this.expDay === localDate(new Date()); }
+  get expDayLabel(): string {
+    return new Date(this.expDay + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+  /** ‹ / › on the day stepper (same as Report): picks that day, keeping the meal. */
+  shiftExpDay(n: number) {
+    const d = new Date(this.expDay + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    this.expDate = localDate(d);
+    this.pickExpected();
+  }
   async loadExpected() {
     if (!this.event) return;
     const seq = ++this.expSeq;

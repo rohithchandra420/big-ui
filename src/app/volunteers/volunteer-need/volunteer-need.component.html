@@ -1,0 +1,27 @@
+<div class="vn" *ngIf="info && status">
+  <div class="vn-row" *ngIf="!editing">
+    <span class="vn-label">Volunteers needed</span>
+    <span class="vn-value">
+      <ng-container *ngIf="info.needed; else none">
+        <b>{{ info.have }} of {{ info.needed }}</b>
+        <span class="vl-pill" [class.ok]="status.kind === 'met'" [class.no]="status.kind === 'short'">{{ status.text }}</span>
+      </ng-container>
+      <ng-template #none>No number given</ng-template>
+    </span>
+    <button type="button" class="pill-btn" *ngIf="info.canSet" (click)="edit()"><mat-icon>edit</mat-icon>{{ info.needed ? 'Change' : 'Set' }}</button>
+  </div>
+
+  <div class="vn-edit" *ngIf="editing">
+    <label class="vn-label" for="vn-needed">Volunteers needed for this event</label>
+    <!-- One line on every screen: a short number box, then the buttons -->
+    <div class="vn-line">
+      <div class="field">
+        <input id="vn-needed" type="number" min="0" max="1000" step="1" inputmode="numeric" [(ngModel)]="value" (keydown.enter)="save()" />
+      </div>
+      <button type="button" class="btn-ghost" (click)="editing = false">Cancel</button>
+      <button type="button" class="btn-cta" [disabled]="busy" (click)="save()">Save</button>
+    </div>
+    <div class="field-error" *ngIf="error">{{ error }}</div>
+    <p class="vn-note">0 removes the number. The Volunteers team sees it next to how many you have.</p>
+  </div>
+</div>

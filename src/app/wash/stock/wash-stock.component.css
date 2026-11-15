@@ -1,0 +1,50 @@
+/* WASH › Stock. Full width like Bookings; the app shell pads every page — never add page padding. Every text rule sets its colour. */
+.wk-page { padding: 0; color: var(--text-primary); }
+.wk-muted { color: var(--text-secondary); font-size: 13px; margin: 8px 0; }
+.wk-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+.wk-search { flex: 1; min-width: 180px; max-width: 420px; }
+.wk-low-note { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: #c2410c; }
+.wk-low-note mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+.wk-list { display: flex; flex-direction: column; gap: 8px; }
+.wk-row { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--border-default); border-radius: 12px;
+  padding: 10px 12px; color: var(--text-primary); position: relative; }
+.wk-row::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 4px; border-radius: 0 4px 4px 0; background: var(--color-secondary); }
+.wk-row.low { border-color: #c2410c; background: #fdebe2; }
+.wk-row.low::before { background: #c2410c; }
+.wk-row.out { border-style: dashed; border-width: 2px; }
+.wk-main { flex: 1; min-width: 0; font: inherit; text-align: left; background: none; border: 0; padding: 0; cursor: pointer; color: var(--text-primary);
+  display: grid; grid-template-columns: minmax(0, 2fr) minmax(90px, 1fr) minmax(80px, 160px) minmax(0, 1fr); gap: 12px; align-items: center; }
+.wk-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.wk-name b { color: var(--text-primary); font-size: 14px; overflow-wrap: anywhere; }
+.wk-badge { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: #c2410c; color: #fff; }
+.wk-qty { color: var(--text-secondary); font-size: 13px; }
+.wk-qty b { color: var(--text-primary); font-size: 18px; }
+.wk-row.low .wk-qty b { color: #c2410c; }
+.wk-bar { height: 8px; border-radius: 99px; background: var(--border-subtle); overflow: hidden; }
+.wk-bar i { display: block; height: 100%; background: var(--color-secondary); border-radius: 99px; }
+.wk-row.low .wk-bar { background: #f6d5c5; }
+.wk-row.low .wk-bar i { background: #c2410c; }
+.wk-lim { color: var(--text-secondary); font-size: 12px; }
+.wk-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.wk-in { border-color: var(--color-primary); color: var(--color-primary); }
+.wk-danger { color: var(--color-danger); }
+.wk-panel-acts { margin-bottom: 14px; }
+
+.wk-form { display: flex; flex-direction: column; gap: 12px; color: var(--text-primary); }
+.wk-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.wk-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.wk-warn { color: #7c2d12; font-size: 13px; }
+.wk-tl { list-style: none; margin: 0; padding: 0; }
+.wk-tl li { display: grid; grid-template-columns: 56px 1fr; gap: 8px; font-size: 13px; padding: 8px 0; border-top: 1px solid var(--border-subtle); color: var(--text-primary); }
+.wk-tl li > b { color: #c2410c; font-size: 14px; }
+.wk-tl li.in > b { color: #2f855a; }
+.wk-tl small { display: block; font-size: 12px; color: var(--text-secondary); overflow-wrap: anywhere; }
+
+@media (max-width: 768px) {
+  .wk-row { flex-direction: column; align-items: stretch; }
+  .wk-main { grid-template-columns: minmax(0, 1fr) auto; }
+  .wk-bar { grid-column: 1 / -1; }
+  .wk-lim { grid-column: 1 / -1; }
+  .wk-acts { justify-content: flex-end; }
+}

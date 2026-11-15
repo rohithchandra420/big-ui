@@ -80,6 +80,10 @@ import { CustomEmailDialogComponent } from './box-office/email/custom-email-dial
 import { EmailProgressComponent } from './box-office/email/email-progress/email-progress.component';
 import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
 import { SectionHeaderComponent } from './shared/section-header/section-header.component';
+import { SlidePanelComponent } from './shared/slide-panel/slide-panel.component';
+import { TaskPillComponent } from './shared/task/task-pill.component';
+import { TaskSheetComponent } from './shared/task/task-sheet.component';
+import { TaskListComponent } from './shared/task/task-list.component';
 import { TentFieldsComponent } from './accommodation/fields/tent-fields.component';
 import { TentFieldComponent } from './accommodation/fields/tent-field.component';
 import { FieldGridComponent } from './accommodation/fields/field-grid.component';
@@ -109,6 +113,14 @@ import { MedicalDeskComponent } from './medical/desk/medical-desk.component';
 import { MedicalRecordsComponent } from './medical/records/medical-records.component';
 import { MedicalPatientComponent } from './medical/patient/medical-patient.component';
 import { MedicalReportComponent } from './medical/report/medical-report.component';
+import { WashMonitorComponent } from './wash/monitor/wash-monitor.component';
+import { WashSetupComponent } from './wash/setup/wash-setup.component';
+import { WashStockComponent } from './wash/stock/wash-stock.component';
+import { WashReportComponent } from './wash/report/wash-report.component';
+import { VolunteersComponent } from './volunteers/volunteers.component';
+import { VolunteerNeedComponent } from './volunteers/volunteer-need/volunteer-need.component';
+import { VolunteerDepositsComponent } from './volunteers/deposits/volunteer-deposits.component';
+import { LocationPromptComponent } from './volunteers/location-prompt/location-prompt.component';
 import { BillboardComponent } from './billboard/billboard.component';
 import { EmailActionsComponent } from './box-office/email/email-actions/email-actions.component';
 import { EmailHistoryComponent } from './box-office/email/email-history/email-history.component';
@@ -170,6 +182,10 @@ LOAD_WASM().subscribe()
     EmailHistoryComponent,
     PwaStatusComponent,
     SectionHeaderComponent,
+    SlidePanelComponent,
+    TaskPillComponent,
+    TaskSheetComponent,
+    TaskListComponent,
     TentFieldsComponent,
     TentFieldComponent,
     FieldGridComponent,
@@ -199,7 +215,15 @@ LOAD_WASM().subscribe()
     MedicalDeskComponent,
     MedicalRecordsComponent,
     MedicalPatientComponent,
-    MedicalReportComponent
+    MedicalReportComponent,
+    WashMonitorComponent,
+    WashSetupComponent,
+    WashStockComponent,
+    WashReportComponent,
+    VolunteersComponent,
+    VolunteerNeedComponent,
+    VolunteerDepositsComponent,
+    LocationPromptComponent
   ],
   imports: [
     BrowserModule,

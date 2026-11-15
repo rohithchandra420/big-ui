@@ -142,14 +142,14 @@ describe('AuthService', () => {
 
         it('grants TL automatic manage access within their own department, with no explicit permission', () => {
             const user = new User('Test', 'a@b.com', '', 'TL', '', '', '123', undefined,
-                [{ department: { _id: 'd1', name: 'Box Office' }, access: ['read'] }], []);
+                [{ department: { _id: 'd1', name: 'Box Office', key: 'box-office' }, access: ['read'] }], []);
             expect(service.hasPermission(user, 'box-office:manage')).toBeTrue();
             expect(service.hasPermission(user, 'box-office:read')).toBeTrue();
         });
 
         it('does not grant TL access to a department they do not belong to', () => {
             const user = new User('Test', 'a@b.com', '', 'TL', '', '', '123', undefined,
-                [{ department: { _id: 'd1', name: 'Box Office' }, access: ['read'] }], []);
+                [{ department: { _id: 'd1', name: 'Box Office', key: 'box-office' }, access: ['read'] }], []);
             expect(service.hasPermission(user, 'finance:read')).toBeFalse();
         });
     });
@@ -157,7 +157,7 @@ describe('AuthService', () => {
     describe('getEffectivePermissionMap', () => {
         it('merges explicit permissions with TL auto-manage for their own department', () => {
             const user = new User('Test', 'a@b.com', '', 'TL', '', '', '123', undefined,
-                [{ department: { _id: 'd1', name: 'Box Office' }, access: ['read'] }], ['general:write']);
+                [{ department: { _id: 'd1', name: 'Box Office', key: 'box-office' }, access: ['read'] }], ['general:write']);
             const map = service.getEffectivePermissionMap(user);
             expect(map['box-office']).toBe('manage');
             expect(map['general']).toBe('write');
@@ -165,14 +165,14 @@ describe('AuthService', () => {
 
         it('TL automatically has manage-level access in their own department, even with no explicit permission string', () => {
             const user = new User('Test', 'a@b.com', '', 'TL', '', '', '123',
-                undefined, [{ department: { _id: 'd1', name: 'Box Office' }, access: ['read'] }], []);
+                undefined, [{ department: { _id: 'd1', name: 'Box Office', key: 'box-office' }, access: ['read'] }], []);
             expect(service.hasPermission(user, 'box-office:manage')).toBeTrue();
             expect(service.hasPermission(user, 'box-office:read')).toBeTrue();
         });
 
         it('TL auto-manage does not extend to departments they do not belong to', () => {
             const user = new User('Test', 'a@b.com', '', 'TL', '', '', '123',
-                undefined, [{ department: { _id: 'd1', name: 'Box Office' }, access: ['read'] }], []);
+                undefined, [{ department: { _id: 'd1', name: 'Box Office', key: 'box-office' }, access: ['read'] }], []);
             expect(service.hasPermission(user, 'finance:read')).toBeFalse();
         });
 
@@ -229,11 +229,147 @@ describe('AuthService', () => {
         });
     });
 
+    describe('Announcements access (Helpdesk, by department key)', () => {
+        const desk = { _id: 'd1', name: 'Front Desk', key: 'helpdesk' };
+        const mk = (role: string, depts: any[] = [], perms: string[] = []) =>
+            new User('Test', 'a@b.com', '', role, '', '', '123', undefined, depts.map(d => ({ department: d, access: ['read'] })), perms);
+
+        it('top roles, every Helpdesk member and helpdesk:manage only', () => {
+            expect(service.canAnnounce(mk('ADMIN'))).toBeTrue();
+            expect(service.canAnnounce(mk('VOL', [desk]))).toBeTrue();
+            expect(service.canAnnounce(mk('TL', [desk]))).toBeTrue();
+            expect(service.canAnnounce(mk('VOL', [], ['helpdesk:manage']))).toBeTrue();
+            expect(service.canAnnounce(mk('TL', [{ _id: 'd2', name: 'Helpdesk', key: 'general' }]))).toBeFalse();
+            expect(service.canAnnounce(mk('VOL', [], ['wash:manage']))).toBeFalse();
+            expect(service.canAnnounce(null)).toBeFalse();
+        });
+    });
+
+    describe('Helpdesk read-only access (HD2)', () => {
+        const desk = { _id: 'd1', name: 'Front Desk', key: 'helpdesk' };
+        const box = { _id: 'd2', name: 'Gate', key: 'box-office' };
+        const mk = (role: string, depts: any[] = [], perms: string[] = []) =>
+            new User('Test', 'a@b.com', '', role, '', '', '123', undefined, depts.map(d => ({ department: d, access: ['read'] })), perms);
+
+        it('gives Helpdesk the view tier of the other sections, never a write', () => {
+            const h = mk('VOL', [desk]);
+            expect(service.isHelpdesk(h)).toBeTrue();
+            expect(service.canViewWash(h)).toBeTrue();
+            expect(service.canLogWash(h)).toBeFalse();
+            expect(service.canReadWorkshops(h)).toBeTrue();
+            expect(service.canRunWorkshops(h)).toBeFalse();
+            expect(service.canViewVolunteers(h)).toBeTrue();
+            expect(service.canAssignVolunteers(h)).toBeFalse();
+            expect(service.canReadTenting(h)).toBeTrue();
+            expect(service.canWriteTenting(h)).toBeFalse();
+            expect(service.canVacateTents(h)).toBeFalse();
+            expect(service.canViewHospitality(h)).toBeTrue();
+            expect(service.canManageHospitality(h)).toBeFalse();
+            expect(service.canUseMedical(h)).toBeFalse();
+        });
+
+        it('Box Office is read-only for Helpdesk unless they are Box Office staff too', () => {
+            expect(service.boxOfficeReadOnly(mk('VOL', [desk]))).toBeTrue();
+            expect(service.boxOfficeReadOnly(mk('VOL', [], ['helpdesk:manage']))).toBeTrue();
+            expect(service.boxOfficeReadOnly(mk('VOL', [desk, box]))).toBeFalse();
+            expect(service.boxOfficeReadOnly(mk('VOL', [box]))).toBeFalse();
+            expect(service.boxOfficeReadOnly(mk('ADMIN'))).toBeFalse();
+            expect(service.boxOfficeReadOnly(null)).toBeFalse();
+            // A read grant alone is view-only; write or higher works the desk.
+            expect(service.boxOfficeReadOnly(mk('VOL', [], ['box-office:read']))).toBeTrue();
+            expect(service.boxOfficeReadOnly(mk('VOL', [], ['box-office:write']))).toBeFalse();
+            expect(service.canWorkBoxOffice(mk('VOL', [], ['box-office:manage']))).toBeTrue();
+            expect(service.canWorkBoxOffice(mk('VOL', [desk]))).toBeFalse();
+            // Bulk Upload: top roles, the Box Office Team Lead, the manage grant.
+            expect(service.canManageBoxOffice(mk('ADMIN'))).toBeTrue();
+            expect(service.canManageBoxOffice(mk('TL', [box]))).toBeTrue();
+            expect(service.canManageBoxOffice(mk('VOL', [], ['box-office:manage']))).toBeTrue();
+            expect(service.canManageBoxOffice(mk('VOL', [box]))).toBeFalse();
+            expect(service.canManageBoxOffice(mk('VOL', [], ['box-office:write']))).toBeFalse();
+            expect(service.canManageBoxOffice(null)).toBeFalse();
+        });
+
+        it('nobody else gains anything', () => {
+            const v = mk('VOL', [{ _id: 'd3', name: 'Helpdesk', key: 'general' }]);
+            expect(service.isHelpdesk(v)).toBeFalse();
+            expect(service.canViewWash(v)).toBeFalse();
+            expect(service.canViewHospitality(v)).toBeFalse();
+        });
+    });
+
     describe('deptKeyOf', () => {
-        it('returns the stored key, or the name-based key until migrated', () => {
+        it('returns the stored built-in key, else "general" — the name is never used', () => {
             expect(service.deptKeyOf({ name: 'Front Gate', key: 'box-office' })).toBe('box-office');
-            expect(service.deptKeyOf({ name: 'Box Office' })).toBe('box-office');
+            expect(service.deptKeyOf({ name: 'Box Office' })).toBe('general');
+            expect(service.deptKeyOf({ name: 'Box Office', key: 'general' })).toBe('general');
+            expect(service.deptKeyOf({ name: 'Finance', key: 'finance' })).toBe('general');
             expect(service.deptKeyOf(null)).toBe('');
+        });
+    });
+
+    describe('Accommodation access (key `tenting`)', () => {
+        const camp = { _id: 'd1', name: 'Camp Crew', key: 'tenting' };
+        const lookalike = { _id: 'd2', name: 'Tenting', key: 'general' };
+        const mk = (role: string, depts: any[] = [], perms: string[] = []) =>
+            new User('Test', 'a@b.com', '', role, '', '', '123', undefined, depts.map(d => ({ department: d, access: ['read'] })), perms);
+
+        it('Read: top roles, every Tenting member, any tenting grant', () => {
+            expect(service.canReadTenting(mk('ADMIN'))).toBeTrue();
+            expect(service.canReadTenting(mk('VOL', [camp]))).toBeTrue();
+            expect(service.canReadTenting(mk('VOL', [], ['tenting:read']))).toBeTrue();
+            expect(service.canReadTenting(mk('VOL', [lookalike]))).toBeFalse();
+            expect(service.canReadTenting(mk('VOL', [], ['box-office:manage']))).toBeFalse();
+            expect(service.canReadTenting(null)).toBeFalse();
+        });
+
+        it('Write: top roles, the Tenting TL, tenting:write and up — not a plain member', () => {
+            expect(service.canWriteTenting(mk('DIR'))).toBeTrue();
+            expect(service.canWriteTenting(mk('TL', [camp]))).toBeTrue();
+            expect(service.canWriteTenting(mk('VOL', [], ['tenting:write']))).toBeTrue();
+            expect(service.canWriteTenting(mk('VOL', [], ['tenting:manage']))).toBeTrue();
+            expect(service.canWriteTenting(mk('VOL', [camp]))).toBeFalse();
+            expect(service.canWriteTenting(mk('VOL', [], ['tenting:read']))).toBeFalse();
+            expect(service.canWriteTenting(mk('TL', [lookalike]))).toBeFalse();
+        });
+
+        it('Manage (fields): top roles, the Tenting TL, tenting:manage only', () => {
+            expect(service.canManageTentFields(mk('ADMIN'))).toBeTrue();
+            expect(service.canManageTentFields(mk('TL', [camp]))).toBeTrue();
+            expect(service.canManageTentFields(mk('VOL', [], ['tenting:manage']))).toBeTrue();
+            expect(service.canManageTentFields(mk('VOL', [], ['tenting:write']))).toBeFalse();
+            expect(service.canManageTentFields(null)).toBeFalse();
+        });
+
+        it('Vacate: the Write group, or Box Office Write as before', () => {
+            expect(service.canVacateTents(mk('VOL', [], ['tenting:write']))).toBeTrue();
+            expect(service.canVacateTents(mk('VOL', [], ['box-office:write']))).toBeTrue();
+            expect(service.canVacateTents(mk('VOL', [], ['box-office:read']))).toBeFalse();
+            expect(service.canVacateTents(mk('VOL', [camp]))).toBeFalse();
+            expect(service.canVacateTents(null)).toBeFalse();
+        });
+    });
+
+    describe('Box Office is matched by key, never by name', () => {
+        const mk = (role: string, dept: any) =>
+            new User('Test', 'a@b.com', '', role, '', '', '123', undefined, [{ department: dept, access: ['read'] }], []);
+
+        it('a renamed Box Office department keeps its access', () => {
+            const gate = { _id: 'd1', name: 'Front Gate', key: 'box-office' };
+            expect(service.inDepartmentKey(mk('VOL', gate), 'box-office')).toBeTrue();
+            expect(service.hasPermission(mk('TL', gate), 'box-office:manage')).toBeTrue();
+        });
+
+        it('a department merely named "Box Office" gets nothing', () => {
+            const lookalike = { _id: 'd2', name: 'Box Office', key: 'general' };
+            expect(service.inDepartmentKey(mk('VOL', lookalike), 'box-office')).toBeFalse();
+            expect(service.hasPermission(mk('TL', lookalike), 'box-office:read')).toBeFalse();
+            // No key at all (an old cached sign-in): no page access either.
+            expect(service.inDepartmentKey(mk('VOL', { _id: 'd3', name: 'Box Office' }), 'box-office')).toBeFalse();
+        });
+
+        it('a Team Lead of a "general" department gets no automatic grant', () => {
+            const map = service.getEffectivePermissionMap(mk('TL', { _id: 'd4', name: 'Decor', key: 'general' }));
+            expect(map).toEqual({});
         });
     });
 

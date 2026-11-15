@@ -1,0 +1,111 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">WASH Stock</div>
+    <div class="page-ph-sub">Water, Sanitation &amp; Hygiene · central store · {{ event?.name || 'No event selected' }}</div>
+  </div>
+  <button type="button" class="btn-cta" *ngIf="canManage" [disabled]="!event" (click)="startNew()">Add item</button>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
+</div>
+
+<div class="wk-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <ng-container *ngIf="event">
+    <div class="wk-tools" *ngIf="items.length">
+      <div class="search-field wk-search">
+        <mat-icon>search</mat-icon>
+        <input type="text" [(ngModel)]="search" (ngModelChange)="apply()" placeholder="Search item" aria-label="Search item" />
+      </div>
+      <span class="wk-low-note" *ngIf="lowCount"><mat-icon>warning</mat-icon>{{ lowCount }} running low</span>
+    </div>
+
+    <p class="wk-muted" *ngIf="!loading && !items.length">
+      Nothing in the store yet.{{ canManage ? ' Add the first item: toilet paper, soap, sanitiser…' : ' The WASH Team Lead adds the items.' }}
+    </p>
+    <p class="wk-muted" *ngIf="items.length && !rows.length">No items match.</p>
+
+    <div class="wk-list">
+      <article class="wk-row" *ngFor="let r of rows; trackBy: trackRow" [class.low]="r.item.low" [class.out]="r.item.quantity === 0">
+        <button type="button" class="wk-main" (click)="open(r.item)" [attr.aria-label]="'Open ' + r.item.name">
+          <span class="wk-name">
+            <b>{{ r.item.name }}</b>
+            <span class="wk-badge" *ngIf="r.item.low">{{ r.item.quantity === 0 ? 'Out' : 'Low' }}</span>
+          </span>
+          <span class="wk-qty"><b>{{ r.item.quantity }}</b> {{ r.item.unit }}</span>
+          <span class="wk-bar" aria-hidden="true"><i [style.width.%]="r.pct"></i></span>
+          <small class="wk-lim">{{ r.item.lowLimit ? 'Low at ' + r.item.lowLimit + ' ' + r.item.unit : 'No low warning' }}</small>
+        </button>
+        <div class="wk-acts" *ngIf="canManage">
+          <button type="button" class="pill-btn" (click)="startMove(r.item, 'used')"><mat-icon>remove</mat-icon>Used</button>
+          <button type="button" class="pill-btn wk-in" (click)="startMove(r.item, 'received')"><mat-icon>add</mat-icon>Received</button>
+        </div>
+      </article>
+    </div>
+  </ng-container>
+
+  <app-slide-panel [open]="mode !== 'closed'" icon="inventory_2" [title]="panelTitle" [subtitle]="panelSubtitle" (closed)="panelClosed()">
+    <!-- Received / Used -->
+    <div class="wk-form" *ngIf="mode === 'move' && selected as i">
+      <div class="field">
+        <label for="wk-qty">How many {{ i.unit }} {{ moveKind === 'received' ? 'came in' : 'were used' }}? *</label>
+        <input id="wk-qty" type="number" min="1" step="1" inputmode="numeric" [(ngModel)]="moveQty" />
+      </div>
+      <div class="warn-banner wk-warn" *ngIf="overBy">
+        Only {{ i.quantity }} {{ i.unit }} in store — that is {{ overBy }} more. Saving sets {{ i.name }} to 0.
+      </div>
+      <div class="field">
+        <label for="wk-note">Note</label>
+        <input id="wk-note" type="text" maxlength="300" [(ngModel)]="moveNote" [placeholder]="moveKind === 'received' ? 'e.g. Supplier delivery' : 'e.g. Evening round'" />
+      </div>
+      <div class="field-error" *ngIf="formError">{{ formError }}</div>
+      <div class="wk-btns">
+        <button type="button" class="btn-ghost" (click)="panelClosed()">Cancel</button>
+        <button type="button" class="btn-cta" [disabled]="busy" (click)="saveMove()">Save {{ moveKind === 'received' ? 'received' : 'used' }}</button>
+      </div>
+    </div>
+
+    <!-- Add / edit item -->
+    <div class="wk-form" *ngIf="mode === 'new' || mode === 'edit'">
+      <div class="field"><label for="wk-name">Item *</label>
+        <input id="wk-name" type="text" maxlength="60" [(ngModel)]="form.name" placeholder="e.g. Toilet paper" /></div>
+      <div class="wk-two">
+        <div class="field"><label for="wk-unit">Unit</label>
+          <input id="wk-unit" type="text" maxlength="20" [(ngModel)]="form.unit" placeholder="rolls, litres, pcs" /></div>
+        <div class="field"><label for="wk-low">Low at</label>
+          <input id="wk-low" type="number" min="0" step="1" [(ngModel)]="form.lowLimit" /></div>
+      </div>
+      <div class="field" *ngIf="mode === 'new'"><label for="wk-open">In store now</label>
+        <input id="wk-open" type="number" min="0" step="1" [(ngModel)]="form.quantity" /></div>
+      <p class="wk-muted">"Low at" marks the item when the store reaches that number (0 = no warning).</p>
+      <div class="field-error" *ngIf="formError">{{ formError }}</div>
+      <div class="wk-btns">
+        <button type="button" class="btn-ghost" (click)="panelClosed()">Cancel</button>
+        <button type="button" class="btn-cta" [disabled]="busy" (click)="saveItem()">{{ mode === 'new' ? 'Add item' : 'Save' }}</button>
+      </div>
+    </div>
+
+    <!-- Item + history -->
+    <ng-container *ngIf="mode === 'view' && selected as i">
+      <div class="wk-acts wk-panel-acts" *ngIf="canManage">
+        <button type="button" class="pill-btn" (click)="startMove(i, 'used')"><mat-icon>remove</mat-icon>Used</button>
+        <button type="button" class="pill-btn wk-in" (click)="startMove(i, 'received')"><mat-icon>add</mat-icon>Received</button>
+        <button type="button" class="pill-btn" (click)="startEdit(i)"><mat-icon>edit</mat-icon>Edit</button>
+        <button type="button" class="pill-btn wk-danger" (click)="remove(i)"><mat-icon>delete</mat-icon>Delete</button>
+      </div>
+      <p class="section-lbl">History</p>
+      <p class="wk-muted" *ngIf="historyLoading">Loading…</p>
+      <p class="wk-muted" *ngIf="!historyLoading && !history.length">Nothing moved yet.</p>
+      <ul class="wk-tl">
+        <li *ngFor="let h of history; trackBy: trackLog" [class.in]="h.kind === 'received'">
+          <b>{{ h.change > 0 ? '+' : '' }}{{ h.change }}</b>
+          <div>
+            {{ h.kind === 'received' ? 'Received' : 'Used' }}<ng-container *ngIf="h.by"> · {{ h.by }}</ng-container> · {{ h.after }} left
+            <small>{{ clock(h.at) }} · {{ h.at | date: 'd MMM' }}<ng-container *ngIf="h.asked !== (h.change < 0 ? -h.change : h.change)"> · asked {{ h.asked }}</ng-container><ng-container *ngIf="h.note"> · "{{ h.note }}"</ng-container></small>
+          </div>
+        </li>
+      </ul>
+    </ng-container>
+  </app-slide-panel>
+</div>

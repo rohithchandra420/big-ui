@@ -7,6 +7,7 @@ import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
 import { HospitalityService } from '../hospitality.service';
 import { MealDay, MealKey, MessDay } from '../hospitality.model';
+import { SlidePanelComponent } from '../../shared/slide-panel/slide-panel.component';
 
 const at = (h: number, m = 0) => new Date(2026, 10, 12, h, m).toISOString();
 const meal = (key: MealKey, label: string, status: MealDay['status'], extra: Partial<MealDay> = {}): MealDay => ({
@@ -41,7 +42,7 @@ describe('HospitalityTodayComponent', () => {
     service.getDay.and.callFake(() => Promise.resolve(day()));
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     await TestBed.configureTestingModule({
-      declarations: [HospitalityTodayComponent],
+      declarations: [HospitalityTodayComponent, SlidePanelComponent],
       imports: [FormsModule],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
@@ -88,9 +89,11 @@ describe('HospitalityTodayComponent', () => {
     component.toggleWho(); flushMicrotasks(); fixture.detectChanges();
     expect(service.getDeskExpected).toHaveBeenCalledWith('e1', '2026-11-12', 'lunch');
     expect(fixture.nativeElement.querySelector('app-expected-list')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.sp-panel .sp-title').textContent.trim()).toBe("Who's counted");
     component.select('dinner'); flushMicrotasks();
     expect(service.getDeskExpected).toHaveBeenCalledWith('e1', '2026-11-12', 'dinner');
-    component.toggleWho(); fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.sp-x') as HTMLButtonElement).click(); fixture.detectChanges();
+    expect(component.whoOpen).toBeFalse();
     expect(fixture.nativeElement.querySelector('app-expected-list')).toBeNull();
     discardPeriodicTasks();
   }));

@@ -32,6 +32,7 @@
       <span class="bb-type"><mat-icon class="ms-fill">{{ TYPES[n.type].icon }}</mat-icon>{{ TYPES[n.type].label }}</span>
       <span class="bb-title">{{ n.title }}</span>
       <span class="bb-msg">{{ n.message }}</span>
+      <app-task-pill class="bb-status" *ngIf="n.status" [status]="n.status"></app-task-pill>
       <span class="bb-when">{{ n.createdAt | date:'d MMM, h:mm a' }}</span>
     </button>
   </div>
@@ -42,7 +43,7 @@
 </div>
 
 <div class="bb-scrim" *ngIf="open" (click)="closeNote()">
-  <div class="bb-note bb-big t-{{ open.type }}" role="dialog" aria-modal="true" [attr.aria-label]="open.title" (click)="$event.stopPropagation()">
+  <div class="bb-note bb-big t-{{ open.type }}" [class.has-task]="!!open.status" role="dialog" aria-modal="true" [attr.aria-label]="open.title" (click)="$event.stopPropagation()">
     <button #closeBtn type="button" class="bb-close" aria-label="Close" (click)="closeNote()"><mat-icon>close</mat-icon></button>
     <span class="bb-type"><mat-icon class="ms-fill">{{ TYPES[open.type].icon }}</mat-icon>{{ TYPES[open.type].label }}</span>
     <span class="bb-title">{{ open.title }}</span>
@@ -52,5 +53,7 @@
       <span><b>To:</b> {{ audience(open) }}</span>
       <span><b>Sent:</b> {{ open.createdAt | date:'d MMM y, h:mm a' }}</span>
     </span>
+    <!-- A sent Task: shared status, the buttons that move it on, and its timeline -->
+    <app-task-sheet *ngIf="open.status" [taskId]="open._id" (changed)="open.status = $event.status"></app-task-sheet>
   </div>
 </div>
