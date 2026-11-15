@@ -480,4 +480,35 @@ describe('BookingsComponent', () => {
       expect(component.emailStatusLabel({ ticketEmail: undefined } as any)).toBe('Not sent');
     });
   });
+
+  describe('who sees Bulk Upload (Box Office access rule)', () => {
+    const bulkButton = () => Array.from(fixture.nativeElement.querySelectorAll('.page-ph button') as NodeListOf<HTMLElement>)
+      .find(b => b.textContent!.includes('Bulk Upload'));
+
+    it('a Box Office volunteer works bookings but has no Bulk Upload', () => {
+      const auth = TestBed.inject(AuthService) as any;
+      auth.boxOfficeReadOnly = () => false;
+      auth.canManageBoxOffice = () => false;
+      fixture.detectChanges();
+      expect(component.readOnly).toBeFalse();
+      expect(bulkButton()).toBeUndefined();
+    });
+
+    it('the Box Office Team Lead has Bulk Upload', () => {
+      const auth = TestBed.inject(AuthService) as any;
+      auth.boxOfficeReadOnly = () => false;
+      auth.canManageBoxOffice = () => true;
+      fixture.detectChanges();
+      expect(bulkButton()).toBeDefined();
+    });
+
+    it('a view-only person has neither Bulk Upload nor Export', () => {
+      const auth = TestBed.inject(AuthService) as any;
+      auth.boxOfficeReadOnly = () => true;
+      auth.canManageBoxOffice = () => true;
+      fixture.detectChanges();
+      expect(component.canBulkUpload).toBeFalse();
+      expect(bulkButton()).toBeUndefined();
+    });
+  });
 });

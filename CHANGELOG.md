@@ -13,6 +13,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.59.0] - 2026-11-15
+
+### Changed
+- **Box Office buttons follow the new access rule.**
+  - A person with only the Box Office Read grant now sees Bookings and Registration without Export, Edit, Spot Registration, Admit, bands or tents (as Helpdesk does).
+  - Bulk Upload shows for the Box Office Team Lead, people with the Manage grant and top roles. Box Office volunteers keep everything else.
+
+---
+
 ## [1.58.0] - 2026-11-15
 
 ### Added
