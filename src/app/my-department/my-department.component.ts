@@ -18,12 +18,23 @@ import {
   UsersMatrix,
   UsersMatrixRow,
   UsersMatrixCell,
-  SlotState
+  SlotState,
+  MemberRole
 } from '../core/department.service';
+import type { VolProfile } from '../volunteers/volunteers.model';
+import { VolProfileComponent } from '../volunteers/vol-profile/vol-profile.component';
 import { ConfirmationService } from '../shared/confirm-dialog/confirmation.service';
 import { EventService } from '../core/event.service';
+import { TaskService } from '../core/task.service';
 
 type ViewMode = 'mark' | 'history' | 'matrix';
+export type Slot = 'morning' | 'afternoon' | 'night';
+/** The three slots on the Attendance tab (B-004 restyle): label + icon. */
+export const SLOT_CHIPS: { slot: Slot; label: string; icon: string }[] = [
+  { slot: 'morning', label: 'Morning', icon: 'wb_sunny' },
+  { slot: 'afternoon', label: 'Afternoon', icon: 'wb_twilight' },
+  { slot: 'night', label: 'Night', icon: 'bedtime' }
+];
 type AllViewMode = 'summary' | 'matrix' | 'users';
 
 @Component({
@@ -35,6 +46,7 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
 
   private userSub!: Subscription;
   userRole = '';
+  private authUserId = '';
 
   departments: MyDept[] = [];
   selectedDeptId = '';
@@ -49,6 +61,23 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
   roster: AttendanceRosterEntry[] = [];
   loadingRoster = false;
   saving = false;
+  readonly slotChips = SLOT_CHIPS;
+  /** What was saved, per person, to count unsaved changes (B-004). */
+  private saved = new Map<string, Record<Slot, boolean>>();
+
+  // B-005: the department's tasks open in a slide panel; the card shows the count.
+  tasksOpen = false;
+  openTasks = 0;
+  totalTasks = 0;
+  private taskRequest = 0;
+
+  // 2026-11-19: a member's details in a slide panel (Volunteers profile + Role)
+  member: { userId: string; name: string } | null = null;
+  memberProfile: VolProfile | null = null;
+  roleBusy = false;
+  @ViewChild(VolProfileComponent) memberView?: VolProfileComponent;
+  /** "Not marked" stat: show only people with no saved slot on the picked day. */
+  onlyUnmarked = false;
 
   reportFrom: string = this.daysAgo(30);
   reportTo: string = this.today();
@@ -96,7 +125,8 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private notificationService: NotificationService,
     private confirmationService: ConfirmationService,
-    private eventService: EventService
+    private eventService: EventService,
+    private taskService: TaskService
   ) {}
 
   /** Staff list (R2): lists and marks cover only the sidebar event's staff. */
@@ -107,6 +137,7 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.userSub = this.authService.user.subscribe(user => {
       this.userRole = user?.role || '';
+      this.authUserId = user?._id || '';
     });
     this.loadDepartments();
     // Reload the current view when the sidebar event changes (not on the first value).
@@ -160,8 +191,46 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.tasksOpen = false;
+    this.closeMember();
+    this.onlyUnmarked = false;
     this.loadDeptInfo();
+    this.loadTaskCount();
     this.loadForCurrentViewMode();
+    if (this.viewMode !== 'mark') this.loadRoster();   // the stat cards count the picked day
+  }
+
+  /** B-006: in the All view, a department row opens that department (and sets the dropdown). */
+  openDepartment(id: string) {
+    if (!this.isAllView || !this.departments.some(d => d._id === id)) return;
+    this.selectedDeptId = id;
+    this.onDeptChange();
+  }
+
+  /** B-005: open / all task counts for the marker on the department card. */
+  async loadTaskCount() {
+    const id = this.selectedDeptId;
+    const req = ++this.taskRequest;
+    this.openTasks = 0;
+    this.totalTasks = 0;
+    if (!id || this.isAllView) return;
+    try {
+      const tasks = await this.taskService.list(id);
+      if (req !== this.taskRequest) return;
+      this.totalTasks = tasks.length;
+      this.openTasks = tasks.filter(t => t.status !== 'closed').length;
+    } catch { /* the marker just stays at 0 */ }
+  }
+
+  get tasksLabel(): string {
+    if (!this.totalTasks) return 'No tasks';
+    return this.openTasks ? `Tasks · ${this.openTasks} open` : `Tasks · all ${this.totalTasks} closed`;
+  }
+
+  /** Closing the panel refreshes the marker (a status may have changed in it). */
+  closeTasks() {
+    this.tasksOpen = false;
+    this.loadTaskCount();
   }
 
   loadDeptInfo() {
@@ -194,7 +263,11 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
     if (!this.selectedDeptId || this.isAllView) return;
     this.loadingRoster = true;
     this.departmentService.getAttendance(this.selectedDeptId, this.selectedDate).subscribe({
-      next: (grid) => { this.roster = grid.roster; this.loadingRoster = false; },
+      next: (grid) => {
+        this.roster = grid.roster;
+        this.saved = new Map(grid.roster.map(r => [r.userId, { morning: r.morning, afternoon: r.afternoon, night: r.night }]));
+        this.loadingRoster = false;
+      },
       error: () => {
         this.loadingRoster = false;
         this.notificationService.openErrorSnackBar('Error loading attendance');
@@ -213,10 +286,136 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
     this.loadRoster();
   }
 
-  toggleSlot(entry: AttendanceRosterEntry, slot: 'morning' | 'afternoon' | 'night') {
+  toggleSlot(entry: AttendanceRosterEntry, slot: Slot) {
     if (!this.canMark) return;
     entry[slot] = !entry[slot];
   }
+
+  // ── B-004: the Attendance tab ──
+
+  /** Mark everyone for a slot, or clear it when everyone already is. */
+  markAll(slot: Slot) {
+    if (!this.canMark || !this.roster.length) return;
+    const all = this.roster.every(r => r[slot]);
+    this.roster.forEach(r => { r[slot] = !all; });
+  }
+  allMarked(slot: Slot): boolean { return this.roster.length > 0 && this.roster.every(r => r[slot]); }
+
+  /** Slots ticked or cleared since the last load / save. */
+  get unsavedCount(): number {
+    let n = 0;
+    this.roster.forEach(r => {
+      const was = this.saved.get(r.userId);
+      (['morning', 'afternoon', 'night'] as Slot[]).forEach(sl => { if (!was || was[sl] !== r[sl]) n++; });
+    });
+    return n;
+  }
+
+  /** "2/3" at the end of a row. */
+  rowCount(entry: AttendanceRosterEntry): number {
+    return Number(entry.morning) + Number(entry.afternoon) + Number(entry.night);
+  }
+
+  /** The hover on a slot: who marked it and when, or what will happen on Save. */
+  markTip(entry: AttendanceRosterEntry, slot: Slot): string {
+    const label = SLOT_CHIPS.find(c => c.slot === slot)!.label;
+    const was = this.saved.get(entry.userId)?.[slot];
+    if (entry[slot] && !was) return `${label} — ticked, not saved yet`;
+    if (!entry[slot] && was) return `${label} — will be cleared on Save`;
+    const m = entry.marks?.[slot];
+    if (entry[slot] && m) return `${label} — marked by ${m.by} · ${this.when(m.at)}`;
+    return entry[slot] ? `${label} — marked` : `${label} — not marked`;
+  }
+
+  private when(iso: string): string {
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  /** "Tue 18 Nov" over the date picker. */
+  get dayLabel(): string {
+    const d = new Date(this.selectedDate + 'T00:00:00Z');
+    return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  }
+  get isToday(): boolean { return this.selectedDate === this.today(); }
+  backToToday() { this.selectedDate = this.today(); this.loadRoster(); }
+
+  // ── redesign (2026-11-19): stat cards ──
+
+  private hasSaved(r: AttendanceRosterEntry): boolean {
+    const s = this.saved.get(r.userId);
+    return !!s && (s.morning || s.afternoon || s.night);
+  }
+  /** People with at least one SAVED slot on the picked day (ticks count once saved). */
+  get markedCount(): number { return this.roster.filter(r => this.hasSaved(r)).length; }
+  get shownRoster(): AttendanceRosterEntry[] {
+    return this.onlyUnmarked ? this.roster.filter(r => !this.hasSaved(r)) : this.roster;
+  }
+  toggleUnmarked() {
+    this.onlyUnmarked = !this.onlyUnmarked;
+    if (this.onlyUnmarked && this.viewMode !== 'mark') this.setViewMode('mark');
+  }
+  /** All view: totals over the Summary rows. */
+  get allTotals(): { people: number; marked: number; unmarked: number } {
+    const people = this.summaryRows.reduce((n, r) => n + (r.volunteerCount || 0), 0);
+    const marked = this.summaryRows.reduce((n, r) => n + (r.marked || 0), 0);
+    return { people, marked, unmarked: Math.max(0, people - marked) };
+  }
+
+  // ── a member's details (2026-11-19) ──
+
+  /** This department's TL or a top role (the dropdown lists a TL's own departments only). */
+  get canOpenMembers(): boolean { return this.canMark; }
+
+  openMember(userId: string, name: string) {
+    if (!this.canOpenMembers || !this.staffEvent) return;
+    this.member = { userId, name };
+    this.memberProfile = null;
+  }
+  closeMember() { this.member = null; this.memberProfile = null; this.roleBusy = false; }
+
+  get memberSubtitle(): string {
+    const p = this.memberProfile;
+    if (!p) return this.deptInfo?.name || '';
+    return p.role === 'TL' ? `Team Lead${p.teams?.length ? ' · ' + p.teams.join(', ') : ''}` : `Volunteer · ${this.deptInfo?.name || ''}`;
+  }
+
+  /** Why the Role buttons are not there. */
+  roleNote(p: VolProfile): string {
+    if (this.member?.userId && this.authUserId === this.member.userId) return 'You cannot change your own role.';
+    return p.role === 'TL' && (p.teams?.length || 0) > 1
+      ? `${p.name} leads more than one department. Change them in Admin › Users.` : '';
+  }
+
+  changeRole(to: MemberRole) {
+    const m = this.member, p = this.memberProfile, ev = this.staffEvent, dept = this.selectedDeptId;
+    if (!m || !p || !ev || !dept || this.roleBusy) return;
+    const deptName = this.deptInfo?.name || 'this department';
+    this.confirmationService.confirm({
+      title: to === 'TL' ? 'Make Team Lead' : 'Make volunteer',
+      message: to === 'TL'
+        ? `${p.name} becomes a Team Lead of ${deptName}. They can mark attendance and manage this department's people.`
+        : `${p.name} stops being a Team Lead of ${deptName} and becomes a volunteer here.`,
+      confirmText: to === 'TL' ? 'Make Team Lead' : 'Make volunteer',
+      danger: to === 'VOL'
+    }).subscribe(async ok => {
+      if (!ok || this.member?.userId !== m.userId) return;
+      this.roleBusy = true;
+      try {
+        await this.departmentService.setMemberRole(dept, m.userId, ev._id, to);
+        this.notificationService.openSucessSnackBar(to === 'TL' ? `${p.name} is now a Team Lead` : `${p.name} is now a volunteer`);
+        await this.memberView?.load();
+        this.loadDeptInfo();
+      } catch (err: any) {
+        this.notificationService.openErrorSnackBar(err?.error?.message || 'Could not change the role');
+      } finally {
+        this.roleBusy = false;
+      }
+    });
+  }
+
+  trackRoster = (_: number, r: AttendanceRosterEntry) => r.userId;
+  trackSlot = (_: number, c: { slot: Slot }) => c.slot;
 
   saveAttendance(overrides: { userId: string; slot: string }[] = []) {
     if (!this.canMark || !this.selectedDeptId) return;

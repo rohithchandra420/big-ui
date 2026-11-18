@@ -2169,3 +2169,119 @@ select:focus {
 @media (max-width: 768px) {
   .tk-shared { margin-left: 0; flex-basis: 100%; }
 }
+
+/* ── My Department (my-department/), 1.64.0 — B-004 / B-005 / B-006 ── */
+.myd-hd { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.myd-hd .grow { flex: 1; }
+/* B-005: the Tasks marker on the department card */
+.myd-tasks { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+  border: 1.5px solid var(--border-default); background: var(--surface-card); color: var(--text-primary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.myd-tasks mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--color-primary); }
+.myd-tasks.has { border-color: var(--color-primary); background: #eef5f1; }
+.myd-tasks.none { color: var(--text-secondary); }
+.myd-tasks.none mat-icon { color: var(--text-muted); }
+.myd-dot { position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; border-radius: 50%; background: var(--color-danger); border: 2px solid var(--surface-card); }
+.myd-tasks:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-secondary); }
+/* B-006: All view rows open a department */
+.myd-pickrow { cursor: pointer; }
+.myd-pickrow:hover td { background: #f6f8f6; }
+.myd-pickrow:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--color-secondary); }
+.myd-namego { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
+.myd-namego > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.myd-pickrow > td { vertical-align: middle; }
+.myd-namego .myd-go { flex: none; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; width: 18px; height: 18px; line-height: 1; overflow: visible; color: var(--text-muted); }
+.myd-pickrow:hover .myd-namego .myd-go { color: var(--color-primary); }
+/* Redesign (2026-11-19): hero card, stat cards, pill tabs */
+.myd-hero { display: flex; gap: 16px; align-items: flex-start; padding: 18px; margin-bottom: 12px; border-radius: 16px; color: var(--text-primary);
+  border: 1px solid var(--border-default); background: linear-gradient(135deg, #eef5f1 0%, var(--surface-card) 60%); }
+.myd-hero-ic { flex: none; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: var(--color-primary); color: #fff; }
+.myd-hero-ic mat-icon { font-size: 28px; width: 28px; height: 28px; }
+.myd-hero-body { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.myd-hero-hd { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.myd-hero-hd h2 { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary); overflow-wrap: anywhere; }
+.myd-hero-desc { margin: 0; font-size: 13px; color: var(--text-secondary); overflow-wrap: anywhere; }
+.myd-hero-desc.muted { color: var(--text-muted); font-style: italic; }
+.myd-hero-meta { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.myd-meta { max-width: 100%; min-width: 0; overflow-wrap: anywhere; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 4px 10px; border-radius: 999px;
+  background: var(--surface-card); border: 1px solid var(--border-subtle); font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+.myd-meta mat-icon { font-size: 16px; width: 16px; height: 16px; color: var(--color-secondary); }
+.myd-tl { display: inline-flex; align-items: center; gap: 5px; color: var(--text-primary); }
+.myd-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.myd-stat { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "i b" "i s"; align-items: center; column-gap: 10px; padding: 12px 14px;
+  border: 1px solid var(--border-default); border-radius: 14px; background: var(--surface-card); color: var(--text-primary); font: inherit; text-align: left; }
+button.myd-stat { cursor: pointer; }
+button.myd-stat:hover { border-color: var(--color-secondary); }
+.myd-stat mat-icon { grid-area: i; font-size: 24px; width: 24px; height: 24px; color: var(--color-primary); }
+.myd-stat b { grid-area: b; font-size: 22px; line-height: 1.1; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.myd-stat small { grid-area: s; font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.myd-stat.ok mat-icon { color: #2f855a; }
+.myd-stat.warn mat-icon { color: #b7791f; }
+.myd-stat.sel { border-color: #b7791f; background: #fff7e6; box-shadow: 0 0 0 1px #b7791f; }
+.myd-stat:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-secondary); }
+.myd-tabs { display: flex; gap: 4px; padding: 4px; margin-bottom: 12px; border-radius: 999px; background: var(--border-subtle); width: fit-content; max-width: 100%; overflow-x: auto; }
+.myd-tab { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border: 0; border-radius: 999px; background: transparent; white-space: nowrap;
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; }
+.myd-tab mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.myd-tab:hover { color: var(--color-primary); }
+.myd-tab.on { background: var(--surface-card); color: var(--color-primary); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.myd-tab:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-secondary); }
+.myd-person { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; border-radius: 6px; background: transparent; white-space: nowrap;
+  font: inherit; color: var(--text-primary); cursor: pointer; }
+.myd-person:hover:not(:disabled) { color: var(--color-primary); text-decoration: underline; }
+.myd-person:disabled { cursor: default; color: var(--text-primary); }
+.myd-role { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--text-primary); }
+@media (max-width: 768px) {
+  .myd-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .myd-hero { padding: 14px; gap: 12px; }
+  .myd-hero-ic { width: 42px; height: 42px; }
+  .myd-tabs { width: 100%; }
+  .myd-tab { flex: 1 0 auto; justify-content: center; }
+}
+/* B-004: the Attendance tab */
+.myd-att { color: var(--text-primary); }
+.myd-dayrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; }
+.myd-dayrow .grow { flex: 1; }
+.myd-dname { position: relative; min-width: 150px; cursor: pointer; color: var(--text-primary); }
+.myd-date-in { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.myd-date-in::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; }
+.myd-dname:focus-within { border-radius: 8px; box-shadow: 0 0 0 2px var(--color-secondary); }
+/* Mark all: the header row of the list, same grid as a person's row */
+.myd-row.myd-all { background: var(--surface-body); border-style: dashed; }
+.myd-slot.all { border-style: dashed; }
+.myd-slot.all.on { border-style: solid; }
+.myd-all-lbl { padding-left: 4px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-secondary); }
+.myd-rows { display: grid; gap: 6px; }
+.myd-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 44px; align-items: center; gap: 10px; padding: 8px 10px;
+  border: 1px solid var(--border-default); border-radius: 12px; background: var(--surface-card); color: var(--text-primary); }
+.myd-row.former { background: var(--surface-body); }
+/* 2026-11-19: the person opens their details */
+.myd-who { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 2px 4px; margin: -2px -4px; border: 0; border-radius: 10px;
+  background: transparent; font: inherit; text-align: left; color: var(--text-primary); cursor: pointer; }
+.myd-who:hover:not(:disabled) .myd-nm b { color: var(--color-primary); text-decoration: underline; }
+.myd-who:disabled { cursor: default; }
+.myd-who:focus-visible, .myd-person:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-secondary); }
+.myd-nm { min-width: 0; }
+.myd-nm b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
+.myd-nm small { font-size: 11px; color: var(--text-muted); }
+.myd-slots { display: flex; gap: 6px; }
+.myd-slot { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 12px; border-radius: 999px; cursor: pointer;
+  border: 1.5px solid var(--border-default); background: var(--surface-card); color: var(--text-secondary); font: inherit; font-size: 12.5px; font-weight: 600; }
+.myd-slot mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.myd-slot:hover:not(:disabled) { border-color: var(--color-secondary); }
+.myd-slot.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.myd-slot:disabled { cursor: default; }
+.myd-slot:disabled:not(.on) { opacity: .7; }
+.myd-slot:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-secondary); }
+.myd-count { justify-self: end; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.myd-count.full { color: var(--color-primary); }
+.myd-count.zero { color: #b7791f; }
+.myd-savebar { position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px;
+  padding: 10px 12px; border-radius: 12px; background: var(--surface-body); color: var(--text-secondary); font-size: 13px; font-weight: 600; }
+.myd-savebar.dirty { background: #fff7e6; color: #92400e; box-shadow: 0 -2px 10px rgba(0, 0, 0, .06); }
+@media (max-width: 640px) {
+  .myd-row { grid-template-columns: minmax(0, 1fr) 44px; grid-template-areas: "w c" "s s"; }
+  .myd-who, .myd-all-lbl { grid-area: w; } .myd-count { grid-area: c; } .myd-slots { grid-area: s; }
+  .myd-slot { flex: 1 1 0; justify-content: center; padding: 0 6px; }
+  .myd-savebar .btn-brand { flex: none; }
+}
+@media (max-width: 380px) { .myd-slot span { display: none; } }

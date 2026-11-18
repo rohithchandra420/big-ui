@@ -118,6 +118,7 @@ import { WashSetupComponent } from './wash/setup/wash-setup.component';
 import { WashStockComponent } from './wash/stock/wash-stock.component';
 import { WashReportComponent } from './wash/report/wash-report.component';
 import { VolunteersComponent } from './volunteers/volunteers.component';
+import { VolProfileComponent } from './volunteers/vol-profile/vol-profile.component';
 import { VolunteerNeedComponent } from './volunteers/volunteer-need/volunteer-need.component';
 import { VolunteerDepositsComponent } from './volunteers/deposits/volunteer-deposits.component';
 import { LocationPromptComponent } from './volunteers/location-prompt/location-prompt.component';
@@ -221,6 +222,7 @@ LOAD_WASM().subscribe()
     WashStockComponent,
     WashReportComponent,
     VolunteersComponent,
+    VolProfileComponent,
     VolunteerNeedComponent,
     VolunteerDepositsComponent,
     LocationPromptComponent

@@ -13,6 +13,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.64.0] - 2026-11-19
+
+### Added
+- **My Department: tap a person to see their details** (Team Leads of the department and DEV / DIR / ADMIN) — from Attendance, History or Calendar. The side panel is the Volunteers profile: contact, details, staff band (Link / Replace band), seven days of attendance and location on request. A **Role** section turns a volunteer into a Team Lead of the department, or back, after a confirmation.
+
+### Changed
+- **My Department, redesigned.** The department sits in a header card (icon, description, Team Leads, volunteers, volunteers needed, Tasks marker), followed by stat cards for the day — people, marked, **Not marked** (tap to show only them) and open tasks — and pill tabs. The All departments view gets the same stat cards and tabs.
+- The Volunteers profile panel is now a shared piece used by both pages; it looks and works the same.
+- All departments: the arrow on a department row lines up with its name.
+- **My Department › Attendance, restyled** (B-004). Each person has a Morning / Afternoon / Night chip (filled when marked) and a "2/3" count; the date has ‹ › steppers, a calendar on tap and Back to today. Team Leads get **Mark all** per slot and a save bar that counts unsaved changes. Hovering a slot shows **who marked it and when** (or "ticked, not saved yet").
+- **My Department: the department's details are on top, and its tasks open in a side panel** (B-005). The card shows a Tasks marker — "Tasks · 2 open" with a red dot, or "No tasks".
+- **My Department › All departments: tap a department to open it** (B-006) — in Daily Summary and Department Calendar; the dropdown follows.
+
+---
+
 ## [1.63.0] - 2026-11-18
 
 ### Changed
