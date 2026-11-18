@@ -13,6 +13,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.62.0] - 2026-11-18
+
+### Changed
+- **Serving desk: find people in the Expected list** (B-009). The search box at the top is gone — on phones, Enter in it jumped to the list's own search. Scan QR and the Walk-in guest pass now sit on the Expected card. In "Find a name", Enter closes the keyboard and, when only one person matches, opens them.
+- **Serving desk: tap a name to open their card** (B-014). A tap does what picking a search result did. The person's card (serve, reason, block, extra plate, band) and the guest cards now open in a side panel — a bottom sheet on phones — with "Next person · scan" to go straight on. Names can be tapped while the list shows the meal that is open now.
+- **Serving desk on phones: the food preference shows again** in the Expected list — the veg / non-veg icon sits between the name and the status (the word is left out to save room; guest plates read "2V · 1NV").
+- **Serving desk: the meal on show is highlighted** in the day / meal picker from the start (B-015).
+- **Today › Who's counted:** a compact two-line list in the side panel — name, food icon and status on top, department and why below — with no profile photo and the food shown as an icon only, so the names stay readable on desktop (B-002). The Serving desk keeps its table and photos.
+
+---
+
 ## [1.61.0] - 2026-11-18
 
 ### Added
