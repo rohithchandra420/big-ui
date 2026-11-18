@@ -18,6 +18,20 @@
   <p class="vl-muted" *ngIf="loading">Loading…</p>
 
   <ng-container *ngIf="event && board">
+    <!-- Picked date: changes only Marked and Stay (the bed for that night) -->
+    <div class="vl-dayrow">
+      <div class="day-nav">
+        <button type="button" class="pill-btn" (click)="shiftDay(-1)" aria-label="Previous day"><mat-icon>chevron_left</mat-icon></button>
+        <label class="day-nav-label vl-dname">
+          <b>{{ dayLabel }}</b>
+          <input type="date" class="vl-date-in" [value]="board.today" (change)="pickDate($any($event.target).value)" aria-label="Pick a date" />
+        </label>
+        <button type="button" class="pill-btn" (click)="shiftDay(1)" aria-label="Next day"><mat-icon>chevron_right</mat-icon></button>
+      </div>
+      <button type="button" class="pill-btn day-nav-today" *ngIf="!isToday" (click)="backToToday()"><mat-icon>today</mat-icon>Back to today</button>
+      <small class="vl-muted vl-dayhint">Marked and Stay follow this date</small>
+    </div>
+
     <!-- Stat cards (tap to filter) -->
     <div class="vl-stats">
       <button type="button" class="vl-stat" [class.on]="stat === 'all' && !notMarked" (click)="stat = 'all'; notMarked = false; apply()">
@@ -30,14 +44,20 @@
         <mat-icon>group_add</mat-icon><span><b>{{ view.stats.stillNeeded }}</b><small>Still needed</small></span>
       </button>
       <button type="button" class="vl-stat" [class.on]="notMarked" (click)="toggleNotMarked()">
-        <mat-icon>event_busy</mat-icon><span><b>{{ view.stats.notMarked }}</b><small>Not marked today</small></span>
+        <mat-icon>event_busy</mat-icon><span><b>{{ view.stats.notMarked }}</b><small>Not marked {{ dayPhrase }}</small></span>
       </button>
     </div>
 
     <div class="vl-tools">
       <div class="vl-seg" role="group" aria-label="Layout">
-        <button type="button" [class.on]="layout === 'board'" (click)="layout = 'board'"><mat-icon>view_kanban</mat-icon>Board</button>
         <button type="button" [class.on]="layout === 'list'" (click)="layout = 'list'"><mat-icon>table_rows</mat-icon>List</button>
+        <button type="button" [class.on]="layout === 'board'" (click)="layout = 'board'"><mat-icon>view_kanban</mat-icon>Board</button>
+      </div>
+      <!-- List only: Team Leads show here, never on the board -->
+      <div class="vl-seg" role="group" aria-label="Who to show" *ngIf="layout === 'list' && view.tlCount">
+        <button type="button" [class.on]="roleFilter === 'all'" (click)="setRole('all')">Everyone</button>
+        <button type="button" [class.on]="roleFilter === 'VOL'" (click)="setRole('VOL')">Volunteers</button>
+        <button type="button" [class.on]="roleFilter === 'TL'" (click)="setRole('TL')">Team Leads · {{ view.tlCount }}</button>
       </div>
       <div class="search-field vl-search">
         <mat-icon>search</mat-icon>
@@ -66,7 +86,7 @@
           </span>
           <span class="vl-who">
             <b>{{ v.name }}</b>
-            <small><i class="vl-dot" [class.no]="!v.marked"></i>{{ v.marked ? 'Marked today' : 'Not marked today' }}<mat-icon class="vl-loc" *ngIf="v.sharing" title="Shares their location when asked" aria-label="Shares their location when asked">location_on</mat-icon></small>
+            <small><i class="vl-dot" [class.no]="!v.marked"></i>{{ (v.marked ? 'Marked ' : 'Not marked ') + dayPhrase }}<mat-icon class="vl-loc" *ngIf="v.sharing" title="Shares their location when asked" aria-label="Shares their location when asked">location_on</mat-icon></small>
           </span>
         </button>
         <button type="button" class="vl-info" (click)="openProfile(v)" [attr.aria-label]="'Profile of ' + v.name"><mat-icon>info</mat-icon></button>
@@ -125,31 +145,44 @@
       <table class="vl-tbl">
         <thead><tr>
           <th class="vl-pick-col" *ngIf="canManage">
-            <button type="button" class="vl-tickbox" [class.on]="allShownPicked" [disabled]="!view.rows.length" (click)="toggleAllShown()"
+            <button type="button" class="vl-tickbox" [class.on]="allShownPicked" [disabled]="!pickableShown" (click)="toggleAllShown()"
                     [attr.aria-pressed]="allShownPicked" [attr.aria-label]="allShownPicked ? 'Unpick everyone shown' : 'Pick everyone shown'"><mat-icon>check</mat-icon></button>
           </th>
-          <th>Volunteer</th><th>Department</th><th>Today</th><th class="vl-wide">Phone</th><th class="vl-wide">Joined</th>
+          <!-- B-003: tap a header to sort; tap again to flip the order -->
+          <th [attr.aria-sort]="ariaSort('name')"><button type="button" class="vl-sort" (click)="sortBy('name')">Volunteer<mat-icon>{{ sortIcon('name') }}</mat-icon></button></th>
+          <th [attr.aria-sort]="ariaSort('dept')"><button type="button" class="vl-sort" (click)="sortBy('dept')">Department<mat-icon>{{ sortIcon('dept') }}</mat-icon></button></th>
+          <th [attr.aria-sort]="ariaSort('today')"><button type="button" class="vl-sort" (click)="sortBy('today')">Marked<mat-icon>{{ sortIcon('today') }}</mat-icon></button></th>
+          <th [attr.aria-sort]="ariaSort('stay')"><button type="button" class="vl-sort" (click)="sortBy('stay')" title="Bed for the night of the picked date">Stay<mat-icon>{{ sortIcon('stay') }}</mat-icon></button></th>
+          <th [attr.aria-sort]="ariaSort('band')"><button type="button" class="vl-sort" (click)="sortBy('band')">Band<mat-icon>{{ sortIcon('band') }}</mat-icon></button></th>
+          <th [attr.aria-sort]="ariaSort('gender')"><button type="button" class="vl-sort" (click)="sortBy('gender')">Gender<mat-icon>{{ sortIcon('gender') }}</mat-icon></button></th>
+          <th class="vl-wide" [attr.aria-sort]="ariaSort('phone')"><button type="button" class="vl-sort" (click)="sortBy('phone')">Phone<mat-icon>{{ sortIcon('phone') }}</mat-icon></button></th>
+          <th class="vl-wide" [attr.aria-sort]="ariaSort('joined')"><button type="button" class="vl-sort" (click)="sortBy('joined')">Joined<mat-icon>{{ sortIcon('joined') }}</mat-icon></button></th>
         </tr></thead>
         <tbody>
           <tr *ngFor="let r of view.rows; trackBy: trackRow" [class.sel]="selected.has(r.v._id)" (click)="openProfile(r.v)">
             <!-- Pick for a bulk location request; the rest of the row opens the profile -->
             <td class="vl-pick-col" *ngIf="canManage">
-              <button type="button" class="vl-tickbox" [class.on]="selected.has(r.v._id)" (click)="$event.stopPropagation(); toggle(r.v)"
+              <!-- Team Leads can't be picked (no moves or location requests for them here) -->
+              <button type="button" class="vl-tickbox" *ngIf="r.v.role !== 'TL'" [class.on]="selected.has(r.v._id)" (click)="$event.stopPropagation(); toggle(r.v)"
                       [attr.aria-pressed]="selected.has(r.v._id)" [attr.aria-label]="'Pick ' + r.v.name"><mat-icon>check</mat-icon></button>
             </td>
             <td>
               <span class="vl-cell-who">
                 <app-user-avatar [userId]="r.v._id" [name]="r.v.name" [version]="r.v.avatarVersion" [size]="26"></app-user-avatar>
                 <b>{{ r.v.name }}</b>
+                <span class="vl-pill tl" *ngIf="r.v.role === 'TL'" title="Team Lead">TL</span>
                 <mat-icon class="vl-loc" *ngIf="r.v.sharing" title="Shares their location when asked" aria-label="Shares their location when asked">location_on</mat-icon>
               </span>
             </td>
             <td><ng-container *ngIf="r.deptName; else un">{{ r.deptName }}</ng-container><ng-template #un><span class="vl-pill un">Unassigned</span></ng-template></td>
             <td><span class="vl-pill" [class.ok]="r.v.marked" [class.no]="!r.v.marked">{{ r.v.marked ? 'Marked' : 'Not marked' }}</span></td>
+            <td><span class="vl-pill vl-stay" [ngClass]="'s-' + r.v.stay">{{ stayLabel[r.v.stay] || 'No bed' }}</span></td>
+            <td><span class="vl-pill" [class.ok]="r.v.band" [class.no]="!r.v.band">{{ r.v.band ? 'Linked' : 'No band' }}</span></td>
+            <td>{{ r.v.gender || '—' }}</td>
             <td class="vl-wide">{{ r.v.phone || '—' }}</td>
             <td class="vl-wide">{{ r.v.dateOfJoining ? (r.v.dateOfJoining | date: 'd MMM') : '—' }}</td>
           </tr>
-          <tr *ngIf="!view.rows.length"><td [attr.colspan]="canManage ? 6 : 5">No volunteers match.</td></tr>
+          <tr *ngIf="!view.rows.length"><td [attr.colspan]="canManage ? 9 : 8">No one matches.</td></tr>
         </tbody>
       </table>
     </div>
@@ -197,7 +230,7 @@
           <app-user-avatar [userId]="p._id" [name]="p.name" [version]="p.avatarVersion" [size]="56"></app-user-avatar>
           <div>
             <b>{{ p.name }}</b>
-            <small>{{ p.unassigned ? 'Unassigned' : p.department?.name }}</small>
+            <small>{{ isTlProfile ? 'Team Lead · ' + (p.teams || []).join(', ') : p.unassigned ? 'Unassigned' : p.department?.name }}</small>
           </div>
         </div>
 
@@ -219,14 +252,28 @@
         <div>
           <p class="section-lbl">Details</p>
           <dl class="vl-kv">
-            <dt>Department</dt><dd>{{ p.unassigned ? 'Unassigned (Volunteer pool)' : p.department?.name }}</dd>
+            <dt>{{ isTlProfile ? 'Leads' : 'Department' }}</dt>
+            <dd>{{ isTlProfile ? (p.teams || []).join(', ') : p.unassigned ? 'Unassigned (Volunteer pool)' : p.department?.name }}</dd>
             <dt>Date of joining</dt><dd>{{ p.dateOfJoining ? (p.dateOfJoining | date: 'd MMM y') : 'Not given' }}</dd>
             <dt>Food</dt><dd>{{ p.foodPreference === 'non-veg' ? 'Non-veg' : 'Veg' }}</dd>
             <dt>Gender</dt><dd>{{ p.gender || 'Not given' }}</dd>
             <dt>Stay</dt><dd>{{ p.stay ? (p.stay.unit + (p.stay.type ? ' · ' + p.stay.type : '') + (p.stay.movedIn ? '' : ' · not moved in yet')) : 'No bed given yet' }}</dd>
             <dt>Staff band</dt><dd>{{ p.band ? 'Linked' : 'Not linked' }}</dd>
-            <dt>Deposit</dt><dd>{{ depositLabel[p.deposit.status] }}<ng-container *ngIf="p.deposit.amount"> · {{ money(p.deposit.amount) }}</ng-container></dd>
+            <ng-container *ngIf="!isTlProfile">
+              <dt>Deposit</dt><dd>{{ depositLabel[p.deposit.status] }}<ng-container *ngIf="p.deposit.amount"> · {{ money(p.deposit.amount) }}</ng-container></dd>
+            </ng-container>
           </dl>
+          <!-- B-010: link / replace the staff band (only when the server allows it for this person) -->
+          <div class="vl-band" *ngIf="band">
+            <button type="button" class="pill-btn" [disabled]="bandBusy" (click)="changeBand(!!band.current)">
+              <mat-icon>watch</mat-icon>{{ band.current ? 'Replace band' : 'Link band' }}
+            </button>
+            <ng-container *ngIf="bandReasonOpen">
+              <input class="vl-band-reason" type="text" maxlength="200" [(ngModel)]="bandReason" placeholder="Why replace? e.g. Lost it"
+                     aria-label="Reason to replace the band" (keyup.enter)="changeBand(true)" />
+              <button type="button" class="pill-btn" [disabled]="!bandReason.trim() || bandBusy" (click)="changeBand(true)"><mat-icon>qr_code_scanner</mat-icon>Scan new band</button>
+            </ng-container>
+          </div>
         </div>
 
         <div>
@@ -241,7 +288,7 @@
         </div>
 
         <!-- Location on request (V3): only for people who may ask -->
-        <div *ngIf="canManage">
+        <div *ngIf="canManage && !isTlProfile">
           <p class="section-lbl">Location</p>
           <p class="vl-muted" *ngIf="locationLoading">Loading…</p>
           <ng-container *ngIf="location as loc">
@@ -264,7 +311,7 @@
           </ng-container>
         </div>
 
-        <div *ngIf="canAssign">
+        <div *ngIf="canAssign && !isTlProfile">
           <p class="section-lbl">Move to</p>
           <div class="vl-move">
             <button type="button" class="pill-btn" *ngFor="let d of destinations; trackBy: trackDest" [class.cur]="isCurrent(d)" [class.free]="d.id === null"

@@ -8,7 +8,11 @@ import { EventItem } from '../models/event.model';
 import { VolunteersService } from './volunteers.service';
 import type * as Leaflet from 'leaflet';
 import { LocationInfo, VolBoard, VolDepartment, VolProfile, Volunteer } from './volunteers.model';
-import { BoardView, DEPOSIT_LABEL, LOCATION_LABEL, Lane, StatFilter, askMessage, buildBoard, money, moveMessage } from './volunteers.utils';
+import {
+  BoardView, DEPOSIT_LABEL, LOCATION_LABEL, Lane, RoleFilter, STAY_LABEL, SortDir, SortKey, StatFilter,
+  askMessage, buildBoard, dayWord, money, moveMessage, shiftDate, sortRows
+} from './volunteers.utils';
+import { StaffBandInfo, StaffBandService } from '../core/staff-band.service';
 
 type Panel = 'closed' | 'profile' | 'need' | 'add';
 /** A home department a new volunteer may get (Add users). */
@@ -40,7 +44,21 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   search = '';
   stat: StatFilter = 'all';
   notMarked = false;
-  layout: 'board' | 'list' = 'board';
+  /** B-018: the List opens first; Board is the second choice. */
+  layout: 'board' | 'list' = 'list';
+  /** B-003: List view column sort. */
+  sortKey: SortKey = 'name';
+  sortDir: SortDir = 'asc';
+  /** List only: everyone, Volunteers or Team Leads. */
+  roleFilter: RoleFilter = 'all';
+  /**
+   * The picked date (YYYY-MM-DD); null = today. It changes only the attendance
+   * marks and the bed status (for that night) — user, 2026-11-18.
+   */
+  date: string | null = null;
+  /** Today as the server sees it (learned from a load without a date). */
+  realToday = '';
+  stayLabel = STAY_LABEL;
 
   selected = new Set<string>();
   /** Lane id being hovered while dragging ('' = the pool, null = none). */
@@ -67,14 +85,15 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     private volunteers: VolunteersService,
     private notify: NotificationService,
     private zone: NgZone,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private staffBands: StaffBandService
   ) {}
 
   ngOnInit() {
     this.sub.add(this.events.activeEvent.subscribe(ev => {
       const changed = ev?._id !== this.event?._id;
       this.event = ev;
-      if (changed) { this.closePanel(); this.selected.clear(); this.board = null; this.load(); }
+      if (changed) { this.closePanel(); this.selected.clear(); this.board = null; this.date = null; this.load(); }
     }));
   }
 
@@ -207,9 +226,13 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loading = !this.board;
     this.loadError = '';
     try {
-      this.board = await this.volunteers.board(this.event._id);
-      // Drop picks that are no longer on the board
-      const ids = new Set(this.board.volunteers.map(v => v._id));
+      const asked = this.date;
+      const b = await this.volunteers.board(this.event._id, asked || undefined);
+      if (asked !== this.date) return;   // another date was picked meanwhile; that load wins
+      this.board = b;
+      if (!asked) this.realToday = b.today;
+      // Drop picks that are no longer on the board (Team Leads are never picked)
+      const ids = new Set(this.board.volunteers.filter(v => v.role !== 'TL').map(v => v._id));
       [...this.selected].forEach(id => { if (!ids.has(id)) this.selected.delete(id); });
     } catch (err: any) {
       this.loadError = err?.error?.message || 'Could not load the volunteers.';
@@ -221,7 +244,8 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   apply() {
-    this.view = buildBoard(this.board, { search: this.search, stat: this.stat, notMarked: this.notMarked });
+    const view = buildBoard(this.board, { search: this.search, stat: this.stat, notMarked: this.notMarked, role: this.roleFilter });
+    this.view = { ...view, rows: sortRows(view.rows, this.sortKey, this.sortDir) };
     const lanes = buildBoard(this.board, { search: '', stat: 'all', notMarked: false }).lanes;
     this.destinations = [
       { id: null, name: 'Unassigned', icon: 'person_search' },
@@ -239,6 +263,50 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     this.apply();
   }
 
+  setRole(r: RoleFilter) {
+    this.roleFilter = r;
+    this.apply();
+  }
+
+  // ── picked date (Marked + Stay only) ──
+  get isToday(): boolean { return !this.date || this.date === this.realToday; }
+  /** "Today" or "Mon 16 Nov". */
+  get dayLabel(): string { return this.board ? dayWord(this.board.today, this.realToday || this.board.today) : ''; }
+  /** For the "Not marked …" texts: "today" / "on Mon 16 Nov". */
+  get dayPhrase(): string { return this.isToday ? 'today' : 'on ' + this.dayLabel; }
+
+  shiftDay(n: number) {
+    if (!this.board) return;
+    this.pickDate(shiftDate(this.board.today, n));
+  }
+
+  /** From the date box or the steppers; an empty or broken value is ignored. */
+  pickDate(value: string) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return;
+    this.date = value === this.realToday ? null : value;
+    this.load();
+  }
+
+  backToToday() {
+    this.date = null;
+    this.load();
+  }
+
+  /** A header click sorts by that column; clicking it again flips the order. */
+  sortBy(key: SortKey) {
+    this.sortDir = this.sortKey === key && this.sortDir === 'asc' ? 'desc' : 'asc';
+    this.sortKey = key;
+    this.apply();
+  }
+
+  sortIcon(key: SortKey): string {
+    return this.sortKey !== key ? 'unfold_more' : this.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward';
+  }
+
+  ariaSort(key: SortKey): string {
+    return this.sortKey !== key ? 'none' : this.sortDir === 'asc' ? 'ascending' : 'descending';
+  }
+
   money = money;
   depositLabel = DEPOSIT_LABEL;
 
@@ -250,7 +318,7 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   // ── picking and moving ──
 
   toggle(v: Volunteer) {
-    if (!this.canAssign) { this.openProfile(v); return; }
+    if (!this.canAssign || v.role === 'TL') { this.openProfile(v); return; }
     this.selected.has(v._id) ? this.selected.delete(v._id) : this.selected.add(v._id);
   }
 
@@ -258,14 +326,18 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** List view: everyone left after search and filters is picked. */
   get allShownPicked(): boolean {
-    return this.view.rows.length > 0 && this.view.rows.every(r => this.selected.has(r.v._id));
+    const vols = this.view.rows.filter(r => r.v.role !== 'TL');
+    return vols.length > 0 && vols.every(r => this.selected.has(r.v._id));
   }
 
-  /** List view header: pick everyone shown, or unpick them when they all are. */
+  /** Volunteers among the rows shown (Team Leads can't be picked). */
+  get pickableShown(): number { return this.view.rows.filter(r => r.v.role !== 'TL').length; }
+
+  /** List view header: pick every volunteer shown, or unpick them when they all are. */
   toggleAllShown() {
     if (!this.canManage) return;
     const all = this.allShownPicked;
-    this.view.rows.forEach(r => (all ? this.selected.delete(r.v._id) : this.selected.add(r.v._id)));
+    this.view.rows.filter(r => r.v.role !== 'TL').forEach(r => (all ? this.selected.delete(r.v._id) : this.selected.add(r.v._id)));
   }
 
   /** `deptId` null = free to the Unassigned pool. */
@@ -322,16 +394,56 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     this.panel = 'profile';
     this.profileOf = v;
     this.profile = null;
+    this.band = null;
     this.profileError = '';
     this.profileLoading = true;
     try {
       const p = await this.volunteers.profile(this.event._id, v._id);
       if (this.profileOf?._id === v._id) this.profile = p;
-      if (this.canManage) this.loadLocation(v);
+      if (this.canManage && v.role !== 'TL') this.loadLocation(v);
+      this.loadBand(v);
     } catch (err: any) {
       this.profileError = err?.error?.message || 'Could not load the profile.';
     } finally {
       this.profileLoading = false;
+    }
+  }
+
+  // ── staff wrist band (B-010) ──
+  band: StaffBandInfo | null = null;
+  bandBusy = false;
+  bandReasonOpen = false;
+  bandReason = '';
+
+  /** The Link / Replace buttons show only when the server lets this person change the band (403 → hidden). */
+  async loadBand(v: Volunteer) {
+    this.band = null;
+    this.bandReasonOpen = false;
+    this.bandReason = '';
+    if (!this.event) return;
+    try {
+      const info = await this.staffBands.get(v._id, this.event._id);
+      if (this.profileOf?._id === v._id) this.band = info;
+    } catch { /* not allowed or not reachable: status only */ }
+  }
+
+  async changeBand(replace: boolean) {
+    const v = this.profileOf, ev = this.event;
+    if (!v || !ev || this.bandBusy) return;
+    if (replace && !this.bandReason.trim()) { this.bandReasonOpen = true; return; }
+    const raw = await this.staffBands.scan(`${replace ? 'Replace' : 'Link'} band: ${v.name}`);
+    if (!raw || this.profileOf?._id !== v._id) return;
+    this.bandBusy = true;
+    try {
+      if (replace) await this.staffBands.replace(v._id, ev._id, raw, this.bandReason.trim());
+      else await this.staffBands.link(v._id, ev._id, raw);
+      this.notify.openSucessSnackBar(replace ? 'Band replaced' : 'Band linked');
+      if (this.profile && this.profileOf?._id === v._id) this.profile = { ...this.profile, band: true };
+      await this.loadBand(v);
+    } catch (err: any) {
+      this.notify.openErrorSnackBar(err?.error?.message || err?.error?.errors?.[0]?.msg || 'Could not save the band');
+    } finally {
+      this.bandBusy = false;
     }
   }
 
@@ -381,6 +493,9 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     this.profileOf = null;
     this.needOf = null;
     this.location = null;
+    this.band = null;
+    this.bandReasonOpen = false;
+    this.bandReason = '';
     this.map?.remove();
     this.map = undefined;
   }
@@ -396,6 +511,10 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.panel === 'add') return `Joins ${this.event?.name || 'the event'}'s staff list`;
     if (this.panel === 'need') return this.needOf?.name || '';
     const p = this.profile;
+    if (this.isTlProfile) return `Team Lead${p?.teams?.length ? ' · ' + p.teams.join(', ') : ''}`;
     return p ? `Volunteer · ${p.unassigned ? 'Unassigned' : p.department?.name || ''}` : 'Volunteer';
   }
+
+  /** The open profile is a Team Lead: no moves, location requests or deposits here. */
+  get isTlProfile(): boolean { return this.profileOf?.role === 'TL'; }
 }

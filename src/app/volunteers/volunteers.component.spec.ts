@@ -10,10 +10,11 @@ import { EventService } from '../core/event.service';
 import { NotificationService } from '../core/notification.service';
 import { VolunteersService } from './volunteers.service';
 import { VolBoard, VolProfile, Volunteer } from './volunteers.model';
+import { StaffBandService } from '../core/staff-band.service';
 
-const vol = (id: string, name: string, department: string | null, marked = true): Volunteer => ({
-  _id: id, name, avatarVersion: 0, department, unassigned: !department, phone: '', dateOfJoining: null,
-  today: { morning: marked, afternoon: false, night: false }, marked
+const vol = (id: string, name: string, department: string | null, marked = true, extra: Partial<Volunteer> = {}): Volunteer => ({
+  _id: id, name, avatarVersion: 0, role: 'VOL', department, unassigned: !department, phone: '', gender: '', dateOfJoining: null,
+  today: { morning: marked, afternoon: false, night: false }, marked, stay: 'none', band: false, ...extra
 });
 
 const profile: VolProfile = {
@@ -29,6 +30,7 @@ describe('VolunteersComponent', () => {
   let notify: jasmine.SpyObj<NotificationService>;
   let canAssign: boolean;
   let dialog: jasmine.SpyObj<MatDialog>;
+  let bands: jasmine.SpyObj<StaffBandService>;
   const el = () => fixture.nativeElement as HTMLElement;
 
   const board = (): VolBoard => ({
@@ -47,6 +49,8 @@ describe('VolunteersComponent', () => {
     service.profile.and.returnValue(Promise.resolve(profile));
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     dialog = jasmine.createSpyObj('MatDialog', ['open']);
+    bands = jasmine.createSpyObj('StaffBandService', ['get', 'link', 'replace', 'scan']);
+    bands.get.and.callFake(() => Promise.reject({ status: 403 }));   // default: may not change bands
     await TestBed.configureTestingModule({
       declarations: [VolunteersComponent, SlidePanelComponent],
       imports: [FormsModule],
@@ -54,7 +58,8 @@ describe('VolunteersComponent', () => {
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
         { provide: NotificationService, useValue: notify },
         { provide: VolunteersService, useValue: service },
-        { provide: MatDialog, useValue: dialog }
+        { provide: MatDialog, useValue: dialog },
+        { provide: StaffBandService, useValue: bands }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -62,11 +67,198 @@ describe('VolunteersComponent', () => {
     component = fixture.componentInstance;
   });
 
-  const start = () => { fixture.detectChanges(); flushMicrotasks(); fixture.detectChanges(); };
+  /** Most tests below check the Board; the page itself opens on the List (B-018). */
+  const start = (layout: 'board' | 'list' = 'board') => {
+    component.layout = layout;
+    fixture.detectChanges(); flushMicrotasks(); fixture.detectChanges();
+  };
+  const headers = () => Array.from(el().querySelectorAll<HTMLButtonElement>('.vl-tbl thead .vl-sort'));
+  const rowNames = () => Array.from(el().querySelectorAll('.vl-tbl tbody tr b')).map(b => b.textContent!.trim());
+
+  it('B-018: opens on the List, and the List button comes first and is selected', fakeAsync(() => {
+    expect(component.layout).toBe('list');
+    fixture.detectChanges(); flushMicrotasks(); fixture.detectChanges();
+    const seg = Array.from(el().querySelectorAll<HTMLButtonElement>('.vl-seg[aria-label="Layout"] button'));
+    expect(seg.map(b => b.textContent!.replace('table_rows', '').replace('view_kanban', '').trim())).toEqual(['List', 'Board']);
+    expect(seg[0].classList).toContain('on');
+    expect(seg[1].classList).not.toContain('on');
+    expect(el().querySelector('.vl-tbl')).not.toBeNull();
+    expect(el().querySelector('.vl-board')).toBeNull();
+    seg[1].click();
+    fixture.detectChanges();
+    expect(el().querySelector('.vl-board')).not.toBeNull();
+  }));
+
+  it('B-003: sorts the List by a column, flips on a second tap, and marks the sorted header', fakeAsync(() => {
+    start('list');
+    expect(rowNames()).toEqual(['Anil', 'Bela', 'Chand']);               // name A–Z by default
+    expect(headers()[0].parentElement!.getAttribute('aria-sort')).toBe('ascending');
+
+    headers()[0].click(); fixture.detectChanges();                        // name again = Z–A
+    expect(rowNames()).toEqual(['Chand', 'Bela', 'Anil']);
+    expect(headers()[0].parentElement!.getAttribute('aria-sort')).toBe('descending');
+
+    headers()[1].click(); fixture.detectChanges();                        // department: Unassigned before WASH
+    expect(rowNames()).toEqual(['Anil', 'Bela', 'Chand']);
+    expect(headers()[0].parentElement!.getAttribute('aria-sort')).toBe('none');
+    headers()[1].click(); fixture.detectChanges();
+    expect(rowNames()).toEqual(['Chand', 'Anil', 'Bela']);                // ties stay A–Z
+
+    headers()[2].click(); fixture.detectChanges();                        // Today: not marked first
+    expect(rowNames()[0]).toBe('Bela');
+  }));
+
+  describe('List: Team Leads, new columns and the picked date (2026-11-18)', () => {
+    const withTls = (): VolBoard => ({
+      ...board(), canManage: true,
+      volunteers: [
+        vol('1', 'Anil', null, true, { gender: 'Male', stay: 'in', band: true }),
+        vol('2', 'Bela', null, false, { stay: 'booked' }),
+        vol('3', 'Chand', 'd2', true, { gender: 'Female' }),
+        vol('9', 'Devi', 'd2', false, { role: 'TL', teams: ['Decor', 'WASH'] })
+      ]
+    });
+    beforeEach(() => service.board.and.callFake((_e: string, date?: string) => Promise.resolve({ ...withTls(), today: date || '2026-11-14' })));
+
+    it('shows Stay, Band and Gender, and Team Leads with a badge — not on the board or in the counts', fakeAsync(() => {
+      start('list');
+      const rows = Array.from(el().querySelectorAll<HTMLTableRowElement>('.vl-tbl tbody tr'));
+      expect(rows.length).toBe(4);
+      const anil = rows[0].textContent!;
+      expect(anil).toContain('Moved in');
+      expect(anil).toContain('Linked');
+      expect(anil).toContain('Male');
+      expect(rows[1].textContent).toContain('Bed given');
+      expect(rows[2].textContent).toContain('No bed');
+      expect(rows[3].querySelector('.vl-pill.tl')).not.toBeNull();
+      expect(rows[3].textContent).toContain('Decor, WASH');
+      expect(rows[3].querySelector('.vl-tickbox')).toBeNull();             // a TL can't be picked
+      expect(component.view.stats.all).toBe(3);                           // volunteers only
+      expect(component.view.tlCount).toBe(1);
+
+      component.toggleAllShown();
+      expect([...component.selected].sort()).toEqual(['1', '2', '3']);
+
+      component.layout = 'board';
+      fixture.detectChanges();
+      expect(el().textContent).not.toContain('Devi');
+    }));
+
+    it('the role filter shows Volunteers or Team Leads; the Unassigned card hides Team Leads', fakeAsync(() => {
+      start('list');
+      component.setRole('TL');
+      fixture.detectChanges();
+      expect(rowNames()).toEqual(['Devi']);
+      component.setRole('VOL');
+      fixture.detectChanges();
+      expect(rowNames()).toEqual(['Anil', 'Bela', 'Chand']);
+      component.setRole('all');
+      component.setStat('unassigned');
+      fixture.detectChanges();
+      expect(rowNames()).toEqual(['Anil', 'Bela']);
+    }));
+
+    it('sorts by Stay (no bed first) and Band', fakeAsync(() => {
+      start('list');
+      component.sortBy('stay');
+      fixture.detectChanges();
+      expect(rowNames()).toEqual(['Chand', 'Devi', 'Bela', 'Anil']);
+      component.sortBy('band');
+      fixture.detectChanges();
+      expect(rowNames()[3]).toBe('Anil');
+    }));
+
+    it('a picked date reloads with that date; steppers move a day; Back to today clears it', fakeAsync(() => {
+      start('list');
+      expect(service.board).toHaveBeenCalledWith('e1', undefined);
+      expect(component.realToday).toBe('2026-11-14');
+      expect(el().querySelector('.day-nav-today')).toBeNull();
+
+      component.shiftDay(-1);
+      flushMicrotasks(); fixture.detectChanges();
+      expect(service.board).toHaveBeenCalledWith('e1', '2026-11-13');
+      expect(component.board!.today).toBe('2026-11-13');
+      expect(component.isToday).toBeFalse();
+      expect(el().querySelector('.vl-stat.on, .vl-stats')!.textContent).toContain('Not marked on');
+      expect(el().querySelector('.day-nav-today')).not.toBeNull();
+
+      component.pickDate('not-a-date');                                    // ignored
+      expect(service.board).toHaveBeenCalledTimes(2);
+      component.pickDate('2026-11-14');                                    // = today: back to no date
+      flushMicrotasks();
+      expect(component.date).toBeNull();
+      component.pickDate('2026-11-20');
+      flushMicrotasks();
+      component.backToToday();
+      flushMicrotasks(); fixture.detectChanges();
+      expect(service.board.calls.mostRecent().args).toEqual(['e1', undefined]);
+      expect(component.isToday).toBeTrue();
+    }));
+
+    it('a Team Lead\'s profile hides moves, location and deposit', fakeAsync(() => {
+      start('list');
+      component.board = { ...component.board!, canAssign: true };
+      service.profile.and.returnValue(Promise.resolve({ ...profile, _id: '9', name: 'Devi', role: 'TL', teams: ['Decor', 'WASH'] }));
+      component.openProfile(component.board!.volunteers[3]);
+      flushMicrotasks(); fixture.detectChanges();
+      expect(component.panelSubtitle).toBe('Team Lead · Decor, WASH');
+      const prof = el().querySelector('.vl-prof')!.textContent!;
+      expect(prof).toContain('Leads');
+      expect(prof).not.toContain('Deposit');
+      expect(prof).not.toContain('Move to');
+      expect(service.location).not.toHaveBeenCalled();
+    }));
+  });
+
+  it('B-010: shows Link band only when the server allows it, then links a scanned band', fakeAsync(() => {
+    start('list');
+    component.openProfile(component.board!.volunteers[0]);
+    flushMicrotasks(); fixture.detectChanges();
+    expect(bands.get).toHaveBeenCalledWith('1', 'e1');
+    expect(el().querySelector('.vl-band')).toBeNull();                    // 403: status only
+
+    bands.get.and.returnValue(Promise.resolve({ current: null, bands: [], canChange: true }));
+    bands.scan.and.returnValue(Promise.resolve('BAND-RAW'));
+    bands.link.and.returnValue(Promise.resolve({ band: { _id: 'b1', code: 'B1' } }));
+    component.openProfile(component.board!.volunteers[0]);
+    flushMicrotasks(); fixture.detectChanges();
+    const btn = el().querySelector<HTMLButtonElement>('.vl-band .pill-btn')!;
+    expect(btn.textContent).toContain('Link band');
+
+    bands.get.and.returnValue(Promise.resolve({ current: { _id: 'b1', code: 'B1' }, bands: [], canChange: true }));
+    btn.click();
+    flushMicrotasks(); fixture.detectChanges();
+    expect(bands.link).toHaveBeenCalledWith('1', 'e1', 'BAND-RAW');
+    expect(notify.openSucessSnackBar).toHaveBeenCalledWith('Band linked');
+    expect(component.profile!.band).toBeTrue();
+    expect(el().querySelector('.vl-band .pill-btn')!.textContent).toContain('Replace band');
+  }));
+
+  it('B-010: Replace asks for a reason first, and the panel close clears the band state', fakeAsync(() => {
+    start('list');
+    bands.get.and.returnValue(Promise.resolve({ current: { _id: 'b1', code: 'B1' }, bands: [], canChange: true }));
+    bands.scan.and.returnValue(Promise.resolve('NEW-RAW'));
+    bands.replace.and.returnValue(Promise.resolve({ band: { _id: 'b2', code: 'B2' } }));
+    component.openProfile(component.board!.volunteers[0]);
+    flushMicrotasks(); fixture.detectChanges();
+
+    component.changeBand(true);
+    expect(component.bandReasonOpen).toBeTrue();
+    expect(bands.scan).not.toHaveBeenCalled();
+    component.bandReason = 'Lost it';
+    component.changeBand(true);
+    flushMicrotasks();
+    expect(bands.replace).toHaveBeenCalledWith('1', 'e1', 'NEW-RAW', 'Lost it');
+    expect(notify.openSucessSnackBar).toHaveBeenCalledWith('Band replaced');
+
+    component.closePanel();
+    expect(component.band).toBeNull();
+    expect(component.bandReason).toBe('');
+  }));
 
   it('shows the Unassigned pool next to the department cards, with have / needed', fakeAsync(() => {
     start();
-    expect(service.board).toHaveBeenCalledWith('e1');
+    expect(service.board).toHaveBeenCalledWith('e1', undefined);   // no date = today
     expect(el().querySelectorAll('.vl-pool .vl-chip').length).toBe(2);
     expect(el().querySelector('.vl-pool .vl-count')!.textContent).toContain('2');
     const lanes = el().querySelectorAll('.vl-lane');
