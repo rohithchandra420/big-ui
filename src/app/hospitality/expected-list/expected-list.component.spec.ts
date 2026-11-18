@@ -63,6 +63,80 @@ describe('ExpectedListComponent', () => {
     expect(text()).toContain('marked for Night (day before)');
   });
 
+  it('B-014: rows are tappable only when pickable; a tap sends the person or the guest\'s pass', () => {
+    const picks: any[] = [];
+    component.picked.subscribe(p => picks.push(p));
+    show(exp());
+    const rowsEl = () => Array.from(fixture.nativeElement.querySelectorAll('.hx-er:not(.hx-eh)')) as HTMLElement[];
+    rowsEl()[1].click();
+    expect(picks).toEqual([]);                                             // not pickable (Today)
+    expect(rowsEl()[1].getAttribute('role')).toBe('row');
+
+    component.pickable = true;
+    fixture.detectChanges();
+    expect(rowsEl()[1].classList).toContain('pick');
+    expect(rowsEl()[1].getAttribute('tabindex')).toBe('0');
+    rowsEl()[1].click();                                                   // Bina
+    rowsEl()[3].click();                                                   // Sound crew (guest)
+    rowsEl()[4].dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));   // Dev, by keyboard
+    expect(picks).toEqual([{ kind: 'staff', id: 'b' }, { kind: 'guest', id: 'g' }, { kind: 'staff', id: 'd' }]);
+  });
+
+  it('B-009: Enter in Find a name stays put, closes the keyboard and picks the one match', () => {
+    const picks: any[] = [];
+    component.picked.subscribe(p => picks.push(p));
+    component.pickable = true;
+    show(exp());
+    const input = fixture.nativeElement.querySelector('.hx-etools input') as HTMLInputElement;
+    expect(input.getAttribute('enterkeyhint')).toBe('search');
+    input.focus();
+    const ev = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true });
+    input.dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBeTrue();
+    expect(document.activeElement).not.toBe(input);
+    expect(picks).toEqual([]);                                             // 5 shown: nobody picked
+
+    component.search = 'echo'; component.apply(); fixture.detectChanges();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }));
+    expect(picks).toEqual([{ kind: 'guest', id: 'g' }]);
+  });
+
+  it('B-002: showAvatar = false drops the photo (Today), names stay', () => {
+    show(exp());
+    expect(fixture.nativeElement.querySelector('app-user-avatar')).not.toBeNull();
+    component.showAvatar = false;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-user-avatar')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.hx-egav')).toBeNull();
+    expect(rows()).toContain('Bina Marked');
+  });
+
+  it('B-002: compact (Today\'s side panel) shows the food as an icon only, names stay', () => {
+    show(exp());
+    expect(text()).toContain('Non-veg');
+    component.compact = true;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.hx-etable.hx-ecompact')).not.toBeNull();
+    const food = fixture.nativeElement.querySelector('.hx-er:not(.hx-eh) .hx-ef') as HTMLElement;
+    expect(food.textContent!.trim()).toBe('');                               // icon only
+    expect(food.querySelector('.food-mark')!.getAttribute('aria-label')).toBe('Veg');
+    expect(text()).toContain('2V · 1NV');                                    // guest plates, short
+    expect(rows()).toContain('Bina Marked');
+  });
+
+  it('every person row has the food icon, with the word in its own span (hidden on phones by CSS)', () => {
+    show(exp());
+    const people = Array.from(fixture.nativeElement.querySelectorAll('.hx-er:not(.hx-eh)')) as HTMLElement[];
+    const staff = people.filter(r => !r.textContent!.includes('Sound crew'));
+    expect(staff.length).toBe(4);
+    staff.forEach(r => {
+      expect(r.querySelector('.hx-ef .food-mark')).not.toBeNull();
+      expect(r.querySelector('.hx-ef .hx-eft')).not.toBeNull();
+    });
+    const guest = people.find(r => r.textContent!.includes('Sound crew'))!;
+    expect(guest.querySelector('.hx-ef .hx-efs')!.textContent).toBe('2V · 1NV');
+  });
+
   it('shows the message when there is no meal, and nothing without data', () => {
     show({ meal: null, next: 'Outside the mess dates' });
     expect(text()).toContain('Outside the mess dates');

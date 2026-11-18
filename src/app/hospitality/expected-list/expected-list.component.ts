@@ -1,9 +1,11 @@
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
 import { localTime } from '../../workshops/planner.utils';
 import { DeskExpected, ExpectedGuest, ExpectedPerson } from '../hospitality.model';
 
 /** Expected list filters (1.47.0). */
 export type ExpectedFilter = 'all' | 'not_yet' | 'served' | 'not_marked' | 'guests';
+/** A tapped row (B-014): a staff member, or a guest by their Meal Pass id. */
+export interface ExpectedPick { kind: 'staff' | 'guest'; id: string }
 const SERVED = new Set(['served', 'served_flagged', 'extra']);
 const WHY_LABELS: Record<string, string> = { marked: 'Marked', always: 'Always counted', not_marked: 'Not marked', not_expected: 'Not expected' };
 
@@ -12,6 +14,8 @@ const WHY_LABELS: Record<string, string> = { marked: 'Marked', always: 'Always c
  * Meal Passes and — greyed — staff not counted, with why and desk status.
  * Used on the Serving desk and on Today's Kitchen count. Styles are global
  * (.hx-e* in styles.css).
+ * 1.62.0: `pickable` makes the rows tappable (Serving desk, B-014) and
+ * `showAvatar` = false drops the photo (Today, B-002).
  */
 @Component({
   selector: 'app-expected-list',
@@ -19,6 +23,15 @@ const WHY_LABELS: Record<string, string> = { marked: 'Marked', always: 'Always c
 })
 export class ExpectedListComponent implements OnChanges {
   @Input() data: DeskExpected | null = null;
+  @Input() pickable = false;
+  @Input() showAvatar = true;
+  /**
+   * Narrow places (Today's Who's counted side panel): two-line rows — name,
+   * food icon and status on top, department and why below — and the food as an
+   * icon only, so the name always has room.
+   */
+  @Input() compact = false;
+  @Output() picked = new EventEmitter<ExpectedPick>();
 
   filter: ExpectedFilter = 'all';
   search = '';
@@ -50,6 +63,22 @@ export class ExpectedListComponent implements OnChanges {
     this.counted = f === 'guests' || f === 'not_marked' ? [] : counted.filter(p => hit(p.name) && (f === 'all' || (f === 'served') === served(p)));
     this.others = f === 'guests' || f === 'not_yet' ? [] : others.filter(p => hit(p.name) && (f !== 'served' || served(p)));
     this.guests = f === 'all' || f === 'guests' ? guests.filter(g => hit(g.name) || hit(g.note)) : [];
+  }
+
+  pickPerson(p: ExpectedPerson) { if (this.pickable) this.picked.emit({ kind: 'staff', id: p._id }); }
+  pickGuest(g: ExpectedGuest) { if (this.pickable) this.picked.emit({ kind: 'guest', id: g._id }); }
+
+  /**
+   * B-009: Enter in "Find a name" never moves on to another field (phones jump
+   * to the next box). It closes the keyboard, and picks the one match if there
+   * is exactly one.
+   */
+  onEnter(ev: Event) {
+    ev.preventDefault();
+    (ev.target as HTMLElement | null)?.blur?.();
+    const people = [...this.counted, ...this.others];
+    if (people.length + this.guests.length !== 1) return;
+    people.length ? this.pickPerson(people[0]) : this.pickGuest(this.guests[0]);
   }
 
   time(iso: string): string { return localTime(new Date(iso)); }

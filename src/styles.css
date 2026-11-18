@@ -1680,6 +1680,21 @@ select:focus {
 .hx-er { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) 90px minmax(0, 1.2fr) 150px; gap: 10px; align-items: center; padding: 7px 4px; border-bottom: 1px solid var(--border-subtle); font-size: 13px; color: var(--text-primary); }
 .hx-er > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hx-er.dim .hx-en b { color: var(--text-secondary); font-weight: 600; }
+/* Serving desk (B-014, 1.62.0): a tappable row opens the person's card */
+.hx-er.pick { cursor: pointer; border-radius: 8px; }
+.hx-er.pick:hover { background: #f6f8f6; }
+.hx-er.pick:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-secondary); }
+/* Compact list (Today › Who's counted side panel, B-002): at any screen width,
+   row 1 = name · food icon · status, row 2 = department · why */
+.hx-efs { display: none; }                       /* short guest plates "2V · 1NV": phones + compact only */
+.hx-ecompact .hx-efs { display: inline; }
+.hx-ecompact .hx-eh { display: none; }
+.hx-ecompact .hx-er { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "n f s" "d w w"; row-gap: 2px; column-gap: 8px; }
+.hx-ecompact .hx-en { grid-area: n; }
+.hx-ecompact .hx-ef { grid-area: f; display: flex; }
+.hx-ecompact .hx-es { grid-area: s; }
+.hx-ecompact .hx-ed { grid-area: d; padding-left: 0; }
+.hx-ecompact .hx-ew { grid-area: w; display: block; text-align: right; }
 .hx-eh { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); border-bottom-color: var(--border-default); }
 .hx-en { display: flex; align-items: center; gap: 8px; }
 .hx-en b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1695,10 +1710,12 @@ select:focus {
 .hx-enone { padding: 10px 4px; }
 @media (max-width: 700px) {
   .hx-eh { display: none; }
-  .hx-er { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n s" "d d"; row-gap: 2px; }
-  .hx-en { grid-area: n; } .hx-es { grid-area: s; }
+  /* Phones: name · food icon · status, department below (food text hidden, icon kept) */
+  .hx-er { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "n f s" "d d d"; row-gap: 2px; column-gap: 8px; }
+  .hx-en { grid-area: n; } .hx-es { grid-area: s; } .hx-ef { grid-area: f; }
   .hx-ed { grid-area: d; padding-left: 36px; white-space: normal; }
-  .hx-ef, .hx-ew { display: none; }
+  .hx-ew, .hx-eft { display: none; }
+  .hx-efs { display: inline; }
 }
 .hx-egav { width: 28px; height: 28px; border-radius: 50%; background: #f3effe; color: #7c3aed; display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
 .hx-epick { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }

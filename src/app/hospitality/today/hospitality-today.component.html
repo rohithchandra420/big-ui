@@ -128,7 +128,7 @@
             <app-slide-panel [open]="whoOpen" icon="checklist" title="Who's counted"
                              [subtitle]="dayLabel + ' · ' + s.expected.total + ' expected'" (closed)="toggleWho()">
               <p class="hx-muted" *ngIf="!who">Loading…</p>
-              <app-expected-list [data]="who"></app-expected-list>
+              <app-expected-list [data]="who" [showAvatar]="false" [compact]="true"></app-expected-list>
             </app-slide-panel>
           </div>
         </section>
