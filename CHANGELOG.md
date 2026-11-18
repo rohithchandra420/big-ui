@@ -13,6 +13,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.61.0] - 2026-11-18
+
+### Added
+- **Volunteers List: more columns.** Stay (the bed for the night: Moved in, Bed given or No bed), staff Band (Linked / No band) and Gender. "Today" is now called "Marked".
+- **Volunteers: pick a date.** A date above the stat cards (‹ › steppers, tap the date for a calendar, Back to today). It changes only the attendance marks and the bed status for that night; the rest stays as it is.
+- **Team Leads in the Volunteers List.** The event's Team Leads show with a TL badge and the departments they lead, plus a filter: Everyone / Volunteers / Team Leads. They are not on the Board, not in the counts and can't be picked or moved. Their profile opens from the List (no moves, location requests or deposits there).
+- **Link or replace a staff band from a volunteer's profile** (B-010). The Volunteer Team Lead can now do this for any volunteer or Team Lead on the event, as well as the people who could already.
+- **Sort the Volunteers List by any column** (B-003): tap a header for ascending, tap again for descending. Empty values stay at the bottom.
+
+### Changed
+- **The Volunteers page opens on the List** (B-018). List comes first in the List / Board toggle.
+
+---
+
 ## [1.60.0] - 2026-11-15
 
 ### Added

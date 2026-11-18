@@ -1,18 +1,30 @@
 /** Volunteers page (V1) — the shapes big-api `routers/volunteers.js` answers with. */
 export interface VolSlots { morning: boolean; afternoon: boolean; night: boolean }
 
+/** Bed for the night of the picked date: moved in, bed given (not moved in yet), or none. */
+export type NightStay = 'in' | 'booked' | 'none';
+
 export interface Volunteer {
   _id: string;
   name: string;
   avatarVersion: number;
+  /** 'TL' rows (user, 2026-11-18) show in the List only: never on the board, in the counts or in moves. */
+  role: 'VOL' | 'TL';
   /** Home department id; null when unassigned (in the Volunteer department or none). */
   department: string | null;
+  /** A Team Lead's departments by name. */
+  teams?: string[];
   unassigned: boolean;
   phone: string;
+  gender: string;
   dateOfJoining: string | null;
+  /** Attendance on the picked date (the board's `today`). */
   today: VolSlots;
-  /** Marked in any slot today. Shown only — marking stays in My Department. */
+  /** Marked in any slot on the picked date. Shown only — marking stays in My Department. */
   marked: boolean;
+  stay: NightStay;
+  /** Has an active staff band for this event. */
+  band: boolean;
   /** V3: shares their location when asked. Sent only to people who may ask (Manage). */
   sharing?: boolean;
 }
@@ -29,6 +41,7 @@ export interface VolDepartment {
 }
 
 export interface VolBoard {
+  /** The picked date (YYYY-MM-DD); today unless another date was asked for. */
   today: string;
   canAssign: boolean;
   /** V3: may ask volunteers for their location and read the answers. */
@@ -116,7 +129,9 @@ export interface VolProfile {
   email: string;
   phone: string;
   avatarVersion: number;
+  role?: 'VOL' | 'TL';
   department: { _id: string; name: string } | null;
+  teams?: string[];
   unassigned: boolean;
   dateOfJoining: string | null;
   foodPreference: 'veg' | 'non-veg';
