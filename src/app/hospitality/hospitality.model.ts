@@ -131,6 +131,8 @@ export interface DeskExpected {
 
 export type ScanOutcome =
   | { result: 'served'; person: DeskPerson }
+  /** A tapped name that is marked and hasn't eaten (api 1.54.0): nothing recorded until Serve. */
+  | { result: 'ready'; person: DeskPerson }
   | { result: 'flag'; person: DeskPerson; slot: Slot; teamLeads: string[] }
   | { result: 'duplicate'; person: DeskPerson; lastServedAt: string; lastServedBy: string }
   | GuestOutcome;
@@ -283,7 +285,8 @@ export interface NightStats {
   guestsInBed: number;
   movedIn: number;
   staffTotal: number;
-  withoutBed: { _id: string; name: string; detail: string }[];
+  /** `gender` = their profile gender (api 1.54.0, B-011), so Allocate asks only when it is missing. */
+  withoutBed: { _id: string; name: string; gender?: Gender | null; detail: string }[];
 }
 export interface StayPerson {
   kind: 'staff' | 'guest';

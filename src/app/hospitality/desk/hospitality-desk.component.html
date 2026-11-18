@@ -136,9 +136,10 @@
       <!-- Result (staff) -->
       <div class="hd-result" *ngIf="staffOutcome as r" [ngClass]="done ? 'done' : r.result">
         <div class="hd-band">
-          <mat-icon class="ms-fill">{{ done ? 'task_alt' : r.result === 'served' ? 'check_circle' : r.result === 'flag' ? 'flag' : 'error' }}</mat-icon>
+          <mat-icon class="ms-fill">{{ done ? 'task_alt' : r.result === 'served' ? 'check_circle' : r.result === 'ready' ? 'restaurant' : r.result === 'flag' ? 'flag' : 'error' }}</mat-icon>
           <ng-container *ngIf="done">{{ done }}</ng-container>
           <ng-container *ngIf="!done && r.result === 'served'">Enjoy your meal</ng-container>
+          <ng-container *ngIf="!done && r.result === 'ready'">Marked — not served yet</ng-container>
           <ng-container *ngIf="!done && r.result === 'flag'">No attendance marked for the {{ slotText }} slot</ng-container>
           <ng-container *ngIf="!done && r.result === 'duplicate'">Already ate this meal at {{ time($any(r).lastServedAt) }}</ng-container>
         </div>
@@ -158,6 +159,11 @@
           </div>
         </div>
 
+        <!-- A tapped name (user, 2026-11-18): nothing is recorded until Serve is pressed -->
+        <div class="hd-body hd-acts" *ngIf="!done && r.result === 'ready'">
+          <button type="button" class="pill-btn hx-primary" [disabled]="busy" (click)="serveReady()"><mat-icon>restaurant</mat-icon>Serve</button>
+          <span class="hx-muted">Check it is them, then Serve.</span>
+        </div>
         <div class="hd-body" *ngIf="!done && r.result === 'flag'">
           <div class="hx-muted">Serve anyway? Pick a reason (it's recorded):</div>
           <div class="hd-reasons">

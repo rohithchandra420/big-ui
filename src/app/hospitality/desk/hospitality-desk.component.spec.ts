@@ -130,10 +130,20 @@ describe('HospitalityDeskComponent', () => {
       service.getDeskExpected.and.returnValue(Promise.resolve(exp()));
       start();
       expect(component.listPickable).toBeTrue();
-      service.scan.and.returnValue(Promise.resolve({ result: 'served', person }));
+      service.scan.and.returnValue(Promise.resolve({ result: 'ready', person }));
       component.onPicked({ kind: 'staff', id: 'u1' });
       flushMicrotasks(); fixture.detectChanges();
-      expect(service.scan).toHaveBeenCalledWith('e1', { user: 'u1' });
+      // A tap only looks (user, 2026-11-18): "ready", no sound, a Serve button
+      expect(service.scan).toHaveBeenCalledWith('e1', { user: 'u1', preview: true });
+      expect(gate.found).not.toHaveBeenCalled();
+      expect(gate.notFound).not.toHaveBeenCalled();
+      expect(text()).toContain('Marked — not served yet');
+      service.scan.and.returnValue(Promise.resolve({ result: 'served', person }));
+      (fixture.nativeElement.querySelector('.hd-result.ready .hx-primary') as HTMLButtonElement).click();
+      flushMicrotasks(); fixture.detectChanges();
+      expect(service.scan.calls.mostRecent().args).toEqual(['e1', { user: 'u1' }]);
+      expect(gate.found).toHaveBeenCalled();
+      expect(text()).toContain('Enjoy your meal');
       expect(component.panelOpen).toBeTrue();
       expect(component.panelTitle).toBe('Kavya Iyer');
       expect(component.panelSubtitle).toBe('VOL · Stage Crew');

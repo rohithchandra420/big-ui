@@ -25,6 +25,7 @@
 .hd-result.served { border-color: #86efac; } .hd-result.served .hd-band { background: #15803d; }
 .hd-result.flag { border-color: #fcd34d; } .hd-result.flag .hd-band { background: #b45309; }
 .hd-result.duplicate { border-color: #fca5a5; } .hd-result.duplicate .hd-band { background: #dc2626; }
+.hd-result.ready { border-color: #a7c4b5; } .hd-result.ready .hd-band { background: var(--color-primary); }
 .hd-result.done { border-color: #c7d3cc; } .hd-result.done .hd-band { background: var(--color-primary); }
 .hd-x { border: 0; background: rgba(255, 255, 255, .2); color: #fff; border-radius: 999px; width: 28px; height: 28px; display: grid; place-items: center; cursor: pointer; }
 .hd-x mat-icon { font-size: 18px; width: 18px; height: 18px; }
