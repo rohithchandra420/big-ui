@@ -142,4 +142,6 @@ export interface VolProfile {
   /** Security deposit for the event; `amount` only for people who may see amounts. */
   deposit: { status: DepositStatus; amount?: number };
   attendance: ({ date: string } & VolSlots)[];
+  /** My Department only (2026-11-19): what the signed-in person may do for this member. */
+  can?: { role: boolean; location: boolean };
 }

@@ -15,22 +15,26 @@
     </app-select>
   </div>
 
-  <!-- Tasks sent to this department (Helpdesk, HD1): one shared status for everyone in it -->
-  <app-task-list *ngIf="!isAllView && selectedDeptId" [department]="selectedDeptId" [hideWhenEmpty]="true"
-                 [heading]="'Tasks for ' + (deptInfo?.name || 'your department')"
-                 hint="Everyone in the department sees the same status. Tap a task to open it."></app-task-list>
-
   <!-- ── ALL view: cross-department reporting only ─────────── -->
   <ng-container *ngIf="isAllView">
 
-    <div class="view-tabs">
-      <button class="tab-btn" [class.active]="allViewMode === 'summary'" (click)="setAllViewMode('summary')">Daily Summary</button>
-      <button class="tab-btn" [class.active]="allViewMode === 'matrix'" (click)="setAllViewMode('matrix')">Department Calendar</button>
-      <button class="tab-btn" [class.active]="allViewMode === 'users'" (click)="setAllViewMode('users')">All Users</button>
+    <!-- Redesign (2026-11-19): the day at a glance, for the Summary date -->
+    <div class="myd-stats" *ngIf="allViewMode === 'summary' && !loadingSummary && summaryRows.length">
+      <div class="myd-stat"><mat-icon>apartment</mat-icon><b>{{ summaryRows.length }}</b><small>Departments</small></div>
+      <div class="myd-stat"><mat-icon>groups</mat-icon><b>{{ allTotals.people }}</b><small>Volunteers</small></div>
+      <div class="myd-stat ok"><mat-icon>event_available</mat-icon><b>{{ allTotals.marked }}</b><small>Marked</small></div>
+      <div class="myd-stat warn"><mat-icon>event_busy</mat-icon><b>{{ allTotals.unmarked }}</b><small>Not marked</small></div>
+    </div>
+
+    <div class="myd-tabs" role="tablist">
+      <button type="button" class="myd-tab" role="tab" [class.on]="allViewMode === 'summary'" [attr.aria-selected]="allViewMode === 'summary'" (click)="setAllViewMode('summary')"><mat-icon>today</mat-icon>Daily Summary</button>
+      <button type="button" class="myd-tab" role="tab" [class.on]="allViewMode === 'matrix'" [attr.aria-selected]="allViewMode === 'matrix'" (click)="setAllViewMode('matrix')"><mat-icon>calendar_month</mat-icon>Department Calendar</button>
+      <button type="button" class="myd-tab" role="tab" [class.on]="allViewMode === 'users'" [attr.aria-selected]="allViewMode === 'users'" (click)="setAllViewMode('users')"><mat-icon>group</mat-icon>All Users</button>
     </div>
 
     <div class="card" *ngIf="allViewMode === 'summary'">
       <div class="section-lbl">Attendance Summary</div>
+      <p class="legend-note">Tap a department to open it.</p>
 
       <div class="field inline-field">
         <label>Date</label>
@@ -48,8 +52,9 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of summaryRows">
-              <td class="sticky-name-col">{{ row.name }}</td>
+            <tr *ngFor="let row of summaryRows" class="myd-pickrow" tabindex="0" role="button" [attr.aria-label]="'Open ' + row.name"
+                (click)="openDepartment(row._id)" (keydown.enter)="openDepartment(row._id)">
+              <td class="sticky-name-col"><span class="myd-namego"><span>{{ row.name }}</span><mat-icon class="myd-go" aria-hidden="true">chevron_right</mat-icon></span></td>
               <td>{{ row.volunteerCount }}</td>
               <td>{{ row.marked }}</td>
               <td>{{ row.morning }}</td>
@@ -83,8 +88,9 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of allMatrix.departments">
-              <td class="sticky-name-col">{{ row.name }}</td>
+            <tr *ngFor="let row of allMatrix.departments" class="myd-pickrow" tabindex="0" role="button" [attr.aria-label]="'Open ' + row.name"
+                (click)="openDepartment(row._id)" (keydown.enter)="openDepartment(row._id)">
+              <td class="sticky-name-col"><span class="myd-namego"><span>{{ row.name }}</span><mat-icon class="myd-go" aria-hidden="true">chevron_right</mat-icon></span></td>
               <td *ngFor="let date of allMatrix.dates">
                 <span class="cell-null" *ngIf="allMatrixCell(row, date).null">–</span>
                 <span class="slot-counts" *ngIf="!allMatrixCell(row, date).null">
@@ -165,41 +171,63 @@
   <!-- ── Single department view ──────────────────────────────── -->
   <ng-container *ngIf="!isAllView && selectedDeptId">
 
-    <div class="dept-info-card" *ngIf="deptInfo">
-      <div class="dept-info-hd">
-        <span class="dept-name">{{ deptInfo.name }}</span>
-      </div>
-      <p class="dept-desc" *ngIf="deptInfo.description">{{ deptInfo.description }}</p>
-      <p class="dept-desc muted" *ngIf="!deptInfo.description">No description</p>
-      <div class="meta-row">
-        <span class="meta-label">TL</span>
-        <span class="meta-value">
-          <span class="tl-list" *ngIf="deptInfo.tls.length; else noTl">
-            <span class="name-cell" *ngFor="let t of deptInfo.tls">
-              <app-user-avatar [userId]="t._id" [name]="t.name" [version]="t.avatarVersion" [size]="18"></app-user-avatar>
-              {{ t.name }}
-            </span>
+    <!-- Redesign (2026-11-19): the department on top (B-005), with its tasks marker -->
+    <div class="myd-hero" *ngIf="deptInfo">
+      <span class="myd-hero-ic" aria-hidden="true"><mat-icon class="ms-fill">diversity_3</mat-icon></span>
+      <div class="myd-hero-body">
+        <div class="myd-hero-hd">
+          <h2>{{ deptInfo.name }}</h2>
+          <!-- B-005: the department's tasks open in a slide panel -->
+          <button type="button" class="myd-tasks" [class.has]="openTasks > 0" [class.none]="!totalTasks" (click)="tasksOpen = true"
+                  [attr.aria-label]="tasksLabel + ' — open the task list'">
+            <mat-icon class="ms-fill">task_alt</mat-icon>{{ tasksLabel }}
+            <span class="myd-dot" *ngIf="openTasks > 0" aria-hidden="true"></span>
+          </button>
+        </div>
+        <p class="myd-hero-desc" [class.muted]="!deptInfo.description">{{ deptInfo.description || 'No description' }}</p>
+        <div class="myd-hero-meta">
+          <span class="myd-meta"><mat-icon>badge</mat-icon>
+            <ng-container *ngIf="deptInfo.tls.length; else noTl">
+              <span class="myd-tl" *ngFor="let t of deptInfo.tls">
+                <app-user-avatar [userId]="t._id" [name]="t.name" [version]="t.avatarVersion" [size]="20"></app-user-avatar>{{ t.name }}
+              </span>
+            </ng-container>
+            <ng-template #noTl>No Team Lead yet</ng-template>
           </span>
-          <ng-template #noTl>—</ng-template>
-        </span>
+          <span class="myd-meta"><mat-icon>group</mat-icon>{{ deptInfo.volunteerCount }} volunteer{{ deptInfo.volunteerCount === 1 ? '' : 's' }}</span>
+        </div>
+        <!-- Volunteers needed for the sidebar event: set by this department's Team Lead, read on the Volunteers page -->
+        <app-volunteer-need [departmentId]="selectedDeptId" [eventId]="staffEvent?._id || ''"></app-volunteer-need>
       </div>
-      <div class="meta-row"><span class="meta-label">Volunteers</span><span class="meta-value">{{ deptInfo.volunteerCount }}</span></div>
-      <!-- Volunteers needed for the sidebar event: set by this department's Team Lead, read on the Volunteers page -->
-      <app-volunteer-need [departmentId]="selectedDeptId" [eventId]="staffEvent?._id || ''"></app-volunteer-need>
     </div>
 
-    <div class="view-tabs">
-      <button class="tab-btn" [class.active]="viewMode === 'mark'" (click)="setViewMode('mark')">Attendance</button>
-      <button class="tab-btn" [class.active]="viewMode === 'history'" (click)="setViewMode('history')">History</button>
-      <button class="tab-btn" [class.active]="viewMode === 'matrix'" (click)="setViewMode('matrix')">Calendar</button>
+    <!-- The picked day at a glance; "Not marked" shows only them on the Attendance tab -->
+    <div class="myd-stats" *ngIf="deptInfo">
+      <div class="myd-stat"><mat-icon>groups</mat-icon><b>{{ roster.length }}</b><small>People</small></div>
+      <div class="myd-stat ok"><mat-icon>event_available</mat-icon><b>{{ markedCount }}</b><small>Marked · {{ isToday ? 'today' : dayLabel }}</small></div>
+      <button type="button" class="myd-stat warn" [class.sel]="onlyUnmarked" [attr.aria-pressed]="onlyUnmarked" (click)="toggleUnmarked()">
+        <mat-icon>event_busy</mat-icon><b>{{ roster.length - markedCount }}</b><small>{{ onlyUnmarked ? 'Showing only them' : 'Not marked' }}</small></button>
+      <button type="button" class="myd-stat" (click)="tasksOpen = true"><mat-icon>task_alt</mat-icon><b>{{ openTasks }}</b><small>Open tasks</small></button>
     </div>
 
-    <!-- Attendance grid for one date -->
-    <div class="card" *ngIf="viewMode === 'mark'">
-      <div class="date-nav">
-        <button class="btn-sm-outline" (click)="shiftDate(-1)">‹ Prev</button>
-        <input type="date" [(ngModel)]="selectedDate" (change)="onDateChange()">
-        <button class="btn-sm-outline" (click)="shiftDate(1)">Next ›</button>
+    <div class="myd-tabs" role="tablist">
+      <button type="button" class="myd-tab" role="tab" [class.on]="viewMode === 'mark'" [attr.aria-selected]="viewMode === 'mark'" (click)="setViewMode('mark')"><mat-icon>how_to_reg</mat-icon>Attendance</button>
+      <button type="button" class="myd-tab" role="tab" [class.on]="viewMode === 'history'" [attr.aria-selected]="viewMode === 'history'" (click)="setViewMode('history')"><mat-icon>history</mat-icon>History</button>
+      <button type="button" class="myd-tab" role="tab" [class.on]="viewMode === 'matrix'" [attr.aria-selected]="viewMode === 'matrix'" (click)="setViewMode('matrix')"><mat-icon>calendar_month</mat-icon>Calendar</button>
+    </div>
+
+    <!-- Attendance for one date (B-004 restyle): a chip per slot; hover = who marked it and when -->
+    <div class="card myd-att" *ngIf="viewMode === 'mark'">
+      <div class="myd-dayrow">
+        <div class="day-nav">
+          <button type="button" class="pill-btn" (click)="shiftDate(-1)" aria-label="Previous day"><mat-icon>chevron_left</mat-icon></button>
+          <label class="day-nav-label myd-dname">
+            <b>{{ dayLabel }}</b><small>{{ isToday ? 'Today' : 'Tap to pick a date' }}</small>
+            <input type="date" class="myd-date-in" [(ngModel)]="selectedDate" (change)="onDateChange()" aria-label="Pick a date" />
+          </label>
+          <button type="button" class="pill-btn" (click)="shiftDate(1)" aria-label="Next day"><mat-icon>chevron_right</mat-icon></button>
+        </div>
+        <button type="button" class="pill-btn day-nav-today" *ngIf="!isToday" (click)="backToToday()"><mat-icon>today</mat-icon>Back to today</button>
       </div>
 
       <div *ngIf="loadingRoster" class="loading-wrap"><mat-spinner diameter="32"></mat-spinner></div>
@@ -208,40 +236,45 @@
         <p>No volunteers currently in this department.</p>
       </div>
 
-      <div class="table-scroll" *ngIf="!loadingRoster && roster.length > 0">
-        <table class="data-table">
-          <thead>
-            <tr><th class="sticky-name-col">Name</th><th>Morning</th><th>Afternoon</th><th>Night</th></tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let entry of roster">
-              <td class="sticky-name-col"><span class="name-cell"><app-user-avatar [userId]="entry.userId" [name]="entry.name" [version]="entry.avatarVersion" [size]="20" [muted]="!entry.current"></app-user-avatar>{{ entry.name }} <span class="former-tag" *ngIf="!entry.current">(transferred)</span></span></td>
-              <td>
-                <label class="cb-wrap">
-                  <input type="checkbox" [checked]="entry.morning" (change)="toggleSlot(entry, 'morning')" [disabled]="!canMark">
-                  <span class="cb-box"></span>
-                </label>
-              </td>
-              <td>
-                <label class="cb-wrap">
-                  <input type="checkbox" [checked]="entry.afternoon" (change)="toggleSlot(entry, 'afternoon')" [disabled]="!canMark">
-                  <span class="cb-box"></span>
-                </label>
-              </td>
-              <td>
-                <label class="cb-wrap">
-                  <input type="checkbox" [checked]="entry.night" (change)="toggleSlot(entry, 'night')" [disabled]="!canMark">
-                  <span class="cb-box"></span>
-                </label>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div *ngIf="!loadingRoster && onlyUnmarked && roster.length > 0 && !shownRoster.length" class="empty-state">
+        <p>Everyone has at least one slot marked for this day.</p>
       </div>
 
-      <div class="btn-row" *ngIf="canMark && roster.length > 0">
-        <button class="btn-brand" [disabled]="saving" (click)="saveAttendance()">
-          {{ saving ? 'Saving…' : 'Save Attendance' }}
+      <div class="myd-rows" *ngIf="!loadingRoster && shownRoster.length > 0">
+        <!-- Mark all: a header row on the same grid, so each chip sits over its column -->
+        <div class="myd-row myd-all" *ngIf="canMark" role="group" aria-label="Mark everyone for a slot">
+          <span class="myd-all-lbl">Mark all</span>
+          <span class="myd-slots">
+            <button type="button" class="myd-slot all" *ngFor="let c of slotChips; trackBy: trackSlot" [class.on]="allMarked(c.slot)"
+                    [attr.aria-pressed]="allMarked(c.slot)" (click)="markAll(c.slot)">
+              <mat-icon [class.ms-fill]="allMarked(c.slot)">{{ c.icon }}</mat-icon><span>{{ c.label }}</span>
+            </button>
+          </span>
+          <span></span>
+        </div>
+        <div class="myd-row" *ngFor="let entry of shownRoster; trackBy: trackRoster" [class.former]="!entry.current">
+          <!-- 2026-11-19: tap a person for their details (TL of this department, top roles) -->
+          <button type="button" class="myd-who" [disabled]="!canOpenMembers" (click)="openMember(entry.userId, entry.name)"
+                  [attr.aria-label]="canOpenMembers ? 'Details of ' + entry.name : null">
+            <app-user-avatar [userId]="entry.userId" [name]="entry.name" [version]="entry.avatarVersion" [size]="32" [muted]="!entry.current"></app-user-avatar>
+            <span class="myd-nm"><b>{{ entry.name }}</b><small *ngIf="!entry.current">Transferred</small></span>
+          </button>
+          <span class="myd-slots">
+            <button type="button" class="myd-slot" *ngFor="let c of slotChips; trackBy: trackSlot" [class.on]="entry[c.slot]"
+                    [disabled]="!canMark" (click)="toggleSlot(entry, c.slot)" [attr.aria-pressed]="entry[c.slot]"
+                    [data-tooltip]="markTip(entry, c.slot)" [attr.aria-label]="markTip(entry, c.slot)">
+              <mat-icon [class.ms-fill]="entry[c.slot]">{{ c.icon }}</mat-icon><span>{{ c.label }}</span>
+            </button>
+          </span>
+          <span class="myd-count" [class.full]="rowCount(entry) === 3" [class.zero]="rowCount(entry) === 0">{{ rowCount(entry) }}/3</span>
+        </div>
+      </div>
+
+      <!-- Sticky save bar: how many slots changed since the last save -->
+      <div class="myd-savebar" *ngIf="canMark && roster.length > 0" [class.dirty]="unsavedCount > 0">
+        <span>{{ unsavedCount ? unsavedCount + ' unsaved change' + (unsavedCount === 1 ? '' : 's') : 'All saved' }}</span>
+        <button class="btn-brand" [disabled]="saving || !unsavedCount" (click)="saveAttendance()">
+          {{ saving ? 'Saving…' : 'Save attendance' }}
         </button>
       </div>
     </div>
@@ -268,7 +301,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let row of reportRows">
-              <td class="sticky-name-col"><span class="name-cell"><app-user-avatar [userId]="row.userId" [name]="row.name" [version]="row.avatarVersion" [size]="20"></app-user-avatar>{{ row.name }}</span></td>
+              <td class="sticky-name-col"><button type="button" class="myd-person" [disabled]="!canOpenMembers" (click)="openMember(row.userId, row.name)"><app-user-avatar [userId]="row.userId" [name]="row.name" [version]="row.avatarVersion" [size]="20"></app-user-avatar>{{ row.name }}</button></td>
               <td>{{ row.daysMarked }}</td>
               <td>{{ row.morning }}</td>
               <td>{{ row.afternoon }}</td>
@@ -302,7 +335,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let row of matrix.users">
-              <td class="sticky-name-col"><span class="name-cell"><app-user-avatar [userId]="row.userId" [name]="row.name" [version]="row.avatarVersion" [size]="20" [muted]="!row.current"></app-user-avatar>{{ row.name }} <span class="former-tag" *ngIf="!row.current">(transferred)</span></span></td>
+              <td class="sticky-name-col"><button type="button" class="myd-person" [disabled]="!canOpenMembers" (click)="openMember(row.userId, row.name)"><app-user-avatar [userId]="row.userId" [name]="row.name" [version]="row.avatarVersion" [size]="20" [muted]="!row.current"></app-user-avatar>{{ row.name }} <span class="former-tag" *ngIf="!row.current">(transferred)</span></button></td>
               <td *ngFor="let date of matrix.dates">
                 <span class="att-dots">
                   <span class="att-dot" [ngClass]="dotClass(matrixCell(row, date).morning)" data-tooltip="Morning"></span>
@@ -328,6 +361,31 @@
         </table>
       </div>
     </div>
+
+    <!-- 2026-11-19: a member's details — the Volunteers profile, plus Role (no Move to here) -->
+    <app-slide-panel [open]="!!member" icon="person" [title]="member?.name || ''" [subtitle]="memberSubtitle" (closed)="closeMember()">
+      <app-vol-profile *ngIf="member && staffEvent" [eventId]="staffEvent._id" [userId]="member.userId" [departmentId]="selectedDeptId"
+                       (loaded)="memberProfile = $event">
+        <div *ngIf="memberProfile as p">
+          <p class="section-lbl">Role</p>
+          <div class="myd-role">
+            <span class="vl-pill" [class.tl]="p.role === 'TL'">{{ p.role === 'TL' ? 'Team Lead' : 'Volunteer' }}</span>
+            <ng-container *ngIf="p.can?.role">
+              <button type="button" class="pill-btn" *ngIf="p.role !== 'TL'" [disabled]="roleBusy" (click)="changeRole('TL')"><mat-icon>military_tech</mat-icon>Make Team Lead</button>
+              <button type="button" class="pill-btn" *ngIf="p.role === 'TL'" [disabled]="roleBusy" (click)="changeRole('VOL')"><mat-icon>person</mat-icon>Make volunteer</button>
+            </ng-container>
+          </div>
+          <p class="vl-muted" *ngIf="!p.can?.role">{{ roleNote(p) }}</p>
+        </div>
+      </app-vol-profile>
+    </app-slide-panel>
+
+    <!-- B-005: tasks sent to this department (Helpdesk, HD1), in a slide panel -->
+    <app-slide-panel [open]="tasksOpen" icon="task_alt" [title]="'Tasks for ' + (deptInfo?.name || 'your department')"
+                     subtitle="Everyone in the department sees the same status" (closed)="closeTasks()">
+      <app-task-list *ngIf="tasksOpen" [department]="selectedDeptId" heading="Tasks"
+                     hint="Tap a task to open it."></app-task-list>
+    </app-slide-panel>
 
   </ng-container>
 

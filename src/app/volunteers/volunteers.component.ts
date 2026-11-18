@@ -6,13 +6,12 @@ import { EventService } from '../core/event.service';
 import { NotificationService } from '../core/notification.service';
 import { EventItem } from '../models/event.model';
 import { VolunteersService } from './volunteers.service';
-import type * as Leaflet from 'leaflet';
-import { LocationInfo, VolBoard, VolDepartment, VolProfile, Volunteer } from './volunteers.model';
+import { VolBoard, VolDepartment, VolProfile, Volunteer } from './volunteers.model';
 import {
-  BoardView, DEPOSIT_LABEL, LOCATION_LABEL, Lane, RoleFilter, STAY_LABEL, SortDir, SortKey, StatFilter,
+  BoardView, DEPOSIT_LABEL, Lane, RoleFilter, STAY_LABEL, SortDir, SortKey, StatFilter,
   askMessage, buildBoard, dayWord, money, moveMessage, shiftDate, sortRows
 } from './volunteers.utils';
-import { StaffBandInfo, StaffBandService } from '../core/staff-band.service';
+import { VolProfileComponent } from './vol-profile/vol-profile.component';
 
 type Panel = 'closed' | 'profile' | 'need' | 'add';
 /** A home department a new volunteer may get (Add users). */
@@ -66,10 +65,10 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   private dragIds: string[] = [];
 
   panel: Panel = 'closed';
+  /** Set by the shared profile once it has loaded (Move to + the panel subtitle). */
   profile: VolProfile | null = null;
   profileOf: Volunteer | null = null;
-  profileLoading = false;
-  profileError = '';
+  @ViewChild(VolProfileComponent) profileView?: VolProfileComponent;
   needOf: VolDepartment | null = null;
   needValue: number | null = null;
   needError = '';
@@ -85,8 +84,7 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     private volunteers: VolunteersService,
     private notify: NotificationService,
     private zone: NgZone,
-    private dialog: MatDialog,
-    private staffBands: StaffBandService
+    private dialog: MatDialog
   ) {}
 
   ngOnInit() {
@@ -107,7 +105,6 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.sub.unsubscribe();
     this.resize?.disconnect();
-    this.map?.remove();
   }
 
   get canAssign(): boolean { return !!this.board?.canAssign; }
@@ -152,13 +149,7 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
       .afterClosed().subscribe(added => { if (added) this.load(); });
   }
 
-  // ── location on request (V3) ──
-  location: LocationInfo | null = null;
-  locationLoading = false;
-  locationLabel = LOCATION_LABEL;
-  @ViewChild('locMap') locMap?: ElementRef<HTMLDivElement>;
-  private map?: Leaflet.Map;
-
+  // ── location on request (V3): asking many from the board / List; one person's is in the profile ──
   /** Only volunteers who share are asked; the answer says how many were not. */
   async askLocation(ids: string[]) {
     if (!this.event || !this.canManage || this.busy || !ids.length) return;
@@ -167,7 +158,7 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
       const res = await this.volunteers.askLocation(this.event._id, ids);
       const text = askMessage(res);
       res.asked ? this.notify.openSucessSnackBar(text) : this.notify.openErrorSnackBar(text);
-      if (this.profileOf && ids.includes(this.profileOf._id)) await this.loadLocation(this.profileOf);
+      if (this.profileOf && ids.includes(this.profileOf._id)) await this.profileView?.loadLocation();
     } catch (err: any) {
       this.notify.openErrorSnackBar(err?.error?.message || 'Could not send the request.');
     } finally {
@@ -179,46 +170,6 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   async askSelected() {
     await this.askLocation([...this.selected]);
     this.selected.clear();
-  }
-
-  async loadLocation(v: Volunteer) {
-    if (!this.event || !this.canManage) return;
-    this.locationLoading = !this.location;
-    try {
-      const info = await this.volunteers.location(this.event._id, v._id);
-      if (this.profileOf?._id !== v._id) return;
-      this.location = info;
-      // The map box appears with the answer; draw once it is on the page
-      setTimeout(() => this.drawMap());
-    } catch {
-      this.location = null;
-    } finally {
-      this.locationLoading = false;
-    }
-  }
-
-  mapsLink(lat?: number, lng?: number): string {
-    return `https://www.google.com/maps/search/?api=1&query=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`;
-  }
-
-  /** Small map of the last answer (Leaflet is loaded on first use, like the SOS page). */
-  private async drawMap() {
-    const at = this.location?.latest;
-    const el = this.locMap?.nativeElement;
-    if (!at || !el || typeof at.lat !== 'number' || typeof at.lng !== 'number') return;
-    if (!document.getElementById('leaflet-css')) {
-      const link = document.createElement('link');
-      link.id = 'leaflet-css'; link.rel = 'stylesheet'; link.href = 'assets/leaflet/leaflet.css';
-      document.head.appendChild(link);
-    }
-    const mod: any = await import('leaflet');
-    const L: typeof Leaflet = mod.default || mod;
-    if (this.locMap?.nativeElement !== el) return;   // the panel changed meanwhile
-    this.map?.remove();
-    this.map = L.map(el, { zoomControl: true, attributionControl: true }).setView([at.lat, at.lng], 17);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(this.map);
-    L.circleMarker([at.lat, at.lng], { radius: 9, color: '#fff', weight: 3, fillColor: '#1E4638', fillOpacity: 1 }).addTo(this.map);
-    setTimeout(() => this.map?.invalidateSize());
   }
 
   async load() {
@@ -389,62 +340,11 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── panels ──
 
-  async openProfile(v: Volunteer) {
+  openProfile(v: Volunteer) {
     if (!this.event) return;
     this.panel = 'profile';
     this.profileOf = v;
     this.profile = null;
-    this.band = null;
-    this.profileError = '';
-    this.profileLoading = true;
-    try {
-      const p = await this.volunteers.profile(this.event._id, v._id);
-      if (this.profileOf?._id === v._id) this.profile = p;
-      if (this.canManage && v.role !== 'TL') this.loadLocation(v);
-      this.loadBand(v);
-    } catch (err: any) {
-      this.profileError = err?.error?.message || 'Could not load the profile.';
-    } finally {
-      this.profileLoading = false;
-    }
-  }
-
-  // ── staff wrist band (B-010) ──
-  band: StaffBandInfo | null = null;
-  bandBusy = false;
-  bandReasonOpen = false;
-  bandReason = '';
-
-  /** The Link / Replace buttons show only when the server lets this person change the band (403 → hidden). */
-  async loadBand(v: Volunteer) {
-    this.band = null;
-    this.bandReasonOpen = false;
-    this.bandReason = '';
-    if (!this.event) return;
-    try {
-      const info = await this.staffBands.get(v._id, this.event._id);
-      if (this.profileOf?._id === v._id) this.band = info;
-    } catch { /* not allowed or not reachable: status only */ }
-  }
-
-  async changeBand(replace: boolean) {
-    const v = this.profileOf, ev = this.event;
-    if (!v || !ev || this.bandBusy) return;
-    if (replace && !this.bandReason.trim()) { this.bandReasonOpen = true; return; }
-    const raw = await this.staffBands.scan(`${replace ? 'Replace' : 'Link'} band: ${v.name}`);
-    if (!raw || this.profileOf?._id !== v._id) return;
-    this.bandBusy = true;
-    try {
-      if (replace) await this.staffBands.replace(v._id, ev._id, raw, this.bandReason.trim());
-      else await this.staffBands.link(v._id, ev._id, raw);
-      this.notify.openSucessSnackBar(replace ? 'Band replaced' : 'Band linked');
-      if (this.profile && this.profileOf?._id === v._id) this.profile = { ...this.profile, band: true };
-      await this.loadBand(v);
-    } catch (err: any) {
-      this.notify.openErrorSnackBar(err?.error?.message || err?.error?.errors?.[0]?.msg || 'Could not save the band');
-    } finally {
-      this.bandBusy = false;
-    }
   }
 
   moveFromProfile(deptId: string | null) {
@@ -492,12 +392,6 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     this.profile = null;
     this.profileOf = null;
     this.needOf = null;
-    this.location = null;
-    this.band = null;
-    this.bandReasonOpen = false;
-    this.bandReason = '';
-    this.map?.remove();
-    this.map = undefined;
   }
 
   get panelTitle(): string {

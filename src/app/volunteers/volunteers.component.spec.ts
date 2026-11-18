@@ -11,6 +11,8 @@ import { NotificationService } from '../core/notification.service';
 import { VolunteersService } from './volunteers.service';
 import { VolBoard, VolProfile, Volunteer } from './volunteers.model';
 import { StaffBandService } from '../core/staff-band.service';
+import { DepartmentService } from '../core/department.service';
+import { VolProfileComponent } from './vol-profile/vol-profile.component';
 
 const vol = (id: string, name: string, department: string | null, marked = true, extra: Partial<Volunteer> = {}): Volunteer => ({
   _id: id, name, avatarVersion: 0, role: 'VOL', department, unassigned: !department, phone: '', gender: '', dateOfJoining: null,
@@ -52,14 +54,15 @@ describe('VolunteersComponent', () => {
     bands = jasmine.createSpyObj('StaffBandService', ['get', 'link', 'replace', 'scan']);
     bands.get.and.callFake(() => Promise.reject({ status: 403 }));   // default: may not change bands
     await TestBed.configureTestingModule({
-      declarations: [VolunteersComponent, SlidePanelComponent],
+      declarations: [VolunteersComponent, SlidePanelComponent, VolProfileComponent],
       imports: [FormsModule],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
         { provide: NotificationService, useValue: notify },
         { provide: VolunteersService, useValue: service },
         { provide: MatDialog, useValue: dialog },
-        { provide: StaffBandService, useValue: bands }
+        { provide: StaffBandService, useValue: bands },
+        { provide: DepartmentService, useValue: {} }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -70,6 +73,11 @@ describe('VolunteersComponent', () => {
   /** Most tests below check the Board; the page itself opens on the List (B-018). */
   const start = (layout: 'board' | 'list' = 'board') => {
     component.layout = layout;
+    fixture.detectChanges(); flushMicrotasks(); fixture.detectChanges();
+  };
+  /** The profile is the shared app-vol-profile: it loads once it is on the page. */
+  const openProf = (v: Volunteer) => {
+    component.openProfile(v);
     fixture.detectChanges(); flushMicrotasks(); fixture.detectChanges();
   };
   const headers = () => Array.from(el().querySelectorAll<HTMLButtonElement>('.vl-tbl thead .vl-sort'));
@@ -199,8 +207,7 @@ describe('VolunteersComponent', () => {
       start('list');
       component.board = { ...component.board!, canAssign: true };
       service.profile.and.returnValue(Promise.resolve({ ...profile, _id: '9', name: 'Devi', role: 'TL', teams: ['Decor', 'WASH'] }));
-      component.openProfile(component.board!.volunteers[3]);
-      flushMicrotasks(); fixture.detectChanges();
+      openProf(component.board!.volunteers[3]);
       expect(component.panelSubtitle).toBe('Team Lead · Decor, WASH');
       const prof = el().querySelector('.vl-prof')!.textContent!;
       expect(prof).toContain('Leads');
@@ -212,16 +219,15 @@ describe('VolunteersComponent', () => {
 
   it('B-010: shows Link band only when the server allows it, then links a scanned band', fakeAsync(() => {
     start('list');
-    component.openProfile(component.board!.volunteers[0]);
-    flushMicrotasks(); fixture.detectChanges();
+    openProf(component.board!.volunteers[0]);
     expect(bands.get).toHaveBeenCalledWith('1', 'e1');
     expect(el().querySelector('.vl-band')).toBeNull();                    // 403: status only
 
     bands.get.and.returnValue(Promise.resolve({ current: null, bands: [], canChange: true }));
     bands.scan.and.returnValue(Promise.resolve('BAND-RAW'));
     bands.link.and.returnValue(Promise.resolve({ band: { _id: 'b1', code: 'B1' } }));
-    component.openProfile(component.board!.volunteers[0]);
-    flushMicrotasks(); fixture.detectChanges();
+    component.closePanel(); fixture.detectChanges();
+    openProf(component.board!.volunteers[0]);
     const btn = el().querySelector<HTMLButtonElement>('.vl-band .pill-btn')!;
     expect(btn.textContent).toContain('Link band');
 
@@ -230,7 +236,7 @@ describe('VolunteersComponent', () => {
     flushMicrotasks(); fixture.detectChanges();
     expect(bands.link).toHaveBeenCalledWith('1', 'e1', 'BAND-RAW');
     expect(notify.openSucessSnackBar).toHaveBeenCalledWith('Band linked');
-    expect(component.profile!.band).toBeTrue();
+    expect(component.profileView!.profile!.band).toBeTrue();
     expect(el().querySelector('.vl-band .pill-btn')!.textContent).toContain('Replace band');
   }));
 
@@ -239,21 +245,22 @@ describe('VolunteersComponent', () => {
     bands.get.and.returnValue(Promise.resolve({ current: { _id: 'b1', code: 'B1' }, bands: [], canChange: true }));
     bands.scan.and.returnValue(Promise.resolve('NEW-RAW'));
     bands.replace.and.returnValue(Promise.resolve({ band: { _id: 'b2', code: 'B2' } }));
-    component.openProfile(component.board!.volunteers[0]);
-    flushMicrotasks(); fixture.detectChanges();
+    openProf(component.board!.volunteers[0]);
+    const pv = component.profileView!;
 
-    component.changeBand(true);
-    expect(component.bandReasonOpen).toBeTrue();
+    pv.changeBand(true);
+    expect(pv.bandReasonOpen).toBeTrue();
     expect(bands.scan).not.toHaveBeenCalled();
-    component.bandReason = 'Lost it';
-    component.changeBand(true);
+    pv.bandReason = 'Lost it';
+    pv.changeBand(true);
     flushMicrotasks();
     expect(bands.replace).toHaveBeenCalledWith('1', 'e1', 'NEW-RAW', 'Lost it');
     expect(notify.openSucessSnackBar).toHaveBeenCalledWith('Band replaced');
 
     component.closePanel();
-    expect(component.band).toBeNull();
-    expect(component.bandReason).toBe('');
+    fixture.detectChanges();
+    expect(component.profileView).toBeUndefined();                    // the band state goes with it
+    expect(component.profile).toBeNull();
   }));
 
   it('shows the Unassigned pool next to the department cards, with have / needed', fakeAsync(() => {
@@ -305,8 +312,7 @@ describe('VolunteersComponent', () => {
     start();
     expect(el().querySelector('.vl-chip')!.getAttribute('draggable')).toBeNull();
     component.toggle(component.board!.volunteers[0]);
-    flushMicrotasks();
-    fixture.detectChanges();
+    fixture.detectChanges(); flushMicrotasks(); fixture.detectChanges();
     expect(component.selected.size).toBe(0);
     expect(service.profile).toHaveBeenCalledWith('e1', '1');
     expect(el().querySelector('.vl-prof')!.textContent).toContain('+919000000001');
@@ -337,8 +343,8 @@ describe('VolunteersComponent', () => {
     start();
     component.board = { ...component.board!, canManage: true };
     service.location.and.returnValue(Promise.resolve({ sharing: false, waiting: false, latest: null, requestHours: 2, log: [] }));
-    component.openProfile(component.board!.volunteers[0]);
-    flushMicrotasks();
+    fixture.detectChanges();
+    openProf(component.board!.volunteers[0]);
     flush();
     fixture.detectChanges();
     expect(service.location).toHaveBeenCalledWith('e1', '1');
