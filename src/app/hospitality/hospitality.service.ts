@@ -56,7 +56,8 @@ export class HospitalityService {
   searchStaff(eventId: string, q: string): Promise<{ people: DeskPerson[]; guests: DeskGuestHit[] }> {
     return firstValueFrom(this.http.get<{ people: DeskPerson[]; guests: DeskGuestHit[] }>(this.url + '/staff', { params: { event: eventId, q } }));
   }
-  scan(eventId: string, who: { qr?: string; user?: string; pass?: string }): Promise<ScanOutcome> {
+  /** `preview` (with `user`): a tapped name — look only; a marked person comes back "ready", nothing is recorded. */
+  scan(eventId: string, who: { qr?: string; user?: string; pass?: string; preview?: boolean }): Promise<ScanOutcome> {
     return firstValueFrom(this.http.post<ScanOutcome>(this.url + '/desk/scan', { event: eventId, ...who }));
   }
   decide(eventId: string, user: string, decision: 'serve' | 'refuse' | 'block' | 'extra', reason?: string): Promise<{ decision: DeskDecision; person: DeskPerson }> {

@@ -142,11 +142,22 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     return !!o && !!m && m.status === 'open' && m.meal === o.meal && m.date === o.date;
   }
 
-  /** A tapped row = the old search pick: a staff member or a guest's Meal Pass. */
+  /**
+   * A tapped row opens the person's card only (user, 2026-11-18: a tap must
+   * never serve by mistake). A marked person comes back "ready" with a Serve
+   * button; a guest's Meal Pass already waits for Serve. Scanning still serves at once.
+   */
   onPicked(p: ExpectedPick) {
     if (!this.listPickable) return;
     this.walkOpen = false;
-    this.check(p.kind === 'guest' ? { pass: p.id } : { user: p.id });
+    this.check(p.kind === 'guest' ? { pass: p.id } : { user: p.id, preview: true });
+  }
+
+  /** "Serve" on a ready card: the real check — the server looks at attendance and plates again. */
+  serveReady() {
+    const o = this.outcome;
+    if (o?.result !== 'ready') return;
+    this.check({ user: o.person._id });
   }
 
   get closesIn(): string {
@@ -198,7 +209,7 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
   }
 
   /** Scan or pick → the server says served / flag / duplicate. */
-  async check(who: { qr?: string; user?: string; pass?: string }) {
+  async check(who: { qr?: string; user?: string; pass?: string; preview?: boolean }) {
     if (!this.event || this.busy) return;
     this.gate.unlock();
     this.busy = true;
@@ -211,7 +222,9 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     try {
       this.outcome = await this.hospitality.scan(this.event._id, who);
       if (this.outcome.result === 'guest') this.prepareGuest(this.outcome);
-      if (this.outcome.result === 'served' || (this.outcome.result === 'guest' && this.guestHasPlates)) this.gate.found(); else this.gate.notFound();
+      // A tapped name that is ready makes no sound — the sound comes with Serve
+      if (this.outcome.result === 'ready') { /* no sound */ }
+      else if (this.outcome.result === 'served' || (this.outcome.result === 'guest' && this.guestHasPlates)) this.gate.found(); else this.gate.notFound();
       await this.load();
     } catch (err: any) {
       this.outcome = null;

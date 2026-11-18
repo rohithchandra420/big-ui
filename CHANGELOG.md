@@ -13,6 +13,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.63.0] - 2026-11-18
+
+### Changed
+- **Serving desk: tapping a name never serves by mistake.** A tap in the Expected list only opens the person's card. If they are marked it says "Marked — not served yet" with a **Serve** button; the meal is recorded only when Serve is pressed. Scanning a meal QR or wrist band still serves at once.
+- **Stay: tabs are Allocate · Calendar · Units, and Allocate opens first** (B-013). People with a view-only Stay open on Calendar.
+- **Stay: unit dates are "First night → Leaving morning"** (B-016), with the number of nights shown. There is no bed on the leaving morning's night. A new unit starts with today to tomorrow morning; every unit keeps at least one set of dates. An older unit without dates gets the whole mess period filled in when it is edited.
+- **Stay: Allocate uses the gender on the person's profile** (B-011) and shows it instead of asking. Only when it is missing does it ask — and says it will be saved to their profile.
+- **Stay: allocating opens in a side panel** (a bottom sheet on phones) — from the search, the "without a bed" list, a unit's details or a calendar night.
+- **Stay › Units and Calendar: "Fill a vacant bed".** A unit's details and a tapped calendar night list who has no bed that night and a search; picking someone opens Allocate for that unit and night (with "Show all units" to look wider). The calendar's side card is replaced by the panel.
+- **Stay › Calendar: 7, 14 or 30 days on screen** (B-012).
+- **Stay › Allocate panel: its own Type filter and unit search**, and the units keep their own order — a unit no longer drops down the list after someone is given a bed there (a different gender in a unit is shown as a warning on its row).
+- **Stay: an empty "No bed" list says so** — "Every staff member has a bed on the night of …" — instead of showing nothing. The count reads "N staff without a bed" (guests are not counted).
+- **Stay › Allocate › Stays: its own search and filters** — find a person or unit, Booked / Moved in / Moved out, and "Night of …" for the stays that hold a bed on the picked night. The page search is not shown on Allocate.
+- **Stay › unit details: who stays there, by date** — earliest first, each marked Before / That night / Later against the picked night — and "Night of …: N of M beds taken" in place of the stay count.
+
+---
+
 ## [1.62.0] - 2026-11-18
 
 ### Changed
