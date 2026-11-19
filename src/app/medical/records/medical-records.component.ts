@@ -6,8 +6,9 @@ import { NotificationService } from '../../core/notification.service';
 import { MedicalService } from '../medical.service';
 import {
   KIND_LABEL, MedicalPatient, OUTCOME_LABEL, Outcome, OUTCOMES, PatientKind, RecordCounts, RecordFilters,
-  SEVERITIES, SEVERITY_BADGE, SEVERITY_LABEL, Severity
+  RecordSortKey, SEVERITIES, SEVERITY_BADGE, SEVERITY_LABEL, Severity
 } from '../medical.model';
+import { TableSort } from '../../shared/table-sort/table-sort';
 
 type Quick = 'all' | 'today' | 'resting' | 'followUp' | 'serious';
 interface Opt<T> { value: T; label: string; }
@@ -37,6 +38,9 @@ export class MedicalRecordsComponent implements OnInit, OnDestroy {
 
   quick: Quick = 'all';
   f: RecordFilters = { q: '', type: '', severity: '', outcome: '', from: '', to: '', page: 0 };
+
+  /** B-003: column sort — the server sorts (the list is paged); a new sort starts on page 1. None = newest visit first. */
+  sort = new TableSort<RecordSortKey>(null, 'asc', () => this.changed());
 
   private sub?: Subscription;
   private timer: any = null;
@@ -75,7 +79,7 @@ export class MedicalRecordsComponent implements OnInit, OnDestroy {
   }
 
   private filters(): RecordFilters {
-    const f: RecordFilters = { ...this.f };
+    const f: RecordFilters = { ...this.f, sort: this.sort.key, dir: this.sort.dir };
     if (this.quick === 'resting') f.resting = true;
     if (this.quick === 'followUp') f.followUp = true;
     if (this.quick === 'serious') f.severity = 'serious';

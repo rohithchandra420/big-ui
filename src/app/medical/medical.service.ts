@@ -58,6 +58,7 @@ export class MedicalService {
     if (f.resting) params['resting'] = '1';
     if (f.followUp) params['followUp'] = '1';
     if (f.page) params['page'] = String(f.page);
+    if (f.sort) { params['sort'] = f.sort; params['dir'] = f.dir === 'desc' ? 'desc' : 'asc'; }
     return this.call(() => this.http.get<RecordsPage>(this.url + '/patients', { params }));
   }
 

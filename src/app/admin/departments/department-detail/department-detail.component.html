@@ -33,6 +33,27 @@
       <p class="dept-desc" *ngIf="detail.description">{{ detail.description }}</p>
       <p class="dept-desc muted" *ngIf="!detail.description">No description</p>
 
+      <!-- B-001: every department detail — access, shared key, volunteers needed -->
+      <dl class="dd-facts">
+        <div class="dd-fact" *ngIf="viewKey as k">
+          <dt><mat-icon>key</mat-icon>Access</dt>
+          <dd><b>{{ k.label }}</b> <code class="key">{{ k.key }}</code><span class="dd-about">{{ k.about }}</span></dd>
+        </div>
+        <div class="dd-fact" *ngIf="viewSharedWith">
+          <dt><mat-icon>link</mat-icon>Shared with</dt>
+          <dd>{{ viewSharedWith }}<span class="dd-about">Same key, so the same access.</span></dd>
+        </div>
+        <div class="dd-fact" *ngIf="showNeeded">
+          <dt><mat-icon>groups</mat-icon>Volunteers needed</dt>
+          <dd *ngIf="viewNeed as n; else needLoading">
+            <ng-container *ngIf="n.needed; else noNumber"><b>{{ n.needed }}</b> needed · <b>{{ n.have }}</b> in the department<span class="dd-short" *ngIf="n.have < n.needed"> · {{ n.needed - n.have }} short</span></ng-container>
+            <ng-template #noNumber>No number set · {{ n.have }} in the department</ng-template>
+            <span class="dd-about">For {{ eventName || 'this event' }}.</span>
+          </dd>
+          <ng-template #needLoading><dd class="dd-about">Loading…</dd></ng-template>
+        </div>
+      </dl>
+
       <section class="section">
         <h3 class="section-title">
           <mat-icon class="section-icon teal">supervisor_account</mat-icon>

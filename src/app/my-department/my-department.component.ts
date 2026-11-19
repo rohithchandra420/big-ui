@@ -26,6 +26,10 @@ import { VolProfileComponent } from '../volunteers/vol-profile/vol-profile.compo
 import { ConfirmationService } from '../shared/confirm-dialog/confirmation.service';
 import { EventService } from '../core/event.service';
 import { TaskService } from '../core/task.service';
+import { SortGetter, TableSort } from '../shared/table-sort/table-sort';
+
+type SummarySortKey = 'name' | 'volunteers' | 'marked' | 'morning' | 'afternoon' | 'night';
+type ReportSortKey = 'name' | 'days' | 'morning' | 'afternoon' | 'night';
 
 type ViewMode = 'mark' | 'history' | 'matrix';
 export type Slot = 'morning' | 'afternoon' | 'night';
@@ -88,6 +92,20 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
 
   summaryDate: string = this.today();
   summaryRows: DeptSummaryStat[] = [];
+
+  /** B-003: column sort for Daily Summary and the per-person report (date grids are not sorted). */
+  summarySort = new TableSort<SummarySortKey>();
+  reportSort = new TableSort<ReportSortKey>();
+  readonly summaryGetters: Record<SummarySortKey, SortGetter<DeptSummaryStat>> = {
+    name: r => r.name, volunteers: r => r.volunteerCount, marked: r => r.marked,
+    morning: r => r.morning, afternoon: r => r.afternoon, night: r => r.night
+  };
+  readonly reportGetters: Record<ReportSortKey, SortGetter<AttendanceReportRow>> = {
+    name: r => r.name, days: r => r.daysMarked, morning: r => r.morning, afternoon: r => r.afternoon, night: r => r.night
+  };
+  /** Sorted again only when the rows or the sort change. */
+  get sortedSummary(): DeptSummaryStat[] { return this.summarySort.sorted(this.summaryRows, this.summaryGetters); }
+  get sortedReport(): AttendanceReportRow[] { return this.reportSort.sorted(this.reportRows, this.reportGetters); }
   loadingSummary = false;
 
   matrix: AttendanceMatrix | null = null;

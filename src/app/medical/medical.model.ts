@@ -145,7 +145,13 @@ export interface RecordFilters {
   resting?: boolean;
   followUp?: boolean;
   page?: number;
+  /** B-003: column sort, done by the server (the list is paged). */
+  sort?: RecordSortKey | null;
+  dir?: 'asc' | 'desc';
 }
+
+/** The Records columns the server can sort (stored fields only). */
+export type RecordSortKey = 'name' | 'type' | 'age' | 'lastVisit' | 'complaint' | 'severity' | 'outcome' | 'visits';
 
 export interface AuditEntry {
   _id: string;

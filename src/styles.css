@@ -765,6 +765,14 @@ select:focus {
 .tbl tr.selected td {
   background: #fff9f0;
 }
+/* B-003: sortable headers (th[appSort] → SortThComponent) — the whole label is the button;
+   the arrow lights up on the sorted column. Works in .tbl and in a page's own table styles. */
+.th-sort { display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; font: inherit;
+  letter-spacing: inherit; text-transform: inherit; color: inherit; cursor: pointer; white-space: nowrap; text-align: inherit; }
+.th-sort .mat-icon { font-size: 14px; width: 14px; height: 14px; opacity: .45; flex: none; }
+.th-sort:hover, th[aria-sort="ascending"] .th-sort, th[aria-sort="descending"] .th-sort { color: var(--color-primary); }
+th[aria-sort="ascending"] .th-sort .mat-icon, th[aria-sort="descending"] .th-sort .mat-icon { opacity: 1; }
+.th-sort:focus-visible { border-radius: 4px; box-shadow: 0 0 0 2px var(--color-secondary); }
 .tbl td.mono {
   font-family: monospace;
   font-size: 10px;
@@ -1986,7 +1994,7 @@ select:focus {
 .vl-tickbox:hover:not(:disabled) { border-color: var(--color-primary); }
 .vl-tickbox.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
 .vl-tickbox:disabled { opacity: .4; cursor: default; }
-.vl-tbl tbody tr.sel, .vl-tbl tbody tr.sel:hover { background: #e6f4ec; }
+.vl-tbl tbody tr.sel td, .vl-tbl tbody tr.sel:hover td { background: #e6f4ec; }
 
 /* Location on request (board chip, picked bar, profile panel) */
 .vl-loc { font-size: 14px; width: 14px; height: 14px; color: var(--color-secondary); }
@@ -2016,17 +2024,7 @@ select:focus {
 .vl-pill.un { background: #f1f6f3; color: var(--color-primary); border: 1px dashed var(--color-secondary); }
 
 .vl-tbl-wrap { overflow-x: auto; background: #fff; border: 1px solid var(--border-default); border-radius: 12px; }
-.vl-tbl { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--text-primary); }
-.vl-tbl th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; padding: 9px 12px;
-  background: var(--border-subtle); color: var(--text-secondary); }
-.vl-tbl td { padding: 8px 12px; border-top: 1px solid var(--border-default); vertical-align: middle; color: var(--text-primary); }
-/* B-003: sortable headers — the whole label is the button; the arrow lights up on the sorted column */
-.vl-sort { display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; font: inherit;
-  letter-spacing: inherit; text-transform: inherit; color: var(--text-secondary); cursor: pointer; white-space: nowrap; }
-.vl-sort .mat-icon { font-size: 15px; width: 15px; height: 15px; opacity: .45; }
-.vl-sort:hover, .vl-tbl th[aria-sort="ascending"] .vl-sort, .vl-tbl th[aria-sort="descending"] .vl-sort { color: var(--color-primary); }
-.vl-tbl th[aria-sort="ascending"] .vl-sort .mat-icon, .vl-tbl th[aria-sort="descending"] .vl-sort .mat-icon { opacity: 1; }
-.vl-sort:focus-visible { border-radius: 4px; box-shadow: 0 0 0 2px var(--color-secondary); }
+/* Volunteers tables use the app's .tbl look (header row, cells); .vl-tbl only adds what is page-specific. */
 /* Picked date (Marked + Stay follow it) */
 .vl-dayrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; color: var(--text-primary); }
 .vl-dname { position: relative; min-width: 150px; cursor: pointer; color: var(--text-primary); }
@@ -2046,8 +2044,6 @@ select:focus {
 .vl-band { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; color: var(--text-primary); }
 .vl-band-reason { flex: 1 1 180px; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: 8px;
   font-size: 13px; color: var(--text-primary); background: #fff; }
-.vl-tbl tbody tr { cursor: pointer; }
-.vl-tbl tbody tr:hover { background: #f7faf8; }
 .vl-cell-who { display: flex; align-items: center; gap: 8px; }
 .vl-cell-who b { font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
 
@@ -2446,3 +2442,14 @@ app-date.dtp-sm .dtp-field, app-time.dtp-sm .dtp-field, app-date-time.dtp-sm .dt
   .jt-dates > span:first-child { grid-column: 1 / -1; }
   .jt-dates app-date { width: 100%; }
 }
+
+/* ── Hospitality › Today (page prefix .ht-) ── */
+/* B-019: kitchen count form (Today) */
+.ht-cform { margin-top: 12px; padding: 12px; border: 1px solid var(--color-border, #e5e5e5); border-radius: 12px; background: #fff; color: #1a1a1a; }
+.ht-cgrid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+.ht-cgrid .field label { display: inline-flex; align-items: center; gap: 6px; }
+.ht-ctot { display: flex; flex-direction: column; align-items: flex-end; padding: 0 4px 8px; color: #1a1a1a; }
+.ht-ctot small { font-size: 12px; color: #666; }
+.ht-ctot b { font-size: 22px; line-height: 1; }
+.ht-chint { margin: 8px 0 0; font-size: 12.5px; }
+@media (max-width: 480px) { .ht-cgrid { grid-template-columns: 1fr 1fr; } .ht-ctot { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: baseline; padding: 0; } }

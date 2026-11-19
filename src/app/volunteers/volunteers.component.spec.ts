@@ -14,6 +14,7 @@ import { VolBoard, VolProfile, Volunteer } from './volunteers.model';
 import { StaffBandService } from '../core/staff-band.service';
 import { DepartmentService } from '../core/department.service';
 import { VolProfileComponent } from './vol-profile/vol-profile.component';
+import { SortThComponent } from '../shared/table-sort/sort-th.component';
 
 const vol = (id: string, name: string, department: string | null, marked = true, extra: Partial<Volunteer> = {}): Volunteer => ({
   _id: id, name, avatarVersion: 0, role: 'VOL', department, unassigned: !department, phone: '', gender: '', dateOfJoining: null, reportedAt: null,
@@ -55,7 +56,7 @@ describe('VolunteersComponent', () => {
     bands = jasmine.createSpyObj('StaffBandService', ['get', 'link', 'replace', 'scan']);
     bands.get.and.callFake(() => Promise.reject({ status: 403 }));   // default: may not change bands
     await TestBed.configureTestingModule({
-      declarations: [DateTimeComponent, VolunteersComponent, SlidePanelComponent, VolProfileComponent],
+      declarations: [DateTimeComponent, VolunteersComponent, SlidePanelComponent, VolProfileComponent, SortThComponent],
       imports: [FormsModule],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
@@ -81,7 +82,7 @@ describe('VolunteersComponent', () => {
     component.openProfile(v);
     fixture.detectChanges(); flushMicrotasks(); fixture.detectChanges();
   };
-  const headers = () => Array.from(el().querySelectorAll<HTMLButtonElement>('.vl-tbl thead .vl-sort'));
+  const headers = () => Array.from(el().querySelectorAll<HTMLButtonElement>('.vl-tbl thead .th-sort'));
   const rowNames = () => Array.from(el().querySelectorAll('.vl-tbl tbody tr b')).map(b => b.textContent!.trim());
 
   it('B-018: opens on the List, and the List button comes first and is selected', fakeAsync(() => {

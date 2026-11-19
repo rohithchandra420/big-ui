@@ -8,9 +8,10 @@ import { EventItem } from '../models/event.model';
 import { VolunteersService } from './volunteers.service';
 import { VolBoard, VolDepartment, VolProfile, Volunteer } from './volunteers.model';
 import {
-  BoardView, DEPOSIT_LABEL, Lane, RoleFilter, STAY_LABEL, SortDir, SortKey, StatFilter,
+  BoardView, DEPOSIT_LABEL, Lane, RoleFilter, STAY_LABEL, SortKey, StatFilter,
   askMessage, buildBoard, dayWord, money, moveMessage, shiftDate, sortRows
 } from './volunteers.utils';
+import { TableSort } from '../shared/table-sort/table-sort';
 import { VolProfileComponent } from './vol-profile/vol-profile.component';
 import { joinState } from '../core/join-time';
 
@@ -47,8 +48,7 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   /** B-018: the List opens first; Board is the second choice. */
   layout: 'board' | 'list' = 'list';
   /** B-003: List view column sort. */
-  sortKey: SortKey = 'name';
-  sortDir: SortDir = 'asc';
+  sort = new TableSort<SortKey>('name', 'asc', () => this.apply());
   /** List only: everyone, Volunteers or Team Leads. */
   roleFilter: RoleFilter = 'all';
   // Joining Time (B-008): date ranges on Expected Join Time and Reported Time
@@ -213,7 +213,7 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
       search: this.search, stat: this.stat, notMarked: this.notMarked, role: this.roleFilter,
       expFrom: this.expFrom, expTo: this.expTo, repFrom: this.repFrom, repTo: this.repTo
     });
-    this.view = { ...view, rows: sortRows(view.rows, this.sortKey, this.sortDir) };
+    this.view = { ...view, rows: sortRows(view.rows, this.sort.key || 'name', this.sort.dir) };
     const lanes = buildBoard(this.board, { search: '', stat: 'all', notMarked: false }).lanes;
     this.destinations = [
       { id: null, name: 'Unassigned', icon: 'person_search' },
@@ -262,17 +262,7 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** A header click sorts by that column; clicking it again flips the order. */
   sortBy(key: SortKey) {
-    this.sortDir = this.sortKey === key && this.sortDir === 'asc' ? 'desc' : 'asc';
-    this.sortKey = key;
-    this.apply();
-  }
-
-  sortIcon(key: SortKey): string {
-    return this.sortKey !== key ? 'unfold_more' : this.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward';
-  }
-
-  ariaSort(key: SortKey): string {
-    return this.sortKey !== key ? 'none' : this.sortDir === 'asc' ? 'ascending' : 'descending';
+    this.sort.toggle(key);
   }
 
   money = money;

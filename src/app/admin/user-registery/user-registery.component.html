@@ -114,14 +114,14 @@
                 <input type="checkbox" class="pick-box" [checked]="allPicked" [indeterminate]="somePicked && !allPicked" (change)="togglePickAll()"
                        [disabled]="!pickableFiltered.length" aria-label="Select everyone in this list">
               </th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Department</th>
-              <th>Access</th>
-              <th>Expected Join Time</th>
-              <th>Reported Time</th>
-              <th *ngIf="showStaff">{{ staffEvent?.name }}</th>
+              <th appSort="name" [sort]="sort">Name</th>
+              <th appSort="email" [sort]="sort">Email</th>
+              <th appSort="role" [sort]="sort">Role</th>
+              <th appSort="dept" [sort]="sort">Department</th>
+              <th appSort="access" [sort]="sort">Access</th>
+              <th appSort="joined" [sort]="sort">Expected Join Time</th>
+              <th appSort="reported" [sort]="sort">Reported Time</th>
+              <th *ngIf="showStaff" appSort="staff" [sort]="sort">{{ staffEvent?.name }}</th>
             </tr>
           </thead>
           <tbody>

@@ -99,15 +99,45 @@ describe('HospitalityTodayComponent', () => {
     discardPeriodicTasks();
   }));
 
-  it('sends the kitchen count and puts the fresh meal in place', fakeAsync(() => {
+  it('B-019: Save count opens a form with the expected numbers; saving sends the changed ones', fakeAsync(() => {
     start();
+    const exp = component.selected!.expected;
+    component.openCount();
+    fixture.detectChanges();
+    expect(component.countOpen).toBeTrue();
+    expect(component.countForm).toEqual({ veg: exp.veg, nonVeg: exp.nonVeg });
+    expect(fixture.nativeElement.querySelector('.ht-cform')).not.toBeNull();
+    expect(component.countChanged).toBeFalse();
+
+    component.countForm = { veg: 142, nonVeg: 58 };
+    expect(component.countChanged).toBe(exp.veg !== 142 || exp.nonVeg !== 58);
     service.sendCount.and.returnValue(Promise.resolve(meal('lunch', 'Lunch', 'open', { count: { veg: 142, nonVeg: 58, guests: 0, sentAt: at(10), sentBy: 'u1' } })));
-    component.sendCount();
+    component.saveCount();
     flushMicrotasks();
     fixture.detectChanges();
-    expect(service.sendCount).toHaveBeenCalledWith({ event: 'e1', date: '2026-11-12', meal: 'lunch' });
+    expect(service.sendCount).toHaveBeenCalledWith({ event: 'e1', date: '2026-11-12', meal: 'lunch' }, { veg: 142, nonVeg: 58 });
     expect(component.selected?.count?.veg).toBe(142);
+    expect(component.countOpen).toBeFalse();
     expect(notify.openSucessSnackBar).toHaveBeenCalled();
+
+    // Changing a saved count starts from the saved numbers.
+    component.openCount();
+    expect(component.countForm).toEqual({ veg: 142, nonVeg: 58 });
+    discardPeriodicTasks();
+  }));
+
+  it('B-019: refuses numbers that are not whole numbers from 0 to 5000', fakeAsync(() => {
+    start();
+    component.openCount();
+    for (const bad of [-1, 2.5, 5001, null]) {
+      component.countForm = { veg: bad as any, nonVeg: 3 };
+      expect(component.countNums).toBeNull();
+    }
+    component.saveCount();
+    flushMicrotasks();
+    expect(service.sendCount).not.toHaveBeenCalled();
+    expect(notify.openErrorSnackBar).toHaveBeenCalled();
+    expect(component.countOpen).toBeTrue();
     discardPeriodicTasks();
   }));
 

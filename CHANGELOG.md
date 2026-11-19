@@ -13,6 +13,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.66.0] - 2026-11-19
+
+### Added
+- **Hospitality › Today: check the kitchen count before saving it** (B-019). Save count opens Veg and Non-veg boxes with the expected numbers filled in and a running total; change them if needed, then save. It says when the numbers differ from the expected count. A saved count can be changed the same way.
+- **Admin › Departments: the details panel shows every department detail** (B-001) — the access key and what it opens, the other departments sharing that key, and for the selected event the volunteers needed against how many are in the department.
+- **Sort by any column in every list table** (B-003): tap a header to sort A–Z / lowest first, tap again to flip it. Bookings, Users, Accommodation Inventory, Medical Records, Volunteers (List and Deposits), Workshop Setup (Venues, Workshops, Categories), Workshop Reports (both views), session lists, WASH Setup, WASH Report (Facilities, Stock), My Department (Daily Summary, per-person report) and the Email Report. Empty values stay at the bottom. Session lists keep each person's place on the list in the # column. Date grids and fixed-order tables (Stay calendar, attendance grids, Hospitality Setup and Report meals, the Bulk Add preview) are not sorted. Email Report: Sent by can't be sorted.
+
+### Changed
+- **Volunteers tables look like the other tables** — same header row, cells and hover as Bookings and Users.
+
+---
+
 ## [1.65.0] - 2026-11-19
 
 ### Added

@@ -7,6 +7,9 @@ import { EventItem } from '../../models/event.model';
 import { parseLatLng } from '../../venue-map/venue-map.utils';
 import { WashService } from '../wash.service';
 import { KIND_INFO, NewFacility, WashFacility, WashKind, WashPin, WashSticker } from '../wash.model';
+import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
+
+type FacilitySortKey = 'name' | 'every' | 'capacity' | 'logged';
 
 const esc = (s: string) => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 
@@ -55,6 +58,13 @@ type Source = 'pin' | 'new';
 export class WashSetupComponent implements OnInit, OnDestroy {
   event: EventItem | null = null;
   facilities: WashFacility[] = [];
+
+  /** B-003: column sort. `sortedFacilities` sorts again only when the list or the sort changes. */
+  sort = new TableSort<FacilitySortKey>();
+  readonly sortGetters: Record<FacilitySortKey, SortGetter<WashFacility>> = {
+    name: f => f.name, every: f => f.intervalHours, capacity: f => f.capacityLitres || null, logged: f => f.logCount || 0
+  };
+  get sortedFacilities(): WashFacility[] { return this.sort.sorted(this.facilities, this.sortGetters); }
   pins: WashPin[] = [];
   loading = false;
   loadError = '';

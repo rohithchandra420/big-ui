@@ -36,8 +36,9 @@ export class HospitalityService {
   reopen(ref: MealRef): Promise<MealDay> {
     return firstValueFrom(this.http.post<MealDay>(this.url + '/meals/reopen', ref));
   }
-  sendCount(ref: MealRef): Promise<MealDay> {
-    return firstValueFrom(this.http.post<MealDay>(this.url + '/meals/count', ref));
+  /** B-019: `nums` = the Veg / Non-veg numbers the person settled on (the server's expected count when left out). */
+  sendCount(ref: MealRef, nums?: { veg: number; nonVeg: number }): Promise<MealDay> {
+    return firstValueFrom(this.http.post<MealDay>(this.url + '/meals/count', nums ? { ...ref, ...nums } : ref));
   }
   remindTls(ref: MealRef): Promise<{ tls: number; delivered: number }> {
     return firstValueFrom(this.http.post<{ tls: number; delivered: number }>(this.url + '/remind-tls', ref));

@@ -6,6 +6,13 @@ import { EventItem } from '../../models/event.model';
 import { WashService } from '../wash.service';
 import { ACTION_INFO, KIND_INFO, ReportFacility, ReportLog, ReportStock, WashReport } from '../wash.model';
 import { durationText } from '../wash.utils';
+import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
+
+type FacilitySortKey = 'name' | 'done' | 'viaQr' | 'overdue' | 'down';
+type StockSortKey = 'name' | 'used' | 'received';
+/** Stable empty lists for the sorted getters (no new array on each check). */
+const NONE_F: ReportFacility[] = [];
+const NONE_S: ReportStock[] = [];
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const localDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -23,6 +30,18 @@ const localDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pa
 export class WashReportComponent implements OnInit, OnDestroy {
   event: EventItem | null = null;
   report: WashReport | null = null;
+
+  /** B-003: column sort, one per table (sorted again only when the report or the sort changes). */
+  facilitySort = new TableSort<FacilitySortKey>();
+  stockSort = new TableSort<StockSortKey>();
+  readonly facilityGetters: Record<FacilitySortKey, SortGetter<ReportFacility>> = {
+    name: f => f.name, done: f => f.done, viaQr: f => f.viaQr, overdue: f => f.overdueMin, down: f => f.downMin
+  };
+  readonly stockGetters: Record<StockSortKey, SortGetter<ReportStock>> = {
+    name: s => s.name, used: s => s.used, received: s => s.received
+  };
+  get sortedFacilities(): ReportFacility[] { return this.facilitySort.sorted(this.report?.facilities || NONE_F, this.facilityGetters); }
+  get sortedStock(): ReportStock[] { return this.stockSort.sorted(this.report?.stock || NONE_S, this.stockGetters); }
   /** The day shown, "YYYY-MM-DD"; '' = today (the server's festival day). */
   date = '';
   loading = false;
