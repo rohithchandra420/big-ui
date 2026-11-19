@@ -43,12 +43,12 @@
     <p class="vl-muted" *ngIf="!d.rows.length">No volunteers on this event's staff list yet.</p>
 
     <div class="vl-tbl-wrap" *ngIf="d.rows.length">
-      <table class="vl-tbl">
+      <table class="tbl vl-tbl">
         <thead>
           <tr>
-            <th>Volunteer</th><th class="vl-wide">Department</th><th>Status</th>
-            <th *ngIf="seeAmounts">Amount</th><th class="vl-wide" *ngIf="seeAmounts">Paid by</th>
-            <th class="vl-wide" *ngIf="seeAmounts">Collected</th>
+            <th appSort="name" [sort]="sort">Volunteer</th><th class="vl-wide" appSort="dept" [sort]="sort">Department</th><th appSort="status" [sort]="sort">Status</th>
+            <th *ngIf="seeAmounts" appSort="amount" [sort]="sort">Amount</th><th class="vl-wide" *ngIf="seeAmounts" appSort="mode" [sort]="sort">Paid by</th>
+            <th class="vl-wide" *ngIf="seeAmounts" appSort="collected" [sort]="sort">Collected</th>
           </tr>
         </thead>
         <tbody>

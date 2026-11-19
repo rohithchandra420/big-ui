@@ -5,6 +5,7 @@ import { NotificationService } from '../../../core/notification.service';
 import { AuthService } from '../../../core/auth.service';
 import { ACCESS_KEYS, AccessKey, DEFAULT_ACCESS_KEY, accessKey, isAccessKey } from '../../../core/access-keys';
 import { VolunteersService } from '../../../volunteers/volunteers.service';
+import { NeedInfo } from '../../../volunteers/volunteers.model';
 
 interface UserChip { _id: string; name: string; avatarVersion?: number; departments?: any[]; }
 
@@ -150,11 +151,42 @@ export class DepartmentDetailComponent implements OnChanges {
     return this.existingDepts.filter(d => d.key === key).map(d => d.name).join(', ');
   }
 
+  // ── B-001: every detail in the view ──
+  /** The department's access key as shown in the view (label + what it opens). */
+  get viewKey(): AccessKey | undefined {
+    return this.detail ? accessKey(this.authService.deptKeyOf(this.detail)) : undefined;
+  }
+
+  /** Other departments with the same key (same access). Not for "general": it gives no access. */
+  get viewSharedWith(): string {
+    const d = this.detail;
+    if (!d) return '';
+    const key = this.authService.deptKeyOf(d);
+    if (key === DEFAULT_ACCESS_KEY) return '';
+    return this.existingDepts.filter(x => x.key === key && x.name !== d.name).map(x => x.name).join(', ');
+  }
+
+  /** Volunteers needed for the sidebar event, read for the view (null = not loaded / not shown). */
+  viewNeed: NeedInfo | null = null;
+
+  private loadViewNeed(deptId: string) {
+    this.viewNeed = null;
+    if (!this.showNeeded) return;
+    this.volunteers.need(this.eventId, deptId).then(info => {
+      if (this.mode === 'view' && this.detail?._id === deptId) this.viewNeed = info;
+    }, () => { /* nothing shown */ });
+  }
+
   // Fetch full department detail (TLs + volunteers with their dept info)
   loadDetail(id: string) {
     this.loading = true;
+    this.viewNeed = null;
+    if (!this.existingDepts.length) this.loadExistingKeys();
     this.adminService.getDepartmentDetail(id, this.eventId).subscribe({
-      next: (d) => { if (id === this.deptId) this.detail = d; this.loading = false; },
+      next: (d) => {
+        if (id === this.deptId) { this.detail = d; this.loadViewNeed(id); }
+        this.loading = false;
+      },
       error: () => { this.notificationService.openErrorSnackBar('Error loading department'); this.loading = false; }
     });
   }

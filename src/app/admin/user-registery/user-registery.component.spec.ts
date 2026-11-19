@@ -156,6 +156,18 @@ describe('UserRegisteryComponent', () => {
       expect(component.filteredUsers.map(u => u._id)).not.toContain('gone');
     });
 
+    it('B-003: starts Name A–Z; a header sort keeps its order (not re-sorted by name)', () => {
+      const names = () => component.filteredUsers.map(u => u.name);
+      const az = [...names()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+      expect(names()).toEqual(az);
+      component.sort.toggle('name');
+      expect(component.sort.dir).toBe('desc');
+      expect(names()).toEqual([...az].reverse());
+      component.sort.toggle('email');
+      const emails = component.filteredUsers.map(u => (u.email || '').toLowerCase());
+      expect(emails).toEqual([...emails].sort());
+    });
+
     it('shows only deactivated users under the Deactivated card', () => {
       component.toggleDeactivated();
       expect(component.statusFilter).toBe('deactivated');

@@ -20,10 +20,10 @@
     <div class="tbl-container ws-tbl" *ngIf="facilities.length">
       <table>
         <thead>
-          <tr><th>Facility</th><th>Every</th><th class="ws-hide">Capacity</th><th class="ws-hide">Logged</th><th></th></tr>
+          <tr><th appSort="name" [sort]="sort">Facility</th><th appSort="every" [sort]="sort">Every</th><th class="ws-hide" appSort="capacity" [sort]="sort">Capacity</th><th class="ws-hide" appSort="logged" [sort]="sort">Logged</th><th></th></tr>
         </thead>
         <tbody>
-          <tr *ngFor="let f of facilities; trackBy: trackFacility" (click)="edit(f)" class="ws-row">
+          <tr *ngFor="let f of sortedFacilities; trackBy: trackFacility" (click)="edit(f)" class="ws-row">
             <td>
               <span class="ws-name">
                 <mat-icon class="ms-fill" [class.k-water]="f.kind === 'water'">{{ kindInfo[f.kind].icon }}</mat-icon>

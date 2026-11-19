@@ -35,9 +35,9 @@
     <p class="wr-muted" *ngIf="!r.facilities.length">No facilities set up for this event.</p>
     <div class="tbl-container wr-tbl" *ngIf="r.facilities.length">
       <table>
-        <thead><tr><th>Facility</th><th>Done</th><th class="wr-hide">Via QR</th><th>Overdue</th><th class="wr-hide">Empty / out of order</th><th></th></tr></thead>
+        <thead><tr><th appSort="name" [sort]="facilitySort">Facility</th><th appSort="done" [sort]="facilitySort">Done</th><th class="wr-hide" appSort="viaQr" [sort]="facilitySort">Via QR</th><th appSort="overdue" [sort]="facilitySort">Overdue</th><th class="wr-hide" appSort="down" [sort]="facilitySort">Empty / out of order</th><th></th></tr></thead>
         <tbody>
-          <tr *ngFor="let f of r.facilities; trackBy: trackFacility" class="wr-row" (click)="openId = f._id">
+          <tr *ngFor="let f of sortedFacilities; trackBy: trackFacility" class="wr-row" (click)="openId = f._id">
             <td>
               <span class="wr-name">
                 <mat-icon class="ms-fill" [class.k-water]="f.kind === 'water'" [class.k-toilets]="f.kind !== 'water'">{{ kindInfo[f.kind].icon }}</mat-icon>
@@ -58,9 +58,9 @@
     <p class="wr-muted" *ngIf="!r.stock.length">Nothing was used or received this day.</p>
     <div class="tbl-container wr-tbl" *ngIf="r.stock.length">
       <table>
-        <thead><tr><th>Item</th><th>Used</th><th>Received</th></tr></thead>
+        <thead><tr><th appSort="name" [sort]="stockSort">Item</th><th appSort="used" [sort]="stockSort">Used</th><th appSort="received" [sort]="stockSort">Received</th></tr></thead>
         <tbody>
-          <tr *ngFor="let s of r.stock; trackBy: trackStock">
+          <tr *ngFor="let s of sortedStock; trackBy: trackStock">
             <td><b>{{ s.name }}</b></td>
             <td>{{ s.used || '—' }} <small *ngIf="s.used">{{ s.unit }}</small></td>
             <td>{{ s.received || '—' }} <small *ngIf="s.received">{{ s.unit }}</small></td>

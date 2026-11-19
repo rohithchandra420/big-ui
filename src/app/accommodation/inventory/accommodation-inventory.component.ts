@@ -9,6 +9,7 @@ import { NotificationService } from '../../core/notification.service';
 import { Tent, TentPassType } from '../../models/tent.model';
 import { Shopcart } from '../../models/ticket.model';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
+import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
 
 // Enhancement (2026-08-20, ACCOMMODATION_CONTEXT.md follow-up #4). Scoped per
 // event — same pattern EventService already uses for the active event itself
@@ -205,16 +206,28 @@ export class AccommodationInventoryComponent implements OnInit, OnDestroy {
     return only!;
   }
 
+  /** B-003: column sort (the stored list is sorted, then filtered). */
+  sort = new TableSort<'no' | 'type' | 'capacity' | 'occupants' | 'gender'>();
+  readonly sortGetters: Record<'no' | 'type' | 'capacity' | 'occupants' | 'gender', SortGetter<Tent>> = {
+    no: t => t.tent_no,
+    type: t => this.passTypeName(t),
+    capacity: t => Number(t.capcity),
+    occupants: t => this.occupantCount(t),
+    gender: t => this.genderComposition(t)
+  };
+
   get filteredTents(): Tent[] {
     const term = this.searchTerm.trim().toLowerCase();
-    return this.tents.filter(tent => {
+    const list = this.sort.sorted(this.tents, this.sortGetters).filter(tent => {
       if (this.selectedType !== 'All' && this.passTypeName(tent) !== this.selectedType) return false;
       if (this.selectedOccupancy !== 'All' && this.occupancyStatus(tent) !== this.selectedOccupancy.toLowerCase()) return false;
       if (!term) return true;
       const matchesTentNo = tent.tent_no?.toLowerCase().includes(term);
       const matchesOccupant = (tent.occupants || []).some(o => o && typeof o === 'object' && o.name?.toLowerCase().includes(term));
       return !!(matchesTentNo || matchesOccupant);
-    }).sort((a, b) => compareTentNo(a.tent_no, b.tent_no));
+    });
+    // B-003: a header sort keeps its order; otherwise tents go in Accom No order (A1, A2 … A10).
+    return this.sort.key ? list : list.sort((a, b) => compareTentNo(a.tent_no, b.tent_no));
   }
 
   startEdit(tent: Tent) {

@@ -34,7 +34,7 @@
 
     <div class="tbl-scroll rp-scroll">
       <table class="tbl" *ngIf="view === 'session'">
-        <thead><tr><th>Workshop</th><th>When</th><th class="hide-sm">Venue</th><th>List</th><th class="hide-sm">Waitlist</th><th class="hide-sm">Walk-ins</th><th>Attended</th><th>No-shows</th></tr></thead>
+        <thead><tr><th appSort="workshop" [sort]="sessionSort">Workshop</th><th appSort="when" [sort]="sessionSort">When</th><th class="hide-sm" appSort="venue" [sort]="sessionSort">Venue</th><th appSort="list" [sort]="sessionSort">List</th><th class="hide-sm" appSort="wait" [sort]="sessionSort">Waitlist</th><th class="hide-sm" appSort="walkin" [sort]="sessionSort">Walk-ins</th><th appSort="attended" [sort]="sessionSort">Attended</th><th appSort="noShows" [sort]="sessionSort">No-shows</th></tr></thead>
         <tbody>
           <tr *ngFor="let s of sessions; trackBy: trackId" [class.selected]="isOpen(s._id)" [class.cancelled]="s.status === 'cancelled'" (click)="openSession(s)">
             <td class="strong"><span class="cat-dot" *ngIf="s.workshop?.category" [style.background]="s.workshop!.category!.colour"></span>{{ s.workshop?.title }}</td>
@@ -53,7 +53,7 @@
       </table>
 
       <table class="tbl" *ngIf="view === 'workshop'">
-        <thead><tr><th>Workshop</th><th>Sessions</th><th>List</th><th class="hide-sm">Waitlist</th><th class="hide-sm">Walk-ins</th><th>Attended</th><th>No-shows</th></tr></thead>
+        <thead><tr><th appSort="workshop" [sort]="workshopSort">Workshop</th><th appSort="sessions" [sort]="workshopSort">Sessions</th><th appSort="list" [sort]="workshopSort">List</th><th class="hide-sm" appSort="wait" [sort]="workshopSort">Waitlist</th><th class="hide-sm" appSort="walkin" [sort]="workshopSort">Walk-ins</th><th appSort="attended" [sort]="workshopSort">Attended</th><th appSort="noShows" [sort]="workshopSort">No-shows</th></tr></thead>
         <tbody>
           <tr *ngFor="let w of workshops; trackBy: trackId" [class.selected]="isOpen(w._id)" (click)="openWorkshop(w)">
             <td class="strong"><span class="cat-dot" *ngIf="w.category" [style.background]="w.category.colour"></span>{{ w.title }}</td>

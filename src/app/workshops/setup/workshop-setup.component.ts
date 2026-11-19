@@ -5,6 +5,11 @@ import { EventService } from '../../core/event.service';
 import { EventItem } from '../../models/event.model';
 import { WorkshopService } from '../workshop.service';
 import { SetupKind, VENUE_DRAFT_KEY, VenueDraft, Workshop, WorkshopCategory, WorkshopSetup, WorkshopVenue } from '../workshops.model';
+import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
+
+type VenueSortKey = 'name' | 'capacity' | 'area' | 'amenities' | 'sessions';
+type WorkshopSortKey = 'title' | 'category' | 'facilitators' | 'language' | 'sessions';
+type CategorySortKey = 'name' | 'workshops';
 
 /**
  * Workshops › Setup (Workshops epic, release 2: W2 venues, W3 workshops and
@@ -94,7 +99,27 @@ export class WorkshopSetupComponent implements OnInit, OnDestroy {
     this.venues = (s?.venues || []).filter(v => has(v.name, v.amenities, v.area?.name));
     this.workshops = (s?.workshops || []).filter(w => has(w.title, w.category?.name, w.language, ...w.facilitators));
     this.categories = (s?.categories || []).filter(c => has(c.name));
+    // B-003: a header tap sorts that table
+    if (this.venueSort.key) this.venues = this.venueSort.apply(this.venues, this.venueGetters);
+    if (this.workshopSort.key) this.workshops = this.workshopSort.apply(this.workshops, this.workshopGetters);
+    if (this.categorySort.key) this.categories = this.categorySort.apply(this.categories, this.categoryGetters);
   }
+
+  /** B-003: column sort, one per table. */
+  venueSort = new TableSort<VenueSortKey>(null, 'asc', () => this.applySearch());
+  workshopSort = new TableSort<WorkshopSortKey>(null, 'asc', () => this.applySearch());
+  categorySort = new TableSort<CategorySortKey>(null, 'asc', () => this.applySearch());
+  readonly venueGetters: Record<VenueSortKey, SortGetter<WorkshopVenue>> = {
+    name: v => v.name, capacity: v => v.capacity, area: v => v.area?.name, amenities: v => v.amenities,
+    sessions: v => v.sessionCount || 0
+  };
+  readonly workshopGetters: Record<WorkshopSortKey, SortGetter<Workshop>> = {
+    title: w => w.title, category: w => w.category?.name, facilitators: w => w.facilitators.join(', '),
+    language: w => w.language, sessions: w => w.sessionCount || 0
+  };
+  readonly categoryGetters: Record<CategorySortKey, SortGetter<WorkshopCategory>> = {
+    name: c => c.name, workshops: c => c.workshopCount || 0
+  };
 
   get shownCount(): number {
     return this.tab === 'venue' ? this.venues.length : this.tab === 'workshop' ? this.workshops.length : this.categories.length;

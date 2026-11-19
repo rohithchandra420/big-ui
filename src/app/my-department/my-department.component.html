@@ -47,12 +47,12 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th class="sticky-name-col">Department</th><th>Volunteers</th><th>Marked</th>
-              <th>Morning</th><th>Afternoon</th><th>Night</th>
+              <th class="sticky-name-col" appSort="name" [sort]="summarySort">Department</th><th appSort="volunteers" [sort]="summarySort">Volunteers</th><th appSort="marked" [sort]="summarySort">Marked</th>
+              <th appSort="morning" [sort]="summarySort">Morning</th><th appSort="afternoon" [sort]="summarySort">Afternoon</th><th appSort="night" [sort]="summarySort">Night</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of summaryRows" class="myd-pickrow" tabindex="0" role="button" [attr.aria-label]="'Open ' + row.name"
+            <tr *ngFor="let row of sortedSummary" class="myd-pickrow" tabindex="0" role="button" [attr.aria-label]="'Open ' + row.name"
                 (click)="openDepartment(row._id)" (keydown.enter)="openDepartment(row._id)">
               <td class="sticky-name-col"><span class="myd-namego"><span>{{ row.name }}</span><mat-icon class="myd-go" aria-hidden="true">chevron_right</mat-icon></span></td>
               <td>{{ row.volunteerCount }}</td>
@@ -297,10 +297,10 @@
       <div class="table-scroll" *ngIf="!loadingReport">
         <table class="data-table">
           <thead>
-            <tr><th class="sticky-name-col">Name</th><th>Days Marked</th><th>Morning</th><th>Afternoon</th><th>Night</th></tr>
+            <tr><th class="sticky-name-col" appSort="name" [sort]="reportSort">Name</th><th appSort="days" [sort]="reportSort">Days Marked</th><th appSort="morning" [sort]="reportSort">Morning</th><th appSort="afternoon" [sort]="reportSort">Afternoon</th><th appSort="night" [sort]="reportSort">Night</th></tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of reportRows">
+            <tr *ngFor="let row of sortedReport">
               <td class="sticky-name-col"><button type="button" class="myd-person" [disabled]="!canOpenMembers" (click)="openMember(row.userId, row.name)"><app-user-avatar [userId]="row.userId" [name]="row.name" [version]="row.avatarVersion" [size]="20"></app-user-avatar>{{ row.name }}</button></td>
               <td>{{ row.daysMarked }}</td>
               <td>{{ row.morning }}</td>
