@@ -36,8 +36,8 @@
         <app-select [(ngModel)]="f.outcome" (ngModelChange)="changed()" aria-label="Outcome">
           <app-option *ngFor="let o of outcomeOptions; trackBy: trackOpt" [value]="o.value">{{ o.label }}</app-option>
         </app-select>
-        <label class="md-date"><span>From</span><input type="date" [(ngModel)]="f.from" (change)="changed()" [disabled]="quick === 'today'"></label>
-        <label class="md-date"><span>To</span><input type="date" [(ngModel)]="f.to" (change)="changed()" [disabled]="quick === 'today'"></label>
+        <label class="md-date"><span>From</span><app-date [(ngModel)]="f.from" (change)="changed()" [disabled]="quick === 'today'" ariaLabel="From"></app-date></label>
+        <label class="md-date"><span>To</span><app-date [(ngModel)]="f.to" (change)="changed()" [disabled]="quick === 'today'" ariaLabel="To"></app-date></label>
         <button type="button" class="pill-btn" (click)="clear()"><mat-icon>filter_alt_off</mat-icon>Clear</button>
       </div>
 

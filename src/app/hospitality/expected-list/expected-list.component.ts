@@ -7,7 +7,10 @@ export type ExpectedFilter = 'all' | 'not_yet' | 'served' | 'not_marked' | 'gues
 /** A tapped row (B-014): a staff member, or a guest by their Meal Pass id. */
 export interface ExpectedPick { kind: 'staff' | 'guest'; id: string }
 const SERVED = new Set(['served', 'served_flagged', 'extra']);
-const WHY_LABELS: Record<string, string> = { marked: 'Marked', always: 'Always counted', not_marked: 'Not marked', not_expected: 'Not expected' };
+const WHY_LABELS: Record<string, string> = {
+  marked: 'Marked', always: 'Always counted', not_marked: 'Not marked', not_expected: 'Not expected',
+  expected: 'Expected to join', reported: 'Reported'
+};
 
 /**
  * Who is behind a meal's expected number (big-ui 1.47.0): counted staff, guest
@@ -83,9 +86,20 @@ export class ExpectedListComponent implements OnChanges {
 
   time(iso: string): string { return localTime(new Date(iso)); }
 
+  /** "14:20" on the meal's day, else "13 Nov 14:20". */
+  private when(iso: string | null | undefined): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const sameDay = this.data?.meal?.date === `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return sameDay ? localTime(d) : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + localTime(d);
+  }
+
   whyLabel(p: ExpectedPerson): string {
     const slot = this.data?.meal?.basis;
     const base = WHY_LABELS[p.why];
+    // Joining Time: say clearly why they count before their attendance does
+    if (p.why === 'reported') return `Reported ${this.when(p.reportedAt)}`;
+    if (p.why === 'expected') return `Expected to join${p.expectedAt ? ' ' + this.when(p.expectedAt) : ''} · ${p.late ? 'late, not reported yet' : 'not reported yet'}`;
     return (p.why === 'marked' || p.why === 'not_marked') && slot ? `${base} · ${slot.label}${slot.previousDay ? ' (day before)' : ''}` : base;
   }
   statusLabel(p: ExpectedPerson): string {

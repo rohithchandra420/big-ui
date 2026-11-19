@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { DateTimeComponent } from '../../shared/date-time/date-time.component';
 import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { BehaviorSubject, of } from 'rxjs';
@@ -7,7 +8,7 @@ import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
 import { HospitalityService } from '../hospitality.service';
-import { StayOverview, StayUnitItem } from '../hospitality.model';
+import { StayNightRow, StayOverview, StayUnitItem } from '../hospitality.model';
 import { AppSelectComponent } from '../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../shared/app-select/app-option.component';
 import { SlidePanelComponent } from '../../shared/slide-panel/slide-panel.component';
@@ -29,6 +30,17 @@ const overview = (): StayOverview => ({
   ]
 });
 
+// B-021: the Allocate tab's night table
+const nila = { _id: 's1', unit: 'u-A-02', unitName: 'A-02', from: '2026-10-21', to: '2026-10-23', nights: 2, gender: 'Female' as const, note: '', people: 1,
+  person: { kind: 'staff' as const, _id: 'p9', name: 'Nila Das' }, movedInAt: null, movedOutAt: null };
+const nightRows = (): StayNightRow[] => [
+  { kind: 'staff', _id: 'p9', name: 'Nila Das', gender: 'Female', detail: 'Decor', expectedAt: '2026-10-19T05:30:00Z', reportedAt: '2026-10-19T06:00:00Z',
+    status: 'booked', stay: { ...nila }, stays: [{ _id: 's1', unit: 'A-02', from: '2026-10-21', to: '2026-10-23' }] },
+  { kind: 'staff', _id: 'p7', name: 'Ravi Menon', gender: 'Male', detail: 'Operations', expectedAt: '2026-10-20T05:30:00Z', reportedAt: null,
+    status: 'none', stay: null, stays: [] },
+  { kind: 'guest', _id: 'g1', name: 'Sound crew', gender: null, detail: 'Guest', status: 'none', stay: null, stays: [] }
+];
+
 describe('HospitalityStayComponent', () => {
   let fixture: ComponentFixture<HospitalityStayComponent>;
   let component: HospitalityStayComponent;
@@ -36,11 +48,12 @@ describe('HospitalityStayComponent', () => {
   let confirm: jasmine.SpyObj<ConfirmationService>;
 
   beforeEach(async () => {
-    service = jasmine.createSpyObj('HospitalityService', ['getStay', 'addStay', 'addUnits', 'searchStayPeople', 'moveStay']);
+    service = jasmine.createSpyObj('HospitalityService', ['getStay', 'addStay', 'addUnits', 'searchStayPeople', 'moveStay', 'getStayNight']);
     service.getStay.and.callFake(() => Promise.resolve(overview()));
+    service.getStayNight.and.callFake(() => Promise.resolve({ date: '2026-10-21', rows: nightRows() }));
     confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
     await TestBed.configureTestingModule({
-      declarations: [HospitalityStayComponent, AppSelectComponent, AppOptionComponent, SlidePanelComponent],
+      declarations: [DateTimeComponent, HospitalityStayComponent, AppSelectComponent, AppOptionComponent, SlidePanelComponent],
       imports: [FormsModule],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
@@ -159,10 +172,6 @@ describe('HospitalityStayComponent', () => {
     component.filter = 'nila';
     component.applyFilter();
     expect(component.shownUnits.map(u => u.name)).toEqual(['A-02']);
-    component.stayQ = 'nila';                                            // the Stays list has its own search
-    component.applyFilter();
-    expect(component.shownStays.map(s => s.person.name)).toEqual(['Nila Das']);
-    component.stayQ = '';
     component.filter = '';
     component.applyFilter();
     expect(component.shownUnits.length).toBe(3);
@@ -203,7 +212,6 @@ describe('HospitalityStayComponent', () => {
     component.to = '2026-10-23';
     component.onTypeFilter();
     expect(component.freeUnits.length).toBe(0);
-    expect(component.shownStays.length).toBe(0);
     component.typeFilter = 't1';
     component.onTypeFilter();
     expect(component.freeUnits.length).toBe(3);
@@ -225,6 +233,7 @@ describe('HospitalityStayComponent', () => {
       expect(component.readOnly).toBeTrue();
       expect(component.tab).toBe('calendar');
       expect(tabs()).toEqual(['Calendar', 'Units']);
+      expect(service.getStayNight).not.toHaveBeenCalled();   // B-021: no night table without Manage
     }));
 
     it('B-016: a new unit starts with today → tomorrow morning; dates are required; one range always stays', fakeAsync(() => {
@@ -325,27 +334,76 @@ describe('HospitalityStayComponent', () => {
       expect(component.freeType).toBe('t1');
     }));
 
-    it('Allocate › Stays: own search, status chips and "Night of"; the page search is hidden on this tab', fakeAsync(() => {
-      const two = overview();
-      two.units[0].stays = [
-        { _id: 's2', unit: 'u-A-01', from: '2026-10-20', to: '2026-10-21', nights: 1, gender: 'Male', note: '', people: 1, person: { kind: 'staff', _id: 'p3', name: 'Omar Sheth' }, movedInAt: '2026-10-20T10:00:00Z', movedOutAt: '2026-10-21T05:00:00Z' },
-        { _id: 's3', unit: 'u-A-01', from: '2026-10-21', to: '2026-10-24', nights: 3, gender: 'Male', note: '', people: 1, person: { kind: 'staff', _id: 'p4', name: 'Ajay Rao' }, movedInAt: '2026-10-21T10:00:00Z', movedOutAt: null }
-      ];
-      service.getStay.and.callFake(() => Promise.resolve(two));
+    it('B-021: Allocate shows the night table for the picked night; the page search is hidden on this tab', fakeAsync(() => {
       start();
+      expect(service.getStayNight).toHaveBeenCalledWith('e1', '2026-10-21');
       expect(fixture.nativeElement.querySelector('.hy-bar .hy-search')).toBeNull();
-      expect(fixture.nativeElement.querySelector('.hy-stools input')).not.toBeNull();
-      expect(component.shownStays.length).toBe(3);
-      component.setStayStatus('in');
-      expect(component.shownStays.map(s => s.person.name)).toEqual(['Ajay Rao']);
-      component.setStayStatus('booked');
-      expect(component.shownStays.map(s => s.person.name)).toEqual(['Nila Das']);
-      component.setStayStatus('');
-      component.stayTonight = true;                                          // night of 21 Oct
-      component.applyFilter();
-      expect(component.shownStays.map(s => s.person.name)).toEqual(['Ajay Rao', 'Nila Das']);
-      component.clearStayFilters();
-      expect(component.shownStays.length).toBe(3);
+      expect(component.shownRows.map(r => r.name)).toEqual(['Nila Das', 'Ravi Menon', 'Sound crew']);
+      const rows = fixture.nativeElement.querySelectorAll('.hy-nt-r:not(.hy-nt-h)');
+      expect(rows.length).toBe(3);
+      expect(rows[1].textContent).toContain('Expected · late, not reported'); // B-017: clear that he has not reported
+      expect(rows[0].textContent).not.toContain('not reported');
+    }));
+
+    it('B-021: status chips, Staff / Guests and the search narrow the table', fakeAsync(() => {
+      start();
+      expect(component.countOf('none')).toBe(2);
+      component.setNtStatus('none');
+      expect(component.shownRows.map(r => r.name)).toEqual(['Ravi Menon', 'Sound crew']);
+      component.setNtKind('guest');
+      expect(component.shownRows.map(r => r.name)).toEqual(['Sound crew']);
+      component.clearNtFilters();
+      component.ntQ = 'a-02';                                                 // by unit
+      component.applyNight();
+      expect(component.shownRows.map(r => r.name)).toEqual(['Nila Das']);
+    }));
+
+    it('B-021: a row with no bed opens Allocate for that night; a row with a stay opens the stay panel', fakeAsync(() => {
+      start();
+      component.openRow(component.nightRows[1]);
+      expect(component.person?.name).toBe('Ravi Menon');
+      expect([component.from, component.to]).toEqual(['2026-10-21', '2026-10-22']);
+      expect(component.gender).toBe('Male');
+      component.closeAllocate();
+      component.openRow(component.nightRows[0]);
+      expect(component.person).toBeNull();
+      expect(component.stayRow?.name).toBe('Nila Das');
+      fixture.detectChanges();
+      const panel = fixture.nativeElement.querySelector('.hy-nt-stay') as HTMLElement;
+      expect(panel.textContent).toContain('A-02');
+      // Another range starts the morning this stay ends
+      component.allocateAnother(component.stayRow!);
+      expect(component.stayRow).toBeNull();
+      expect([component.from, component.to]).toEqual(['2026-10-23', '2026-10-24']);
+    }));
+
+    it('B-021: the stay panel follows a reload; a moved-in stay offers Moved out and Undo', fakeAsync(() => {
+      start();
+      component.openRow(component.nightRows[0]);
+      const moved = nightRows();
+      moved[0].status = 'in';
+      moved[0].stay = { ...nila, movedInAt: '2026-10-21T10:00:00Z' };
+      service.getStayNight.and.callFake(() => Promise.resolve({ date: '2026-10-21', rows: moved }));
+      component.load();
+      flushMicrotasks();
+      fixture.detectChanges();
+      expect(component.stayRow?.status).toBe('in');
+      const text = (fixture.nativeElement.querySelector('app-slide-panel .hy-nt-acts') as HTMLElement).textContent || '';
+      expect(text).toContain('Moved out');
+      expect(text).toContain('Undo Moved in');
+      expect(text).not.toContain('Cancel stay');
+    }));
+
+    it('B-017: the search sends the picked night; staff not reported are tagged', fakeAsync(() => {
+      service.searchStayPeople.and.returnValue(Promise.resolve({ people: [] }));
+      start();
+      component.q = 'ravi';
+      component.search();
+      flushMicrotasks();
+      expect(service.searchStayPeople).toHaveBeenCalledWith('e1', 'ravi', '2026-10-21');
+      expect(component.joinTag({ kind: 'staff', _id: 'x', name: 'X', gender: null, detail: '', stays: [], expectedAt: '2099-01-01T05:30:00Z', reportedAt: null })?.label)
+        .toBe('Expected · not reported yet');
+      expect(component.joinTag({ kind: 'guest', _id: 'g', name: 'G', gender: null, detail: '', stays: [] })).toBeNull();
     }));
 
     it('unit details: stays by date with Before / That night / Later; beds taken that night instead of a stay count', fakeAsync(() => {

@@ -6,7 +6,8 @@ import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.se
 import { EventItem } from '../../models/event.model';
 import { localDate } from '../../workshops/planner.utils';
 import { HospitalityService } from '../hospitality.service';
-import { GENDERS, Gender, StayItem, StayOverview, StayPerson, StayTypeItem, StayUnitItem } from '../hospitality.model';
+import { GENDERS, Gender, StayItem, StayNightRow, StayNightStatus, StayOverview, StayPerson, StayTypeItem, StayUnitItem } from '../hospitality.model';
+import { joinState } from '../../core/join-time';
 
 type Tab = 'units' | 'allocate' | 'calendar';
 interface UnitForm { _id?: string; batch: boolean; type: string; name: string; prefix: string; start: number; count: number; beds: number; area: string; notes: string; ranges: { from: string; to: string }[] }
@@ -72,7 +73,24 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
   /** The night the counts are for (default tonight). */
   statsNight = '';
   freeUnits: FreeUnit[] = [];
-  stays: (StayItem & { unitName: string })[] = [];
+
+  // B-021 (Joining Time): the Allocate tab's table for the picked night
+  nightRows: StayNightRow[] = [];
+  shownRows: StayNightRow[] = [];
+  nightLoading = false;
+  ntQ = '';
+  ntStatus: '' | StayNightStatus = '';
+  ntKind: '' | 'staff' | 'guest' = '';
+  readonly ntStatuses: { value: '' | StayNightStatus; label: string }[] = [
+    { value: '', label: 'All' }, { value: 'none', label: 'No bed' }, { value: 'booked', label: 'Booked' },
+    { value: 'in', label: 'Moved in' }, { value: 'out', label: 'Moved out' }
+  ];
+  readonly statusLabel: Record<StayNightStatus, string> = { none: 'No bed', booked: 'Booked', in: 'Moved in', out: 'Moved out' };
+  /** The row whose stay is open in the slide panel (kept by kind + id, so a reload refreshes it). */
+  stayKey = '';
+  stayRow: StayNightRow | null = null;
+  /** "Not on this list?" — the search of all staff and guests. */
+  searchOpen = false;
 
   // Calendar (a window of days)
   calFrom = '';
@@ -93,7 +111,6 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     { value: 'full', label: 'Full' }, { value: 'closed', label: 'Not available' }
   ];
   shownUnits: StayUnitItem[] = [];
-  shownStays: (StayItem & { unitName: string })[] = [];
 
   private sub = new Subscription();
 
@@ -126,9 +143,9 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
       if (!this.calFrom) this.calFrom = this.data.today >= this.data.messDates.opensOn && this.data.today <= this.data.messDates.closesOn ? this.data.today : this.data.messDates.opensOn;
       this.buildCalendar();
       this.refreshCell();
-      this.buildStays();
       this.applyFilter();
       this.buildFree();
+      await this.loadNight();
     } catch (err: any) {
       this.loadError = err?.error?.message || 'Could not load the stays.';
     } finally {
@@ -160,29 +177,8 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     this.shownUnits = units.filter(u =>
       (!this.typeFilter || u.type?._id === this.typeFilter) && nightOk(u) &&
       (has(u.name, u.type?.name, u.area?.name) || staysThen(u).some(s => has(s.person.name))));
-    const typeOf = new Map(units.map(u => [u._id, u.type?._id || '']));
-    // Allocate › Stays has its own search and filters (user, 2026-11-18)
-    const sq = this.stayQ.trim().toLowerCase();
-    this.shownStays = this.stays.filter(s =>
-      (!sq || [s.person.name, s.unitName].some(x => (x || '').toLowerCase().includes(sq))) &&
-      (!this.typeFilter || typeOf.get(String(s.unit)) === this.typeFilter) &&
-      (!this.stayStatus || this.stayState(s) === this.stayStatus) &&
-      (!this.stayTonight || (s.from <= this.statsNight && s.to > this.statsNight)));
     this.refreshUnitStays();
   }
-
-  // ── Allocate › Stays filters ──
-  stayQ = '';
-  stayStatus: '' | 'booked' | 'in' | 'out' = '';
-  /** Only the stays that hold a bed on the picked night. */
-  stayTonight = false;
-  readonly stayStatuses = [
-    { value: '', label: 'All' }, { value: 'booked', label: 'Booked' }, { value: 'in', label: 'Moved in' }, { value: 'out', label: 'Moved out' }
-  ] as const;
-  stayState(s: StayItem): 'booked' | 'in' | 'out' { return s.movedOutAt ? 'out' : s.movedInAt ? 'in' : 'booked'; }
-  setStayStatus(v: '' | 'booked' | 'in' | 'out') { this.stayStatus = v; this.applyFilter(); }
-  get stayFiltersOn(): boolean { return !!(this.stayQ.trim() || this.stayStatus || this.stayTonight); }
-  clearStayFilters() { this.stayQ = ''; this.stayStatus = ''; this.stayTonight = false; this.applyFilter(); }
 
   // ── Unit details: its stays on a timeline ──
   /** The open unit's stays by date (first night, then leaving morning) — not booking order (user, 2026-11-18). */
@@ -312,7 +308,8 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     const q = this.q.trim();
     if (q.length < 2 || !this.event) return;
     try {
-      this.people = (await this.hospitality.searchStayPeople(this.event._id, q)).people;
+      // B-017: only people who have joined by the picked night (guests are not filtered)
+      this.people = (await this.hospitality.searchStayPeople(this.event._id, q, this.statsNight || undefined)).people;
       this.searched = true;
     } catch (err: any) {
       this.notify.openErrorSnackBar(err?.error?.message || 'Could not search.');
@@ -453,11 +450,62 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Every stay, soonest first, for the Allocate list. */
-  private buildStays() {
-    const list: (StayItem & { unitName: string })[] = [];
-    for (const u of this.data?.units || []) for (const s of u.stays) list.push({ ...s, unitName: u.name });
-    this.stays = list.sort((a, b) => a.from.localeCompare(b.from) || a.person.name.localeCompare(b.person.name));
+  // ── The night table (B-021) ──────────────────────────────
+
+  async loadNight() {
+    if (!this.event || this.readOnly || !this.statsNight) { this.nightRows = []; this.applyNight(); return; }
+    this.nightLoading = !this.nightRows.length;
+    try {
+      this.nightRows = (await this.hospitality.getStayNight(this.event._id, this.statsNight)).rows;
+    } catch (err: any) {
+      this.nightRows = [];
+      this.notify.openErrorSnackBar(err?.error?.message || 'Could not load that night.');
+    } finally {
+      this.nightLoading = false;
+      this.applyNight();
+    }
+  }
+
+  applyNight() {
+    const q = this.ntQ.trim().toLowerCase();
+    this.shownRows = this.nightRows.filter(r =>
+      (!q || [r.name, r.detail, r.stay?.unitName].some(x => (x || '').toLowerCase().includes(q))) &&
+      (!this.ntStatus || r.status === this.ntStatus) &&
+      (!this.ntKind || r.kind === this.ntKind));
+    // The open stay panel follows the fresh data
+    this.stayRow = this.stayKey ? this.nightRows.find(r => this.rowKey(r) === this.stayKey) || null : null;
+    if (!this.stayRow) this.stayKey = '';
+  }
+
+  countOf(v: '' | StayNightStatus): number { return v ? this.nightRows.filter(r => r.status === v).length : this.nightRows.length; }
+  setNtStatus(v: '' | StayNightStatus) { this.ntStatus = v; this.applyNight(); }
+  setNtKind(v: '' | 'staff' | 'guest') { this.ntKind = this.ntKind === v ? '' : v; this.applyNight(); }
+  get ntFiltersOn(): boolean { return !!(this.ntQ.trim() || this.ntStatus || this.ntKind); }
+  clearNtFilters() { this.ntQ = ''; this.ntStatus = ''; this.ntKind = ''; this.applyNight(); }
+  rowKey = (r: StayNightRow) => r.kind + ':' + r._id;
+  trackRow = (_: number, r: StayNightRow) => this.rowKey(r);
+
+  /** A row tapped: no bed → the Allocate panel for that night; a stay → the stay panel. */
+  openRow(r: StayNightRow) {
+    if (this.readOnly) return;
+    if (!r.stay) { this.pick(r, { from: this.statsNight, to: plusDays(this.statsNight, 1) }); return; }
+    this.stayKey = this.rowKey(r);
+    this.stayRow = r;
+  }
+  closeStay() { this.stayKey = ''; this.stayRow = null; }
+
+  /** From the stay panel: another range for the same person (starts the morning this stay ends). */
+  allocateAnother(r: StayNightRow) {
+    const from = r.stay?.to || this.statsNight;
+    this.closeStay();
+    this.pick(r, { from, to: plusDays(from, 1) });
+  }
+
+  /** B-017: "Expected to join · not reported yet" (late when that time has passed) for staff not reported. */
+  joinTag(p: StayPerson): { cls: string; label: string } | null {
+    if (p.kind !== 'staff' || p.reportedAt) return null;
+    const st = joinState(p.expectedAt, null);
+    return { cls: st === 'late' ? 'late' : 'expected', label: st === 'late' ? 'Expected · late, not reported' : 'Expected · not reported yet' };
   }
 
   move(s: StayItem, which: 'move-in' | 'move-out', undo = false) {

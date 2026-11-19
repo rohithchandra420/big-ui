@@ -85,8 +85,13 @@
             <app-option value="all">All statuses</app-option>
           </app-select>
 
+          <!-- Joining Time (B-008): one day each (user, 2026-11-19) -->
+          <app-date class="dtp-sm filter-date" [(ngModel)]="expOn" (ngModelChange)="onFilterChange()" prefix="Joins" placeholder="any day" ariaLabel="Expected Join Time on"></app-date>
+          <app-date class="dtp-sm filter-date" [(ngModel)]="repOn" (ngModelChange)="onFilterChange()" prefix="Reported" placeholder="any day" ariaLabel="Reported Time on"></app-date>
+
           <button class="btn-ghost clear-btn" *ngIf="hasFilters" (click)="clearFilters()">Clear</button>
         </div>
+
       </div>
 
       <!-- Staff list actions for the picked rows -->
@@ -114,7 +119,8 @@
               <th>Role</th>
               <th>Department</th>
               <th>Access</th>
-              <th>Joined</th>
+              <th>Expected Join Time</th>
+              <th>Reported Time</th>
               <th *ngIf="showStaff">{{ staffEvent?.name }}</th>
             </tr>
           </thead>
@@ -139,13 +145,19 @@
               <td><span class="badge bb">{{ roleName(u) || '—' }}</span></td>
               <td>{{ homeDeptName(u) || '—' }}</td>
               <td>{{ getAccessLabel(u) }}</td>
-              <td>{{ u.dateOfJoining ? (u.dateOfJoining | date:'mediumDate') : '—' }}</td>
+              <td>
+                <div class="jt-cell">{{ u.dateOfJoining ? (u.dateOfJoining | date:'d MMM y, HH:mm') : '—' }}</div>
+              </td>
+              <td>
+                <div class="jt-cell" *ngIf="u.reportedAt">{{ u.reportedAt | date:'d MMM y, HH:mm' }}</div>
+                <span class="jt-chip" *ngIf="!u.reportedAt" [ngClass]="joinStateOf(u)">{{ joinStateOf(u) === 'late' ? 'Late · not reported' : 'Not reported' }}</span>
+              </td>
               <td *ngIf="showStaff">
                 <span class="badge" [ngClass]="u.onEvent ? 'bg' : 'bx'">{{ isAlwaysStaff(u) ? 'Always' : (u.onEvent ? 'On staff' : 'Not on') }}</span>
               </td>
             </tr>
             <tr *ngIf="!loading && pagedUsers.length === 0">
-              <td [attr.colspan]="6 + (isTopLevel ? 1 : 0) + (showStaff ? 1 : 0)" class="empty-row">No users found.</td>
+              <td [attr.colspan]="7 + (isTopLevel ? 1 : 0) + (showStaff ? 1 : 0)" class="empty-row">No users found.</td>
             </tr>
           </tbody>
         </table>
@@ -264,15 +276,21 @@
           </button>
         </div>
 
+        <!-- Joining Time: Expected Join Time + Reported Time, Mark reported / Undo -->
+        <ng-container *ngIf="isActive(activeUser)">
+          <div class="section-lbl">Joining</div>
+          <app-reported [userId]="activeUser._id" [eventId]="reportEventId" [name]="activeUser.name"
+                        [role]="roleName(activeUser)" [home]="homeDeptId(activeUser)"
+                        [expectedAt]="activeUser.dateOfJoining || null" [reportedAt]="activeUser.reportedAt || null"
+                        [reportedBy]="activeUser.reportedBy?.name ? activeUser.reportedBy : null"
+                        (changed)="onReported(activeUser, $event)"></app-reported>
+        </ng-container>
+
         <div class="section-lbl">Details</div>
         <div class="detail-list">
           <div class="detail-row">
             <span class="detail-l">Phone</span>
             <span class="detail-v">{{ activeUser.phone || '—' }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-l">Date of Joining</span>
-            <span class="detail-v">{{ activeUser.dateOfJoining ? (activeUser.dateOfJoining | date:'mediumDate') : '—' }}</span>
           </div>
           <div class="detail-row">
             <span class="detail-l">Account Created</span>

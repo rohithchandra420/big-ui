@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DateTimeComponent } from '../../../shared/date-time/date-time.component';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
@@ -20,7 +21,7 @@ describe('EventCreateDialogComponent', () => {
     dialogRefSpy = jasmine.createSpyObj('MatDialogRef', ['close']);
 
     await TestBed.configureTestingModule({
-      declarations: [EventCreateDialogComponent],
+      declarations: [DateTimeComponent, EventCreateDialogComponent],
       imports: [ReactiveFormsModule],
       providers: [
         { provide: EventService, useValue: eventServiceSpy },

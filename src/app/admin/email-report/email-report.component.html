@@ -76,11 +76,11 @@
 
         <label class="date-filter">
           <span>From</span>
-          <input type="date" [(ngModel)]="fromDate" (ngModelChange)="onFilterChange()" [max]="toDate || null" />
+          <app-date [(ngModel)]="fromDate" (ngModelChange)="onFilterChange()" [max]="toDate || null" ariaLabel="From"></app-date>
         </label>
         <label class="date-filter">
           <span>To</span>
-          <input type="date" [(ngModel)]="toDate" (ngModelChange)="onFilterChange()" [min]="fromDate || null" />
+          <app-date [(ngModel)]="toDate" (ngModelChange)="onFilterChange()" [min]="fromDate || null" ariaLabel="To"></app-date>
         </label>
 
         <button class="btn-ghost clear-btn" *ngIf="hasFilters" (click)="clearFilters()">Clear</button>

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { DateTimeComponent } from '../../shared/date-time/date-time.component';
 import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
@@ -41,7 +42,7 @@ describe('HospitalityReportComponent', () => {
     service.getReport.and.callFake(() => Promise.resolve(report()));
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     await TestBed.configureTestingModule({
-      declarations: [HospitalityReportComponent, AppSelectComponent, AppOptionComponent, SlidePanelComponent],
+      declarations: [DateTimeComponent, HospitalityReportComponent, AppSelectComponent, AppOptionComponent, SlidePanelComponent],
       imports: [FormsModule],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },

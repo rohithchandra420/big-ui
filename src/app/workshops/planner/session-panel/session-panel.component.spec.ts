@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { DateTimeComponent } from '../../../shared/date-time/date-time.component';
 import { ReactiveFormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA, SimpleChange } from '@angular/core';
 import { of } from 'rxjs';
@@ -41,7 +42,7 @@ describe('SessionPanelComponent', () => {
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
     await TestBed.configureTestingModule({
-      declarations: [SessionPanelComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [DateTimeComponent, SessionPanelComponent, AppSelectComponent, AppOptionComponent],
       imports: [ReactiveFormsModule],
       providers: [
         { provide: WorkshopService, useValue: service },

@@ -30,7 +30,8 @@ export interface AttendanceRosterEntry {
   afternoon: boolean;
   night: boolean;
   /** B-004 (api 1.55.0): who marked each saved slot and when. */
-  marks?: Partial<Record<'morning' | 'afternoon' | 'night', { by: string; at: string }>>;
+  // Joining Time: `auto` + `note` = marked by BiG when the person was marked Reported
+  marks?: Partial<Record<'morning' | 'afternoon' | 'night', { by: string; at: string; auto?: 'reported'; note?: string }>>;
 }
 
 export interface AttendanceGrid {

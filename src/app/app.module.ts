@@ -81,6 +81,8 @@ import { EmailProgressComponent } from './box-office/email/email-progress/email-
 import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
 import { SectionHeaderComponent } from './shared/section-header/section-header.component';
 import { SlidePanelComponent } from './shared/slide-panel/slide-panel.component';
+import { ReportedComponent } from './shared/reported/reported.component';
+import { DateTimeComponent } from './shared/date-time/date-time.component';
 import { TaskPillComponent } from './shared/task/task-pill.component';
 import { TaskSheetComponent } from './shared/task/task-sheet.component';
 import { TaskListComponent } from './shared/task/task-list.component';
@@ -184,6 +186,8 @@ LOAD_WASM().subscribe()
     PwaStatusComponent,
     SectionHeaderComponent,
     SlidePanelComponent,
+    ReportedComponent,
+    DateTimeComponent,
     TaskPillComponent,
     TaskSheetComponent,
     TaskListComponent,

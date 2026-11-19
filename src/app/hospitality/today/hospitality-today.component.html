@@ -58,7 +58,7 @@
           <button type="button" class="pill-btn" *ngIf="!readOnly && (s.closedEarly && s.status === 'closed')" [disabled]="!!busy" (click)="reopenMess()"><mat-icon>door_open</mat-icon>Reopen</button>
         </ng-container>
         <div class="ht-time" *ngIf="editingTime">
-          <input type="time" [(ngModel)]="newTime" aria-label="New opening time" />
+          <app-time [(ngModel)]="newTime" ariaLabel="New opening time"></app-time>
           <button type="button" class="btn-cta" [disabled]="!newTime" (click)="saveTime()">Save</button>
           <button type="button" class="btn-ghost" *ngIf="s.ownTimes" (click)="resetTime()">Usual time</button>
           <button type="button" class="btn-ghost" (click)="editingTime = false">Cancel</button>
@@ -106,6 +106,7 @@
             </div>
             <div class="ht-total"><b>{{ s.expected.total }}</b> plates expected</div>
             <div class="ht-basis">Count from <span class="hx-tag"><mat-icon class="ms-fill">{{ basisIcon }}</mat-icon>{{ basisText }}</span> + guest passes valid for this meal</div>
+            <div class="ht-basis" *ngIf="s.expectedToJoin">+ {{ s.expectedToJoin }} expected to join (not reported yet<ng-container *ngIf="s.lateToReport">, {{ s.lateToReport }} late</ng-container>)</div>
 
             <div class="ht-dl done" *ngIf="s.count">
               <mat-icon class="ms-fill">check_circle</mat-icon>

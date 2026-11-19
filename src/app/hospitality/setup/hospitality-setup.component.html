@@ -20,11 +20,11 @@
           <div class="hs-range">
             <div class="field">
               <label for="hs-open">Mess opens</label>
-              <input id="hs-open" type="date" name="opensOn" [(ngModel)]="opensOn" (ngModelChange)="buildStrip()" required />
+              <app-date inputId="hs-open" name="opensOn" [(ngModel)]="opensOn" (ngModelChange)="buildStrip()" required ariaLabel="Mess opens"></app-date>
             </div>
             <div class="field">
               <label for="hs-close">Mess closes</label>
-              <input id="hs-close" type="date" name="closesOn" [(ngModel)]="closesOn" (ngModelChange)="buildStrip()" required />
+              <app-date inputId="hs-close" name="closesOn" [(ngModel)]="closesOn" (ngModelChange)="buildStrip()" [min]="opensOn || null" required ariaLabel="Mess closes"></app-date>
             </div>
             <div class="field">
               <label for="hs-fest">Fest days</label>
@@ -53,7 +53,7 @@
             <tbody>
               <tr *ngFor="let r of rows; trackBy: trackRow">
                 <td><span class="hs-nm"><i [style.background]="r.colour"></i>{{ r.label }}</span></td>
-                <td><input type="time" [name]="'t-' + r.key" [(ngModel)]="times[r.key]" required [attr.aria-label]="r.label + ' opens at'" /></td>
+                <td><app-time [name]="'t-' + r.key" [(ngModel)]="times[r.key]" required [ariaLabel]="r.label + ' opens at'"></app-time></td>
                 <td>{{ openText }}</td>
                 <td>
                   <span class="hx-tag" *ngIf="r.basis">{{ r.basis }}</span>

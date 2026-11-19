@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { DateTimeComponent } from '../shared/date-time/date-time.component';
 import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { BehaviorSubject, of } from 'rxjs';
@@ -47,7 +48,7 @@ describe('MyDepartmentComponent', () => {
     tasks.list.and.returnValue(Promise.resolve([{ _id: 't1', status: 'new' }, { _id: 't2', status: 'closed' }, { _id: 't3', status: 'in_progress' }] as any));
 
     await TestBed.configureTestingModule({
-      declarations: [MyDepartmentComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [DateTimeComponent, MyDepartmentComponent, AppSelectComponent, AppOptionComponent],
       imports: [FormsModule],
       providers: [
         { provide: DepartmentService, useValue: depts },
@@ -77,6 +78,11 @@ describe('MyDepartmentComponent', () => {
     const anil = component.roster[0];
     expect(component.markTip(anil, 'morning')).toMatch(/^Morning — marked by Ravi Lead · /);
     expect(component.markTip(anil, 'night')).toBe('Night — not marked');
+    // Joining Time: a mark BiG made when they were marked Reported says so
+    anil.night = true;
+    anil.marks = { ...anil.marks, night: { by: 'Ravi Lead', at: '2026-11-12T08:50:00Z', auto: 'reported', note: 'Reported 12 Nov 14:20 — marked from the afternoon slot' } };
+    (component as any).saved.set(anil.userId, { ...(component as any).saved.get(anil.userId), night: true });
+    expect(component.markTip(anil, 'night')).toBe('Night — auto: Reported 12 Nov 14:20 — marked from the afternoon slot (by Ravi Lead)');
     expect(rows[0].querySelector('.myd-count')!.textContent!.trim()).toBe('1/3');
   }));
 

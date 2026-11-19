@@ -323,6 +323,7 @@ export class MyDepartmentComponent implements OnInit, OnDestroy {
     if (entry[slot] && !was) return `${label} — ticked, not saved yet`;
     if (!entry[slot] && was) return `${label} — will be cleared on Save`;
     const m = entry.marks?.[slot];
+    if (entry[slot] && m?.auto) return `${label} — auto: ${m.note || 'marked when reported'} (by ${m.by})`;
     if (entry[slot] && m) return `${label} — marked by ${m.by} · ${this.when(m.at)}`;
     return entry[slot] ? `${label} — marked` : `${label} — not marked`;
   }

@@ -12,6 +12,7 @@ import {
   askMessage, buildBoard, dayWord, money, moveMessage, shiftDate, sortRows
 } from './volunteers.utils';
 import { VolProfileComponent } from './vol-profile/vol-profile.component';
+import { joinState } from '../core/join-time';
 
 type Panel = 'closed' | 'profile' | 'need' | 'add';
 /** A home department a new volunteer may get (Add users). */
@@ -50,6 +51,19 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   sortDir: SortDir = 'asc';
   /** List only: everyone, Volunteers or Team Leads. */
   roleFilter: RoleFilter = 'all';
+  // Joining Time (B-008): date ranges on Expected Join Time and Reported Time
+  expFrom = '';
+  expTo = '';
+  repFrom = '';
+  repTo = '';
+  joinState = joinState;
+  get joinFiltersOn(): boolean { return !!(this.expFrom || this.expTo || this.repFrom || this.repTo); }
+  clearJoinFilters() { this.expFrom = this.expTo = this.repFrom = this.repTo = ''; this.apply(); }
+  /** After Mark reported / Undo in the profile: the row follows. */
+  onReported(e: { userId: string; reportedAt: string | null }) {
+    const v = this.board?.volunteers.find(x => x._id === e.userId);
+    if (v) { v.reportedAt = e.reportedAt; this.apply(); }
+  }
   /**
    * The picked date (YYYY-MM-DD); null = today. It changes only the attendance
    * marks and the bed status (for that night) — user, 2026-11-18.
@@ -195,7 +209,10 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   apply() {
-    const view = buildBoard(this.board, { search: this.search, stat: this.stat, notMarked: this.notMarked, role: this.roleFilter });
+    const view = buildBoard(this.board, {
+      search: this.search, stat: this.stat, notMarked: this.notMarked, role: this.roleFilter,
+      expFrom: this.expFrom, expTo: this.expTo, repFrom: this.repFrom, repTo: this.repTo
+    });
     this.view = { ...view, rows: sortRows(view.rows, this.sortKey, this.sortDir) };
     const lanes = buildBoard(this.board, { search: '', stat: 'all', notMarked: false }).lanes;
     this.destinations = [

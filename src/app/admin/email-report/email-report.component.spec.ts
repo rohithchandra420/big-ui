@@ -1,4 +1,5 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { DateTimeComponent } from '../../shared/date-time/date-time.component';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -44,7 +45,7 @@ describe('EmailReportComponent', () => {
     finished$ = new Subject<EmailBatch>();
 
     await TestBed.configureTestingModule({
-      declarations: [EmailReportComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [DateTimeComponent, EmailReportComponent, AppSelectComponent, AppOptionComponent],
       imports: [FormsModule],
       providers: [
         { provide: EmailService, useValue: emailSpy },

@@ -13,6 +13,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.65.0] - 2026-11-19
+
+### Added
+- **Joining Time: Mark reported.** Admin › Users, the Volunteers profile and My Department's member panel show a person's **Expected Join Time** and **Reported Time**, with **Mark reported** (now or an earlier time), **Change time** and **Undo** for the people allowed (DEV / DIR / ADMIN, the Volunteer Team Lead, the person's home-department Team Lead). Reporting marks attendance for the rest of that day.
+- **Users and Volunteers: "Expected Join Time" and "Reported Time" columns** (B-008), with a "not reported" tag (late once the expected time has passed). Users filter by one day for each; Volunteers by date ranges and can sort by Reported Time.
+- **Stay › Allocate: the night table** (B-021). Everyone who may need a bed on the picked night, with search, status chips (No bed · Booked · Moved in · Moved out) and Staff / Guests. Tap a person with no bed to allocate for that night; tap a booked person for their stay — Moved in, Moved out, Undo, Cancel and "Allocate another range". "Not on this list?" searches everyone.
+- **A new date and time picker, app-wide.** One field for date and time where both are needed. On a computer it opens a panel with a calendar, hour and minute columns, a box to type any time, quick picks (Now, Today, Tomorrow), Clear and Done; days outside the allowed dates are greyed. On phones a tap opens the phone's own picker. Every date and time field uses it, and it looks like the other inputs.
+
+### Changed
+- **Who's counted says why:** "Reported 11:05", or "Expected to join 11:00 · late, not reported yet". Today's meal card adds how many are expected to join.
+- **Stay › Allocate: the search only finds staff who have joined by the picked night** (B-017), and says who has not reported yet. The separate Stays list is gone — its actions are in the night table's stay panel.
+- **Add / edit user: Expected Join Time is one date and time field**; a day picked alone means 11:00. Bulk Add keeps a time typed in a date cell. Veg and Non-veg sit on one line.
+- **My Department:** hovering an automatic mark says it was made when the person reported.
+
+---
+
 ## [1.64.0] - 2026-11-19
 
 ### Added

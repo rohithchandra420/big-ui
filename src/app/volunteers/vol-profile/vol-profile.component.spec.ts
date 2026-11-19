@@ -11,7 +11,7 @@ import { VolProfile } from '../volunteers.model';
 // The shared profile (Volunteers + My Department, 2026-11-19).
 const base: VolProfile = {
   _id: 'u1', name: 'Anil', email: 'anil@example.com', phone: '', avatarVersion: 0, role: 'VOL',
-  department: { _id: 'd1', name: 'Stage Crew' }, unassigned: false, dateOfJoining: null, foodPreference: 'veg', gender: '',
+  department: { _id: 'd1', name: 'Stage Crew' }, unassigned: false, dateOfJoining: null, reportedAt: null, reportedBy: null, foodPreference: 'veg', gender: '',
   stay: null, band: false, meals: 0, deposit: { status: 'none' },
   attendance: [{ date: '2026-11-18', morning: false, afternoon: false, night: false }, { date: '2026-11-19', morning: false, afternoon: true, night: false }]
 };

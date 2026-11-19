@@ -6,6 +6,7 @@ import { StaffBandInfo, StaffBandService } from '../../core/staff-band.service';
 import { VolunteersService } from '../volunteers.service';
 import { LocationInfo, VolProfile } from '../volunteers.model';
 import { DEPOSIT_LABEL, LOCATION_LABEL, askMessage, money } from '../volunteers.utils';
+import { ReportedChange } from '../../shared/reported/reported.component';
 
 /**
  * One volunteer's (or Team Lead's) complete profile: contact, details, staff
@@ -28,6 +29,8 @@ export class VolProfileComponent implements OnChanges, OnDestroy {
   @Input() marked: boolean | null = null;
   @Input() canAskLocation = false;
   @Output() loaded = new EventEmitter<VolProfile | null>();
+  /** Joining Time: Mark reported / Undo happened here (the page updates its row). */
+  @Output() reported = new EventEmitter<{ userId: string; reportedAt: string | null }>();
 
   profile: VolProfile | null = null;
   loading = false;
@@ -50,6 +53,12 @@ export class VolProfileComponent implements OnChanges, OnDestroy {
   ngOnDestroy() { this.map?.remove(); }
 
   get isTl(): boolean { return this.profile?.role === 'TL'; }
+
+  onReported(change: ReportedChange) {
+    if (!this.profile) return;
+    this.profile = { ...this.profile, reportedAt: change.reportedAt, reportedBy: change.reportedBy };
+    this.reported.emit({ userId: this.profile._id, reportedAt: change.reportedAt });
+  }
   get markedToday(): boolean {
     if (this.marked !== null) return this.marked;
     const d = this.profile?.attendance[this.profile.attendance.length - 1];

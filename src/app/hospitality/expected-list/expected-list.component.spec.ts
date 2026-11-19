@@ -143,4 +143,18 @@ describe('ExpectedListComponent', () => {
     show(null);
     expect(text().trim()).toBe('');
   });
+
+  it('Joining Time: says why someone counts before their attendance does', () => {
+    const d = exp();
+    d.summary = { ...d.summary!, expected: 8, reported: 1, expectedToJoin: 1, late: 1 };
+    d.counted!.push(
+      { _id: 'e', name: 'Esha Early', avatarVersion: 0, department: 'Decor', food: 'veg', counted: true, why: 'reported', status: 'none', at: null, reportedAt: at(11, 5) },
+      { _id: 'f', name: 'Farah Late', avatarVersion: 0, department: 'Decor', food: 'veg', counted: true, why: 'expected', late: true, status: 'none', at: null, expectedAt: at(11, 0), reportedAt: null }
+    );
+    show(d);
+    expect(text()).toContain('Reported 11:05');
+    expect(text()).toContain('Expected to join 11:00 · late, not reported yet');
+    expect(text()).toContain('+ 1 reported today + 1 expected to join (1 late)');
+    expect(fixture.nativeElement.querySelector('.hx-ew.late')).not.toBeNull();
+  });
 });

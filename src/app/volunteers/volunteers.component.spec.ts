@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, flush, flushMicrotasks } from '@angular/core/testing';
+import { DateTimeComponent } from '../shared/date-time/date-time.component';
 import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { BehaviorSubject, of } from 'rxjs';
@@ -15,13 +16,13 @@ import { DepartmentService } from '../core/department.service';
 import { VolProfileComponent } from './vol-profile/vol-profile.component';
 
 const vol = (id: string, name: string, department: string | null, marked = true, extra: Partial<Volunteer> = {}): Volunteer => ({
-  _id: id, name, avatarVersion: 0, role: 'VOL', department, unassigned: !department, phone: '', gender: '', dateOfJoining: null,
+  _id: id, name, avatarVersion: 0, role: 'VOL', department, unassigned: !department, phone: '', gender: '', dateOfJoining: null, reportedAt: null,
   today: { morning: marked, afternoon: false, night: false }, marked, stay: 'none', band: false, ...extra
 });
 
 const profile: VolProfile = {
   _id: '1', name: 'Anil', email: 'anil@example.com', phone: '+919000000001', avatarVersion: 0, department: null, unassigned: true,
-  dateOfJoining: '2026-11-10T00:00:00.000Z', foodPreference: 'veg', gender: 'Male', stay: null, band: false, meals: 4, deposit: { status: 'held', amount: 500 },
+  dateOfJoining: '2026-11-10T00:00:00.000Z', reportedAt: null, reportedBy: null, foodPreference: 'veg', gender: 'Male', stay: null, band: false, meals: 4, deposit: { status: 'held', amount: 500 },
   attendance: [{ date: '2026-11-13', morning: true, afternoon: false, night: false }, { date: '2026-11-14', morning: false, afternoon: false, night: false }]
 };
 
@@ -54,7 +55,7 @@ describe('VolunteersComponent', () => {
     bands = jasmine.createSpyObj('StaffBandService', ['get', 'link', 'replace', 'scan']);
     bands.get.and.callFake(() => Promise.reject({ status: 403 }));   // default: may not change bands
     await TestBed.configureTestingModule({
-      declarations: [VolunteersComponent, SlidePanelComponent, VolProfileComponent],
+      declarations: [DateTimeComponent, VolunteersComponent, SlidePanelComponent, VolProfileComponent],
       imports: [FormsModule],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },

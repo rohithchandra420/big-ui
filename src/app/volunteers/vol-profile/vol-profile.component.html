@@ -24,12 +24,20 @@
     </dl>
   </div>
 
+  <!-- Joining Time: Expected Join Time + Reported Time, Mark reported / Undo -->
+  <div>
+    <p class="section-lbl">Joining</p>
+    <app-reported [userId]="p._id" [eventId]="eventId" [name]="p.name" [role]="p.role || 'VOL'"
+                  [home]="p.unassigned ? '' : (p.department?._id || '')"
+                  [expectedAt]="p.dateOfJoining" [reportedAt]="p.reportedAt" [reportedBy]="p.reportedBy"
+                  (changed)="onReported($event)"></app-reported>
+  </div>
+
   <div>
     <p class="section-lbl">Details</p>
     <dl class="vl-kv">
       <dt>{{ isTl ? 'Leads' : 'Department' }}</dt>
       <dd>{{ isTl ? (p.teams || []).join(', ') : p.unassigned ? 'Unassigned (Volunteer pool)' : p.department?.name }}</dd>
-      <dt>Date of joining</dt><dd>{{ p.dateOfJoining ? (p.dateOfJoining | date: 'd MMM y') : 'Not given' }}</dd>
       <dt>Food</dt><dd>{{ p.foodPreference === 'non-veg' ? 'Non-veg' : 'Veg' }}</dd>
       <dt>Gender</dt><dd>{{ p.gender || 'Not given' }}</dd>
       <dt>Stay</dt><dd>{{ p.stay ? (p.stay.unit + (p.stay.type ? ' · ' + p.stay.type : '') + (p.stay.movedIn ? '' : ' · not moved in yet')) : 'No bed given yet' }}</dd>

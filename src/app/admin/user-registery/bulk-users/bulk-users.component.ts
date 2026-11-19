@@ -35,12 +35,13 @@ export function headerKey(h: string): string {
   return String(h || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
 }
 
-/** A spreadsheet cell as plain text; dates become yyyy-mm-dd (local day). */
+/** A spreadsheet cell as plain text; dates become yyyy-mm-dd (local day), plus " HH:mm" when the cell has a time (Joining Time). */
 export function cellText(v: any): string {
   if (v === undefined || v === null) return '';
   if (v instanceof Date) {
     const p = (n: number) => String(n).padStart(2, '0');
-    return `${v.getFullYear()}-${p(v.getMonth() + 1)}-${p(v.getDate())}`;
+    const day = `${v.getFullYear()}-${p(v.getMonth() + 1)}-${p(v.getDate())}`;
+    return v.getHours() || v.getMinutes() ? `${day} ${p(v.getHours())}:${p(v.getMinutes())}` : day;
   }
   return String(v).trim();
 }
@@ -136,7 +137,7 @@ export class BulkUsersComponent {
         ['home_department', 'No', 'Department name exactly as on the Volunteers page. Leave empty for Unassigned. Medical cannot be used here'],
         ['food_preference', 'No', 'veg or non-veg'],
         ['gender', 'No', 'Male, Female or Prefer not to say'],
-        ['date_of_joining', 'No', 'A date, e.g. 2026-11-07. Leave empty if not known'],
+        ['date_of_joining', 'No', 'Expected Join Time: a date, e.g. 2026-11-07 (= 11:00), or a date and time, e.g. 2026-11-07 14:30. Leave empty if not known'],
         ['phone', 'No', '7 to 15 digits; a leading + is allowed. Format the column as Text so the + and leading zeros stay'],
         ['', '', 'Everyone in this file is added as a Volunteer']
       ] : [
@@ -148,7 +149,7 @@ export class BulkUsersComponent {
         ['home_department', 'For VOL and TL', 'Department name exactly as in Admin › Departments'],
         ['food_preference', 'No', 'veg or non-veg'],
         ['gender', 'No', 'Male, Female or Prefer not to say'],
-        ['date_of_joining', 'No', 'A date, e.g. 2026-11-07. Leave empty if not known'],
+        ['date_of_joining', 'No', 'Expected Join Time: a date, e.g. 2026-11-07 (= 11:00), or a date and time, e.g. 2026-11-07 14:30. Leave empty if not known'],
         ['phone', 'No', '7 to 15 digits; a leading + is allowed. Format the column as Text so the + and leading zeros stay']
       ]);
       const book = XLSX.utils.book_new();
