@@ -7,7 +7,7 @@
 .hr-seg button.on { background: var(--color-primary); color: #fff; font-weight: 600; }
 .hr-dname { font-weight: 700; font-size: 15px; }
 .hr-range { display: flex; gap: 8px; align-items: center; }
-.hr-date { border: 1px solid var(--border-default); border-radius: 8px; padding: 6px 8px; font: inherit; color: var(--text-primary); background: #fff; }
+.hr-date { min-width: 160px; color: var(--text-primary); }   /* an <app-date> (ui 1.65.0) */
 .hr-dept { min-width: 200px; }
 
 .hr-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }

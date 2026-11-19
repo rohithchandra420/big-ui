@@ -6,7 +6,7 @@
     <div><b>{{ s.served }}</b><span>served</span></div>
     <div class="yet"><b>{{ s.notYet }}</b><span>not yet</span></div>
   </div>
-  <p class="hx-muted hx-emath">{{ s.expected }} = {{ s.marked }} marked for {{ data.meal.basis.label }}{{ data.meal.basis.previousDay ? ' (day before)' : '' }} + {{ s.always }} always counted + {{ s.guestPlates }} guest plate{{ s.guestPlates === 1 ? '' : 's' }}</p>
+  <p class="hx-muted hx-emath">{{ s.expected }} = {{ s.marked }} marked for {{ data.meal.basis.label }}{{ data.meal.basis.previousDay ? ' (day before)' : '' }} + {{ s.always }} always counted<ng-container *ngIf="s.reported"> + {{ s.reported }} reported today</ng-container><ng-container *ngIf="s.expectedToJoin"> + {{ s.expectedToJoin }} expected to join<ng-container *ngIf="s.late"> ({{ s.late }} late)</ng-container></ng-container> + {{ s.guestPlates }} guest plate{{ s.guestPlates === 1 ? '' : 's' }}</p>
   <div class="hx-etools">
     <div class="search-field">
       <mat-icon>search</mat-icon>
@@ -23,7 +23,7 @@
       <span class="hx-en"><app-user-avatar *ngIf="showAvatar" [userId]="p._id" [name]="p.name" [version]="p.avatarVersion" [size]="28"></app-user-avatar><b>{{ p.name }}</b></span>
       <span class="hx-ed">{{ p.department || 'No department' }}</span>
       <span class="hx-ef" [title]="p.food === 'non-veg' ? 'Non-veg' : 'Veg'"><span class="food-mark" [ngClass]="p.food === 'non-veg' ? 'nonveg' : 'veg'" [attr.aria-label]="p.food === 'non-veg' ? 'Non-veg' : 'Veg'"></span><span class="hx-eft" *ngIf="!compact">{{ p.food === 'non-veg' ? 'Non-veg' : 'Veg' }}</span></span>
-      <span class="hx-ew">{{ whyLabel(p) }}</span>
+      <span class="hx-ew" [class.late]="p.late">{{ whyLabel(p) }}</span>
       <span class="hx-es"><span class="hx-st" [ngClass]="statusClass(p)" [title]="p.reason || ''">{{ statusLabel(p) }}</span></span>
     </div>
     <div class="hx-eg" *ngIf="guests.length">Guests · plates on the pass</div>
@@ -39,7 +39,7 @@
       <span class="hx-en"><app-user-avatar *ngIf="showAvatar" [userId]="p._id" [name]="p.name" [version]="p.avatarVersion" [size]="28"></app-user-avatar><b>{{ p.name }}</b></span>
       <span class="hx-ed">{{ p.department || 'No department' }}</span>
       <span class="hx-ef" [title]="p.food === 'non-veg' ? 'Non-veg' : 'Veg'"><span class="food-mark" [ngClass]="p.food === 'non-veg' ? 'nonveg' : 'veg'" [attr.aria-label]="p.food === 'non-veg' ? 'Non-veg' : 'Veg'"></span><span class="hx-eft" *ngIf="!compact">{{ p.food === 'non-veg' ? 'Non-veg' : 'Veg' }}</span></span>
-      <span class="hx-ew">{{ whyLabel(p) }}</span>
+      <span class="hx-ew" [class.late]="p.late">{{ whyLabel(p) }}</span>
       <span class="hx-es"><span class="hx-st" [ngClass]="statusClass(p)" [title]="p.reason || ''">{{ statusLabel(p) }}</span></span>
     </div>
     <p class="hx-muted hx-enone" *ngIf="!counted.length && !others.length && !guests.length">Nobody matches.</p>

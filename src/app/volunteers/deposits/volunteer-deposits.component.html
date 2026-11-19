@@ -105,7 +105,7 @@
       </div>
       <div class="field">
         <label for="vd-date">Collected on</label>
-        <input id="vd-date" type="date" [max]="maxDate" [(ngModel)]="form.collectedAt" />
+        <app-date inputId="vd-date" [max]="maxDate" [(ngModel)]="form.collectedAt" ariaLabel="Collected on"></app-date>
       </div>
       <div class="field">
         <label for="vd-note">Note</label>

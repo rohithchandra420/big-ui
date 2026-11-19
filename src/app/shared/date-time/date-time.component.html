@@ -1,0 +1,61 @@
+<!-- The field. Phones: a transparent native input lies on top, so a tap opens the phone's own picker. -->
+<div class="dtp" [class.open]="open" [class.off]="isDisabled" [class.empty]="!value">
+  <button #trigger type="button" class="dtp-field" [id]="inputId || null" [disabled]="isDisabled"
+          [attr.aria-label]="(ariaLabel || placeholderText) + (label ? ': ' + label : '')" aria-haspopup="dialog" [attr.aria-expanded]="open"
+          (click)="toggle()">
+    <mat-icon class="dtp-ic">{{ icon }}</mat-icon>
+    <span class="dtp-pre" *ngIf="prefix">{{ prefix }}</span>
+    <span class="dtp-v">{{ label || placeholderText }}</span>
+    <mat-icon class="dtp-chev">{{ open ? 'expand_less' : 'expand_more' }}</mat-icon>
+  </button>
+  <input *ngIf="touch" class="dtp-native" [type]="nativeType" [value]="value" [min]="min || null" [max]="max || null"
+         [attr.step]="hasTime ? step * 60 : null" [disabled]="isDisabled" [attr.aria-label]="ariaLabel || placeholderText"
+         (click)="openNative($event)" (change)="$event.stopPropagation(); onNative($any($event.target).value)" />
+</div>
+
+<!-- Desktop panel (CDK overlay) -->
+<ng-template #panelTpl>
+  <div class="dtp-panel" [ngClass]="'dtp-' + mode" role="dialog" [attr.aria-label]="ariaLabel || placeholderText" (keydown)="onPanelKey($event)">
+    <div class="dtp-body">
+      <div class="dtp-cal" *ngIf="hasDate">
+        <div class="dtp-head">
+          <button type="button" class="dtp-nav" [disabled]="!canPrev" (click)="shiftMonth(-1)" aria-label="Previous month"><mat-icon>chevron_left</mat-icon></button>
+          <b>{{ monthLabel }}</b>
+          <button type="button" class="dtp-nav" [disabled]="!canNext" (click)="shiftMonth(1)" aria-label="Next month"><mat-icon>chevron_right</mat-icon></button>
+        </div>
+        <div class="dtp-dow"><span *ngFor="let d of dow; trackBy: trackStr">{{ d }}</span></div>
+        <div class="dtp-days">
+          <button type="button" *ngFor="let c of cells; trackBy: trackCell" class="dtp-day"
+                  [class.lead]="!c.key" [class.on]="c.key && c.key === datePart" [class.today]="c.today"
+                  [disabled]="c.off" [attr.tabindex]="c.key ? null : -1" [attr.aria-hidden]="c.key ? null : true"
+                  [attr.aria-label]="c.key ? dateText(c.key) : null" [attr.aria-pressed]="c.key ? c.key === datePart : null"
+                  (click)="pickDay(c)">{{ c.key ? c.day : '' }}</button>
+        </div>
+      </div>
+      <div class="dtp-time" *ngIf="hasTime">
+        <span class="dtp-lbl">Time</span>
+        <div class="dtp-cols">
+          <div class="dtp-col dtp-gs" role="listbox" aria-label="Hour">
+            <button type="button" *ngFor="let h of hours; trackBy: trackStr" class="dtp-slot" role="option"
+                    [class.on]="h === pickedHour" [attr.aria-selected]="h === pickedHour" (click)="pickHour(h)">{{ h }}</button>
+          </div>
+          <div class="dtp-col dtp-gs" role="listbox" aria-label="Minute">
+            <button type="button" *ngFor="let m of minutes; trackBy: trackStr" class="dtp-slot" role="option"
+                    [class.on]="m === pickedMinute" [attr.aria-selected]="m === pickedMinute" (click)="pickMinute(m)">{{ m }}</button>
+          </div>
+        </div>
+        <input class="dtp-type" type="text" inputmode="numeric" maxlength="5" placeholder="Type, e.g. 14:23" aria-label="Type a time"
+               [(ngModel)]="typed" [ngModelOptions]="{ standalone: true }" (keydown.enter)="applyTyped()" (blur)="applyTyped()" />
+      </div>
+    </div>
+    <div class="dtp-quick" *ngIf="quickPicks.length">
+      <button type="button" class="dtp-chip" *ngFor="let q of quickPicks; trackBy: trackQuick" (click)="pickQuick(q.id)">
+        <mat-icon *ngIf="q.id === 'now'">bolt</mat-icon>{{ q.label }}</button>
+    </div>
+    <div class="dtp-foot">
+      <span class="dtp-sum">{{ label || 'Nothing picked yet' }}</span>
+      <button type="button" class="dtp-ghost" (click)="clear()">Clear</button>
+      <button type="button" class="dtp-done" (click)="close()">Done</button>
+    </div>
+  </div>
+</ng-template>

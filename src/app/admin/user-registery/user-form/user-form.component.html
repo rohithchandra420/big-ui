@@ -43,8 +43,9 @@
 
   <div class="form-two-col">
     <div class="field">
-      <label>Date of Joining *</label>
-      <input type="date" formControlName="dateOfJoining">
+      <label>Expected Join Time *</label>
+      <!-- One field for date and time; a day picked alone starts at 11:00 -->
+      <app-date-time formControlName="dateOfJoining" ariaLabel="Expected Join Time"></app-date-time>
     </div>
     <div class="field">
       <label>Food</label>

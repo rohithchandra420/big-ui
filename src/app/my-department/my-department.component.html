@@ -38,7 +38,7 @@
 
       <div class="field inline-field">
         <label>Date</label>
-        <input type="date" [(ngModel)]="summaryDate" (change)="loadSummary()">
+        <app-date [(ngModel)]="summaryDate" (change)="loadSummary()" ariaLabel="Date"></app-date>
       </div>
 
       <div *ngIf="loadingSummary" class="loading-wrap"><mat-spinner diameter="32"></mat-spinner></div>
@@ -284,11 +284,11 @@
       <div class="form-two-col">
         <div class="field">
           <label>From</label>
-          <input type="date" [(ngModel)]="reportFrom" (change)="loadReport()">
+          <app-date [(ngModel)]="reportFrom" (change)="loadReport()" [max]="reportTo || null" ariaLabel="From"></app-date>
         </div>
         <div class="field">
           <label>To</label>
-          <input type="date" [(ngModel)]="reportTo" (change)="loadReport()">
+          <app-date [(ngModel)]="reportTo" (change)="loadReport()" [min]="reportFrom || null" ariaLabel="To"></app-date>
         </div>
       </div>
 

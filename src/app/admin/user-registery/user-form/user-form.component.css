@@ -111,3 +111,8 @@
   font-size: 12px;
   color: var(--text-muted);
 }
+
+/* Veg / Non-veg on one line on desktop (user, 2026-11-19); phones may wrap */
+.food-opts { flex-wrap: nowrap; }
+.food-opts .toggle-chip { white-space: nowrap; padding: 7px 10px 7px 8px; }
+@media (max-width: 420px) { .food-opts { flex-wrap: wrap; } }

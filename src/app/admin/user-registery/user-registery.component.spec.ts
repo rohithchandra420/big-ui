@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DateTimeComponent } from '../../shared/date-time/date-time.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
@@ -96,7 +97,7 @@ describe('UserRegisteryComponent', () => {
     avatarSpy.effectiveVersion.and.callFake((_id: string, v: any) => v || 0);
 
     await TestBed.configureTestingModule({
-      declarations: [UserRegisteryComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [DateTimeComponent, UserRegisteryComponent, AppSelectComponent, AppOptionComponent],
       imports: [FormsModule, ReactiveFormsModule],
       providers: [
         { provide: AdminService, useValue: adminSpy },
@@ -162,6 +163,25 @@ describe('UserRegisteryComponent', () => {
 
       component.toggleDeactivated();
       expect(component.statusFilter).toBe('active');
+    });
+
+    it('Joining Time (B-008): one day each for Expected Join Time and Reported Time; Clear resets them', () => {
+      const [a, b] = component.activeUsers;
+      a.dateOfJoining = new Date(2026, 10, 10, 11).toISOString();
+      a.reportedAt = new Date(2026, 10, 11, 9).toISOString();
+      b.dateOfJoining = new Date(2026, 10, 14, 11).toISOString();
+      b.reportedAt = null;
+      component.expOn = '2026-11-10';
+      expect(component.filteredUsers.map(u => u._id)).toEqual([a._id]);
+      expect(component.hasFilters).toBeTrue();
+      component.expOn = '2026-11-11';
+      expect(component.filteredUsers.length).toBe(0);
+      component.expOn = '';
+      component.repOn = '2026-11-11';
+      expect(component.filteredUsers.map(u => u._id)).toEqual([a._id]);
+      component.clearFilters();
+      expect(component.repOn).toBe('');
+      expect(component.joinStateOf(a)).toBe('reported');
     });
 
     it('shows active and deactivated users together under the "All" status', () => {

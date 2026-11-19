@@ -1,4 +1,5 @@
 import { VolBoard, VolDepartment, Volunteer } from './volunteers.model';
+import { inDayRange } from '../core/join-time';
 
 /** Pure helpers for the Volunteers board (no Angular), so the rules are easy to test. */
 
@@ -12,6 +13,9 @@ export interface BoardFilter {
   stat: StatFilter;
   notMarked: boolean;
   role?: RoleFilter;
+  /** Joining Time (B-008): date ranges ("YYYY-MM-DD", '' = open). */
+  expFrom?: string; expTo?: string;
+  repFrom?: string; repTo?: string;
 }
 
 export type NeedKind = 'none' | 'short' | 'met';
@@ -74,7 +78,8 @@ export function buildBoard(board: VolBoard | null, f: BoardFilter): BoardView {
   const empty: BoardView = { pool: [], poolTotal: 0, lanes: [], rows: [], stats: { all: 0, unassigned: 0, stillNeeded: 0, notMarked: 0 }, tlCount: 0 };
   if (!board) return empty;
   const q = f.search.trim().toLowerCase();
-  const match = (v: Volunteer) => (!q || v.name.toLowerCase().includes(q) || v.phone.includes(q)) && (!f.notMarked || !v.marked);
+  const match = (v: Volunteer) => (!q || v.name.toLowerCase().includes(q) || v.phone.includes(q)) && (!f.notMarked || !v.marked)
+    && inDayRange(v.dateOfJoining, f.expFrom || '', f.expTo || '') && inDayRange(v.reportedAt, f.repFrom || '', f.repTo || '');
   const role = f.role || 'all';
   // Team Leads are on the List only — the board, the counts and moves are for volunteers
   const vols = board.volunteers.filter(v => v.role !== 'TL');
@@ -122,7 +127,7 @@ export function buildBoard(board: VolBoard | null, f: BoardFilter): BoardView {
 }
 
 // ── List view sorting (B-003) ──
-export type SortKey = 'name' | 'dept' | 'today' | 'stay' | 'band' | 'gender' | 'phone' | 'joined';
+export type SortKey = 'name' | 'dept' | 'today' | 'stay' | 'band' | 'gender' | 'phone' | 'joined' | 'reported';
 export type SortDir = 'asc' | 'desc';
 type Row = BoardView['rows'][number];
 
@@ -138,7 +143,8 @@ const STAY_ORDER: Record<string, number> = { none: 0, booked: 1, in: 2 };
 export function sortRows(rows: Row[], key: SortKey, dir: SortDir): Row[] {
   const sign = dir === 'asc' ? 1 : -1;
   const byName = (a: Row, b: Row) => a.v.name.localeCompare(b.v.name);
-  const missing = (r: Row) => (key === 'phone' && !r.v.phone) || (key === 'joined' && !r.v.dateOfJoining) || (key === 'gender' && !r.v.gender);
+  const missing = (r: Row) => (key === 'phone' && !r.v.phone) || (key === 'joined' && !r.v.dateOfJoining) || (key === 'gender' && !r.v.gender)
+    || (key === 'reported' && !r.v.reportedAt);
   const value = (a: Row, b: Row): number => {
     switch (key) {
       case 'dept': return (a.deptName || 'Unassigned').localeCompare(b.deptName || 'Unassigned');
@@ -148,6 +154,7 @@ export function sortRows(rows: Row[], key: SortKey, dir: SortDir): Row[] {
       case 'gender': return a.v.gender.localeCompare(b.v.gender);
       case 'phone': return a.v.phone.localeCompare(b.v.phone);
       case 'joined': return Date.parse(a.v.dateOfJoining!) - Date.parse(b.v.dateOfJoining!);
+      case 'reported': return Date.parse(a.v.reportedAt!) - Date.parse(b.v.reportedAt!);
       default: return byName(a, b);
     }
   };

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DateTimeComponent } from '../../../shared/date-time/date-time.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -44,7 +45,7 @@ describe('EventDetailComponent', () => {
     eventServiceSpy.getEventDetail.and.returnValue(of(mockDetail));
 
     await TestBed.configureTestingModule({
-      declarations: [EventDetailComponent],
+      declarations: [DateTimeComponent, EventDetailComponent],
       imports: [RouterTestingModule, ReactiveFormsModule],
       providers: [
         { provide: EventService, useValue: eventServiceSpy },

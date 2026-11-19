@@ -1,0 +1,29 @@
+<div class="rp" [ngClass]="'rp-' + state">
+  <div class="rp-row">
+    <span class="rp-ic"><mat-icon class="ms-fill">{{ state === 'reported' ? 'how_to_reg' : state === 'late' ? 'schedule' : 'event_upcoming' }}</mat-icon></span>
+    <div class="rp-txt">
+      <b>{{ label }}</b>
+      <small *ngIf="reportedAt">{{ reportedAt | date: 'd MMM y, HH:mm' }}{{ reportedBy?.name ? ' · by ' + reportedBy?.name : '' }}</small>
+      <small>Expected Join Time: {{ expectedAt ? (expectedAt | date: 'd MMM y, HH:mm') : 'not given' }}</small>
+    </div>
+  </div>
+
+  <div class="rp-actions" *ngIf="canSet && !editing">
+    <button type="button" class="pill-btn" [disabled]="busy" (click)="startEdit()">
+      <mat-icon>{{ reportedAt ? 'edit_calendar' : 'how_to_reg' }}</mat-icon>{{ reportedAt ? 'Change time' : 'Mark reported' }}
+    </button>
+    <button type="button" class="pill-btn" *ngIf="reportedAt" [disabled]="busy" (click)="undo()"><mat-icon>undo</mat-icon>Undo</button>
+  </div>
+
+  <div class="rp-edit" *ngIf="editing">
+    <div class="field">
+      <label for="rp-when-{{ userId }}">Reported at</label>
+      <app-date-time inputId="rp-when-{{ userId }}" [(ngModel)]="when" [max]="maxNow" ariaLabel="Reported at"></app-date-time>
+    </div>
+    <p class="rp-hint">Attendance is marked for the rest of that day's slots. Later days stay with the Team Lead.</p>
+    <div class="rp-btns">
+      <button type="button" class="btn-ghost" [disabled]="busy" (click)="editing = false">Cancel</button>
+      <button type="button" class="btn-cta" [disabled]="busy || !when" (click)="save()">Save</button>
+    </div>
+  </div>
+</div>

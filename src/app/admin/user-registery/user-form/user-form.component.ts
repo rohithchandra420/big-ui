@@ -8,6 +8,7 @@ import { Observable, Subscription, from } from 'rxjs';
 import { VolunteersService } from '../../../volunteers/volunteers.service';
 import { ACCESS_KEYS, AccessKey, AccessKeyTier, grantTier } from '../../../core/access-keys';
 import { PHONE_PATTERN } from '../../../core/phone';
+import { joinIso, localDateTime } from '../../../core/join-time';
 
 export type PermLevel = 'none' | 'read' | 'write' | 'manage';
 export type UserFormMode = 'create' | 'edit';
@@ -76,6 +77,7 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
     confirmPassword: new FormControl<string | null>(null, Validators.required),
     role: new FormControl<string>('', Validators.required),
     homeDepartment: new FormControl<string>('', Validators.required),
+    // Joining Time: Expected Join Time, one field ('YYYY-MM-DDTHH:mm', local; a day alone = 11:00).
     dateOfJoining: new FormControl<string | null>(null, Validators.required),
     // Hospitality: what the kitchen counts them as (missing = Veg on the server).
     foodPreference: new FormControl<'veg' | 'non-veg'>('veg', { nonNullable: true }),
@@ -224,7 +226,7 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
       email: u.email,
       role: u.role?.name || u.role || '',
       homeDepartment: homeDeptId || '',
-      dateOfJoining: u.dateOfJoining ? u.dateOfJoining.substring(0, 10) : null,
+      dateOfJoining: u.dateOfJoining ? localDateTime(new Date(u.dateOfJoining)) : null,
       foodPreference: u.foodPreference === 'non-veg' ? 'non-veg' : 'veg',
       gender: u.gender || '',
       phone: u.phone || ''
@@ -263,7 +265,7 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
       departmentIds: raw.homeDepartment ? [raw.homeDepartment] : [],
       // Volunteers page: no grants are sent — the server gives Read on the home key only.
       ...(this.volunteersMode ? {} : { permissions: this.buildPermissions() }),
-      dateOfJoining: raw.dateOfJoining,
+      dateOfJoining: this.joinTimeIso(raw.dateOfJoining),
       foodPreference: raw.foodPreference,
       ...(raw.gender ? { gender: raw.gender } : {}),
       ...(raw.phone.trim() ? { phone: raw.phone.trim() } : {}),
@@ -289,6 +291,11 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
+  /** The picker's 'YYYY-MM-DDTHH:mm' (or a date alone = 11:00) as an ISO time for the server. */
+  private joinTimeIso(v: string | null | undefined): string {
+    return v ? joinIso(v.slice(0, 10), v.slice(11, 16)) : '';
+  }
+
   private update() {
     const raw = this.form.getRawValue();
     const updateDetails: any = {
@@ -304,7 +311,7 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
 
     if (this.isTopLevel) {
       updateDetails.departments = raw.homeDepartment ? [{ departmentId: raw.homeDepartment, access: ['read'] }] : [];
-      updateDetails.dateOfJoining = raw.dateOfJoining;
+      updateDetails.dateOfJoining = this.joinTimeIso(raw.dateOfJoining) || undefined;
     }
 
     this.saving = true;

@@ -77,8 +77,8 @@
               </button>
             </div>
             <div class="hg-two">
-              <div class="field"><label>{{ pass.kind === 'range' ? 'From' : 'Day' }}</label><input type="date" [(ngModel)]="pass.from" /></div>
-              <div class="field" *ngIf="pass.kind === 'range'"><label>To</label><input type="date" [(ngModel)]="pass.to" /></div>
+              <div class="field"><label>{{ pass.kind === 'range' ? 'From' : 'Day' }}</label><app-date [(ngModel)]="pass.from" [ariaLabel]="pass.kind === 'range' ? 'From' : 'Day'"></app-date></div>
+              <div class="field" *ngIf="pass.kind === 'range'"><label>To</label><app-date [(ngModel)]="pass.to" [min]="pass.from || null" ariaLabel="To"></app-date></div>
               <div class="field" *ngIf="pass.kind === 'one_meal'"><label>Meal</label>
                 <app-select [(ngModel)]="pass.meal"><app-option *ngFor="let m of meals" [value]="m.key">{{ m.label }}</app-option></app-select></div>
             </div>

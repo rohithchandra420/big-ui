@@ -17,7 +17,10 @@ export interface Volunteer {
   unassigned: boolean;
   phone: string;
   gender: string;
+  /** Expected Join Time (date + time). */
   dateOfJoining: string | null;
+  /** Reported Time (Joining Time): when they actually arrived; null = not reported yet. */
+  reportedAt: string | null;
   /** Attendance on the picked date (the board's `today`). */
   today: VolSlots;
   /** Marked in any slot on the picked date. Shown only — marking stays in My Department. */
@@ -134,6 +137,8 @@ export interface VolProfile {
   teams?: string[];
   unassigned: boolean;
   dateOfJoining: string | null;
+  reportedAt: string | null;
+  reportedBy: { _id: string; name: string } | null;
   foodPreference: 'veg' | 'non-veg';
   gender: string;
   stay: { unit: string; type: string; from: string; to: string; movedIn: boolean } | null;

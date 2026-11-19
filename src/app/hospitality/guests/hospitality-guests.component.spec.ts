@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { DateTimeComponent } from '../../shared/date-time/date-time.component';
 import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { BehaviorSubject, of } from 'rxjs';
@@ -33,7 +34,7 @@ describe('HospitalityGuestsComponent', () => {
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
     await TestBed.configureTestingModule({
-      declarations: [HospitalityGuestsComponent, SlidePanelComponent],
+      declarations: [DateTimeComponent, HospitalityGuestsComponent, SlidePanelComponent],
       imports: [FormsModule],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },

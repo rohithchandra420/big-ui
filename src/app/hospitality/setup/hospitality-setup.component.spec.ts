@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { DateTimeComponent } from '../../shared/date-time/date-time.component';
 import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
@@ -23,7 +24,7 @@ describe('HospitalitySetupComponent', () => {
     service.getSetup.and.callFake(() => Promise.resolve(empty()));
     service.saveSetup.and.returnValue(Promise.resolve({ plan: null }));
     await TestBed.configureTestingModule({
-      declarations: [HospitalitySetupComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [DateTimeComponent, HospitalitySetupComponent, AppSelectComponent, AppOptionComponent],
       imports: [FormsModule],
       providers: [
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
