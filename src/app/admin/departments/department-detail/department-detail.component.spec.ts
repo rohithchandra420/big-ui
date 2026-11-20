@@ -116,7 +116,7 @@ describe('DepartmentDetailComponent', () => {
     });
 
     it('offers only the built-in keys, and says when the picked key is shared', () => {
-      expect(component.accessKeys.map(k => k.key)).toEqual(['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk']);
+      expect(component.accessKeys.map(k => k.key)).toEqual(['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk', 'music']);
       component.editForm.get('key')!.setValue('workshop');
       expect(component.sharedWith).toBe('Workshop Tent A');
       expect(component.keyAbout).toContain('door');

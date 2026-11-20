@@ -106,6 +106,15 @@ export const ACCESS_KEYS: AccessKey[] = [
     tiers: [
       { tier: 'manage', label: 'Manage', gives: 'Announcements: send, send again, and follow and reopen tasks' }
     ]
+  },
+  {
+    key: 'music', label: 'Music',
+    about: 'Members see the Music Planner and Setup. The Team Lead plans stages, acts and slots.',
+    tiers: [
+      { tier: 'read', label: 'Read', gives: 'See the Music Planner and Setup' },
+      { tier: 'write', label: 'Write', gives: 'Also add and change acts and slots' },
+      { tier: 'manage', label: 'Manage', gives: 'Also add and change stages' }
+    ]
   }
 ];
 

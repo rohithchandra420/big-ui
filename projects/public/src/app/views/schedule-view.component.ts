@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
-import { PublicEvent, PublicSession } from '../core/public-api.service';
+import { PublicEvent, PublicMusic, PublicSession } from '../core/public-api.service';
+import { musicOfDay } from '../core/music';
+import { MusicListComponent } from '../ui/music-bits';
 import { I18nService, TPipe } from '../core/i18n';
 import { dayLabel } from '../core/festival-time';
 import { CategoryChip, categoriesOf, festivalDay } from '../core/sessions';
@@ -10,7 +12,7 @@ import { CategoryChipsComponent, SessionRowComponent } from '../ui/session-bits'
 @Component({
   selector: 'pub-schedule-view',
   standalone: true,
-  imports: [NgIf, NgFor, TPipe, SessionRowComponent, CategoryChipsComponent],
+  imports: [NgIf, NgFor, TPipe, SessionRowComponent, CategoryChipsComponent, MusicListComponent],
   template: `
     <section>
       <div class="sec-head"><h2>{{ 'sched.title' | t }}</h2><span class="hand">{{ 'sched.hand' | t }}</span></div>
@@ -24,11 +26,13 @@ import { CategoryChipsComponent, SessionRowComponent } from '../ui/session-bits'
         <pub-session-row *ngFor="let s of shown; trackBy: track" [session]="s" [now]="now" (open)="open.emit($event)"></pub-session-row>
       </div>
       <div class="empty" *ngIf="!shown.length"><span class="ms">event_busy</span>{{ 'sched.empty' | t }}</div>
-    </section>`,
+    </section>
+    <pub-music-list [music]="musicDay" [now]="now" title="music.day"></pub-music-list>`,
 })
 export class ScheduleViewComponent implements OnChanges {
   @Input({ required: true }) event!: PublicEvent;
   @Input() sessions: PublicSession[] = [];
+  @Input() music: PublicMusic[] = [];
   @Input() now = Date.now();
   @Output() open = new EventEmitter<PublicSession>();
 
@@ -37,6 +41,8 @@ export class ScheduleViewComponent implements OnChanges {
   ofDay: PublicSession[] = [];
   shown: PublicSession[] = [];
   categories: CategoryChip[] = [];
+  /** The picked day's music (stored for the *ngFor). */
+  musicDay: PublicMusic[] = [];
 
   constructor(private i18n: I18nService) {}
 
@@ -48,7 +54,7 @@ export class ScheduleViewComponent implements OnChanges {
     if (!this.day || !this.event.days.includes(this.day)) {
       this.day = this.event.days.includes(this.event.today) ? this.event.today : this.event.days[0];
     }
-    if (changes['sessions'] || changes['event']) this.build();
+    if (changes['sessions'] || changes['event'] || changes['music']) this.build();
   }
 
   setDay(d: string): void {
@@ -64,6 +70,7 @@ export class ScheduleViewComponent implements OnChanges {
   private build(): void {
     this.ofDay = this.sessions.filter(s => festivalDay(s.start) === this.day)
       .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+    this.musicDay = musicOfDay(this.music, this.day);
     this.categories = categoriesOf(this.ofDay);
     if (this.category && !this.categories.some(c => c.key === this.category)) this.category = '';
     this.filter();

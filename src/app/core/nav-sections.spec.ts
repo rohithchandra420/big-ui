@@ -20,6 +20,8 @@ describe('nav-sections', () => {
     expect(matchUrl('/hospitality/desk')!.tab!.label).toBe('Serving desk');
     expect(matchUrl('/workshops')!.tab!.label).toBe('Planner');
     expect(matchUrl('/workshops/reports')!.tab!.label).toBe('Reports');
+    expect(matchUrl('/music')!.tab!.label).toBe('Planner');
+    expect(matchUrl('/music/setup')!.tab!.label).toBe('Setup');
     expect(matchUrl('/medical')!.tab!.label).toBe('Desk');
     expect(matchUrl('/box-office/bookings')!.section.label).toBe('Box Office');
     expect(matchUrl('/admin/email-report')!.tab!.label).toBe('Email Report');

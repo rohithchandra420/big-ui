@@ -13,6 +13,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.67.0] - 2026-11-20
+
+### Added
+- **New Music section** in the sidebar, with two tabs:
+  - **Planner:** the event's slots on a day calendar with one column per stage. Drag a slot to another stage or time, drag its bottom edge to change its length, or select empty time to add one (on a phone: tap an empty slot). The sound check shows as a light striped band before its slot and moves with it. A clash (same stage at once, or the same act twice) shows an amber border and a "Clash" chip, and is listed in the slot panel before saving — it can still be saved. People who may only view tap a slot for its details (act, stage, times, sound check, genre, contact, notes). A red line marks the current time across every stage and moves each minute. A slot that runs past midnight shows on both days ("Continues after midnight" / "From the day before"), and the calendar starts early enough to show it; its times are changed from its panel.
+  - **Setup:** Stages (name, its Stage area on the Venue Map, notes) and Acts (artist / band, genre, contact name and phone, notes), each a sortable table; add and edit in a side panel (bottom sheet on phones).
+- **Music access key** in Admin › Users and Departments: Read (see the Planner and Setup), Write (also acts and slots), Manage (also stages). Music department members see the section; Helpdesk sees it read-only.
+- **Public page (`/live`): music** — Home shows "On stage today" (playing now and the rest of today; before the festival, Day 1) and the Schedule lists the picked day's music under "Music". Artist / band, genre, stage and times only.
+
+---
+
 ## [1.66.0] - 2026-11-19
 
 ### Added

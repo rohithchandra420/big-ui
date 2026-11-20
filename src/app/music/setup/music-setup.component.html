@@ -1,0 +1,140 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Music Setup</div>
+    <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · stages and acts</div>
+  </div>
+  <div class="mu-ph-btns">
+    <button type="button" class="btn-ghost" *ngIf="canManage" [disabled]="!event" (click)="openStage(null)">Add stage</button>
+    <button type="button" class="btn-cta" *ngIf="canEdit" [disabled]="!event" (click)="openAct(null)">Add act</button>
+  </div>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
+</div>
+
+<div class="mu-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+
+  <ng-container *ngIf="event && data">
+    <!-- Stages -->
+    <section class="mu-sec">
+      <h2 class="mu-h"><mat-icon class="ms-fill">stadium</mat-icon>Stages <small>{{ data.stages.length }}</small></h2>
+      <p class="mu-muted" *ngIf="!data.stages.length">
+        No stages yet.{{ canManage ? ' Add one, and link it to a Stage area drawn on the Venue Map if you like.' : '' }}
+      </p>
+      <div class="tbl-container tbl mu-tbl" *ngIf="data.stages.length">
+        <table>
+          <thead><tr>
+            <th appSort="name" [sort]="stageSort">Stage</th>
+            <th appSort="area" [sort]="stageSort">On the map</th>
+            <th appSort="slots" [sort]="stageSort">Slots</th>
+            <th></th>
+          </tr></thead>
+          <tbody>
+            <tr *ngFor="let s of sortedStages; trackBy: trackId" class="mu-row" (click)="openStage(s)">
+              <td><b>{{ s.name }}</b><small *ngIf="s.notes" class="mu-sub">{{ s.notes }}</small></td>
+              <td>{{ s.area?.name || '—' }}</td>
+              <td>{{ s.slotCount }}</td>
+              <td class="mu-end"><mat-icon>chevron_right</mat-icon></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mu-muted">Draw or move a stage's area on the <a routerLink="/venue-map">Venue Map</a> (kind "Stage area").</p>
+    </section>
+
+    <!-- Acts -->
+    <section class="mu-sec">
+      <h2 class="mu-h"><mat-icon class="ms-fill">mic_external_on</mat-icon>Acts <small>{{ data.acts.length }}</small></h2>
+      <p class="mu-muted" *ngIf="!data.acts.length">No acts yet.{{ canEdit ? ' Add the artists and bands, then plan their slots in the Planner.' : '' }}</p>
+      <div class="tbl-container tbl mu-tbl" *ngIf="data.acts.length">
+        <table>
+          <thead><tr>
+            <th appSort="name" [sort]="actSort">Artist / band</th>
+            <th appSort="genre" [sort]="actSort">Genre</th>
+            <th class="mu-hide" appSort="contact" [sort]="actSort">Contact</th>
+            <th appSort="slots" [sort]="actSort">Slots</th>
+            <th></th>
+          </tr></thead>
+          <tbody>
+            <tr *ngFor="let a of sortedActs; trackBy: trackId" class="mu-row" (click)="openAct(a)">
+              <td><b>{{ a.name }}</b></td>
+              <td>{{ a.genre || '—' }}</td>
+              <td class="mu-hide">{{ a.contactName || '' }}<small class="mu-sub" *ngIf="a.contactPhone">{{ a.contactPhone }}</small><span *ngIf="!a.contactName && !a.contactPhone">—</span></td>
+              <td>{{ a.slotCount }}</td>
+              <td class="mu-end"><mat-icon>chevron_right</mat-icon></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mu-muted">Contact and notes stay with the staff. The public page shows only the artist, genre, stage and times.</p>
+    </section>
+  </ng-container>
+
+  <app-slide-panel [open]="mode !== 'closed'" [icon]="panelIcon" [title]="panelTitle" [subtitle]="event?.name || ''" (closed)="close()">
+    <!-- Stage -->
+    <div class="mu-form" *ngIf="mode === 'stage'">
+      <ng-container *ngIf="canManage; else stageView">
+        <div class="field"><label for="mu-st-name">Name *</label>
+          <input id="mu-st-name" type="text" maxlength="60" [(ngModel)]="stageForm.name" placeholder="e.g. Riverside Stage" /></div>
+        <div class="field">
+          <label>Stage area on the Venue Map</label>
+          <app-select [(ngModel)]="stageForm.area" placeholder="Not linked">
+            <app-option value="">Not linked</app-option>
+            <app-option *ngFor="let a of freeAreas; trackBy: trackId" [value]="a._id">{{ a.name }}</app-option>
+          </app-select>
+          <small class="mu-muted" *ngIf="!areas.length">No Stage areas on the Venue Map for this event yet.</small>
+        </div>
+        <div class="field"><label for="mu-st-notes">Notes</label>
+          <textarea id="mu-st-notes" rows="3" maxlength="300" [(ngModel)]="stageForm.notes" placeholder="Staff only"></textarea></div>
+        <div class="field-error" *ngIf="formError">{{ formError }}</div>
+        <div class="mu-acts">
+          <button type="button" class="btn-danger" *ngIf="editStage" (click)="removeStage(editStage)">Delete</button>
+          <span class="mu-grow"></span>
+          <button type="button" class="btn-ghost" (click)="close()">Cancel</button>
+          <button type="button" class="btn-cta" [disabled]="busy" (click)="saveStage()">{{ editStage ? 'Save' : 'Add stage' }}</button>
+        </div>
+      </ng-container>
+      <ng-template #stageView>
+        <dl class="mu-dl" *ngIf="editStage">
+          <dt>On the map</dt><dd>{{ editStage.area?.name || 'Not linked' }}</dd>
+          <dt>Slots</dt><dd>{{ editStage.slotCount }}</dd>
+          <ng-container *ngIf="editStage.notes"><dt>Notes</dt><dd>{{ editStage.notes }}</dd></ng-container>
+        </dl>
+      </ng-template>
+    </div>
+
+    <!-- Act -->
+    <div class="mu-form" *ngIf="mode === 'act'">
+      <ng-container *ngIf="canEdit; else actView">
+        <div class="field"><label for="mu-ac-name">Artist / band *</label>
+          <input id="mu-ac-name" type="text" maxlength="60" [(ngModel)]="actForm.name" placeholder="e.g. The Saltmarsh Choir" /></div>
+        <div class="field"><label for="mu-ac-genre">Genre</label>
+          <input id="mu-ac-genre" type="text" maxlength="40" [(ngModel)]="actForm.genre" placeholder="e.g. Folk, Electronic" /></div>
+        <div class="mu-two">
+          <div class="field"><label for="mu-ac-cn">Contact name</label>
+            <input id="mu-ac-cn" type="text" maxlength="60" [(ngModel)]="actForm.contactName" /></div>
+          <div class="field"><label for="mu-ac-cp">Contact phone</label>
+            <input id="mu-ac-cp" type="tel" maxlength="20" [(ngModel)]="actForm.contactPhone" /></div>
+        </div>
+        <div class="field"><label for="mu-ac-notes">Notes</label>
+          <textarea id="mu-ac-notes" rows="3" maxlength="300" [(ngModel)]="actForm.notes" placeholder="Staff only, e.g. rider, gear"></textarea></div>
+        <div class="field-error" *ngIf="formError">{{ formError }}</div>
+        <div class="mu-acts">
+          <button type="button" class="btn-danger" *ngIf="editAct" (click)="removeAct(editAct)">Delete</button>
+          <span class="mu-grow"></span>
+          <button type="button" class="btn-ghost" (click)="close()">Cancel</button>
+          <button type="button" class="btn-cta" [disabled]="busy" (click)="saveAct()">{{ editAct ? 'Save' : 'Add act' }}</button>
+        </div>
+      </ng-container>
+      <ng-template #actView>
+        <dl class="mu-dl" *ngIf="editAct">
+          <dt>Genre</dt><dd>{{ editAct.genre || '—' }}</dd>
+          <dt>Contact</dt><dd>{{ editAct.contactName || '—' }}<a *ngIf="editAct.contactPhone" [href]="'tel:' + editAct.contactPhone"> {{ editAct.contactPhone }}</a></dd>
+          <dt>Slots</dt><dd>{{ editAct.slotCount }}</dd>
+          <ng-container *ngIf="editAct.notes"><dt>Notes</dt><dd>{{ editAct.notes }}</dd></ng-container>
+        </dl>
+      </ng-template>
+    </div>
+  </app-slide-panel>
+</div>

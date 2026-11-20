@@ -2,7 +2,7 @@ import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { Subscription, catchError, forkJoin, of } from 'rxjs';
 import { I18nService, TPipe, WordKey } from './core/i18n';
-import { Loaded, PublicApiService, PublicEdition, PublicEvent, PublicHighlightsAnswer, PublicMapAnswer, PublicMapArea, PublicMapPin, PublicNews, PublicNewsAnswer, PublicPhoto, PublicSession, PublicSessionsAnswer } from './core/public-api.service';
+import { Loaded, PublicApiService, PublicEdition, PublicEvent, PublicHighlightsAnswer, PublicMapAnswer, PublicMapArea, PublicMapPin, PublicMusic, PublicMusicAnswer, PublicNews, PublicNewsAnswer, PublicPhoto, PublicSession, PublicSessionsAnswer } from './core/public-api.service';
 import { HighlightsComponent } from './views/highlights-view.component';
 import { MapViewComponent } from './views/map-view.component';
 import { FindWayComponent } from './ui/find-way.component';
@@ -51,6 +51,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   event: PublicEvent | null = null;
   sessions: PublicSession[] = [];
+  music: PublicMusic[] = [];
   news: PublicNews[] = [];
   pins: PublicMapPin[] = [];
   areas: PublicMapArea[] = [];
@@ -108,16 +109,19 @@ export class AppComponent implements OnInit, OnDestroy {
     // …and the map (PH4a).
     const map$ = this.api.map().pipe(
       catchError(() => of<Loaded<PublicMapAnswer>>({ data: { off: false, pins: this.pins, areas: this.areas }, at: this.loadedAt || Date.now(), offline: true })));
+    // …and the music (Music epic).
+    const music$ = this.api.music().pipe(
+      catchError(() => of<Loaded<PublicMusicAnswer>>({ data: { off: false, music: this.music }, at: this.loadedAt || Date.now(), offline: true })));
     // …and the highlights (PH6).
     const hl$ = this.api.highlights().pipe(
       catchError(() => of<Loaded<PublicHighlightsAnswer>>({ data: { off: false, photos: this.photos, stats: this.stats }, at: this.loadedAt || Date.now(), offline: true })));
-    this.sub = forkJoin([this.api.event(), sessions$, news$, map$, hl$]).subscribe({
-      next: ([ev, ss, nw, mp, hl]) => {
+    this.sub = forkJoin([this.api.event(), sessions$, news$, map$, hl$, music$]).subscribe({
+      next: ([ev, ss, nw, mp, hl, mu]) => {
         this.unreachable = false;
-        this.offline = ev.offline || ss.offline || nw.offline || mp.offline || hl.offline;
+        this.offline = ev.offline || ss.offline || nw.offline || mp.offline || hl.offline || mu.offline;
         // Offline: show the oldest saved time among the parts that came from the phone.
-        const saved = [ev, ss, nw, mp, hl].filter(x => x.offline).map(x => x.at);
-        this.loadedAt = saved.length ? Math.min(...saved) : Math.max(ev.at, ss.at, nw.at, mp.at, hl.at);
+        const saved = [ev, ss, nw, mp, hl, mu].filter(x => x.offline).map(x => x.at);
+        this.loadedAt = saved.length ? Math.min(...saved) : Math.max(ev.at, ss.at, nw.at, mp.at, hl.at, mu.at);
         if ('photos' in hl.data && JSON.stringify(hl.data) !== this.hlKey) {
           this.hlKey = JSON.stringify(hl.data);
           this.photos = hl.data.photos;
@@ -134,6 +138,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.off = ev.data.off;
         this.event = ev.data.off ? null : ev.data as PublicEvent;
         this.sessions = 'sessions' in ss.data ? ss.data.sessions : [];
+        this.music = 'music' in mu.data ? mu.data.music : [];
         // Keep an open details sheet showing the fresh copy of its session.
         if (this.selected) this.selected = this.sessions.find(s => s.id === this.selected!.id) || null;
       },

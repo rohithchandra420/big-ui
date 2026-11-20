@@ -63,6 +63,17 @@ export interface PublicSession {
 }
 export type PublicSessionsAnswer = { off: false; sessions: PublicSession[] } | { off: true };
 
+/** A music slot (Music epic): artist / band, genre, stage and times only. */
+export interface PublicMusic {
+  id: string;
+  act: string;
+  genre: string;
+  stage: string;
+  start: string;
+  end: string;
+}
+export type PublicMusicAnswer = { off: false; music: PublicMusic[] } | { off: true };
+
 /** A news post from the organisers (PH3) — sent from staff Announcements. */
 export interface PublicNews {
   id: string;
@@ -105,6 +116,10 @@ export class PublicApiService {
 
   sessions(): Observable<Loaded<PublicSessionsAnswer>> {
     return this.get<PublicSessionsAnswer>('sessions');
+  }
+
+  music(): Observable<Loaded<PublicMusicAnswer>> {
+    return this.get<PublicMusicAnswer>('music');
   }
 
   news(): Observable<Loaded<PublicNewsAnswer>> {

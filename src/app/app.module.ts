@@ -120,6 +120,8 @@ import { WashMonitorComponent } from './wash/monitor/wash-monitor.component';
 import { WashSetupComponent } from './wash/setup/wash-setup.component';
 import { WashStockComponent } from './wash/stock/wash-stock.component';
 import { WashReportComponent } from './wash/report/wash-report.component';
+import { MusicPlannerComponent } from './music/planner/music-planner.component';
+import { MusicSetupComponent } from './music/setup/music-setup.component';
 import { VolunteersComponent } from './volunteers/volunteers.component';
 import { VolProfileComponent } from './volunteers/vol-profile/vol-profile.component';
 import { VolunteerNeedComponent } from './volunteers/volunteer-need/volunteer-need.component';
@@ -227,6 +229,8 @@ LOAD_WASM().subscribe()
     WashSetupComponent,
     WashStockComponent,
     WashReportComponent,
+    MusicPlannerComponent,
+    MusicSetupComponent,
     VolunteersComponent,
     VolProfileComponent,
     VolunteerNeedComponent,

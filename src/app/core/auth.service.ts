@@ -139,6 +139,27 @@ export class AuthService {
         return this.canLogWash(user) || (user.permissions || []).some(p => p.startsWith('wash:')) || this.isHelpdesk(user);
     }
 
+    /** Music › Stages: same rule as big-api utils/musicAccess.js — DEV/DIR/ADMIN, the Music TL, music:manage. */
+    canManageMusic(user: User | null): boolean {
+        if (!user) return false;
+        if (['DEV', 'DIR', 'ADMIN'].includes(user.role)) return true;
+        if (user.role === 'TL' && this.inDepartmentKey(user, 'music')) return true;
+        return (user.permissions || []).includes('music:manage');
+    }
+
+    /** Music › acts and slots: the Manage group and music:write. Members alone only view. */
+    canEditMusic(user: User | null): boolean {
+        if (!user) return false;
+        return this.canManageMusic(user) || (user.permissions || []).includes('music:write');
+    }
+
+    /** Music › Planner and Setup (view): the Edit group, every Music member, any music grant, Helpdesk. */
+    canViewMusic(user: User | null): boolean {
+        if (!user) return false;
+        return this.canEditMusic(user) || this.inDepartmentKey(user, 'music') ||
+            (user.permissions || []).some(p => p.startsWith('music:')) || this.isHelpdesk(user);
+    }
+
     /** Volunteers page, same rule as big-api utils/volunteerAccess.js. The Volunteer
      *  department is the Unassigned pool, so being a MEMBER gives nothing.
      *  Assign (move / free): DEV/DIR/ADMIN, the Volunteer department's TL, volunteer:write and up. */

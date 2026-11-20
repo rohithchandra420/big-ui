@@ -1,0 +1,21 @@
+/* Music › Setup. Full width like Bookings; every text rule sets its colour.
+   Shared bits (.mu-form, .mu-two, .mu-dl, .mu-acts) are global in styles.css. */
+.mu-page { padding: 0; color: var(--text-primary); }   /* the app shell pads every page — never add page padding */
+.mu-ph-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.mu-sec { margin-bottom: 22px; color: var(--text-primary); }
+.mu-h { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.mu-h mat-icon { color: #6b46c1; }
+.mu-h small { font-size: 12px; font-weight: 600; color: #6b46c1; background: #f3f0fb; border-radius: 999px; padding: 1px 8px; }
+.mu-muted { display: block; color: var(--text-secondary); font-size: 13px; margin: 10px 0; }
+.mu-muted a { color: var(--color-primary); }
+
+.mu-row { cursor: pointer; }
+.mu-row td { color: var(--text-primary); }
+.mu-row b { color: var(--text-primary); overflow-wrap: anywhere; }
+.mu-sub { display: block; color: var(--text-secondary); font-size: 12px; overflow-wrap: anywhere; }
+.mu-end { text-align: right; color: var(--text-muted); width: 40px; }
+
+@media (max-width: 768px) {
+  .mu-hide { display: none; }
+}

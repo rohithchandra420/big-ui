@@ -1402,6 +1402,34 @@ th[aria-sort="ascending"] .th-sort .mat-icon, th[aria-sort="descending"] .th-sor
 /* Phones: an empty calendar slot, tapped to add a session (WorkshopPlannerComponent.listenForTaps) */
 .wp-cell { position: absolute; inset: 0; display: block; }
 
+/* Music (MUSIC_CONTEXT.md). Planner: markup DayPilot writes itself (slot
+   cards, sound-check bands, stage headers). Then the panel bits that the
+   Planner and Setup share. */
+.mu-col { display: flex; flex-direction: column; align-items: center; padding: 4px 0; line-height: 1.25; }
+.mu-col b { font-size: 12px; color: var(--text-primary); }
+.mu-col span { font-size: 11px; color: var(--text-muted); }
+.mu-ev { padding: 3px 4px; font-size: 11px; line-height: 1.3; color: var(--text-primary); overflow: hidden; }
+.mu-ev .mu-t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); }
+.mu-ev .mu-m { color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-chip { display: inline-block; margin-top: 3px; padding: 0 6px; border-radius: 999px; font-size: 10px; font-weight: 600; background: #f3f0fb; color: #553c9a; }
+.mu-chip.warn { background: #fef3c7; color: #92400e; }
+.mu-sc-item .calendar_default_event_inner { background: repeating-linear-gradient(135deg, #f3f0fb 0 6px, #ebe4f8 6px 12px) !important; }
+.mu-sc { padding: 2px 4px; font-size: 10.5px; font-weight: 600; color: #553c9a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-cell { position: absolute; inset: 0; display: block; }
+/* The current-time line across every stage (MusicPlannerComponent onBeforeCellRender) */
+.mu-now-line { position: absolute; left: 0; right: 0; height: 2px; margin-top: -1px; background: #dc2626; pointer-events: none; z-index: 1; }
+.mu-form { display: flex; flex-direction: column; gap: 12px; color: var(--text-primary); }
+.mu-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mu-acts { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.mu-grow { flex: 1; }
+.mu-dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 14px; margin: 0; color: var(--text-primary); }
+.mu-dl dt { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; }
+.mu-dl dd { margin: 0; font-size: 13.5px; color: var(--text-primary); overflow-wrap: anywhere; }
+.mu-dl a { color: var(--color-primary); }
+@media (max-width: 768px) {
+  .mu-two { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* Venue Map: a session running now in a Workshop area (Workshops W8) — the
    count on the area's badge, and the "Now" block in its panel. */
 .vm-area-ic { position: relative; }
