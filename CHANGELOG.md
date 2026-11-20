@@ -13,6 +13,29 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.68.0] - 2026-11-20
+
+### Added
+- **Public page, live map:** each place with a status gets a coloured label on the map. Workshop areas show the session's state (Walk in, Reg open, Waitlist, Reg closed…). Stages show who is playing. The Medical Bay shows Open / Closed. Toilets and washrooms show Cleaned / Open / Closed, water stations Filled / Empty, and the Box Office Open / Closed. Tap a place for the full line.
+- **Public page, an icon on every area** (stage, workshops, first aid, toilets, camping, parking, no entry…). Where an area has a live label, its icon sits inside the label. Paths, routes and the festival ground have no icon.
+- **Public page, Live now includes music:** the act playing right now gets a card in Live now, next to the workshops running (artist, genre, stage, times). Live now also shows when only music is on.
+- **Public page, festival ground:** everything outside the festival boundary is greyed out, and the boundary is a strong dark-green line. The map opens fitted to the ground.
+- **Public page, Home as in the approved V2 design:**
+  - the chosen hero photo behind the title;
+  - a "session you starred has changed" banner that opens My plan;
+  - on desktop, two columns (sessions and music on the left, Find your way and a small live map card on the right, which sticks while you scroll);
+  - Find your way is always shown;
+  - **Need a hand?** tiles now come after Through the years.
+- **Medical Desk: Medical Bay Open / Closed switch** in the page header, with a confirm step. It shows who changed it last.
+- **Music › Setup: stage amenities.** The stage panel has a chip for each amenity in the fixed list and an "Other amenities" field (up to 5, Enter to add). The Stages table has a new Amenities column (icons only on phones). Staff only.
+- **Admin › Public Page › Photos: "Use as hero"** on each photo (one per event).
+
+### Changed
+- The small map card on Home loads the map only when it scrolls into view, so the page stays light on mobile data.
+- Music › Setup: the Stages and Acts tables now run edge to edge.
+
+---
+
 ## [1.67.0] - 2026-11-20
 
 ### Added

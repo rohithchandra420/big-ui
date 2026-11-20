@@ -68,7 +68,8 @@ export class PublicPhotosComponent implements OnChanges {
 
   save(p: PublicPhoto, change: Partial<PublicPhoto>): void {
     this.admin.updatePublicPhoto(p._id, change).subscribe({
-      next: u => this.photos = this.photos.map(x => x._id === u._id ? u : x),
+      // One hero per event: the server clears the others, so do the same here.
+      next: u => this.photos = this.photos.map(x => x._id === u._id ? u : (u.hero && x.hero ? { ...x, hero: false } : x)),
       error: err => this.notify.openErrorSnackBar(err?.error?.message || 'Could not save the change')
     });
   }

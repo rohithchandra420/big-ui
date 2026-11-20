@@ -17,7 +17,7 @@ export const PIN_LOOK: Record<string, Look> = {
 };
 
 export const AREA_LOOK: Record<string, Look & { line?: boolean; dash?: string }> = {
-  boundary:      { icon: 'fence', colour: '#86efac', word: 'map.boundary', dash: '8 6' },
+  boundary:      { icon: 'fence', colour: '#15803d', word: 'map.boundary' },
   workshop_area: { icon: 'palette', colour: '#7c3aed', word: 'map.workshops' },
   camping:       { icon: 'camping', colour: '#386e5b', word: 'map.camping' },
   washroom:      { icon: 'wc', colour: '#64748b', word: 'map.toilets' },

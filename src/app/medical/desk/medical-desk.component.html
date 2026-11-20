@@ -7,6 +7,13 @@
       <div class="page-ph-sub">{{ eventName || 'No event selected' }} · find the patient, then record the visit</div>
     </div>
     <div class="ph-actions">
+      <!-- Medical Bay open / closed: Venue Map + public map -->
+      <button type="button" class="md-bay" *ngIf="bay" [class.on]="bay.open" [disabled]="baySaving" (click)="toggleBay()"
+              [attr.aria-pressed]="bay.open"
+              [title]="bay.changedBy ? (bay.open ? 'Opened' : 'Closed') + ' by ' + bay.changedBy : 'Shown on the Venue Map and the public page'">
+        <mat-icon>{{ bay.open ? 'local_hospital' : 'do_not_disturb_on' }}</mat-icon>
+        <span>Medical Bay: <b>{{ bay.open ? 'Open' : 'Closed' }}</b></span>
+      </button>
       <button type="button" class="pill-btn" (click)="lockNow()" title="Hide the records now"><mat-icon>lock</mat-icon>Lock</button>
     </div>
     <!-- Navigation Tabs: Back + this section's pages -->

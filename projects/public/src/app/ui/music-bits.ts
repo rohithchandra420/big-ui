@@ -59,3 +59,37 @@ export class MusicListComponent {
   @Input() title: 'music.title' | 'music.preview' | 'music.day' = 'music.title';
   track = (_: number, m: PublicMusic) => m.id;
 }
+
+/** A music act playing now, as a card in Home's "Live now" rail (2026-11-20). Not tappable. */
+@Component({
+  selector: 'pub-live-music-card',
+  standalone: true,
+  imports: [TPipe],
+  template: `
+    <div class="live-card">
+      <div class="live-open">
+        <div class="ph" [style.--c1]="dot">
+          <span class="ms ph-ic">music_note</span>
+          <span class="badge"><span class="dot"></span>{{ 'live.left' | t: { n: minsLeft } }}</span>
+          <span class="cat">{{ slot.genre || ('music.tag' | t) }}</span>
+        </div>
+        <div class="live-body">
+          <h3>{{ slot.act }}</h3>
+          <div class="music-now"><span class="live-dot"></span>{{ 'music.now' | t }}</div>
+          <div class="meta">
+            <span><span class="ms">location_on</span>{{ slot.stage }}</span>
+            <span><span class="ms">schedule</span>{{ start }}–{{ end }}</span>
+          </div>
+        </div>
+      </div>
+    </div>`,
+})
+export class LiveMusicCardComponent {
+  @Input({ required: true }) slot!: PublicMusic;
+  @Input() now = Date.now();
+  readonly dot = MUSIC_DOT;
+  constructor(private i18n: I18nService) {}
+  get minsLeft(): number { return Math.max(1, Math.ceil((Date.parse(this.slot.end) - this.now) / 60000)); }
+  get start(): string { return timeLabel(Date.parse(this.slot.start), this.i18n.lang); }
+  get end(): string { return timeLabel(Date.parse(this.slot.end), this.i18n.lang); }
+}

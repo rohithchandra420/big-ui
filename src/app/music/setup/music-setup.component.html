@@ -22,11 +22,12 @@
       <p class="mu-muted" *ngIf="!data.stages.length">
         No stages yet.{{ canManage ? ' Add one, and link it to a Stage area drawn on the Venue Map if you like.' : '' }}
       </p>
-      <div class="tbl-container tbl mu-tbl" *ngIf="data.stages.length">
-        <table>
+      <div class="tbl-container mu-tbl" *ngIf="data.stages.length">
+        <table class="tbl">
           <thead><tr>
             <th appSort="name" [sort]="stageSort">Stage</th>
             <th appSort="area" [sort]="stageSort">On the map</th>
+            <th>Amenities</th>
             <th appSort="slots" [sort]="stageSort">Slots</th>
             <th></th>
           </tr></thead>
@@ -34,6 +35,11 @@
             <tr *ngFor="let s of sortedStages; trackBy: trackId" class="mu-row" (click)="openStage(s)">
               <td><b>{{ s.name }}</b><small *ngIf="s.notes" class="mu-sub">{{ s.notes }}</small></td>
               <td>{{ s.area?.name || '—' }}</td>
+              <td class="mu-am-cell">
+                <span class="mu-am" *ngFor="let a of amenitiesOf(s); trackBy: trackKey" [title]="a.label"><mat-icon>{{ a.icon }}</mat-icon><span class="mu-am-l">{{ a.label }}</span></span>
+                <span class="mu-am extra" *ngFor="let x of s.extraAmenities; trackBy: trackText">{{ x }}</span>
+                <span *ngIf="!s.amenities?.length && !s.extraAmenities?.length">—</span>
+              </td>
               <td>{{ s.slotCount }}</td>
               <td class="mu-end"><mat-icon>chevron_right</mat-icon></td>
             </tr>
@@ -47,8 +53,8 @@
     <section class="mu-sec">
       <h2 class="mu-h"><mat-icon class="ms-fill">mic_external_on</mat-icon>Acts <small>{{ data.acts.length }}</small></h2>
       <p class="mu-muted" *ngIf="!data.acts.length">No acts yet.{{ canEdit ? ' Add the artists and bands, then plan their slots in the Planner.' : '' }}</p>
-      <div class="tbl-container tbl mu-tbl" *ngIf="data.acts.length">
-        <table>
+      <div class="tbl-container mu-tbl" *ngIf="data.acts.length">
+        <table class="tbl">
           <thead><tr>
             <th appSort="name" [sort]="actSort">Artist / band</th>
             <th appSort="genre" [sort]="actSort">Genre</th>
@@ -85,6 +91,25 @@
           </app-select>
           <small class="mu-muted" *ngIf="!areas.length">No Stage areas on the Venue Map for this event yet.</small>
         </div>
+        <div class="field">
+          <label>Amenities <small class="mu-muted-i">staff only</small></label>
+          <div class="mu-am-pick" role="group" aria-label="Amenities">
+            <label class="toggle-chip" *ngFor="let a of amenityList; trackBy: trackKey" [class.on]="hasAmenity(a.key)">
+              <input class="sr-only" type="checkbox" [checked]="hasAmenity(a.key)" (change)="toggleAmenity(a.key)">
+              <mat-icon>{{ hasAmenity(a.key) ? 'check' : a.icon }}</mat-icon>{{ a.label }}
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="mu-st-extra">Other amenities <small class="mu-muted-i">up to {{ maxExtras }}, press Enter to add</small></label>
+          <div class="mu-am-pick" *ngIf="stageForm.extraAmenities.length">
+            <span class="toggle-chip on" *ngFor="let x of stageForm.extraAmenities; trackBy: trackText">{{ x }}
+              <button type="button" class="mu-am-x" (click)="removeExtra(x)" [attr.aria-label]="'Remove ' + x"><mat-icon>close</mat-icon></button>
+            </span>
+          </div>
+          <input id="mu-st-extra" type="text" [maxlength]="extraMaxLen" [(ngModel)]="extraDraft" placeholder="e.g. Piano, Fog machine"
+                 [disabled]="stageForm.extraAmenities.length >= maxExtras" (keydown.enter)="$event.preventDefault(); addExtra()" />
+        </div>
         <div class="field"><label for="mu-st-notes">Notes</label>
           <textarea id="mu-st-notes" rows="3" maxlength="300" [(ngModel)]="stageForm.notes" placeholder="Staff only"></textarea></div>
         <div class="field-error" *ngIf="formError">{{ formError }}</div>
@@ -98,6 +123,12 @@
       <ng-template #stageView>
         <dl class="mu-dl" *ngIf="editStage">
           <dt>On the map</dt><dd>{{ editStage.area?.name || 'Not linked' }}</dd>
+          <dt>Amenities</dt>
+          <dd>
+            <span class="mu-am" *ngFor="let a of amenitiesOf(editStage); trackBy: trackKey"><mat-icon>{{ a.icon }}</mat-icon><span class="mu-am-l">{{ a.label }}</span></span>
+            <span class="mu-am extra" *ngFor="let x of editStage.extraAmenities; trackBy: trackText">{{ x }}</span>
+            <span *ngIf="!editStage.amenities?.length && !editStage.extraAmenities?.length">None listed</span>
+          </dd>
           <dt>Slots</dt><dd>{{ editStage.slotCount }}</dd>
           <ng-container *ngIf="editStage.notes"><dt>Notes</dt><dd>{{ editStage.notes }}</dd></ng-container>
         </dl>

@@ -6,7 +6,8 @@ import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
 import { GateFeedbackService } from '../../core/gate-feedback.service';
 import { BoxOfficeQrscannerPopupComponent, QrScannerData } from '../../box-office/registration/qrscanner-popup/qrscanner-popup.component';
-import { MedicalService } from '../medical.service';
+import { DeskStatus, MedicalService } from '../medical.service';
+import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
 import { MedicalLockService } from '../medical-lock.service';
 import { ADULT_AGE, FoundPerson, GENDERS, Gender, KIND_LABEL, MedicalPatient, RecordCounts, SEVERITY_BADGE, SEVERITY_LABEL } from '../medical.model';
 
@@ -42,6 +43,10 @@ export class MedicalDeskComponent implements OnInit, OnDestroy {
   /** Set when opened from an SOS ("Start medical visit"); passed inside the app, never in the address. */
   sos: SosHandOver | null = null;
 
+  /** Medical Bay open / closed (Venue Map + public map, 2026-11-20). */
+  bay: DeskStatus | null = null;
+  baySaving = false;
+
   walkInOpen = false;
   walkIn: WalkIn = emptyWalkIn();
 
@@ -56,7 +61,8 @@ export class MedicalDeskComponent implements OnInit, OnDestroy {
     private notify: NotificationService,
     private gate: GateFeedbackService,
     private dialog: MatDialog,
-    private router: Router
+    private router: Router,
+    private confirm: ConfirmationService
   ) {}
 
   ngOnInit(): void {
@@ -83,17 +89,42 @@ export class MedicalDeskComponent implements OnInit, OnDestroy {
     if (!this.eventId) return;
     try {
       await this.medical.access();
-      const [all, resting, follow] = await Promise.all([
+      const [all, resting, follow, bay] = await Promise.all([
         this.medical.records(this.eventId, {}),
         this.medical.records(this.eventId, { resting: true }),
-        this.medical.records(this.eventId, { followUp: true })
+        this.medical.records(this.eventId, { followUp: true }),
+        this.medical.deskStatus(this.eventId)
       ]);
+      this.bay = bay;
       this.counts = all.counts;
       this.resting = resting.patients;
       this.followUps = follow.patients;
     } catch (err: any) {
       this.notify.openErrorSnackBar(err?.error?.message || 'Could not load the Medical Desk');
     }
+  }
+
+  /** Open / close the Medical Bay — participants see it on the public map. */
+  toggleBay(): void {
+    if (!this.eventId || !this.bay || this.baySaving) return;
+    const open = !this.bay.open;
+    this.confirm.confirm({
+      title: open ? 'Open the Medical Bay?' : 'Close the Medical Bay?',
+      message: open
+        ? 'The Venue Map and the public festival page will show the Medical Bay as open.'
+        : 'The Venue Map and the public festival page will show the Medical Bay as closed, and point people to SOS / 112.',
+      confirmText: open ? 'Open' : 'Close', danger: !open
+    }).subscribe(async ok => {
+      if (!ok || !this.eventId) return;
+      this.baySaving = true;
+      try {
+        this.bay = await this.medical.setDeskStatus(this.eventId, open);
+      } catch (err: any) {
+        this.notify.openErrorSnackBar(err?.error?.message || 'Could not change the Medical Bay status');
+      } finally {
+        this.baySaving = false;
+      }
+    });
   }
 
   onSearch(): void {

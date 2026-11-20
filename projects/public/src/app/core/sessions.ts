@@ -20,8 +20,11 @@ export function isOver(s: PublicSession, now: number): boolean {
   return now >= Date.parse(s.end);
 }
 
+/** The status part of a session (also sent on a Workshop area of the map). */
+export type SessionStatus = Pick<PublicSession, 'state' | 'stateAt' | 'full'>;
+
 /** The pill's colour: open (green), reg (amber), wait (red), closed (grey), walk (blue). */
-export function stateTone(s: PublicSession): 'open' | 'reg' | 'wait' | 'closed' | 'walk' {
+export function stateTone(s: SessionStatus): 'open' | 'reg' | 'wait' | 'closed' | 'walk' {
   switch (s.state) {
     case 'open': return 'open';
     case 'list': return 'open';
@@ -38,7 +41,7 @@ export function statePulse(s: PublicSession): boolean {
 }
 
 /** The status in words, e.g. "Entry opens 10:30". */
-export function stateText(s: PublicSession, i18n: I18nService): string {
+export function stateText(s: SessionStatus, i18n: I18nService): string {
   const time = s.stateAt ? timeLabel(Date.parse(s.stateAt), i18n.lang) : '';
   switch (s.state) {
     case 'soon': return i18n.t('st.soon', { time });

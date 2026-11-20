@@ -71,6 +71,43 @@ describe('AppComponent (public shell)', () => {
     expect(text()).toContain('Thank you,');
   });
 
+  it('Home (V2 order): Find your way in the side column; help tiles come after Through the years', () => {
+    apiSpy.event.and.returnValue(of({ data: { ...during, help: [{ icon: 'support_agent', title: 'Helpdesk', text: 'Near Gate 1' }] } as PublicEventAnswer, at: Date.now(), offline: false }));
+    apiSpy.highlights.and.returnValue(of({ data: { off: false, photos: [], stats: [{ edition: 'BiG 2026', items: [{ value: '2,000', label: 'bloomers', icon: 'groups' }] }] }, at: Date.now(), offline: false }));
+    create();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('.home-side .near')).toBeTruthy();          // shown even with an empty map
+    expect(el.querySelector('.home-map')).toBeNull();                    // no preview card without places
+    const stats = el.querySelector('.stats')!, help = el.querySelector('.help')!;
+    expect(stats).toBeTruthy();
+    expect(help).toBeTruthy();
+    expect(stats.compareDocumentPosition(help) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('the hero photo picked on Admin › Public Page sits behind the title', () => {
+    create();
+    expect(fixture.nativeElement.querySelector('.hero-bg')).toBeNull();
+    apiSpy.highlights.and.returnValue(of({ data: { off: false, photos: [], stats: [], hero: { url: 'https://media.example.com/h.webp' } }, at: Date.now(), offline: false }));
+    component.load();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.hero').classList).toContain('photo');
+    expect(fixture.nativeElement.querySelector('.hero-bg img').getAttribute('src')).toBe('https://media.example.com/h.webp');
+  });
+
+  it('a changed starred session shows a banner on Home that opens My plan', () => {
+    create();
+    const plan = (component as any).plan;
+    spyOn(plan, 'changes').and.returnValue(['time']);
+    apiSpy.sessions.and.returnValue(of({ data: { off: false, sessions: [session()] }, at: Date.now(), offline: false }));
+    component.load();
+    fixture.detectChanges();
+    const banner = fixture.nativeElement.querySelector('.changed-banner') as HTMLElement;
+    expect(banner.textContent).toContain('A session you starred has changed');
+    (banner.querySelector('button') as HTMLButtonElement).click();
+    expect(component.view).toBe('plan');
+    expect(component.changedCount).toBe(0);
+  });
+
   it('switched off: the resting screen, nothing else', () => {
     apiSpy.event.and.returnValue(of({ data: { off: true } as PublicEventAnswer, at: Date.now(), offline: false }));
     create();

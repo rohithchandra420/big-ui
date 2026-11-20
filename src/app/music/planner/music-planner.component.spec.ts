@@ -14,7 +14,7 @@ const DAY1 = '2027-01-15', DAY2 = '2027-01-16';
 
 const data = (extra: Partial<MusicData> = {}): MusicData => ({
   canEdit: true, canManage: true,
-  stages: [{ _id: 'st1', name: 'Riverside Stage', notes: '', area: null, slotCount: 2 }],
+  stages: [{ _id: 'st1', name: 'Riverside Stage', notes: '', area: null, amenities: [], extraAmenities: [], slotCount: 2 }],
   acts: [
     { _id: 'a1', name: 'The Saltmarsh Choir', genre: 'Folk', contactName: 'Oren Vale', contactPhone: '98765', notes: 'Two mics', slotCount: 1 },
     { _id: 'a2', name: 'Copper Lanterns', genre: '', contactName: '', contactPhone: '', notes: '', slotCount: 1 }

@@ -26,6 +26,10 @@
           <span class="ph-seg" role="group" aria-label="Layout">
             <button type="button" *ngFor="let l of layouts; trackBy: trackLayout" [class.on]="p.layout === l.value" (click)="save(p, { layout: l.value })">{{ l.label }}</button>
           </span>
+          <button type="button" class="ph-btn" [class.on]="p.hero" (click)="save(p, { hero: !p.hero })" [attr.aria-pressed]="!!p.hero"
+                  title="Show this photo behind the title at the top of the public page">
+            <mat-icon>{{ p.hero ? 'star' : 'star_outline' }}</mat-icon>{{ p.hero ? 'Hero photo' : 'Use as hero' }}
+          </button>
           <button type="button" class="ph-btn" (click)="save(p, { shown: !p.shown })">
             <mat-icon>{{ p.shown ? 'visibility' : 'visibility_off' }}</mat-icon>{{ p.shown ? 'Shown' : 'Hidden' }}
           </button>
