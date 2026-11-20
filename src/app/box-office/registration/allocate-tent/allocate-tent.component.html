@@ -2,10 +2,15 @@
   <div class="card-title" style="margin-bottom: 12px;">
     Allocate Tent — <span class="mono">{{ shopItem._id }}</span> ({{ shopItem.item_name }})
   </div>
+  <!-- Bed model (I0): one Tent Pass, one Festival Pass per bed -->
+  <div class="at-bed" *ngIf="bedCount > 1">
+    <mat-icon aria-hidden="true">bed</mat-icon>
+    <span><b>Bed {{ bedNumber }} of {{ bedCount }}</b><span *ngIf="stay?.people?.length"> · already in: {{ stayNames }}</span></span>
+  </div>
 
   <div class="section-lbl" style="margin-bottom: 8px;">Link Festival Pass</div>
   <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
-    The occupant's name, phone, email and gender are taken from the linked Festival Pass — no separate form needed for the Tent Pass.
+    The person in this bed is the Festival Pass you pick: their name, phone, email and gender come from it.
   </div>
 
   <div class="filter-bar" style="margin-bottom: 10px;">
@@ -59,7 +64,7 @@
     <div class="field" style="max-width: 280px; flex: 1 1 220px; margin: 0;">
       <label>Target tent</label>
       <app-select [(ngModel)]="selectedTentId">
-        <app-option [value]="null">Auto-pick next available</app-option>
+        <app-option [value]="null">{{ stayTentNo ? 'Same unit as the other beds (' + stayTentNo + ')' : 'Auto-pick next available' }}</app-option>
         <app-option *ngFor="let t of vacantTents" [value]="t._id">{{ t.tent_no }} ({{ vacancyOf(t) }} free)</app-option>
       </app-select>
     </div>
@@ -77,10 +82,19 @@
     </div>
   </div>
 
+  <!-- Bed model (I0): a different unit than the stay's other beds is a warning, never a refusal -->
+  <div class="alert aw" *ngIf="unitMismatchMessage">
+    {{ unitMismatchMessage }}
+    <div class="btn-row">
+      <button class="btn-ghost" (click)="cancelUnitMismatch()">Cancel</button>
+      <button class="btn-danger" (click)="confirmUnitMismatch()">Allocate anyway</button>
+    </div>
+  </div>
+
   <div class="btn-row">
     <button class="btn-ghost" (click)="cancel()">Back</button>
     <button class="btn-cta" (click)="allocate()" [disabled]="!selectedFestivalPassId || (needsGender && !localGender) || allocating">
-      {{ allocating ? 'Allocating…' : 'Allocate Tent' }}
+      {{ allocating ? 'Allocating…' : (bedCount > 1 ? 'Allocate bed ' + bedNumber : 'Allocate Tent') }}
     </button>
   </div>
 </div>

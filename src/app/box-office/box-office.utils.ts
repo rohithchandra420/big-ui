@@ -33,6 +33,11 @@ function displayName(item: Shopcart): string {
     return item.passTypeName || item.item_name;
 }
 
+/** The pass name to show for one pass item (same rule as the Passes column). */
+export function passDisplayName(item: Pick<Shopcart, 'passTypeName' | 'item_name'>): string {
+    return item.passTypeName || item.item_name || '';
+}
+
 function groupPasses(shopcart: Shopcart[] | undefined): { name: string; festival: boolean; count: number }[] {
     if (!shopcart?.length) {
         return [];

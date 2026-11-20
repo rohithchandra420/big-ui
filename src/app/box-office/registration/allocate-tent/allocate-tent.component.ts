@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
 import { Gender, Shopcart, Ticket } from '../../../models/ticket.model';
 import { Tent } from '../../../models/tent.model';
-import { AccomodationService, TentAllocationResult } from '../../../accomodation/accomodation.service';
+import { AccomodationService, StayView, TentAllocationResult } from '../../../accomodation/accomodation.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventService } from '../../../core/event.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -36,6 +36,12 @@ export class AllocateTentComponent implements OnInit {
   genderMismatchPending = false;
   genderMismatchExisting: string[] = [];
 
+  /** Bed model (I0): this Tent Pass's beds; null until loaded. */
+  stay: StayView | null = null;
+  /** "This stay's other beds are in CR1. Put this bed in CR2 anyway?" */
+  unitMismatchMessage = '';
+  private overrideGender = false;
+
   allocating = false;
 
   constructor(
@@ -66,7 +72,23 @@ export class AllocateTentComponent implements OnInit {
       this.loadSuggestions(seed);
     }
     this.loadVacantTents();
+    this.loadStay();
   }
+
+  private loadStay() {
+    if (!this.shopItem._id) return;
+    this.accomodationService.getStay(this.shopItem._id).subscribe({
+      next: (s) => this.stay = s,
+      error: () => this.stay = null
+    });
+  }
+
+  /** Which bed this allocation fills, e.g. 2 (of 3). */
+  get bedNumber(): number { return (this.stay?.used ?? 0) + 1; }
+  get bedCount(): number { return this.stay?.beds ?? this.shopItem.beds ?? 1; }
+  /** The unit of this stay's other beds (shown on the auto-pick choice). */
+  get stayTentNo(): string { return this.stay?.people[0]?.tent_no || ''; }
+  get stayNames(): string { return (this.stay?.people || []).map(p => p.name || 'Attendee').join(', '); }
 
   private hasSearchableIdentity(item: { name?: string; phone_no?: string; email?: string }): boolean {
     const name = (item.name || '').trim();
@@ -178,7 +200,7 @@ export class AllocateTentComponent implements OnInit {
     return (tent.occupants ?? []).filter(o => o === null).length;
   }
 
-  allocate(overrideGenderMismatch = false) {
+  allocate(overrideGenderMismatch = this.overrideGender, overrideUnitMismatch = false) {
     const pass = this.selectedFestivalPass;
     const gender = pass?.gender || this.localGender;
     if (!pass || !gender || this.allocating) {
@@ -191,17 +213,23 @@ export class AllocateTentComponent implements OnInit {
       festivalPassId: pass._id!,
       tentId: this.selectedTentId ?? undefined,
       gender: pass.gender ? undefined : (gender as Gender),
-      overrideGenderMismatch
+      overrideGenderMismatch,
+      overrideUnitMismatch
     }).subscribe({
       next: (result) => {
         this.allocating = false;
         this.genderMismatchPending = false;
-        this.notificationService.openSucessSnackBar('Tent allocated');
+        this.unitMismatchMessage = '';
+        this.overrideGender = false;
+        this.notificationService.openSucessSnackBar(this.bedCount > 1 ? `Bed ${this.bedNumber} of ${this.bedCount} allocated` : 'Tent allocated');
         this.allocated.emit(result);
       },
       error: (err) => {
         this.allocating = false;
-        if (err?.error?.code === 'GENDER_MISMATCH') {
+        if (err?.error?.code === 'UNIT_MISMATCH') {
+          this.overrideGender = overrideGenderMismatch;
+          this.unitMismatchMessage = err.error.message || "This stay's other beds are in another unit. Allocate anyway?";
+        } else if (err?.error?.code === 'GENDER_MISMATCH') {
           this.genderMismatchPending = true;
           this.genderMismatchExisting = err.error.existingGenders || [];
         } else {
@@ -212,7 +240,18 @@ export class AllocateTentComponent implements OnInit {
   }
 
   confirmGenderMismatch() {
+    this.genderMismatchPending = false;
     this.allocate(true);
+  }
+
+  /** Bed in another unit than the stay's other beds: staff confirmed. */
+  confirmUnitMismatch() {
+    this.allocate(this.overrideGender, true);
+  }
+
+  cancelUnitMismatch() {
+    this.unitMismatchMessage = '';
+    this.overrideGender = false;
   }
 
   cancelGenderMismatch() {

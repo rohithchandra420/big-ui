@@ -10,3 +10,9 @@
 
 /* Tent Fields (B4): the tent list and "Pick on field" side by side, stacking on phones */
 .at-tent-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+
+/* Bed model (I0): "Bed 2 of 3" line */
+.at-bed { display: flex; align-items: center; gap: 6px; margin: -4px 0 12px; padding: 6px 10px; border-radius: 10px;
+  background: var(--surface-body); border: 1px solid var(--border-default); font-size: 13px; color: var(--text-primary); }
+.at-bed mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--color-primary); }
+.at-bed b { color: var(--text-primary); }

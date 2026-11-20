@@ -38,13 +38,32 @@
 
   <div class="alert aw" style="margin-top: 12px;" *ngIf="unknownPassNames.length">
     <strong>{{ unknownPassNames.length }} pass name{{ unknownPassNames.length > 1 ? 's' : '' }} not on this event yet:</strong>
-    <div class="bu-unknown-row" *ngFor="let name of unknownPassNames">
-      <span class="bu-unknown-name">{{ name }}</span>
-      <select [(ngModel)]="newPassTypeCategories[name]" [ngModelOptions]="{standalone: true}">
-        <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
-      </select>
-    </div>
-    <p class="field-hint">Pick a category for each — confirming will create these as new pass types on the active event, then upload.</p>
+    <ng-container *ngIf="canCreatePassTypes; else askAdmin">
+      <div class="bu-unknown-row" *ngFor="let name of unknownPassNames; let i = index">
+        <span class="bu-unknown-name">{{ name }}</span>
+        <div class="bu-unknown-fields">
+          <div class="field bu-unknown-field">
+            <label>Category</label>
+            <app-select [(ngModel)]="newPassTypeCategories[name]" [ngModelOptions]="{standalone: true}" [attr.aria-label]="'Category for ' + name">
+              <app-option *ngFor="let c of categories" [value]="c">{{ c }}</app-option>
+            </app-select>
+          </div>
+          <div class="field bu-unknown-field bu-beds" *ngIf="newPassTypeCategories[name] === 'tent'">
+            <label [for]="'bu-beds-' + i">Beds per pass</label>
+            <input [id]="'bu-beds-' + i" type="number" min="1" [max]="maxBeds"
+                   [ngModel]="newPassTypeBeds[name]" [ngModelOptions]="{standalone: true}"
+                   (ngModelChange)="setBeds(name, $event)">
+          </div>
+        </div>
+      </div>
+      <p class="field-hint">Pick a category for each (and beds per pass for a tent pass: one Festival Pass per bed). Confirming creates these pass types on the active event, then uploads.</p>
+    </ng-container>
+    <ng-template #askAdmin>
+      <div class="bu-unknown-row" *ngFor="let name of unknownPassNames">
+        <span class="bu-unknown-name">{{ name }}</span>
+      </div>
+      <p class="field-hint bu-ask-admin">Ask an admin to add these in Admin › Events first. Upload stays blocked until they exist.</p>
+    </ng-template>
   </div>
 
   <div class="alert ad" style="margin-top: 12px;" *ngIf="validationErrors.length">
@@ -61,7 +80,7 @@
 
 <mat-dialog-actions align="end">
   <button class="btn-ghost" (click)="cancel()">Cancel</button>
-  <button class="btn-cta" (click)="upload()" [disabled]="!selectedFile || uploading">
+  <button class="btn-cta" (click)="upload()" [disabled]="!selectedFile || uploading || blockedByUnknownPassNames">
     {{ uploadLabel }}
   </button>
 </mat-dialog-actions>

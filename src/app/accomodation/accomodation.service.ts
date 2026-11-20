@@ -9,6 +9,17 @@ export interface TentAllocationResult {
     tent: Tent;
     tentPassItem: Shopcart;
     festivalPassItem: Shopcart | null;
+    /** Bed model (I0): the Tent Pass's beds after the change. */
+    stay?: StayView | null;
+}
+
+/** A Tent Pass's beds and who is in them (bed model I0). */
+export interface StayView {
+    tentPassId: string;
+    beds: number;
+    used: number;
+    tentId: string | null;
+    people: { _id: string; name: string; gender: string | null; isAdmitted: boolean; tentId: string; tent_no: string }[];
 }
 
 @Injectable()
@@ -60,12 +71,18 @@ export class AccomodationService {
         tentId?: string;
         gender?: Gender;
         overrideGenderMismatch?: boolean;
+        overrideUnitMismatch?: boolean;
     }) {
         return this.http.post<TentAllocationResult>(this.url + '/allocateTentSlot', payload);
     }
 
-    vacateTentSlot(shopcartId: string) {
-        return this.http.post<TentAllocationResult>(this.url + '/vacateTentSlot', { shopcartId });
+    /** Frees one bed. A Tent Pass with several beds taken needs the Festival Pass (which bed). */
+    vacateTentSlot(shopcartId: string, festivalPassId?: string) {
+        return this.http.post<TentAllocationResult>(this.url + '/vacateTentSlot', festivalPassId ? { shopcartId, festivalPassId } : { shopcartId });
+    }
+
+    getStay(tentPassId: string) {
+        return this.http.get<StayView>(this.url + '/stay/' + tentPassId);
     }
 
     // eventId is required server-side (validated in tenting.js) — the caller

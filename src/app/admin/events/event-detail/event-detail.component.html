@@ -52,53 +52,53 @@
 
         <div class="pass-type-list" *ngIf="detail.passTypes.length > 0">
           <div class="pass-type-row" *ngFor="let pt of detail.passTypes">
-
-            <ng-container *ngIf="editingPassTypeId !== pt._id">
-              <span class="pt-name">{{ pt.name }}</span>
-              <span class="cat-chip" [class]="'cat-' + pt.category">{{ pt.category }}</span>
-              <span class="code-chip" *ngIf="pt.category === 'tent'" [class.code-chip-unset]="!pt.code">{{ pt.code || 'no code' }}</span>
-              <div class="pt-actions">
-                <button class="btn-sm-outline" (click)="startEditPassType(pt)">Edit</button>
-                <button class="btn-sm-danger" (click)="deletePassType(pt)">Delete</button>
-              </div>
-            </ng-container>
-
-            <form class="pt-edit-form" *ngIf="editingPassTypeId === pt._id" [formGroup]="editPassTypeForm">
-              <input type="text" formControlName="name" class="pt-inline-input">
-              <app-select formControlName="category">
-                <app-option *ngFor="let c of categories" [value]="c">{{ c }}</app-option>
-              </app-select>
-              <input type="text" formControlName="code" placeholder="Code" maxlength="4"
-                class="pt-inline-input pt-code-input"
-                *ngIf="editPassTypeForm.value.category === 'tent'"
-                title="Short prefix used to number tent units, e.g. SO -> SO1, SO2...">
-              <div class="pt-actions">
-                <button class="btn-sm-outline" (click)="cancelEditPassType()">Cancel</button>
-                <button class="btn-sm-outline" [disabled]="editPassTypeForm.invalid" (click)="saveEditPassType(pt)">Save</button>
-              </div>
-            </form>
-
+            <span class="pt-name">{{ pt.name }}</span>
+            <span class="cat-chip" [class]="'cat-' + pt.category">{{ pt.category }}</span>
+            <span class="code-chip" *ngIf="pt.category === 'tent'" [class.code-chip-unset]="!pt.code">{{ pt.code || 'no code' }}</span>
+            <span class="code-chip" *ngIf="pt.category === 'tent'" title="Beds per pass: one Festival Pass per bed">{{ pt.beds || 1 }} {{ (pt.beds || 1) === 1 ? 'bed' : 'beds' }}</span>
+            <div class="pt-actions">
+              <button class="btn-sm-outline" (click)="startEditPassType(pt)">Edit</button>
+              <button class="btn-sm-danger" (click)="deletePassType(pt)">Delete</button>
+            </div>
           </div>
         </div>
-        <p class="empty-text" *ngIf="detail.passTypes.length === 0 && !addingPassType">No pass types yet.</p>
+        <p class="empty-text" *ngIf="detail.passTypes.length === 0">No pass types yet.</p>
+      </section>
 
-        <form class="pt-add-form" *ngIf="addingPassType" [formGroup]="passTypeForm">
-          <input type="text" formControlName="name" placeholder="e.g. Festival Ticket" class="pt-inline-input">
-          <app-select formControlName="category">
-            <app-option *ngFor="let c of categories" [value]="c">{{ c }}</app-option>
-          </app-select>
-          <input type="text" formControlName="code" placeholder="Code" maxlength="4"
-            class="pt-inline-input pt-code-input"
-            *ngIf="passTypeForm.value.category === 'tent'"
-            title="Short prefix used to number tent units, e.g. SO -> SO1, SO2... Can also be set later.">
-          <div class="pt-actions">
-            <button class="btn-ghost" (click)="cancelAddPassType()">Cancel</button>
-            <button class="btn-cta" [disabled]="passTypeForm.invalid || savingPassType" (click)="savePassType()">
-              {{ savingPassType ? 'Adding…' : 'Add' }}
+      <!-- Add / edit pass type: slide panel (side on desktop, bottom sheet on phones) -->
+      <app-slide-panel [open]="passTypePanelOpen" icon="confirmation_number" [title]="passTypePanelTitle"
+                       [subtitle]="detail.name" (closed)="closePassTypePanel()">
+        <form class="pt-panel-form" *ngIf="passTypePanelOpen" [formGroup]="passTypePanelForm" (ngSubmit)="savePassTypePanel()">
+          <div class="field">
+            <label for="pt-name">Name *</label>
+            <input id="pt-name" type="text" formControlName="name" maxlength="60" placeholder="e.g. Festival Ticket">
+          </div>
+          <div class="field">
+            <label>Category *</label>
+            <app-select formControlName="category" aria-label="Category">
+              <app-option *ngFor="let c of categories" [value]="c">{{ c }}</app-option>
+            </app-select>
+          </div>
+          <ng-container *ngIf="passTypePanelForm.value.category === 'tent'">
+            <div class="field">
+              <label for="pt-code">Code</label>
+              <input id="pt-code" type="text" formControlName="code" maxlength="4" class="pt-code" placeholder="e.g. SO">
+              <p class="pt-hint">Short prefix for unit numbers, e.g. SO → SO1, SO2. Can be set later.</p>
+            </div>
+            <div class="field">
+              <label for="pt-beds">Beds per pass</label>
+              <input id="pt-beds" type="number" formControlName="beds" min="1" max="20" class="pt-beds">
+              <p class="pt-hint">One Festival Pass per bed (1–20).</p>
+            </div>
+          </ng-container>
+          <div class="pt-panel-acts">
+            <button type="button" class="btn-ghost" (click)="closePassTypePanel()">Cancel</button>
+            <button type="submit" class="btn-cta" [disabled]="passTypePanelForm.invalid || savingPassType">
+              {{ savingPassType ? 'Saving…' : (addingPassType ? 'Add pass type' : 'Save') }}
             </button>
           </div>
         </form>
-      </section>
+      </app-slide-panel>
 
       <section class="section" *ngIf="detail.tents.length > 0">
         <h3 class="section-title">

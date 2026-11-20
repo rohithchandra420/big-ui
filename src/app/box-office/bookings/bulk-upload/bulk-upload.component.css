@@ -30,13 +30,21 @@
 .bu-unknown-name {
   font-size: 12px;
   font-weight: 500;
+  color: var(--text-primary);
 }
 
-.bu-unknown-row select {
-  padding: 4px 8px;
-  border: 1px solid var(--border-default);
-  border-radius: 6px;
-  font-size: 11px;
-  font-family: inherit;
-  background: #fff;
+/* Category + Beds per pass for each new pass type (ui 1.69.0) */
+.bu-unknown-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-primary);
+}
+.bu-unknown-field { margin: 0; min-width: 130px; }
+.bu-unknown-field.bu-beds { min-width: 0; width: 110px; }
+.bu-ask-admin { color: var(--text-primary); font-weight: 500; }
+
+@media (max-width: 480px) {
+  .bu-unknown-fields { width: 100%; }
+  .bu-unknown-field { flex: 1 1 130px; }
 }
