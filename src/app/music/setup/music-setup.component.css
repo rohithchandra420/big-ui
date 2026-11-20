@@ -19,3 +19,19 @@
 @media (max-width: 768px) {
   .mu-hide { display: none; }
 }
+
+/* Stage amenities (2026-11-20): table chips + the form's pick list. */
+.mu-am-cell { white-space: normal !important; min-width: 160px; }
+.mu-am { display: inline-flex; align-items: center; gap: 3px; margin: 2px 4px 2px 0; padding: 2px 8px 2px 5px; border-radius: 999px;
+  background: #f3f0fb; color: #4c2f91; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.mu-am mat-icon { font-size: 14px; width: 14px; height: 14px; color: #6b46c1; }
+.mu-am.extra { padding-left: 8px; background: var(--surface-body); border: 1px solid var(--border-default); color: var(--text-secondary); }
+.mu-am-pick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; color: var(--text-primary); }
+.mu-am-x { border: 0; background: none; padding: 0; margin-left: 2px; display: inline-flex; color: inherit; cursor: pointer; }
+.mu-am-x mat-icon { font-size: 16px; width: 16px; height: 16px; color: #fff; }
+.mu-muted-i { font-weight: 400; color: var(--text-muted); font-size: 11px; }
+@media (max-width: 768px) {
+  .mu-am-l { display: none; }   /* phones: icons only (labels stay in the title) */
+  .mu-am { padding: 3px 5px; }
+  .mu-am-cell { min-width: 0; }
+}

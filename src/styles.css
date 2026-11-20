@@ -1799,6 +1799,14 @@ th[aria-sort="ascending"] .th-sort .mat-icon, th[aria-sort="descending"] .th-sor
 /* Explicit text colour on the page and the side panel: nothing inside may inherit a light one. */
 .md-panel, .md-panel .panel-body { color: var(--text-primary); }
 .md-page.md-wide { max-width: none; }
+/* Medical Bay open / closed switch on the Medical Desk header (2026-11-20). */
+.md-bay { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px 7px 10px; border-radius: 999px; font-size: 13px; white-space: nowrap;
+  border: 1.5px solid var(--color-danger); background: var(--surface-card); color: var(--color-danger); cursor: pointer; }
+.md-bay mat-icon { font-size: 18px; width: 18px; height: 18px; color: inherit; }
+.md-bay b { color: inherit; }
+.md-bay.on { background: var(--color-success); border-color: var(--color-success); color: #fff; }
+.md-bay:focus-visible { box-shadow: 0 0 0 3px rgba(30, 70, 56, 0.2); }
+.md-bay:disabled { opacity: .6; cursor: default; }
 .md-report { max-width: 900px; }
 .md-card { background: var(--surface-card); border: 1px solid var(--border-default); border-radius: 12px; padding: 16px; box-shadow: var(--shadow-xs); margin-bottom: 14px; color: var(--text-primary); }
 .md-h { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0 0 12px; }

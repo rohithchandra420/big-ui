@@ -35,6 +35,25 @@ describe('public music', () => {
     expect(musicForHome(MUSIC, ev({ phase: 'after' }), NOW)).toEqual([]);
   });
 
+  it('Live now shows the act playing now as a card, even with no workshop running (2026-11-20)', () => {
+    TestBed.configureTestingModule({ imports: [HomeViewComponent], providers: [provideHttpClient()] });
+    const fixture = TestBed.createComponent(HomeViewComponent);
+    const c = fixture.componentInstance;
+    c.event = ev(); c.sessions = []; c.music = MUSIC; c.now = NOW;
+    c.ngOnChanges();
+    fixture.detectChanges();
+    const cards = fixture.nativeElement.querySelectorAll('pub-live-music-card');
+    expect(cards.length).toBe(1);
+    expect(cards[0].textContent).toContain('playing');
+    expect(cards[0].textContent).toContain('Riverside Stage');
+    expect(fixture.nativeElement.textContent).toContain('Live now');
+    // Before the festival: nothing live.
+    c.event = ev({ phase: 'before' });
+    c.ngOnChanges();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('pub-live-music-card').length).toBe(0);
+  });
+
   it('Schedule: the whole day in start order', () => {
     expect(musicOfDay(MUSIC, '2026-12-11').map(x => x.id)).toEqual(['done', 'playing', 'later']);
   });

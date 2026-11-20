@@ -186,7 +186,7 @@ export class AdminService {
         return this.http.post<PublicPhoto>(this.url + '/admin/public-photos', data);
     }
 
-    updatePublicPhoto(id: string, data: Partial<Pick<PublicPhoto, 'caption' | 'sub' | 'layout' | 'order' | 'shown'>>) {
+    updatePublicPhoto(id: string, data: Partial<Pick<PublicPhoto, 'caption' | 'sub' | 'layout' | 'order' | 'shown' | 'hero'>>) {
         return this.http.patch<PublicPhoto>(this.url + '/admin/public-photos/' + id, data);
     }
 
@@ -223,6 +223,8 @@ export interface PublicStat { value: string; label: string; icon: string; }
 export interface PublicEdition { edition: string; items: PublicStat[]; }
 export interface PublicPhoto {
   _id: string; caption: string; sub: string; layout: 'normal' | 'tall' | 'wide'; order: number; shown: boolean;
+  /** Behind the public page's hero (one per event). */
+  hero?: boolean;
   url: string; thumbUrl: string; createdAt: string;
 }
 export interface PublicHelpTile { icon: string; title: string; text: string; }

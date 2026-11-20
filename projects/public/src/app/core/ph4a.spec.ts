@@ -3,6 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PublicApiService, PublicMapArea, PublicMapPin } from './public-api.service';
 import { centreOf, metresBetween, nearest, placesFor, walkMinutes } from './map-data';
 import { MyLocationService } from './my-location.service';
+import { badgeOf } from './live-status';
+import { I18nService } from './i18n';
 import { FindWayComponent } from '../ui/find-way.component';
 import { EmergencyComponent, smsOf, telOf, whatsappOf } from '../ui/emergency.component';
 import { MapViewComponent } from '../views/map-view.component';
@@ -80,21 +82,29 @@ describe('FindWayComponent', () => {
     expect(c.rows[0].minutes).toBe(1);
   });
 
-  it('tap opens the map on the place; help tiles open their text', () => {
+  it('tap opens the map on the place; the help part opens its tiles', () => {
     let opened: string | null | undefined;
     c.openMap.subscribe(v => opened = v);
     (fixture.nativeElement.querySelector('.near button') as HTMLButtonElement).click();
     expect(opened).toBe('w1');
+    expect(fixture.nativeElement.querySelector('.help')).toBeNull();   // "find" part only
+    c.part = 'help';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.near')).toBeNull();
     let help: any;
     c.openHelp.subscribe(h => help = h);
     (fixture.nativeElement.querySelector('.help button') as HTMLButtonElement).click();
     expect(help.title).toBe('Helpdesk');
   });
 
-  it('hides Find your way when the map has nothing', () => {
+  it('still shows Find your way when the map has nothing yet (buttons disabled)', () => {
     c.pins = []; c.areas = [];
+    c.ngOnChanges();
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.near')).toBeNull();
+    const buttons = fixture.nativeElement.querySelectorAll('.near button') as NodeListOf<HTMLButtonElement>;
+    expect(buttons.length).toBe(4);
+    expect(Array.from(buttons).every(b => b.disabled)).toBeTrue();
+    expect(fixture.nativeElement.textContent).toContain('Not on the map yet');
   });
 });
 
@@ -160,9 +170,9 @@ describe('MapViewComponent', () => {
     expect(c.ready).toBeTrue();
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelectorAll('.pub-pin').length).toBe(4);
-    expect(el.querySelector('.pub-pin b.open')).toBeTruthy();   // Box Office open dot
+    expect(el.querySelector('.pub-pin b.t-good')).toBeTruthy();   // Box Office open dot
     expect(c.legend.map(l => l.word)).toEqual(['map.water', 'map.toilets', 'map.boxOffice', 'map.firstAid', 'map.emergencyRoute']);
-    expect((c as any).popup('<b>x</b>', 'map.boundary', [1, 2])).toContain('&lt;b&gt;x&lt;/b&gt;');
+    expect((c as any).popup('<b>x</b>', 'map.boundary', [1, 2], null)).toContain('&lt;b&gt;x&lt;/b&gt;');
     fixture.destroy();
   });
 
@@ -171,7 +181,7 @@ describe('MapViewComponent', () => {
     const fixture = TestBed.createComponent(MapViewComponent);
     const c = fixture.componentInstance;
     c.pins = [
-      { ...pins[0], wash: 'refilled' }, { ...pins[1], wash: 'empty' },
+      { ...pins[0], wash: 'filled' }, { ...pins[1], wash: 'empty' },
       { ...pins[2], wash: 'closed' },   // toilets out of order
     ];
     c.areas = [];
@@ -180,12 +190,14 @@ describe('MapViewComponent', () => {
     for (let i = 0; i < 50 && !c.ready && !c.failed; i++) await new Promise(r => setTimeout(r, 100));
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelectorAll('.pub-pin b').length).toBe(3);
-    expect(el.querySelectorAll('.pub-pin b.open').length).toBe(1);
-    const pop = (pin?: PublicMapPin, wash?: any) => (c as any).popup('x', 'map.water', [1, 2], pin, wash) as string;
-    expect(pop(c.pins[0])).toContain('<div class="pp-status open">Refilled</div>');
-    expect(pop(c.pins[1])).toContain('<div class="pp-status closed">Empty</div>');
-    expect(pop(c.pins[2])).toContain('<div class="pp-status closed">Closed</div>');
-    expect(pop(undefined, 'open')).toContain('<div class="pp-status open">Open</div>');   // a Washroom area
+    expect(el.querySelectorAll('.pub-pin b.t-good').length).toBe(1);
+    expect(el.querySelectorAll('.pub-badge').length).toBe(3);
+    const i18n = TestBed.inject(I18nService);
+    const pop = (item: any) => (c as any).popup('x', 'map.water', [1, 2], badgeOf(item, i18n)) as string;
+    expect(pop(c.pins[0])).toContain('<div class="pp-status t-good">Filled</div>');
+    expect(pop(c.pins[1])).toContain('<div class="pp-status t-bad">Empty</div>');
+    expect(pop(c.pins[2])).toContain('<div class="pp-status t-bad">Closed for now</div>');
+    expect(pop({ id: 'a', name: 'x', kind: 'washroom', points: [], wash: 'cleaned' })).toContain('<div class="pp-status t-good">Cleaned recently</div>');
     expect(pop(pins[0])).not.toContain('pp-status');                                          // not set up in WASH
     fixture.destroy();
   });

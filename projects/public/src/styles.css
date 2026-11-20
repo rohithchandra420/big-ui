@@ -260,3 +260,67 @@ pub-news-ticker { display: block; margin-top: -16px; position: relative; z-index
 .facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 4px 0 0; font-size: 13px; }
 .facts dt { color: var(--muted); font-weight: 600; }
 .facts dd { margin: 0; color: var(--ink); }
+
+/* ---------- Live map status + V2 Home (2026-11-20) ---------- */
+/* Badges on the map (Leaflet tooltips): icon + a few words, coloured by tone. */
+.leaflet-tooltip.pub-badge, .pub-badge {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px 3px 6px; border-radius: 999px;
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 12px; font-weight: 700; line-height: 1.2;
+  white-space: nowrap; max-width: 190px; overflow: hidden; text-overflow: ellipsis;
+  border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); color: #fff; background: #6b7280;
+}
+.leaflet-tooltip.pub-badge::before { display: none; }
+.pub-badge .ms { font-size: 15px; color: inherit; font-style: normal; }
+.leaflet-tooltip.pub-badge.sm { font-size: 10px; padding: 2px 7px 2px 5px; max-width: 130px; }
+.leaflet-tooltip.pub-badge.sm .ms { font-size: 12px; }
+.pub-badge.t-good { background: #15803d; }
+.pub-badge.t-warn { background: #b45309; }
+.pub-badge.t-bad  { background: #b91c1c; }
+.pub-badge.t-info { background: #1d4ed8; }
+.pub-badge.t-off  { background: #6b7280; }
+/* The status dot on a pin, by tone. */
+.pub-pin b.t-good { background: #16a34a; }
+.pub-pin b.t-warn { background: #d97706; }
+.pub-pin b.t-bad  { background: #dc2626; }
+.pub-pin b.t-info { background: #2563eb; }
+.pp-status.t-good { color: #146c43; }
+.pp-status.t-warn { color: #92400e; }
+.pp-status.t-bad  { color: #b42318; }
+.pp-status.t-info { color: #1d4ed8; }
+
+/* Home: the map preview card (a tap opens the Map tab). */
+.map-card { display: block; width: 100%; padding: 0; border: 0; background: none; text-align: left; position: relative; border-radius: 22px; color: var(--ink); }
+.map-wrap.small { height: 220px; }
+.map-card .map-el { pointer-events: none; }
+.map-card-go {
+  position: absolute; z-index: 500; right: 10px; top: 10px; display: inline-flex; align-items: center; gap: 4px;
+  background: #fff; color: var(--leaf); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; box-shadow: var(--shadow);
+}
+.map-card-go .ms { font-size: 17px; color: var(--leaf); }
+
+/* Home: two columns on desktop, the side column sticks (V2 mock). */
+.home-layout { display: grid; gap: 0 28px; }
+.home-layout > * { min-width: 0; }
+@media (min-width: 980px) {
+  .home-layout { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+  .home-side { position: sticky; top: 16px; }
+  .home-side .near { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Home: "your starred session changed" banner. */
+.changed-banner {
+  display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 10px 12px; border-radius: 16px;
+  background: #fff7e6; border: 1px solid #f6d58e; color: var(--ink);
+}
+.changed-banner .ms { color: var(--marigold); }
+.changed-banner .t { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--ink); }
+.changed-banner button { border: 0; background: var(--leaf); color: #fff; border-radius: 12px; padding: 7px 12px; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.home-map { display: block; margin-top: 12px; }
+/* An area's icon on the public map (areas without a live label). */
+.pub-area-ic { background: none; border: 0; }
+.pub-area-ic > span { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+.pub-area-ic i { color: #fff; font-size: 16px; font-style: normal; }
+.pub-area-ic.sm > span { width: 22px; height: 22px; }
+.pub-area-ic.sm i { font-size: 13px; }
+pub-live-music-card { display: block; scroll-snap-align: start; min-width: 0; }
+.music-now { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #6b46c1; }

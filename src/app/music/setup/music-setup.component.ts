@@ -6,7 +6,7 @@ import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.se
 import { EventItem } from '../../models/event.model';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
 import { MusicService } from '../music.service';
-import { MusicAct, MusicData, MusicStage, MusicStageArea } from '../music.model';
+import { EXTRA_AMENITY_MAX_LEN, MAX_EXTRA_AMENITIES, MusicAct, MusicData, MusicStage, MusicStageArea, STAGE_AMENITIES, StageAmenity } from '../music.model';
 
 type StageSortKey = 'name' | 'area' | 'slots';
 type ActSortKey = 'name' | 'genre' | 'contact' | 'slots';
@@ -40,10 +40,16 @@ export class MusicSetupComponent implements OnInit, OnDestroy {
     name: a => a.name, genre: a => a.genre || null, contact: a => a.contactName || a.contactPhone || null, slots: a => a.slotCount
   };
 
+  /** Stage amenities (2026-11-20, staff only): the fixed list + the form's extras. */
+  readonly amenityList = STAGE_AMENITIES;
+  readonly maxExtras = MAX_EXTRA_AMENITIES;
+  readonly extraMaxLen = EXTRA_AMENITY_MAX_LEN;
+  extraDraft = '';
+
   mode: Mode = 'closed';
   editStage: MusicStage | null = null;
   editAct: MusicAct | null = null;
-  stageForm = { name: '', area: '', notes: '' };
+  stageForm = { name: '', area: '', notes: '', amenities: [] as string[], extraAmenities: [] as string[] };
   actForm = { name: '', genre: '', contactName: '', contactPhone: '', notes: '' };
   formError = '';
 
@@ -102,7 +108,9 @@ export class MusicSetupComponent implements OnInit, OnDestroy {
   openStage(s: MusicStage | null): void {
     if (!s && !this.canManage) return;
     this.editStage = s;
-    this.stageForm = { name: s?.name || '', area: s?.area?._id || '', notes: s?.notes || '' };
+    this.stageForm = { name: s?.name || '', area: s?.area?._id || '', notes: s?.notes || '',
+      amenities: [...(s?.amenities || [])], extraAmenities: [...(s?.extraAmenities || [])] };
+    this.extraDraft = '';
     this.freeAreas = this.areas.filter(a => !a.usedBy || a.usedBy._id === s?._id);
     this.formError = '';
     this.mode = 'stage';
@@ -126,13 +134,48 @@ export class MusicSetupComponent implements OnInit, OnDestroy {
     const f = this.stageForm;
     if (!f.name.trim()) { this.formError = 'Give the stage a name.'; return; }
     if (!this.event) return;
-    const body = { name: f.name.trim(), area: f.area || null, notes: f.notes.trim() };
+    this.addExtra();   // a typed extra counts even without Enter
+    if (this.formError) return;
+    const body = { name: f.name.trim(), area: f.area || null, notes: f.notes.trim(), amenities: f.amenities, extraAmenities: f.extraAmenities };
     await this.run(async () => {
       if (this.editStage) await this.music.updateStage(this.editStage._id, body);
       else await this.music.addStage(this.event!._id, body);
       this.notify.openSucessSnackBar(this.editStage ? 'Stage saved' : 'Stage added');
     }, 'Could not save the stage.');
   }
+
+  hasAmenity(key: string): boolean { return this.stageForm.amenities.includes(key); }
+
+  toggleAmenity(key: string): void {
+    const list = this.stageForm.amenities;
+    // Kept in the list's order, so the table reads the same for every stage.
+    const next = list.includes(key) ? list.filter(k => k !== key) : [...list, key];
+    this.stageForm.amenities = STAGE_AMENITIES.map(a => a.key).filter(k => next.includes(k));
+  }
+
+  /** Adds the typed extra (Enter, or on save); duplicates in any case are ignored. */
+  addExtra(): void {
+    this.formError = '';
+    const x = this.extraDraft.trim();
+    if (!x) return;
+    const list = this.stageForm.extraAmenities;
+    if (list.some(e => e.toLowerCase() === x.toLowerCase())) { this.extraDraft = ''; return; }
+    if (list.length >= MAX_EXTRA_AMENITIES) { this.formError = `Up to ${MAX_EXTRA_AMENITIES} other amenities.`; return; }
+    this.stageForm.extraAmenities = [...list, x.slice(0, EXTRA_AMENITY_MAX_LEN)];
+    this.extraDraft = '';
+  }
+
+  removeExtra(x: string): void {
+    this.stageForm.extraAmenities = this.stageForm.extraAmenities.filter(e => e !== x);
+  }
+
+  /** A stage's fixed amenities, in list order (stored per stage for the table). */
+  amenitiesOf(s: MusicStage): StageAmenity[] {
+    return STAGE_AMENITIES.filter(a => (s.amenities || []).includes(a.key));
+  }
+
+  trackKey = (_: number, a: StageAmenity) => a.key;
+  trackText = (_: number, x: string) => x;
 
   async saveAct(): Promise<void> {
     const f = this.actForm;

@@ -9,6 +9,7 @@ import {
 } from './medical.model';
 
 type VisitResult = { visit: MedicalVisit; patient: MedicalPatient };
+export interface DeskStatus { open: boolean; changedBy: string; changedAt: string | null; }
 
 /** Medical Desk (release 1). Every call waits for the password when the desk is locked (423) and retries once. */
 @Injectable({ providedIn: 'root' })
@@ -30,6 +31,15 @@ export class MedicalService {
       this.lock.touched();
       return res;
     }
+  }
+
+  /** Medical Bay open / closed (shown on the Venue Map and the public map). */
+  deskStatus(eventId: string): Promise<DeskStatus> {
+    return this.call(() => this.http.get<DeskStatus>(this.url + '/desk-status', { params: { event: eventId } }));
+  }
+
+  setDeskStatus(eventId: string, open: boolean): Promise<DeskStatus> {
+    return this.call(() => this.http.put<DeskStatus>(this.url + '/desk-status', { event: eventId, open }));
   }
 
   async access(): Promise<MedicalAccess> {

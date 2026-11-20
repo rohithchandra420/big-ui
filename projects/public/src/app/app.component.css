@@ -60,3 +60,10 @@ h1 { font-size: clamp(32px, 7.5vw, 60px); line-height: 1; margin: 26px 0 8px; fo
 .bottom button.on .ms { font-variation-settings: 'FILL' 1; }
 @media (min-width: 900px) { .bottom { display: none; } }
 @media (max-width: 420px) { .fresh span { max-width: 92px; overflow: hidden; text-overflow: ellipsis; } }
+
+/* ---------- Hero photo (2026-11-20, V2 mock) ---------- */
+.hero-bg { position: absolute; inset: 0; }
+.hero-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero.photo::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(20,48,38,.55) 0%, rgba(20,48,38,.78) 60%, rgba(20,48,38,.95) 100%); }
+.hero.photo .hero-in { z-index: 1; }
+.hero.photo .petal { display: none; }

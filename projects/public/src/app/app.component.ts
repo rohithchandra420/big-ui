@@ -58,6 +58,10 @@ export class AppComponent implements OnInit, OnDestroy {
   private mapKey = '';
   photos: PublicPhoto[] = [];
   stats: PublicEdition[] = [];
+  /** The hero background photo picked on Admin › Public Page (2026-11-20), or null. */
+  heroUrl: string | null = null;
+  /** Starred sessions changed since My plan was last opened (Home banner, V2 mock). */
+  changedCount = 0;
   private hlKey = '';
   /** The place the Map tab opens on (from a shortcut / the Emergency sheet). */
   mapFocus: string | null = null;
@@ -126,6 +130,7 @@ export class AppComponent implements OnInit, OnDestroy {
           this.hlKey = JSON.stringify(hl.data);
           this.photos = hl.data.photos;
           this.stats = hl.data.stats;
+          this.heroUrl = hl.data.hero?.url || null;
         }
         this.news = 'news' in nw.data ? nw.data.news : [];
         // Keep the same arrays when nothing changed, so the map isn't redrawn every 30 s.
@@ -139,11 +144,17 @@ export class AppComponent implements OnInit, OnDestroy {
         this.event = ev.data.off ? null : ev.data as PublicEvent;
         this.sessions = 'sessions' in ss.data ? ss.data.sessions : [];
         this.music = 'music' in mu.data ? mu.data.music : [];
+        this.countChanged();
         // Keep an open details sheet showing the fresh copy of its session.
         if (this.selected) this.selected = this.sessions.find(s => s.id === this.selected!.id) || null;
       },
       error: () => this.unreachable = true,
     });
+  }
+
+  /** How many starred sessions changed (time / place / status). */
+  countChanged(): void {
+    this.changedCount = this.sessions.filter(s => this.plan.changes(s).length > 0).length;
   }
 
   openSession(s: PublicSession): void { this.selected = s; }
@@ -176,6 +187,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.mapFocus = null;   // a tab opens the plain map; openMap() sets a place after this
     location.hash = view === 'home' ? '' : view;
     this.view = view;
+    if (view === 'plan') this.changedCount = 0;
   }
 
   get soonText(): WordKey { return SOON[this.view]; }

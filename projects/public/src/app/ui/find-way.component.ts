@@ -19,13 +19,15 @@ const SHORTCUTS: { kind: Shortcut; icon: string; colour: string; word: WordKey }
  * Home (PH4a): "Find your way" — the nearest water, first aid, toilets and
  * Box Office (walking minutes once the phone shares its location), each opens
  * the map there — and the staff's help tiles under "Need a hand?".
+ * `part` (2026-11-20): Home shows the two in different places — "find" in
+ * the side column, "help" at the end of the page.
  */
 @Component({
   selector: 'pub-find-way',
   standalone: true,
   imports: [NgIf, NgFor, TPipe],
   template: `
-    <section *ngIf="hasMap">
+    <section *ngIf="part === 'find'">
       <div class="sec-head">
         <h2>{{ 'find.title' | t }}</h2><span class="hand">{{ 'find.hand' | t }}</span>
         <div class="sp"></div>
@@ -44,7 +46,7 @@ const SHORTCUTS: { kind: Shortcut; icon: string; colour: string; word: WordKey }
       </button>
     </section>
 
-    <section *ngIf="help.length">
+    <section *ngIf="part === 'help' && help.length">
       <div class="sec-head"><h2>{{ 'help.title' | t }}</h2></div>
       <div class="help">
         <button type="button" *ngFor="let h of help; let i = index; trackBy: trackIndex" (click)="openHelp.emit(h)">
@@ -57,6 +59,8 @@ export class FindWayComponent implements OnInit, OnChanges, OnDestroy {
   @Input() pins: PublicMapPin[] = [];
   @Input() areas: PublicMapArea[] = [];
   @Input() help: { icon: string; title: string; text: string }[] = [];
+  /** Which part to show (see above). */
+  @Input() part: 'find' | 'help' = 'find';
   /** A place id to show on the map (null = just open the map). */
   @Output() openMap = new EventEmitter<string | null>();
   @Output() openHelp = new EventEmitter<{ icon: string; title: string; text: string }>();
@@ -66,8 +70,6 @@ export class FindWayComponent implements OnInit, OnChanges, OnDestroy {
   private sub?: Subscription;
 
   constructor(private me: MyLocationService) {}
-
-  get hasMap(): boolean { return this.pins.length > 0 || this.areas.length > 0; }
 
   trackKind = (_: number, r: ShortcutRow) => r.kind;
   trackIndex = (i: number) => i;

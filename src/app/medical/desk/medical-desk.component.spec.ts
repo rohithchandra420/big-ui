@@ -10,6 +10,7 @@ import { MedicalLockService } from '../medical-lock.service';
 import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
 import { GateFeedbackService } from '../../core/gate-feedback.service';
+import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
 
 const page = (patients: any[] = []) => ({ patients, total: patients.length, page: 0, pageSize: 50, counts: { patients: 3, visitsToday: 2, restingNow: 1, followUpsDue: 0, serious: 0 } });
 
@@ -20,9 +21,14 @@ describe('MedicalDeskComponent', () => {
   let router: jasmine.SpyObj<Router>;
   let dialog: jasmine.SpyObj<MatDialog>;
   let gate: jasmine.SpyObj<GateFeedbackService>;
+  let confirm: jasmine.SpyObj<ConfirmationService>;
 
   beforeEach(async () => {
-    medical = jasmine.createSpyObj('MedicalService', ['access', 'records', 'find', 'findBand', 'openReport']);
+    medical = jasmine.createSpyObj('MedicalService', ['access', 'records', 'find', 'findBand', 'openReport', 'deskStatus', 'setDeskStatus']);
+    medical.deskStatus.and.returnValue(Promise.resolve({ open: false, changedBy: '', changedAt: null }));
+    medical.setDeskStatus.and.callFake((_: string, open: boolean) => Promise.resolve({ open, changedBy: 'Medic One', changedAt: '2026-11-20T08:00:00Z' }));
+    confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
+    confirm.confirm.and.returnValue(of(true));
     medical.access.and.returnValue(Promise.resolve({ canUse: true, canManage: false, canAudit: false, canExport: false, locked: false, lockMinutes: 15 }));
     medical.records.and.callFake((_: string, f: any) => Promise.resolve(page(f.resting ? [{ _id: 'p9', name: 'Resting Rao', lastComplaint: 'Faint', lastSeverity: 'moderate', lastVisitAt: '2026-11-12T08:00:00Z' }] : [])));
     router = jasmine.createSpyObj('Router', ['navigate']);
@@ -38,7 +44,8 @@ describe('MedicalDeskComponent', () => {
         { provide: NotificationService, useValue: jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']) },
         { provide: GateFeedbackService, useValue: gate },
         { provide: MatDialog, useValue: dialog },
-        { provide: Router, useValue: router }
+        { provide: Router, useValue: router },
+        { provide: ConfirmationService, useValue: confirm }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -53,6 +60,27 @@ describe('MedicalDeskComponent', () => {
     start();
     expect(text()).toContain('Visits today');
     expect(text()).toContain('Resting Rao');
+  }));
+
+  it('Medical Bay switch: closed by default, opens after the confirm', fakeAsync(() => {
+    start();
+    const btn = () => fixture.nativeElement.querySelector('.md-bay') as HTMLButtonElement;
+    expect(btn().textContent).toContain('Closed');
+    btn().click();
+    flushMicrotasks();
+    fixture.detectChanges();
+    expect(confirm.confirm).toHaveBeenCalledWith(jasmine.objectContaining({ title: 'Open the Medical Bay?' }));
+    expect(medical.setDeskStatus).toHaveBeenCalledWith('e1', true);
+    expect(btn().textContent).toContain('Open');
+    expect(btn().classList).toContain('on');
+  }));
+
+  it('Medical Bay switch: nothing changes when the confirm is cancelled', fakeAsync(() => {
+    confirm.confirm.and.returnValue(of(false));
+    start();
+    (fixture.nativeElement.querySelector('.md-bay') as HTMLButtonElement).click();
+    flushMicrotasks();
+    expect(medical.setDeskStatus).not.toHaveBeenCalled();
   }));
 
   it('searches after a pause and opens an existing report', fakeAsync(() => {
