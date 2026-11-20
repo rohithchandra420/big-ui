@@ -36,8 +36,9 @@ describe('AllocateTentComponent', () => {
 
   beforeEach(async () => {
     accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', [
-      'suggestFestivalPassMatches', 'getAvailableTents', 'allocateTentSlot'
+      'suggestFestivalPassMatches', 'getAvailableTents', 'allocateTentSlot', 'getStay'
     ]);
+    accomodationServiceSpy.getStay.and.returnValue(of({ tentPassId: 'x', beds: 1, used: 0, tentId: null, people: [] }));
     accomodationServiceSpy.suggestFestivalPassMatches.and.returnValue(of([]));
     accomodationServiceSpy.getAvailableTents.and.returnValue(of([]));
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
@@ -255,7 +256,7 @@ describe('AllocateTentComponent', () => {
     component.allocate();
 
     expect(accomodationServiceSpy.allocateTentSlot).toHaveBeenCalledWith({
-      tentPassId: 't1', festivalPassId: 'f1', tentId: 'tent1', gender: undefined, overrideGenderMismatch: false
+      tentPassId: 't1', festivalPassId: 'f1', tentId: 'tent1', gender: undefined, overrideGenderMismatch: false, overrideUnitMismatch: false
     });
     expect(notificationSpy.openSucessSnackBar).toHaveBeenCalled();
     expect(allocatedSpy).toHaveBeenCalled();
@@ -289,6 +290,53 @@ describe('AllocateTentComponent', () => {
     expect(component.genderMismatchPending).toBeTrue();
     expect(component.genderMismatchExisting).toEqual(['Female']);
     expect(notificationSpy.openErrorSnackBar).not.toHaveBeenCalled();
+  });
+
+  describe('bed model (I0): one Tent Pass, one Festival Pass per bed', () => {
+    const stay2of3 = {
+      tentPassId: 'x', beds: 3, used: 1, tentId: 'tent1',
+      people: [{ _id: 'f0', name: 'Mira Holt', gender: 'Female', isAdmitted: false, tentId: 'tent1', tent_no: 'CR1' }]
+    };
+
+    it('shows "Bed 2 of 3", who is already in, and the same unit as the auto choice', () => {
+      accomodationServiceSpy.getStay.and.returnValue(of(stay2of3));
+      component.ngOnInit();
+      fixture.detectChanges();
+      expect(component.bedNumber).toBe(2);
+      expect(component.bedCount).toBe(3);
+      const text = fixture.nativeElement.textContent as string;
+      expect(text).toContain('Bed 2 of 3');
+      expect(text).toContain('Mira Holt');
+      expect(text).toContain('Same unit as the other beds (CR1)');
+      expect(text).toContain('Allocate bed 2');
+    });
+
+    it('a UNIT_MISMATCH is a warning: confirming re-sends with overrideUnitMismatch', () => {
+      accomodationServiceSpy.getStay.and.returnValue(of(stay2of3));
+      component.ngOnInit();
+      const candidate = { _id: 'f1', gender: 'Female' } as Shopcart;
+      component.festivalPassSuggestions = [candidate];
+      component.selectFestivalPass(candidate);
+      accomodationServiceSpy.allocateTentSlot.and.returnValue(throwError(() => ({
+        error: { code: 'UNIT_MISMATCH', message: "This stay's other beds are in CR1. Put this bed in CR2 anyway?" }
+      })));
+      component.allocate();
+      expect(component.unitMismatchMessage).toContain('CR1');
+      expect(notificationSpy.openErrorSnackBar).not.toHaveBeenCalled();
+
+      accomodationServiceSpy.allocateTentSlot.and.returnValue(of({ tent: { _id: 'tent2' } as any, tentPassItem: {} as Shopcart, festivalPassItem: null }));
+      component.confirmUnitMismatch();
+      expect(accomodationServiceSpy.allocateTentSlot.calls.mostRecent().args[0]).toEqual(jasmine.objectContaining({ overrideUnitMismatch: true }));
+      expect(component.unitMismatchMessage).toBe('');
+      expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Bed 2 of 3 allocated');
+    });
+
+    it('cancelling the unit warning sends nothing more', () => {
+      component.unitMismatchMessage = 'x';
+      component.cancelUnitMismatch();
+      expect(component.unitMismatchMessage).toBe('');
+      expect(accomodationServiceSpy.allocateTentSlot).not.toHaveBeenCalled();
+    });
   });
 
   it('allocate() shows an error toast for non-gender-mismatch failures', () => {

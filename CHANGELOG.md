@@ -13,6 +13,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.69.0] - 2026-11-20
+
+### Changed
+- **Bookings / Booking Found:** a Tent Pass row shows **Beds 2 / 3**, its unit and the people in its beds. **Allocate next bed** shows while a bed is free. With one bed taken, **Vacate** frees it; with several, each person has their own × to vacate their bed.
+- **Admin › Events › Pass Types:** Add and Edit open in a slide panel (side panel on desktop, bottom sheet on phones). Every field has a label. Code and Beds per pass show only for tent pass types.
+- **Bulk Upload, new pass names:** a new tent pass type now also gets **Beds per pass**. The number is taken from the name where it says so ("(3 guests)", "2 beds"), otherwise 1, and can be changed before confirming. Category uses the app's own dropdown. Only admins can create pass types here; anyone else is asked to have an admin add them in Admin › Events first, and Upload stays blocked until then (it used to fail half way).
+- **Booking details, each pass:** the icon shows the type of pass (ticket = festival, hotel = tent, plus = add-on), followed by the pass name. Add-ons get their own icon instead of the tent icon.
+- **Allocate Tent:** shows **Bed 2 of 3** and who is already in. The automatic choice is "Same unit as the other beds", and the button reads "Allocate bed 2". A different unit asks "This stay's other beds are in CR1. Put this bed in CR2 anyway?" with **Cancel / Allocate anyway**.
+
+### Added
+- **Admin › Events:** "Beds per pass" on tent pass types (shown as "3 beds").
+
+### Fixed
+- **Booking details:** the pass name was missing next to the icon for passes made at the Box Office. It now shows the same name as the Passes column.
+
+---
+
 ## [1.68.0] - 2026-11-20
 
 ### Added

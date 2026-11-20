@@ -19,9 +19,9 @@
     <div class="att-info">
       <div class="att-name">{{ item.name || 'Attendee' }}</div>
       <div class="att-pass">
-        <mat-icon class="att-type-icon" [ngClass]="isFestivalPass(item) ? 'ti-festival' : 'ti-tent'">
-          {{ isFestivalPass(item) ? 'confirmation_number' : 'hotel' }}
-        </mat-icon>{{ item.item_name }}
+        <span class="att-kind" [ngClass]="passKind(item).cls" [title]="passKind(item).label">
+          <mat-icon class="att-type-icon" [attr.aria-label]="passKind(item).label">{{ passKind(item).icon }}</mat-icon><span class="att-pass-name">{{ passName(item) }}</span>
+        </span>
       </div>
       <div class="att-badges">
         <!-- Festival Pass: details + admission status -->
@@ -48,9 +48,22 @@
           </span>
         </ng-container>
 
-        <!-- Tent Pass: allocation status only — identity mirrors the linked Festival Pass -->
-        <span class="badge" *ngIf="!isFestivalPass(item)" [ngClass]="item.allocatedTentId ? 'bg' : 'bx'">
-          {{ item.allocatedTentId ? ('Tent: ' + (tentNoFor(item) || '…')) : 'Not allocated' }}
+        <!-- Tent Pass (bed model I0): beds taken of its beds + the unit; the people are listed below -->
+        <ng-container *ngIf="!isFestivalPass(item)">
+          <span class="badge" [ngClass]="bedsUsed(item) ? 'bg' : 'bx'">
+            {{ bedsUsed(item) ? ('Tent: ' + (tentNoFor(item) || '…')) : 'Not allocated' }}
+          </span>
+          <span class="badge" *ngIf="bedsOf(item) > 1" [ngClass]="bedsFree(item) ? 'ba' : 'bg'">
+            <mat-icon class="att-type-icon">bed</mat-icon>Beds {{ bedsUsed(item) }} / {{ bedsOf(item) }}
+          </span>
+        </ng-container>
+      </div>
+      <!-- Who is in this Tent Pass's beds (one Festival Pass per bed) -->
+      <div class="att-beds" *ngIf="!isFestivalPass(item) && peopleIn(item).length">
+        <span class="att-bed" *ngFor="let p of peopleIn(item); trackBy: trackPerson">
+          <mat-icon class="att-type-icon">person</mat-icon>{{ p.name || 'Attendee' }}<span class="att-bed-unit" *ngIf="p.tent_no && p.tent_no !== tentNoFor(item)"> · {{ p.tent_no }}</span>
+          <button type="button" class="att-bed-x" *ngIf="!readOnly && bedsUsed(item) > 1" (click)="vacateAttendee(item, p)"
+                  [attr.aria-label]="'Vacate the bed of ' + (p.name || 'this attendee')" title="Vacate this bed"><mat-icon>close</mat-icon></button>
         </span>
       </div>
     </div>
@@ -80,10 +93,11 @@
       </ng-container>
 
       <ng-template #tentActions>
-        <button class="btn-secondary att-action" *ngIf="!item.allocatedTentId" (click)="openAllocateTent(item)">
-          Allocate Tent
+        <button class="btn-secondary att-action" *ngIf="bedsFree(item)" (click)="openAllocateTent(item)">
+          {{ bedsOf(item) > 1 ? (bedsUsed(item) ? 'Allocate next bed' : 'Allocate bed') : 'Allocate Tent' }}
         </button>
-        <button class="btn-secondary att-action" *ngIf="item.allocatedTentId" (click)="vacateAttendee(item)">
+        <!-- One bed taken: Vacate it here. Several: the × on each person above. -->
+        <button class="btn-secondary att-action" *ngIf="bedsUsed(item) === 1" (click)="vacateAttendee(item, peopleIn(item)[0])">
           Vacate
         </button>
       </ng-template>

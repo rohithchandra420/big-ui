@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, SimpleChange } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { of, throwError } from 'rxjs';
 
@@ -46,7 +46,8 @@ describe('AttendeeListComponent', () => {
     });
     authSpy.hasPermission.and.returnValue(false);
     authSpy.inDepartmentKey.and.callFake(() => canReplace);
-    accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', ['getTentById', 'vacateTentSlot']);
+    accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', ['getTentById', 'vacateTentSlot', 'getStay']);
+    accomodationServiceSpy.getStay.and.returnValue(of({ tentPassId: 'x', beds: 1, used: 0, tentId: null, people: [] }));
     accomodationServiceSpy.getTentById.and.returnValue(of({} as Tent));
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
@@ -130,6 +131,46 @@ describe('AttendeeListComponent', () => {
 
     it('is false for tent pass items', () => {
       expect(component.isFestivalPass(mockTicket.shopcart![1])).toBeFalse();
+    });
+  });
+
+  describe('passKind(): the kind of pass before its name', () => {
+    it('gives Festival Pass / Tent Pass / Add-on from the category', () => {
+      expect(component.passKind({ ...mockTicket.shopcart![0], category: 'festival' } as any)).toEqual(jasmine.objectContaining({ label: 'Festival Pass', icon: 'confirmation_number' }));
+      expect(component.passKind({ ...mockTicket.shopcart![1], category: 'tent' } as any)).toEqual(jasmine.objectContaining({ label: 'Tent Pass', icon: 'hotel' }));
+      expect(component.passKind({ ...mockTicket.shopcart![1], category: 'addon' } as any)).toEqual(jasmine.objectContaining({ label: 'Add-on', icon: 'add_circle' }));
+    });
+
+    it('returns the same object each time (stable for change detection)', () => {
+      const item = mockTicket.shopcart![0];
+      expect(component.passKind(item)).toBe(component.passKind(item));
+    });
+
+    it('shows only the type icon, then the pass name (never a type label); an Add-on no longer shows the tent icon', () => {
+      const t = { ...mockTicket, _id: 'tk-kind', shopcart: [
+        { ...mockTicket.shopcart![0], _id: 'k1', category: 'festival', item_name: 'Weekend Ticket' },
+        { ...mockTicket.shopcart![1], _id: 'k2', category: 'addon', item_name: 'Car Parking', allocatedTentId: null },
+        { ...mockTicket.shopcart![1], _id: 'k3', category: 'tent', item_name: 'Shared Tent', allocatedTentId: null }
+      ] } as any as Ticket;
+      configureWith(t);
+      const rows = Array.from(fixture.nativeElement.querySelectorAll('.att-pass')) as HTMLElement[];
+      const texts = rows.map(r => r.textContent!.replace(/\s+/g, ' ').trim());
+      expect(texts).toContain('confirmation_numberWeekend Ticket');
+      expect(texts).toContain('add_circleCar Parking');
+      expect(texts).toContain('hotelShared Tent');
+      expect(texts.find(x => x.includes('Car Parking'))).not.toContain('hotel');
+      expect(texts.join(' ')).not.toMatch(/Festival Pass|Tent Pass|Add-on/);
+    });
+
+    it('uses passTypeName (Box Office flow) when item_name is empty', () => {
+      const t = { ...mockTicket, _id: 'tk-ptn', shopcart: [
+        { ...mockTicket.shopcart![0], _id: 'n1', category: 'festival', item_name: undefined, passTypeName: 'Day Pass' },
+        { ...mockTicket.shopcart![1], _id: 'n2', category: 'tent', item_name: undefined, passTypeName: 'PYOT', allocatedTentId: null }
+      ] } as any as Ticket;
+      configureWith(t);
+      const texts = (Array.from(fixture.nativeElement.querySelectorAll('.att-pass')) as HTMLElement[]).map(r => r.textContent!.replace(/\s+/g, ' ').trim());
+      expect(texts).toContain('confirmation_numberDay Pass');
+      expect(texts).toContain('hotelPYOT');
     });
   });
 
@@ -452,6 +493,42 @@ describe('AttendeeListComponent', () => {
     });
   });
 
+  describe('bed model (I0): a Tent Pass with several beds', () => {
+    const stay = {
+      tentPassId: 's2', beds: 3, used: 2, tentId: 'tent1',
+      people: [
+        { _id: 'p1', name: 'Rowan Ilse', gender: 'Male', isAdmitted: false, tentId: 'tent1', tent_no: 'CR1' },
+        { _id: 'p2', name: 'Esme Tarn', gender: 'Female', isAdmitted: true, tentId: 'tent1', tent_no: 'CR1' }
+      ]
+    };
+
+    it('shows Beds 2 / 3, the people in them, and "Allocate next bed" while a bed is free', () => {
+      accomodationServiceSpy.getStay.and.returnValue(of(stay));
+      const localTicket = { ...mockTicket, _id: 'tk-beds', shopcart: mockTicket.shopcart!.map(i => ({ ...i, allocatedTentId: 'tent1', beds: 3 })) } as Ticket;
+      component.ticket = localTicket;
+      component.ngOnChanges({ ticket: new SimpleChange(undefined, localTicket, true) });
+      fixture.detectChanges();
+      const text = fixture.nativeElement.textContent as string;
+      expect(text).toContain('Beds 2 / 3');
+      expect(text).toContain('Rowan Ilse');
+      expect(text).toContain('Esme Tarn');
+      expect(text).toContain('Allocate next bed');
+      expect(component.bedsFree(localTicket.shopcart![1])).toBeTrue();
+    });
+
+    it('the × on a person vacates only that bed', () => {
+      accomodationServiceSpy.getStay.and.returnValue(of(stay));
+      const localTicket = { ...mockTicket, _id: 'tk-beds2', shopcart: mockTicket.shopcart!.map(i => ({ ...i, allocatedTentId: 'tent1', beds: 3 })) } as Ticket;
+      component.ticket = localTicket;
+      component.ngOnChanges({ ticket: new SimpleChange(undefined, localTicket, true) });
+      const after = { ...stay, used: 1, people: [stay.people[1]] };
+      accomodationServiceSpy.vacateTentSlot.and.returnValue(of({ tent: {} as Tent, tentPassItem: localTicket.shopcart![1], festivalPassItem: null, stay: after }));
+      component.vacateAttendee(localTicket.shopcart![1], stay.people[0]);
+      expect(accomodationServiceSpy.vacateTentSlot).toHaveBeenCalledWith('s2', 'p1');
+      expect(component.bedsUsed(localTicket.shopcart![1])).toBe(1);
+    });
+  });
+
   describe('vacateAttendee()', () => {
     it('updates both linked items on success', () => {
       const localTicket = { ...mockTicket, shopcart: mockTicket.shopcart!.map(i => ({ ...i, allocatedTentId: 'tent1' })) } as Ticket;
@@ -463,7 +540,7 @@ describe('AttendeeListComponent', () => {
 
       component.vacateAttendee(localTicket.shopcart![1]);
 
-      expect(accomodationServiceSpy.vacateTentSlot).toHaveBeenCalledWith('s2');
+      expect(accomodationServiceSpy.vacateTentSlot).toHaveBeenCalledWith('s2', undefined);
       expect(component.ticket.shopcart![1].allocatedTentId).toBeNull();
       expect(component.ticket.shopcart![0].allocatedTentId).toBeNull();
       expect(notificationSpy.openSucessSnackBar).toHaveBeenCalled();

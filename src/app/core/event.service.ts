@@ -115,11 +115,11 @@ export class EventService {
     return this.http.delete<{ message: string; count?: number }>(this.url + '/admin/events/' + id);
   }
 
-  createPassType(eventId: string, data: { name: string; category: PassTypeCategory; code?: string }) {
+  createPassType(eventId: string, data: { name: string; category: PassTypeCategory; code?: string; beds?: number }) {
     return this.http.post<PassType>(this.url + '/admin/events/' + eventId + '/pass-types', data);
   }
 
-  updatePassType(eventId: string, passTypeId: string, data: Partial<{ name: string; category: PassTypeCategory; code: string }>) {
+  updatePassType(eventId: string, passTypeId: string, data: Partial<{ name: string; category: PassTypeCategory; code: string; beds: number }>) {
     return this.http.patch<PassType>(this.url + '/admin/events/' + eventId + '/pass-types/' + passTypeId, data);
   }
 

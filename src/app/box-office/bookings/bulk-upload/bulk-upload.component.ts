@@ -7,6 +7,8 @@ import { BoxOfficeService } from '../../box-office.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventService } from '../../../core/event.service';
 import { PassTypeCategory } from '../../../models/event.model';
+import { AuthService } from '../../../core/auth.service';
+import { TOP_ROLES } from '../../../core/reported-access';
 
 interface FilePreview {
   rowCount: number;
@@ -15,6 +17,19 @@ interface FilePreview {
 }
 
 const CATEGORIES: PassTypeCategory[] = ['festival', 'tent', 'addon'];
+
+/** Highest "Beds per pass" a pass type may have (same as the server). */
+export const MAX_BEDS = 20;
+
+/**
+ * Beds per pass guessed from a pass name: "Room (3 guests)", "2 beds",
+ * "4 person tent" give 3, 2, 4. Anything else gives 1. Always 1–20.
+ */
+export function bedsFromName(name: string): number {
+  const m = /(\d+)\s*(?:guests?|beds?|persons?|people|pax|sharing)\b/i.exec(name || '');
+  const n = m ? parseInt(m[1], 10) : 1;
+  return Math.min(MAX_BEDS, Math.max(1, n || 1));
+}
 
 /**
  * Bulk-imports pre-existing external orders (e.g. from a partner/agent) via
@@ -43,6 +58,11 @@ const CATEGORIES: PassTypeCategory[] = ['festival', 'tent', 'addon'];
  * a human always sees the exact list and picks each category explicitly
  * (pre-guessed from the name, always overridable), matching the same
  * "no side-effect creation" principle, just moved earlier in the flow.
+ *
+ * Bed model (ui 1.69.0): a new tent pass type also gets "Beds per pass",
+ * guessed from the name ("(3 guests)" → 3, else 1) and editable. Only top
+ * roles can create pass types (server: adminAuth); anyone else sees the
+ * list with "ask an admin" and Upload stays blocked until they exist.
  */
 @Component({
   selector: 'app-bulk-upload',
@@ -67,13 +87,37 @@ export class BulkUploadComponent implements OnInit {
   private existingPassTypeNames: Set<string> | null = null;
   unknownPassNames: string[] = [];
   newPassTypeCategories: { [name: string]: PassTypeCategory } = {};
+  /** Beds per pass for each new tent pass type (ui 1.69.0, bed model). */
+  newPassTypeBeds: { [name: string]: number } = {};
+  readonly maxBeds = MAX_BEDS;
 
   constructor(
     private dialogRef: MatDialogRef<BulkUploadComponent>,
     private boxOfficeService: BoxOfficeService,
     private notificationService: NotificationService,
-    private eventService: EventService
+    private eventService: EventService,
+    private authService: AuthService
   ) { }
+
+  /**
+   * Only top roles may create pass types (the server allows no one else).
+   * Anyone else who can open Bulk Upload is told to ask an admin first,
+   * instead of the upload failing half way.
+   */
+  get canCreatePassTypes(): boolean {
+    return TOP_ROLES.includes(this.authService.user.value?.role || '');
+  }
+
+  /** Upload is blocked: unknown pass names this user can't create. */
+  get blockedByUnknownPassNames(): boolean {
+    return this.unknownPassNames.length > 0 && !this.canCreatePassTypes;
+  }
+
+  /** A typed beds value, kept to a whole number 1–20. */
+  setBeds(name: string, value: any) {
+    const n = Math.round(Number(value));
+    this.newPassTypeBeds[name] = Math.min(MAX_BEDS, Math.max(1, Number.isFinite(n) && n > 0 ? n : 1));
+  }
 
   ngOnInit() {
     const activeEvent = this.eventService.currentActiveEvent;
@@ -95,8 +139,10 @@ export class BulkUploadComponent implements OnInit {
     const existing = this.existingPassTypeNames;
     this.unknownPassNames = this.preview.itemNames.filter(name => !existing.has(name));
     this.newPassTypeCategories = {};
+    this.newPassTypeBeds = {};
     this.unknownPassNames.forEach(name => {
       this.newPassTypeCategories[name] = /tent/i.test(name) ? 'tent' : 'festival';
+      this.newPassTypeBeds[name] = bedsFromName(name);
     });
   }
 
@@ -136,6 +182,7 @@ export class BulkUploadComponent implements OnInit {
     this.duplicateOrderIds = [];
     this.unknownPassNames = [];
     this.newPassTypeCategories = {};
+    this.newPassTypeBeds = {};
 
     if (!file.name.endsWith('.xlsx')) {
       this.notificationService.openErrorSnackBar('Only .xlsx files are supported');
@@ -196,6 +243,10 @@ export class BulkUploadComponent implements OnInit {
       this.notificationService.openErrorSnackBar('No event selected');
       return;
     }
+    if (this.blockedByUnknownPassNames) {
+      this.notificationService.openErrorSnackBar('Ask an admin to add the new pass types in Admin › Events first');
+      return;
+    }
     this.uploading = true;
     this.validationErrors = [];
     this.duplicateOrderIds = [];
@@ -203,7 +254,11 @@ export class BulkUploadComponent implements OnInit {
     if (this.unknownPassNames.length) {
       forkJoin(
         this.unknownPassNames.map(name =>
-          this.eventService.createPassType(activeEvent._id, { name, category: this.newPassTypeCategories[name] })
+          this.eventService.createPassType(activeEvent._id, {
+            name,
+            category: this.newPassTypeCategories[name],
+            ...(this.newPassTypeCategories[name] === 'tent' ? { beds: this.newPassTypeBeds[name] || 1 } : {})
+          })
         )
       ).pipe(
         catchError((err) => {

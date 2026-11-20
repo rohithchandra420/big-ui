@@ -3,7 +3,8 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 
-import { BulkUploadComponent } from './bulk-upload.component';
+import { BulkUploadComponent, bedsFromName } from './bulk-upload.component';
+import { AuthService } from '../../../core/auth.service';
 import { BoxOfficeService } from '../../box-office.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventService } from '../../../core/event.service';
@@ -22,6 +23,7 @@ describe('BulkUploadComponent', () => {
   let boxOfficeServiceSpy: jasmine.SpyObj<BoxOfficeService>;
   let notificationSpy: jasmine.SpyObj<NotificationService>;
   let dialogRefSpy: jasmine.SpyObj<MatDialogRef<BulkUploadComponent>>;
+  let userSubject: BehaviorSubject<any>;
   let activeEventSubject: BehaviorSubject<EventItem | null>;
   let eventServiceSpy: jasmine.SpyObj<EventService> & { activeEvent: BehaviorSubject<EventItem | null>, currentActiveEvent: EventItem | null };
 
@@ -31,6 +33,7 @@ describe('BulkUploadComponent', () => {
     dialogRefSpy = jasmine.createSpyObj('MatDialogRef', ['close']);
     activeEventSubject = new BehaviorSubject<EventItem | null>(mockActiveEvent);
     eventServiceSpy = jasmine.createSpyObj('EventService', ['getEventDetail', 'createPassType']) as any;
+    userSubject = new BehaviorSubject<any>({ _id: 'u1', role: 'ADMIN' });
     eventServiceSpy.activeEvent = activeEventSubject;
     Object.defineProperty(eventServiceSpy, 'currentActiveEvent', { get: () => activeEventSubject.value });
     eventServiceSpy.getEventDetail.and.returnValue(of(mockEventDetail));
@@ -42,6 +45,7 @@ describe('BulkUploadComponent', () => {
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },
         { provide: NotificationService, useValue: notificationSpy },
         { provide: EventService, useValue: eventServiceSpy },
+        { provide: AuthService, useValue: { user: userSubject } },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -231,7 +235,7 @@ describe('BulkUploadComponent', () => {
 
       component.upload();
 
-      expect(eventServiceSpy.createPassType).toHaveBeenCalledWith('evt1', { name: 'Shared Tent', category: 'tent' });
+      expect(eventServiceSpy.createPassType).toHaveBeenCalledWith('evt1', { name: 'Shared Tent', category: 'tent', beds: 1 });
       expect(boxOfficeServiceSpy.uploadBoxOfficeExcel).toHaveBeenCalled();
       expect(dialogRefSpy.close).toHaveBeenCalledWith(1);
     });
@@ -247,6 +251,89 @@ describe('BulkUploadComponent', () => {
       expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('A pass type with this name already exists for this event');
       expect(boxOfficeServiceSpy.uploadBoxOfficeExcel).not.toHaveBeenCalled();
       expect(component.uploading).toBeFalse();
+    });
+  });
+
+  describe('beds per pass for a new tent pass type (bed model)', () => {
+    const setUnknown = (names: string[]) => {
+      component.selectedFile = new File(['data'], 'orders.xlsx');
+      component.preview = { rowCount: names.length, orderIds: [1], itemNames: names };
+      (component as any).recomputeUnknownPassNames();
+    };
+
+    it('bedsFromName() reads the beds from the name, else 1, always 1–20', () => {
+      expect(bedsFromName('Deluxe Room (3 guests)')).toBe(3);
+      expect(bedsFromName('Dorm 2 beds')).toBe(2);
+      expect(bedsFromName('4 Person Tent')).toBe(4);
+      expect(bedsFromName('Solo Tent')).toBe(1);
+      expect(bedsFromName('Room (40 guests)')).toBe(20);
+      expect(bedsFromName('Room (0 guests)')).toBe(1);
+    });
+
+    it('defaults each new pass type to the beds in its name', () => {
+      setUnknown(['Twin Tent (2 guests)', 'Shared Tent']);
+      expect(component.newPassTypeBeds['Twin Tent (2 guests)']).toBe(2);
+      expect(component.newPassTypeBeds['Shared Tent']).toBe(1);
+    });
+
+    it('sends the chosen beds for a tent pass type, and none for festival', () => {
+      setUnknown(['Twin Tent (2 guests)', 'Day Pass']);
+      component.setBeds('Twin Tent (2 guests)', 3);
+      eventServiceSpy.createPassType.and.returnValue(of({ _id: 'px', event: 'evt1', name: 'x', category: 'tent' }));
+      boxOfficeServiceSpy.uploadBoxOfficeExcel.and.returnValue(of({ message: 'ok', ticketCount: 1 }));
+
+      component.upload();
+
+      expect(eventServiceSpy.createPassType).toHaveBeenCalledWith('evt1', { name: 'Twin Tent (2 guests)', category: 'tent', beds: 3 });
+      expect(eventServiceSpy.createPassType).toHaveBeenCalledWith('evt1', { name: 'Day Pass', category: 'festival' });
+    });
+
+    it('setBeds() keeps the value a whole number 1–20', () => {
+      setUnknown(['Shared Tent']);
+      component.setBeds('Shared Tent', 50);
+      expect(component.newPassTypeBeds['Shared Tent']).toBe(20);
+      component.setBeds('Shared Tent', '');
+      expect(component.newPassTypeBeds['Shared Tent']).toBe(1);
+      component.setBeds('Shared Tent', 2.6);
+      expect(component.newPassTypeBeds['Shared Tent']).toBe(3);
+    });
+
+    it('shows the Beds per pass field only for a tent category', () => {
+      setUnknown(['Shared Tent', 'Day Pass']);
+      fixture.detectChanges();
+      const labels = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.bu-unknown-field label')).map(l => l.textContent!.trim());
+      expect(labels.filter(l => l === 'Beds per pass').length).toBe(1);
+    });
+  });
+
+  describe('a user who is not a top role', () => {
+    beforeEach(() => userSubject.next({ _id: 'u2', role: 'TL' }));
+
+    it('is told to ask an admin, and Upload is blocked', () => {
+      component.selectedFile = new File(['data'], 'orders.xlsx');
+      component.preview = { rowCount: 1, orderIds: [1], itemNames: ['Shared Tent'] };
+      (component as any).recomputeUnknownPassNames();
+      fixture.detectChanges();
+
+      expect(component.canCreatePassTypes).toBeFalse();
+      expect(component.blockedByUnknownPassNames).toBeTrue();
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('Ask an admin to add these in Admin › Events first');
+      expect((fixture.nativeElement as HTMLElement).querySelector('.bu-unknown-field')).toBeNull();
+
+      component.upload();
+      expect(eventServiceSpy.createPassType).not.toHaveBeenCalled();
+      expect(boxOfficeServiceSpy.uploadBoxOfficeExcel).not.toHaveBeenCalled();
+      expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('Ask an admin to add the new pass types in Admin › Events first');
+    });
+
+    it('can still upload when every pass name already exists', () => {
+      component.selectedFile = new File(['data'], 'orders.xlsx');
+      component.preview = { rowCount: 1, orderIds: [1], itemNames: ['Festival Ticket'] };
+      (component as any).recomputeUnknownPassNames();
+      boxOfficeServiceSpy.uploadBoxOfficeExcel.and.returnValue(of({ message: 'ok', ticketCount: 1 }));
+
+      component.upload();
+      expect(boxOfficeServiceSpy.uploadBoxOfficeExcel).toHaveBeenCalled();
     });
   });
 

@@ -5,10 +5,10 @@ import { filter } from 'rxjs';
 import { Shopcart, Ticket } from '../../models/ticket.model';
 import { Tent } from '../../models/tent.model';
 import { BandHistoryEntry, BoxOfficeService } from '../box-office.service';
-import { AccomodationService, TentAllocationResult } from '../../accomodation/accomodation.service';
+import { AccomodationService, StayView, TentAllocationResult } from '../../accomodation/accomodation.service';
 import { NotificationService } from '../../core/notification.service';
 import { AuthService } from '../../core/auth.service';
-import { isFestivalPass } from '../box-office.utils';
+import { isFestivalPass, passDisplayName } from '../box-office.utils';
 import { GateFeedbackService } from '../../core/gate-feedback.service';
 import {
   BandPurpose, BandScanResult, BoxOfficeQrscannerPopupComponent, QrScannerData
@@ -20,6 +20,15 @@ import {
  * detail panel, so this logic lives in exactly one place rather than being
  * duplicated (and risking drift) across the two.
  */
+/** A pass kind chip: label, Material Symbols icon and colour class. */
+export interface PassKind { label: string; icon: string; cls: string; }
+
+const PASS_KINDS: { [category: string]: PassKind } = {
+  festival: { label: 'Festival Pass', icon: 'confirmation_number', cls: 'pk-festival' },
+  tent: { label: 'Tent Pass', icon: 'hotel', cls: 'pk-tent' },
+  addon: { label: 'Add-on', icon: 'add_circle', cls: 'pk-addon' },
+};
+
 @Component({
   selector: 'app-attendee-list',
   templateUrl: './attendee-list.component.html',
@@ -42,6 +51,9 @@ export class AttendeeListComponent implements OnChanges {
 
   /** allocatedTentId -> Tent, resolved lazily for the "Tent: SH13" readout. */
   tentLookup: Record<string, Tent> = {};
+
+  /** Bed model (I0): Tent Pass id -> its beds and who is in them. */
+  stays: Record<string, StayView> = {};
 
   /** passId -> its bands, newest first; loaded when the band details open. */
   bandHistory: Record<string, BandHistoryEntry[]> = {};
@@ -66,8 +78,28 @@ export class AttendeeListComponent implements OnChanges {
         this.resetView();
       }
       this.loadTentDetails();
+      this.loadStays();
     }
   }
+
+  /** Every Tent Pass's beds (who is in them may come from a linked booking). */
+  private loadStays() {
+    for (const item of this.ticket?.shopcart ?? []) {
+      if (this.isFestivalPass(item) || !item._id) continue;
+      this.accomodationService.getStay(item._id).subscribe({
+        next: (s) => this.stays[item._id!] = s,
+        error: () => { /* best-effort display only */ }
+      });
+    }
+  }
+
+  /** Beds of a Tent Pass (from its stay once loaded). */
+  bedsOf(item: Shopcart): number { return this.stays[item._id!]?.beds ?? item.beds ?? 1; }
+  /** Beds taken. Before the stay loads: 1 when the pass has a unit. */
+  bedsUsed(item: Shopcart): number { return this.stays[item._id!]?.used ?? (item.allocatedTentId ? 1 : 0); }
+  bedsFree(item: Shopcart): boolean { return this.bedsUsed(item) < this.bedsOf(item); }
+  peopleIn(item: Shopcart): StayView['people'] { return this.stays[item._id!]?.people ?? []; }
+  trackPerson = (_: number, p: { _id: string }) => p._id;
 
   /** Back to the attendee rows — closes any open Counter Form / Allocate Tent. */
   resetView() {
@@ -112,6 +144,23 @@ export class AttendeeListComponent implements OnChanges {
 
   isFestivalPass(item: Shopcart): boolean {
     return isFestivalPass(item);
+  }
+
+  /**
+   * The kind of pass (ui 1.69.0): only the icon shows it (ticket = festival,
+   * hotel = tent, plus = add-on), followed by the item's own pass name.
+   * The label is the icon's tooltip / screen-reader text, never shown. Fixed objects, so change detection
+   * gets the same identity every time. An item with no category falls back
+   * to the old name match (festival, else tent).
+   */
+  /** Pass name after the type icon: passTypeName (Box Office flow), else item_name (uploads / old items). */
+  passName(item: Shopcart): string {
+    return passDisplayName(item);
+  }
+
+  passKind(item: Shopcart): PassKind {
+    const cat = item.category || (isFestivalPass(item) ? 'festival' : 'tent');
+    return PASS_KINDS[cat] || PASS_KINDS['tent'];
   }
 
   attendeeInitials(item: Shopcart): string {
@@ -249,6 +298,7 @@ export class AttendeeListComponent implements OnChanges {
 
   onTentAllocated(result: TentAllocationResult) {
     this.tentLookup[result.tent._id!] = result.tent;
+    if (result.stay) this.stays[result.tentPassItem._id!] = result.stay;
     this.replaceShopcartItem(result.tentPassItem);
     if (result.festivalPassItem) {
       this.replaceShopcartItem(result.festivalPassItem);
@@ -260,10 +310,15 @@ export class AttendeeListComponent implements OnChanges {
     this.activeAllocateItem = null;
   }
 
-  vacateAttendee(item: Shopcart) {
-    this.accomodationService.vacateTentSlot(item._id!).subscribe({
+  /**
+   * Frees one bed: a Festival Pass's own bed, or — from a Tent Pass row — the
+   * bed of `person` (needed when several beds are taken).
+   */
+  vacateAttendee(item: Shopcart, person?: { _id: string }) {
+    this.accomodationService.vacateTentSlot(item._id!, person?._id).subscribe({
       next: (result) => {
-        this.replaceShopcartItem(result.tentPassItem);
+        if (result.stay && result.tentPassItem?._id) this.stays[result.tentPassItem._id] = result.stay;
+        if (result.tentPassItem) this.replaceShopcartItem(result.tentPassItem);
         if (result.festivalPassItem) {
           this.replaceShopcartItem(result.festivalPassItem);
         }
