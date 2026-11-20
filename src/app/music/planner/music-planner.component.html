@@ -1,0 +1,131 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Music Planner</div>
+    <div class="page-ph-sub">{{ event?.name || 'No event selected' }} · slots by stage</div>
+  </div>
+  <button type="button" class="btn-cta" *ngIf="canAdd" (click)="openNew()">+ New slot</button>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
+</div>
+
+<div class="mu-page">
+  <div class="alert alert-warning" *ngIf="!event && !loading">Pick an event in the sidebar to see its music.</div>
+  <div class="alert alert-danger" *ngIf="loadError">{{ loadError }} <a href="#" (click)="$event.preventDefault(); load()">Try again</a></div>
+  <div class="alert alert-danger" *ngIf="calendarError">{{ calendarError }}</div>
+
+  <div class="mu-board" [hidden]="!event">
+    <div class="mu-bar">
+      <div class="mu-days" role="tablist" aria-label="Day">
+        <button type="button" class="mu-day" role="tab" *ngFor="let d of days; trackBy: trackDay"
+                [class.on]="d.date === day" [attr.aria-selected]="d.date === day" (click)="setDay(d.date)">
+          <b>{{ d.label }}</b><span>{{ d.sub }} · {{ dayCounts.get(d.date) || 0 }} slot{{ dayCounts.get(d.date) === 1 ? '' : 's' }}</span>
+        </button>
+      </div>
+      <div class="mu-legend" *ngIf="stages.length">
+        <span><i class="mu-lg-slot"></i>Slot</span>
+        <span><i class="mu-lg-sc"></i>Sound check</span>
+        <span><i class="mu-lg-clash"></i>Clash</span>
+      </div>
+    </div>
+
+    <div class="mu-hint" *ngIf="data && stages.length">
+      <ng-container *ngIf="canEdit; else readOnly">
+        Drag a slot to another stage or time, drag its bottom edge to change its length, or select empty time to add one
+        (on a phone: tap an empty slot). The sound check moves with its slot. A clash shows a warning but is allowed.
+        A slot past midnight shows on both days: tap it to change its times. The red line is now.
+      </ng-container>
+      <ng-template #readOnly>Tap a slot for its details.</ng-template>
+    </div>
+    <div class="mu-hint warn" *ngIf="data && canEdit && stages.length && !acts.length">
+      Add the acts first in <a routerLink="/music/setup">Setup</a>, then plan their slots here.
+    </div>
+    <div class="mu-hint warn" *ngIf="data && noEventDates">
+      This event has no dates yet, so only days with slots are shown. Set the dates in Admin › Events.
+    </div>
+
+    <div class="mu-empty" *ngIf="data && !stages.length">
+      <mat-icon class="ms-fill">queue_music</mat-icon>
+      <p>No stages for this event yet.</p>
+      <a class="btn-cta" routerLink="/music/setup">Go to Setup</a>
+    </div>
+
+    <div class="mu-scroller" [hidden]="!stages.length">
+      <div class="mu-cal" [style.min-width.px]="(stages.length || 1) * 150 + 60">
+        <div #dpEl></div>
+      </div>
+    </div>
+    <div class="mu-credit">Calendar: DayPilot Lite (open source, Apache-2.0)</div>
+  </div>
+
+  <!-- ── A slot: details (view) or the form (edit / new) ───────── -->
+  <app-slide-panel [open]="panelOpen" icon="music_note" [title]="panelTitle" [subtitle]="panelSubtitle" (closed)="closePanel()">
+    <div class="mu-form" *ngIf="panelOpen">
+      <ng-container *ngIf="canEdit; else details">
+        <div class="field">
+          <label>Act *</label>
+          <app-select [(ngModel)]="form.act" placeholder="Pick an artist / band" (ngModelChange)="checkForm()">
+            <app-option *ngFor="let a of acts; trackBy: trackId" [value]="a._id">{{ a.name }}{{ a.genre ? ' · ' + a.genre : '' }}</app-option>
+          </app-select>
+        </div>
+        <div class="field">
+          <label>Stage *</label>
+          <app-select [(ngModel)]="form.stage" placeholder="Pick a stage" (ngModelChange)="checkForm()">
+            <app-option *ngFor="let s of stages; trackBy: trackId" [value]="s._id">{{ s.name }}</app-option>
+          </app-select>
+        </div>
+        <div class="mu-two">
+          <div class="field"><label for="mu-start">Start *</label>
+            <app-date-time inputId="mu-start" ariaLabel="Start" [(ngModel)]="form.start" (change)="checkForm()"></app-date-time></div>
+          <div class="field"><label for="mu-end">End *</label>
+            <app-date-time inputId="mu-end" ariaLabel="End" [(ngModel)]="form.end" [min]="form.start" (change)="checkForm()"></app-date-time></div>
+        </div>
+
+        <button type="button" class="toggle-chip mu-sc-toggle" role="switch" [class.on]="form.soundCheck"
+                [attr.aria-checked]="form.soundCheck" (click)="toggleSoundCheck()">
+          <mat-icon>graphic_eq</mat-icon>Sound check
+        </button>
+        <div class="mu-two" *ngIf="form.soundCheck">
+          <div class="field"><label for="mu-sc-start">Sound check from</label>
+            <app-date-time inputId="mu-sc-start" ariaLabel="Sound check from" [(ngModel)]="form.scStart" [max]="form.start" (change)="checkForm()"></app-date-time></div>
+          <div class="field"><label for="mu-sc-end">Sound check until</label>
+            <app-date-time inputId="mu-sc-end" ariaLabel="Sound check until" [(ngModel)]="form.scEnd" [min]="form.scStart" [max]="form.start" (change)="checkForm()"></app-date-time></div>
+        </div>
+
+        <div class="warn-banner" *ngIf="formClashes.length" role="status">
+          <mat-icon>warning</mat-icon>
+          <div>
+            <b>Clashes with</b>
+            <ul><li *ngFor="let c of formClashes; trackBy: trackText">{{ c.text }}</li></ul>
+            <small>You can still save it.</small>
+          </div>
+        </div>
+
+        <div class="field-error" *ngIf="formError">{{ formError }}</div>
+        <div class="mu-acts">
+          <button type="button" class="btn-danger" *ngIf="editing" (click)="remove()">Delete</button>
+          <span class="mu-grow"></span>
+          <button type="button" class="btn-ghost" (click)="closePanel()">Cancel</button>
+          <button type="button" class="btn-cta" [disabled]="busy" (click)="save()">{{ editing ? 'Save' : 'Add slot' }}</button>
+        </div>
+      </ng-container>
+
+      <ng-template #details>
+        <dl class="mu-dl" *ngIf="editing">
+          <dt>When</dt><dd>{{ when(editing.start) }}–{{ time(editing.end) }}</dd>
+          <dt>Stage</dt><dd>{{ stageName(editing.stage) }}</dd>
+          <ng-container *ngIf="editing.soundCheckStart">
+            <dt>Sound check</dt><dd>{{ time(editing.soundCheckStart) }}–{{ time(editing.soundCheckEnd) }}</dd>
+          </ng-container>
+          <ng-container *ngIf="actOf(editing.act) as a">
+            <ng-container *ngIf="a.genre"><dt>Genre</dt><dd>{{ a.genre }}</dd></ng-container>
+            <ng-container *ngIf="a.contactName || a.contactPhone">
+              <dt>Contact</dt>
+              <dd>{{ a.contactName }}<a *ngIf="a.contactPhone" [href]="'tel:' + a.contactPhone"> {{ a.contactPhone }}</a></dd>
+            </ng-container>
+            <ng-container *ngIf="a.notes"><dt>Notes</dt><dd>{{ a.notes }}</dd></ng-container>
+          </ng-container>
+        </dl>
+      </ng-template>
+    </div>
+  </app-slide-panel>
+</div>

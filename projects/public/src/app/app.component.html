@@ -57,12 +57,12 @@
   <main class="wrap">
     <pub-news-ticker *ngIf="view === 'home'" [news]="news" [now]="now" (all)="go('news')"></pub-news-ticker>
     <pub-alerts-card *ngIf="view === 'home'"></pub-alerts-card>
-    <pub-home-view *ngIf="view === 'home'" [event]="ev" [sessions]="sessions" [now]="now"
+    <pub-home-view *ngIf="view === 'home'" [event]="ev" [sessions]="sessions" [music]="music" [now]="now"
                    (open)="openSession($event)" (schedule)="go('schedule')"></pub-home-view>
     <pub-find-way *ngIf="view === 'home'" [pins]="pins" [areas]="areas" [help]="help"
                   (openMap)="openMap($event)" (openHelp)="openHelp($event)"></pub-find-way>
     <pub-highlights *ngIf="view === 'home'" [photos]="photos" [stats]="stats" [phase]="ev.phase"></pub-highlights>
-    <pub-schedule-view *ngIf="view === 'schedule'" [event]="ev" [sessions]="sessions" [now]="now"
+    <pub-schedule-view *ngIf="view === 'schedule'" [event]="ev" [sessions]="sessions" [music]="music" [now]="now"
                        (open)="openSession($event)"></pub-schedule-view>
 
     <pub-news-view *ngIf="view === 'news'" [news]="news" [now]="now"></pub-news-view>

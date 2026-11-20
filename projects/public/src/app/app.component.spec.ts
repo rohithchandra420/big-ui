@@ -30,7 +30,8 @@ describe('AppComponent (public shell)', () => {
 
   beforeEach(async () => {
     history.replaceState(null, '', location.pathname);
-    apiSpy = jasmine.createSpyObj('PublicApiService', ['event', 'sessions', 'news', 'map', 'highlights']);
+    apiSpy = jasmine.createSpyObj('PublicApiService', ['event', 'sessions', 'news', 'map', 'highlights', 'music']);
+    apiSpy.music.and.returnValue(of({ data: { off: false, music: [] }, at: Date.now(), offline: false }));
     apiSpy.event.and.returnValue(of({ data: during, at: Date.now(), offline: false }));
     apiSpy.sessions.and.returnValue(of({ data: { off: false, sessions: [] }, at: Date.now(), offline: false }));
     apiSpy.news.and.returnValue(of({ data: { off: false, news: [] }, at: Date.now(), offline: false }));
