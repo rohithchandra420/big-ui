@@ -15,6 +15,9 @@ export interface PassType {
   // Bed model (I0): beds one Tent Pass of this type gives — one Festival Pass
   // per bed. Tent category only; default 1. "Beds per pass" in Admin › Events.
   beds?: number;
+  // External Booking Import (I1): the sales system's item_code ("Sales system
+  // code"), stored lower-case. The importer matches on it first, then the name.
+  externalCode?: string;
 }
 
 export interface EventItem {

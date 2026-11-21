@@ -19,11 +19,17 @@
     <button class="btn-secondary" (click)="searchManually()">Search</button>
   </div>
 
+  <!-- This booking's Festival Passes with no details can't take a bed yet -->
+  <div class="at-unfilled" *ngIf="unfilledInBooking > 0">
+    <mat-icon aria-hidden="true">info</mat-icon>
+    <span>{{ unfilledInBooking }} Festival {{ unfilledInBooking === 1 ? 'Pass' : 'Passes' }} in this booking still {{ unfilledInBooking === 1 ? 'needs its' : 'need their' }} details: fill {{ unfilledInBooking === 1 ? 'it' : 'them' }} at the counter first.</span>
+  </div>
+
   <div *ngIf="festivalPassSuggestions.length === 0" style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
     No matches yet — try searching by name, phone or email.
   </div>
 
-  <div class="att-row" *ngFor="let candidate of festivalPassSuggestions"
+  <div class="att-row" *ngFor="let candidate of festivalPassSuggestions; trackBy: trackSuggestion"
        [class.selected]="selectedFestivalPassId === candidate._id"
        style="cursor: pointer;"
        (click)="selectFestivalPass(candidate)">
@@ -42,9 +48,12 @@
       <span class="cb-box"></span>
     </label>
     <div class="att-info">
-      <div class="att-name">{{ candidate.name || 'Attendee' }}</div>
+      <div class="att-name">
+        {{ candidate.name || 'Attendee' }}
+        <span class="badge bb at-same" *ngIf="candidate.sameBooking">This booking</span>
+      </div>
       <div class="att-pass">
-        Order #{{ candidate.order_id }} · {{ candidate.phone_no }} · {{ candidate.email }}{{ candidate.gender ? ' · ' + candidate.gender : '' }}
+        <span class="mono" *ngIf="bookingLabel(candidate)">{{ bookingLabel(candidate) }} · </span>{{ candidate.phone_no }} · {{ candidate.email }}{{ candidate.gender ? ' · ' + candidate.gender : '' }}
       </div>
     </div>
   </div>

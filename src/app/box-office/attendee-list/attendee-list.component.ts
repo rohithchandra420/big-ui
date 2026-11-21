@@ -8,7 +8,7 @@ import { BandHistoryEntry, BoxOfficeService } from '../box-office.service';
 import { AccomodationService, StayView, TentAllocationResult } from '../../accomodation/accomodation.service';
 import { NotificationService } from '../../core/notification.service';
 import { AuthService } from '../../core/auth.service';
-import { isFestivalPass, passDisplayName } from '../box-office.utils';
+import { hasExtraBed, isFestivalPass, isTentPass as isTentPassItem, passDisplayName } from '../box-office.utils';
 import { GateFeedbackService } from '../../core/gate-feedback.service';
 import {
   BandPurpose, BandScanResult, BoxOfficeQrscannerPopupComponent, QrScannerData
@@ -37,6 +37,11 @@ const PASS_KINDS: { [category: string]: PassKind } = {
 export class AttendeeListComponent implements OnChanges {
 
   @Input() ticket!: Ticket;
+
+  /** External Booking Import: the booking has an Extra bed add-on (tag on its Tent Pass rows). */
+  get extraBed(): boolean {
+    return hasExtraBed(this.ticket);
+  }
 
   /**
    * Shows an "Edit" action on rows with complete details, opening the same
@@ -85,7 +90,7 @@ export class AttendeeListComponent implements OnChanges {
   /** Every Tent Pass's beds (who is in them may come from a linked booking). */
   private loadStays() {
     for (const item of this.ticket?.shopcart ?? []) {
-      if (this.isFestivalPass(item) || !item._id) continue;
+      if (!this.isTentPass(item) || !item._id) continue;
       this.accomodationService.getStay(item._id).subscribe({
         next: (s) => this.stays[item._id!] = s,
         error: () => { /* best-effort display only */ }
@@ -144,6 +149,11 @@ export class AttendeeListComponent implements OnChanges {
 
   isFestivalPass(item: Shopcart): boolean {
     return isFestivalPass(item);
+  }
+
+  /** Only a Tent Pass gets Allocate / Vacate; an add-on (e.g. Extra bed) takes no bed. */
+  isTentPass(item: Shopcart): boolean {
+    return isTentPassItem(item);
   }
 
   /**

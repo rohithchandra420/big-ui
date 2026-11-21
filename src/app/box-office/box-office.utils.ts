@@ -1,4 +1,4 @@
-import { Shopcart, Ticket, TicketEmailStatus } from '../models/ticket.model';
+import { Shopcart, Ticket, TicketEmailStatus, TicketKind } from '../models/ticket.model';
 
 // Introducing Events (see INTRODUCING_EVENTS_CONTEXT.md) — replaces the old
 // hardcoded FESTIVAL_PASS_NAMES/ALL_ITEM_NAMES lists. Which passes exist and
@@ -19,12 +19,41 @@ export function isFestivalPass(item: Pick<Shopcart, 'category' | 'item_name'>): 
     return LEGACY_FESTIVAL_PASS_NAMES.includes(item.item_name);
 }
 
+/** A Tent Pass (takes beds). An add-on never is; a legacy pass with no category is when it isn't a Festival Pass. */
+export function isTentPass(item: Pick<Shopcart, 'category' | 'item_name'>): boolean {
+    if (item.category) return item.category === 'tent';
+    return !isFestivalPass(item);
+}
+
 // Spot Registration has no dedicated "source" field on Ticket — instead the backend
 // (see boxOffice.js's /createTicket) auto-generates transaction_id as `SPOT-<timestamp>`
 // whenever a walk-in registration omits one. That prefix doubles as the source marker,
 // avoiding a schema migration for a field that's otherwise unused elsewhere.
 export function isSpotRegistration(ticket: Ticket): boolean {
     return !!ticket.transaction_id?.startsWith('SPOT-');
+}
+
+// ── External Booking Import (I2) ──
+
+/** Booking ID: the sales system's reference, else the order number. */
+export function bookingIdOf(ticket: Pick<Ticket, 'reference' | 'order_id'> | null | undefined): string {
+    if (!ticket) return '';
+    return ticket.reference || String(ticket.order_id ?? '');
+}
+
+const PAYMENT_METHOD_LABELS: Record<TicketKind, string> = { online: 'Online', offline: 'Offline', guest_list: 'Guest list' };
+
+/** "Online" / "Offline" / "Guest list" for an imported booking; '' otherwise. */
+export function paymentMethodLabel(ticket: Pick<Ticket, 'kind'> | null | undefined): string {
+    return ticket?.kind ? (PAYMENT_METHOD_LABELS[ticket.kind] || '') : '';
+}
+
+const EXTRA_BED = /extra[\s_-]*bed/i;
+
+/** The booking has an "Extra bed" add-on (no bed of its own: shown as a tag on its Tent Pass). */
+export function hasExtraBed(ticket: Pick<Ticket, 'shopcart'> | null | undefined): boolean {
+    return (ticket?.shopcart || []).some(i => i.category === 'addon' && i.isActive !== false
+        && (EXTRA_BED.test(i.passTypeName || i.item_name || '') || EXTRA_BED.test(i.externalCode || '')));
 }
 
 // Display name for a pass item — passTypeName (new Box Office flow) with a

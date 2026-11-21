@@ -80,7 +80,7 @@
                   <div class="occupant-card-row occupant-gender-row"><mat-icon>wc</mat-icon>{{ o.gender || '—' }}</div>
                   <div class="occupant-card-row"><mat-icon>call</mat-icon>{{ o.phone_no || '—' }}</div>
                   <div class="occupant-card-row"><mat-icon>mail</mat-icon>{{ o.email || '—' }}</div>
-                  <div class="occupant-card-row"><mat-icon>receipt_long</mat-icon>Order #{{ o.order_id }}</div>
+                  <div class="occupant-card-row" *ngIf="o.order_id != null"><mat-icon>receipt_long</mat-icon>Order #{{ o.order_id }}</div>
                   <div class="occupant-card-row">
                     <span class="badge-admit" [class.in]="o.isAdmitted" [class.out]="!o.isAdmitted">
                       {{ o.isAdmitted ? 'Admitted' : 'Not admitted' }}

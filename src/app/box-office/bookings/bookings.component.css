@@ -20,6 +20,22 @@
   word-break: break-word;
 }
 
+/* Header actions: wrap on phones instead of pushing the page wide. */
+.bk-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* Paid-at time under the payment method (External Booking Import). */
+.pay-sub { margin-top: 4px; font-size: 11px; color: var(--text-secondary); }
+
+/* Linked bookings in the detail panel: tap one to find it. */
+.bk-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; color: var(--text-primary); }
+.bk-links-l { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.bk-links-l mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.bk-link {
+  font-size: 11px; padding: 3px 9px; border-radius: 20px; cursor: pointer;
+  border: 1px solid var(--border-default); background: var(--surface-input); color: var(--text-primary);
+}
+.bk-link:hover, .bk-link:focus-visible { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary); outline: none; }
+
 /* Ticket Email status filter, next to the search box (same sizing as the Users page filters). */
 .email-status-filter {
   width: 220px;

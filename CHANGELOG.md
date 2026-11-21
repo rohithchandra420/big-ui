@@ -13,6 +13,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.70.0] - 2026-11-21
+
+### Added
+- **Bookings › Import bookings:** upload the sales system's CSV or Excel export in a slide panel (bottom sheet on phones). A preview lists what will be created, skipped or changed since the last import, rows with errors and unknown pass types (an admin can create these on the spot). Then **Import**, and a report.
+- **Bookings and booking details:** the Booking ID, payment method (Online / Offline / Guest list), when it was paid and the linked bookings. A Tent Pass shows an **Extra bed** tag when the booking bought one.
+- **Admin › Events › Pass Types:** "Sales system code".
+
+### Changed
+- **Allocate Tent:** each suggestion shows its **Booking ID** (or the order number). The booking's own people come first, tagged **This booking**. When some of the booking's Festival Passes still need their details, the panel says how many, to be filled at the counter first. The booking's own people are also listed when the Tent Pass and the buyer have no details to search on.
+- Places that showed "Order #" now handle a booking that has no order number.
+
+### Fixed
+- **Booking details:** an add-on (Extra bed, Car Pass…) showed **Allocate Tent**, which could only fail. Only a Tent Pass has Allocate / Vacate now.
+
+---
+
 ## [1.69.0] - 2026-11-20
 
 ### Changed

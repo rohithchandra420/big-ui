@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
 import { Gender, Shopcart, Ticket } from '../../../models/ticket.model';
 import { Tent } from '../../../models/tent.model';
-import { AccomodationService, StayView, TentAllocationResult } from '../../../accomodation/accomodation.service';
+import { AccomodationService, StayView, SuggestedPass, TentAllocationResult } from '../../../accomodation/accomodation.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventService } from '../../../core/event.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -26,7 +26,9 @@ export class AllocateTentComponent implements OnInit {
   /** Only used as a fallback when the selected Festival Pass has no gender on file yet. */
   localGender: Gender | '' = '';
 
-  festivalPassSuggestions: Shopcart[] = [];
+  festivalPassSuggestions: SuggestedPass[] = [];
+  /** This booking's Festival Passes with no bed yet that still need their details. */
+  unfilledInBooking = 0;
   selectedFestivalPassId: string | null = null;
   manualSearchTerm = '';
 
@@ -67,10 +69,10 @@ export class AllocateTentComponent implements OnInit {
     // — a blank Tent Pass still belongs to a real booking, and the buyer is
     // very often (not always, for group bookings) the right Festival Pass.
     // Staff can still search manually if this guess is wrong.
-    const seed = this.searchSeed();
-    if (seed) {
-      this.loadSuggestions(seed);
-    }
+    //
+    // 2026-11-21: always asked, even with no seed — the server puts this Tent
+    // Pass's own booking's filled-in Festival Passes first (sameBooking).
+    this.loadSuggestions(this.searchSeed() ?? {});
     this.loadVacantTents();
     this.loadStay();
   }
@@ -117,14 +119,17 @@ export class AllocateTentComponent implements OnInit {
 
   private loadSuggestions(params: { name?: string; phone?: string; email?: string }, notifyIfNoEvent = false) {
     const activeEvent = this.eventService.currentActiveEvent;
-    if (!activeEvent) {
+    if (!activeEvent || !this.shopItem._id) {
       this.festivalPassSuggestions = [];
-      if (notifyIfNoEvent) this.notificationService.openErrorSnackBar('No event selected');
+      if (!activeEvent && notifyIfNoEvent) this.notificationService.openErrorSnackBar('No event selected');
       return;
     }
-    this.accomodationService.suggestFestivalPassMatches(activeEvent._id, params).subscribe({
-      next: (res) => this.festivalPassSuggestions = res,
-      error: () => this.festivalPassSuggestions = []
+    this.accomodationService.suggestFestivalPassMatches(activeEvent._id, this.shopItem._id, params).subscribe({
+      next: (res) => {
+        this.festivalPassSuggestions = res?.matches ?? [];
+        this.unfilledInBooking = res?.unfilledInBooking ?? 0;
+      },
+      error: () => { this.festivalPassSuggestions = []; this.unfilledInBooking = 0; }
     });
   }
 
@@ -176,6 +181,14 @@ export class AllocateTentComponent implements OnInit {
     }
     this.loadSuggestions({ name: term, phone: term, email: term }, true);
   }
+
+  /** "Booking TST-1", else "Order #42" for a pass without a Booking ID; '' if neither. */
+  bookingLabel(p: Shopcart): string {
+    if (p.bookingId) return 'Booking ' + p.bookingId;
+    return p.order_id != null ? 'Order #' + p.order_id : '';
+  }
+
+  trackSuggestion = (_: number, p: SuggestedPass) => p._id;
 
   get selectedFestivalPass(): Shopcart | null {
     return this.festivalPassSuggestions.find(c => c._id === this.selectedFestivalPassId) ?? null;

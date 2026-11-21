@@ -166,6 +166,7 @@
   color: var(--text-primary);
 }
 .code-chip-unset { color: var(--text-secondary); font-style: italic; font-weight: 400; }
+.pt-ext-chip { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .pt-actions {
   display: flex;
