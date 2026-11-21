@@ -1,0 +1,99 @@
+<p class="vl-muted" *ngIf="loading">Loading…</p>
+<div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+<div class="vl-prof" *ngIf="profile as p">
+  <div class="vl-prof-top">
+    <app-user-avatar [userId]="p._id" [name]="p.name" [version]="p.avatarVersion" [size]="56"></app-user-avatar>
+    <div>
+      <b>{{ p.name }}</b>
+      <small>{{ isTl ? 'Team Lead · ' + (p.teams || []).join(', ') : p.unassigned ? 'Unassigned' : p.department?.name }}</small>
+    </div>
+  </div>
+
+  <div class="vl-facts">
+    <div class="vl-fact"><mat-icon>{{ markedToday ? 'event_available' : 'event_busy' }}</mat-icon>
+      <b>{{ markedToday ? 'Marked' : 'Not marked' }}</b><small>Attendance today</small></div>
+    <div class="vl-fact"><mat-icon>restaurant</mat-icon><b>{{ p.meals }} meal{{ p.meals === 1 ? '' : 's' }}</b><small>Served so far</small></div>
+    <div class="vl-fact"><mat-icon>{{ p.stay ? 'bed' : 'no_meeting_room' }}</mat-icon><b>{{ p.stay ? 'Has a bed' : 'No bed' }}</b><small>Stay</small></div>
+  </div>
+
+  <div>
+    <p class="section-lbl">Contact</p>
+    <dl class="vl-kv">
+      <dt>Phone</dt><dd><a *ngIf="p.phone; else noPhone" [href]="'tel:' + p.phone">{{ p.phone }}</a><ng-template #noPhone>Not given</ng-template></dd>
+      <dt>Email</dt><dd><a [href]="'mailto:' + p.email">{{ p.email }}</a></dd>
+    </dl>
+  </div>
+
+  <!-- Joining Time: Expected Join Time + Reported Time, Mark reported / Undo -->
+  <div>
+    <p class="section-lbl">Joining</p>
+    <app-reported [userId]="p._id" [eventId]="eventId" [name]="p.name" [role]="p.role || 'VOL'"
+                  [home]="p.unassigned ? '' : (p.department?._id || '')"
+                  [expectedAt]="p.dateOfJoining" [reportedAt]="p.reportedAt" [reportedBy]="p.reportedBy"
+                  (changed)="onReported($event)"></app-reported>
+  </div>
+
+  <div>
+    <p class="section-lbl">Details</p>
+    <dl class="vl-kv">
+      <dt>{{ isTl ? 'Leads' : 'Department' }}</dt>
+      <dd>{{ isTl ? (p.teams || []).join(', ') : p.unassigned ? 'Unassigned (Volunteer pool)' : p.department?.name }}</dd>
+      <dt>Food</dt><dd>{{ p.foodPreference === 'non-veg' ? 'Non-veg' : 'Veg' }}</dd>
+      <dt>Gender</dt><dd>{{ p.gender || 'Not given' }}</dd>
+      <dt>Stay</dt><dd>{{ p.stay ? (p.stay.unit + (p.stay.type ? ' · ' + p.stay.type : '') + (p.stay.movedIn ? '' : ' · not moved in yet')) : 'No bed given yet' }}</dd>
+      <dt>Staff band</dt><dd>{{ p.band ? 'Linked' : 'Not linked' }}</dd>
+      <ng-container *ngIf="!isTl">
+        <dt>Deposit</dt><dd>{{ depositLabel[p.deposit.status] }}<ng-container *ngIf="p.deposit.amount"> · {{ money(p.deposit.amount) }}</ng-container></dd>
+      </ng-container>
+    </dl>
+    <!-- B-010: link / replace the staff band (only when the server allows it for this person) -->
+    <div class="vl-band" *ngIf="band">
+      <button type="button" class="pill-btn" [disabled]="bandBusy" (click)="changeBand(!!band.current)">
+        <mat-icon>watch</mat-icon>{{ band.current ? 'Replace band' : 'Link band' }}
+      </button>
+      <ng-container *ngIf="bandReasonOpen">
+        <input class="vl-band-reason" type="text" maxlength="200" [(ngModel)]="bandReason" placeholder="Why replace? e.g. Lost it"
+               aria-label="Reason to replace the band" (keyup.enter)="changeBand(true)" />
+        <button type="button" class="pill-btn" [disabled]="!bandReason.trim() || bandBusy" (click)="changeBand(true)"><mat-icon>qr_code_scanner</mat-icon>Scan new band</button>
+      </ng-container>
+    </div>
+  </div>
+
+  <div>
+    <p class="section-lbl">Attendance · last {{ p.attendance.length }} days</p>
+    <div class="vl-att" [style.--days]="p.attendance.length">
+      <span></span><span class="vl-att-d" *ngFor="let d of p.attendance">{{ d.date | date: 'EEE' }}</span>
+      <span class="vl-att-r">Morning</span><i *ngFor="let d of p.attendance" [class.y]="d.morning"></i>
+      <span class="vl-att-r">Afternoon</span><i *ngFor="let d of p.attendance" [class.y]="d.afternoon"></i>
+      <span class="vl-att-r">Night</span><i *ngFor="let d of p.attendance" [class.y]="d.night"></i>
+    </div>
+    <p class="vl-muted">Green = marked. Marking stays in My Department.</p>
+  </div>
+
+  <!-- Location on request (V3): only for people who may ask -->
+  <div *ngIf="showLocation">
+    <p class="section-lbl">Location</p>
+    <p class="vl-muted" *ngIf="locationLoading">Loading…</p>
+    <ng-container *ngIf="location as loc">
+      <p class="vl-muted" *ngIf="!loc.sharing">{{ p.name }} has not turned on location sharing in their profile, so they cannot be asked.</p>
+      <div class="vl-loc-row" *ngIf="loc.sharing">
+        <span class="vl-pill" [class.no]="loc.waiting" [class.ok]="!loc.waiting">{{ loc.waiting ? 'Waiting for an answer' : 'Shares when asked' }}</span>
+        <button type="button" class="pill-btn" [disabled]="asking || loc.waiting" (click)="askLocation()"><mat-icon>location_searching</mat-icon>Ask location</button>
+        <button type="button" class="pill-btn" *ngIf="loc.waiting" [disabled]="locationLoading" (click)="loadLocation()"><mat-icon>refresh</mat-icon>Check</button>
+      </div>
+      <p class="vl-muted" *ngIf="loc.sharing && loc.waiting">They get a notification and a prompt in BiG. A request with no answer ends after {{ loc.requestHours }} hours.</p>
+      <ng-container *ngIf="loc.latest as at">
+        <div class="vl-map" #locMap></div>
+        <p class="vl-muted">Last answer {{ at.answeredAt | date: 'd MMM, h:mm a' }} · asked by {{ at.askedBy }} ·
+          <a [href]="mapsLink(at.lat, at.lng)" target="_blank" rel="noopener">Open in Maps</a></p>
+      </ng-container>
+      <ul class="vl-log" *ngIf="loc.log.length">
+        <li *ngFor="let l of loc.log">{{ locationLabel[l.status] }}<small>Asked {{ l.askedAt | date: 'd MMM, h:mm a' }} · {{ l.askedBy }}</small></li>
+      </ul>
+      <p class="vl-muted" *ngIf="loc.sharing && !loc.log.length">Never asked yet.</p>
+    </ng-container>
+  </div>
+
+  <!-- Page-specific sections (Volunteers: Move to; My Department: Role) -->
+  <ng-content></ng-content>
+</div>

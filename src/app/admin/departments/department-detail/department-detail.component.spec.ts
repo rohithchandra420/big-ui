@@ -116,7 +116,7 @@ describe('DepartmentDetailComponent', () => {
     });
 
     it('offers only the built-in keys, and says when the picked key is shared', () => {
-      expect(component.accessKeys.map(k => k.key)).toEqual(['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk']);
+      expect(component.accessKeys.map(k => k.key)).toEqual(['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk', 'music']);
       component.editForm.get('key')!.setValue('workshop');
       expect(component.sharedWith).toBe('Workshop Tent A');
       expect(component.keyAbout).toContain('door');
@@ -168,6 +168,46 @@ describe('DepartmentDetailComponent', () => {
       const closed = spyOn(component.closed, 'emit');
       component.cancel();
       expect(closed).toHaveBeenCalled();
+    });
+  });
+
+  describe('B-001: every detail in the view', () => {
+    const viewWith = (detail: DeptDetail, eventId = '') => {
+      adminServiceSpy.getDepartmentDetail.and.returnValue(of(detail));
+      component.eventId = eventId;
+      component.reset();
+      fixture.detectChanges();
+    };
+
+    it('shows the access key with what it opens', () => {
+      const facts = fixture.nativeElement.querySelector('.dd-facts') as HTMLElement;
+      expect(component.viewKey?.key).toBe('box-office');
+      expect(facts.textContent).toContain('Box Office');
+      expect(facts.textContent).toContain(component.viewKey!.about);
+    });
+
+    it('lists the other departments that share the key, never for general', () => {
+      viewWith({ ...mockDetail, _id: 'd2', name: 'Workshop Tent B', key: 'workshop' });
+      expect(component.viewSharedWith).toBe('Workshop Tent A');
+      expect(fixture.nativeElement.textContent).toContain('Workshop Tent A');
+      viewWith({ ...mockDetail, _id: 'd3', name: 'Logistics', key: 'general' });
+      expect(component.viewSharedWith).toBe('');
+    });
+
+    it('shows volunteers needed for the sidebar event, and how many are in the department', fakeAsync(() => {
+      viewWith(mockDetail, 'e1');
+      flushMicrotasks();
+      fixture.detectChanges();
+      expect(volunteersSpy.need).toHaveBeenCalledWith('e1', 'd1');
+      expect(component.viewNeed).toEqual({ needed: 4, have: 1, canSet: true });
+      const text = (fixture.nativeElement.querySelector('.dd-facts') as HTMLElement).textContent!;
+      expect(text).toContain('4 needed');
+      expect(text).toContain('3 short');
+    }));
+
+    it('no event: the needed line is left out', () => {
+      expect(component.showNeeded).toBeFalse();
+      expect(fixture.nativeElement.textContent).not.toContain('Volunteers needed');
     });
   });
 

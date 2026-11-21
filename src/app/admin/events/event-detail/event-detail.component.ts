@@ -8,6 +8,9 @@ import { ConfirmationService } from '../../../shared/confirm-dialog/confirmation
 import { LocationService } from '../../../venue-map/location.service';
 import { AdminService } from '../../admin.service';
 
+
+/** Beds per pass from the form: a whole number 1–20 (1 when empty). */
+const bedsOf = (v: number | null | undefined): number => Math.min(20, Math.max(1, Math.round(Number(v) || 1)));
 @Component({
   selector: 'app-event-detail',
   templateUrl: './event-detail.component.html',
@@ -33,22 +36,26 @@ export class EventDetailComponent implements OnInit {
     emailIntro: new FormControl('', Validators.maxLength(2000))
   });
 
-  // New pass type form, shown inline below the pass type list. `code` is
-  // only really meaningful for category 'tent' (see ACCOMMODATION_CONTEXT.md
-  // decision #11) but shown for every category — harmless if unused.
+  // New pass type form, shown in the pass type slide panel (ui 1.69.0; was
+  // inline). `code` and `beds` are only meaningful for category 'tent' (see
+  // ACCOMMODATION_CONTEXT.md decision #11) and only shown for it.
   addingPassType = false;
   passTypeForm = new FormGroup({
     name: new FormControl('', Validators.required),
     category: new FormControl<PassTypeCategory>('festival', Validators.required),
-    code: new FormControl('', Validators.maxLength(4))
+    code: new FormControl('', Validators.maxLength(4)),
+    beds: new FormControl<number>(1, [Validators.min(1), Validators.max(20)])
   });
   savingPassType = false;
 
   editingPassTypeId: string | null = null;
+  /** The pass type being edited in the slide panel. */
+  private editingPassType: PassType | null = null;
   editPassTypeForm = new FormGroup({
     name: new FormControl('', Validators.required),
     category: new FormControl<PassTypeCategory>('festival', Validators.required),
-    code: new FormControl('', Validators.maxLength(4))
+    code: new FormControl('', Validators.maxLength(4)),
+    beds: new FormControl<number>(1, [Validators.min(1), Validators.max(20)])
   });
 
   constructor(
@@ -199,8 +206,33 @@ export class EventDetailComponent implements OnInit {
 
   // ── Pass types ────────────────────────────────────────────
 
+  /** The add / edit slide panel is open. */
+  get passTypePanelOpen(): boolean {
+    return this.addingPassType || this.editingPassTypeId !== null;
+  }
+
+  get passTypePanelTitle(): string {
+    return this.addingPassType ? 'Add pass type' : 'Edit pass type';
+  }
+
+  /** The form the panel shows: the add form or the edit form. */
+  get passTypePanelForm(): FormGroup {
+    return this.addingPassType ? this.passTypeForm : this.editPassTypeForm;
+  }
+
+  closePassTypePanel() {
+    this.cancelAddPassType();
+    this.cancelEditPassType();
+  }
+
+  savePassTypePanel() {
+    if (this.addingPassType) this.savePassType();
+    else if (this.editingPassType) this.saveEditPassType(this.editingPassType);
+  }
+
   startAddPassType() {
-    this.passTypeForm.reset({ name: '', category: 'festival', code: '' });
+    this.cancelEditPassType();
+    this.passTypeForm.reset({ name: '', category: 'festival', code: '', beds: 1 });
     this.addingPassType = true;
   }
 
@@ -211,8 +243,8 @@ export class EventDetailComponent implements OnInit {
   savePassType() {
     if (!this.detail || this.passTypeForm.invalid || this.savingPassType) return;
     this.savingPassType = true;
-    const { name, category, code } = this.passTypeForm.value;
-    this.eventService.createPassType(this.detail._id, { name: name!.trim(), category: category!, code: code?.trim() || undefined }).subscribe({
+    const { name, category, code, beds } = this.passTypeForm.value;
+    this.eventService.createPassType(this.detail._id, { name: name!.trim(), category: category!, code: code?.trim() || undefined, ...(category === 'tent' ? { beds: bedsOf(beds) } : {}) }).subscribe({
       next: () => {
         this.savingPassType = false;
         this.addingPassType = false;
@@ -227,24 +259,32 @@ export class EventDetailComponent implements OnInit {
   }
 
   startEditPassType(pt: PassType) {
+    this.cancelAddPassType();
     this.editingPassTypeId = pt._id;
-    this.editPassTypeForm.setValue({ name: pt.name, category: pt.category, code: pt.code || '' });
+    this.editingPassType = pt;
+    this.editPassTypeForm.setValue({ name: pt.name, category: pt.category, code: pt.code || '', beds: pt.beds || 1 });
   }
 
   cancelEditPassType() {
     this.editingPassTypeId = null;
+    this.editingPassType = null;
   }
 
   saveEditPassType(pt: PassType) {
-    if (!this.detail || this.editPassTypeForm.invalid) return;
-    const { name, category, code } = this.editPassTypeForm.value;
-    this.eventService.updatePassType(this.detail._id, pt._id, { name: name!.trim(), category: category!, code: code?.trim() || '' }).subscribe({
+    if (!this.detail || this.editPassTypeForm.invalid || this.savingPassType) return;
+    this.savingPassType = true;
+    const { name, category, code, beds } = this.editPassTypeForm.value;
+    this.eventService.updatePassType(this.detail._id, pt._id, { name: name!.trim(), category: category!, code: code?.trim() || '', ...(category === 'tent' ? { beds: bedsOf(beds) } : {}) }).subscribe({
       next: () => {
-        this.editingPassTypeId = null;
+        this.savingPassType = false;
+        this.cancelEditPassType();
         this.notificationService.openSucessSnackBar('Pass type updated');
         this.loadDetail(this.detail!._id);
       },
-      error: (err) => this.notificationService.openErrorSnackBar(err?.error?.message || 'Error updating pass type')
+      error: (err) => {
+        this.savingPassType = false;
+        this.notificationService.openErrorSnackBar(err?.error?.message || 'Error updating pass type');
+      }
     });
   }
 

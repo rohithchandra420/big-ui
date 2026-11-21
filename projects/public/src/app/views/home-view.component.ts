@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
-import { PublicEvent, PublicSession } from '../core/public-api.service';
+import { PublicEvent, PublicMusic, PublicSession } from '../core/public-api.service';
+import { isPlaying, musicForHome } from '../core/music';
+import { LiveMusicCardComponent, MusicListComponent } from '../ui/music-bits';
 import { TPipe } from '../core/i18n';
 import { CategoryChip, categoriesOf, festivalDay, isLive } from '../core/sessions';
 import { CategoryChipsComponent, LiveCardComponent, SessionRowComponent } from '../ui/session-bits';
@@ -13,12 +15,14 @@ import { CategoryChipsComponent, LiveCardComponent, SessionRowComponent } from '
 @Component({
   selector: 'pub-home-view',
   standalone: true,
-  imports: [NgIf, NgFor, TPipe, LiveCardComponent, SessionRowComponent, CategoryChipsComponent],
+  imports: [NgIf, NgFor, TPipe, LiveCardComponent, SessionRowComponent, CategoryChipsComponent, MusicListComponent, LiveMusicCardComponent],
   template: `
-    <section *ngIf="live.length">
+    <!-- Live now: workshops running + music playing (2026-11-20) -->
+    <section *ngIf="live.length || liveMusic.length">
       <div class="sec-head"><span class="live-dot"></span><h2>{{ 'live.title' | t }}</h2><span class="hand">{{ 'live.hand' | t }}</span></div>
       <div class="rail">
         <pub-live-card *ngFor="let s of live; trackBy: track" [session]="s" [now]="now" (open)="open.emit($event)"></pub-live-card>
+        <pub-live-music-card *ngFor="let m of liveMusic; trackBy: trackMusic" [slot]="m" [now]="now"></pub-live-music-card>
       </div>
     </section>
 
@@ -36,11 +40,15 @@ import { CategoryChipsComponent, LiveCardComponent, SessionRowComponent } from '
       <div class="empty" *ngIf="!shown.length">
         <span class="ms">sentiment_calm</span>{{ (category ? 'next.emptyCat' : 'next.empty') | t }}
       </div>
-    </section>`,
+    </section>
+
+    <!-- Music: playing now + the rest of today (before the festival: Day 1) -->
+    <pub-music-list [music]="onStage" [now]="now" [title]="event.phase === 'before' ? 'music.preview' : 'music.title'"></pub-music-list>`,
 })
 export class HomeViewComponent implements OnChanges {
   @Input({ required: true }) event!: PublicEvent;
   @Input() sessions: PublicSession[] = [];
+  @Input() music: PublicMusic[] = [];
   @Input() now = Date.now();
   @Output() open = new EventEmitter<PublicSession>();
   @Output() schedule = new EventEmitter<void>();
@@ -50,8 +58,13 @@ export class HomeViewComponent implements OnChanges {
   shown: PublicSession[] = [];
   categories: CategoryChip[] = [];
   category = '';
+  /** Music slots for Home (stored for the *ngFor). */
+  onStage: PublicMusic[] = [];
+  /** Music playing right now (Live now). */
+  liveMusic: PublicMusic[] = [];
 
   track = (_: number, s: PublicSession) => s.id;
+  trackMusic = (_: number, m: PublicMusic) => m.id;
 
   ngOnChanges(): void {
     const ev = this.event;
@@ -64,6 +77,8 @@ export class HomeViewComponent implements OnChanges {
       this.live = this.sessions.filter(s => isLive(s, this.now));
       this.next = this.sessions.filter(s => festivalDay(s.start) === ev.today && Date.parse(s.start) > this.now);
     }
+    this.onStage = musicForHome(this.music, ev, this.now);
+    this.liveMusic = ev.phase === 'during' ? this.music.filter(m => isPlaying(m, this.now)) : [];
     this.categories = categoriesOf(this.next);
     if (this.category && !this.categories.some(c => c.key === this.category)) this.category = '';
     this.filter();

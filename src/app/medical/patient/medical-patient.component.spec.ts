@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { DateTimeComponent } from '../../shared/date-time/date-time.component';
 import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
@@ -41,7 +42,7 @@ describe('MedicalPatientComponent', () => {
     confirm = jasmine.createSpyObj('ConfirmationService', ['confirm']);
     router = jasmine.createSpyObj('Router', ['navigate']);
     await TestBed.configureTestingModule({
-      declarations: [MedicalPatientComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [DateTimeComponent, MedicalPatientComponent, AppSelectComponent, AppOptionComponent],
       imports: [FormsModule],
       providers: [
         { provide: MedicalService, useValue: medical },

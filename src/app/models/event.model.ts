@@ -12,6 +12,9 @@ export interface PassType {
   // then may be unset until Accommodation Setup prompts for one. See
   // ACCOMMODATION_CONTEXT.md decision #11.
   code?: string;
+  // Bed model (I0): beds one Tent Pass of this type gives — one Festival Pass
+  // per bed. Tent category only; default 1. "Beds per pass" in Admin › Events.
+  beds?: number;
 }
 
 export interface EventItem {

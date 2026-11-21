@@ -15,6 +15,8 @@ export class Shopcart {
     public gender?: Gender | null;
     public allocatedTentId?: string | null;
     public linkedPassId?: string | null;
+    /** Bed model (I0): Tent Pass only — beds it gives (one Festival Pass per bed). */
+    public beds?: number;
     // Introducing Events (see INTRODUCING_EVENTS_CONTEXT.md) — item_name
     // above stays authoritative for the legacy Tickets module (untouched,
     // decision #3), these are populated for anything created through the

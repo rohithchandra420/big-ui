@@ -13,6 +13,142 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.69.0] - 2026-11-20
+
+### Changed
+- **Bookings / Booking Found:** a Tent Pass row shows **Beds 2 / 3**, its unit and the people in its beds. **Allocate next bed** shows while a bed is free. With one bed taken, **Vacate** frees it; with several, each person has their own × to vacate their bed.
+- **Admin › Events › Pass Types:** Add and Edit open in a slide panel (side panel on desktop, bottom sheet on phones). Every field has a label. Code and Beds per pass show only for tent pass types.
+- **Bulk Upload, new pass names:** a new tent pass type now also gets **Beds per pass**. The number is taken from the name where it says so ("(3 guests)", "2 beds"), otherwise 1, and can be changed before confirming. Category uses the app's own dropdown. Only admins can create pass types here; anyone else is asked to have an admin add them in Admin › Events first, and Upload stays blocked until then (it used to fail half way).
+- **Booking details, each pass:** the icon shows the type of pass (ticket = festival, hotel = tent, plus = add-on), followed by the pass name. Add-ons get their own icon instead of the tent icon.
+- **Allocate Tent:** shows **Bed 2 of 3** and who is already in. The automatic choice is "Same unit as the other beds", and the button reads "Allocate bed 2". A different unit asks "This stay's other beds are in CR1. Put this bed in CR2 anyway?" with **Cancel / Allocate anyway**.
+
+### Added
+- **Admin › Events:** "Beds per pass" on tent pass types (shown as "3 beds").
+
+### Fixed
+- **Booking details:** the pass name was missing next to the icon for passes made at the Box Office. It now shows the same name as the Passes column.
+
+---
+
+## [1.68.0] - 2026-11-20
+
+### Added
+- **Public page, live map:** each place with a status gets a coloured label on the map. Workshop areas show the session's state (Walk in, Reg open, Waitlist, Reg closed…). Stages show who is playing. The Medical Bay shows Open / Closed. Toilets and washrooms show Cleaned / Open / Closed, water stations Filled / Empty, and the Box Office Open / Closed. Tap a place for the full line.
+- **Public page, an icon on every area** (stage, workshops, first aid, toilets, camping, parking, no entry…). Where an area has a live label, its icon sits inside the label. Paths, routes and the festival ground have no icon.
+- **Public page, Live now includes music:** the act playing right now gets a card in Live now, next to the workshops running (artist, genre, stage, times). Live now also shows when only music is on.
+- **Public page, festival ground:** everything outside the festival boundary is greyed out, and the boundary is a strong dark-green line. The map opens fitted to the ground.
+- **Public page, Home as in the approved V2 design:**
+  - the chosen hero photo behind the title;
+  - a "session you starred has changed" banner that opens My plan;
+  - on desktop, two columns (sessions and music on the left, Find your way and a small live map card on the right, which sticks while you scroll);
+  - Find your way is always shown;
+  - **Need a hand?** tiles now come after Through the years.
+- **Medical Desk: Medical Bay Open / Closed switch** in the page header, with a confirm step. It shows who changed it last.
+- **Music › Setup: stage amenities.** The stage panel has a chip for each amenity in the fixed list and an "Other amenities" field (up to 5, Enter to add). The Stages table has a new Amenities column (icons only on phones). Staff only.
+- **Admin › Public Page › Photos: "Use as hero"** on each photo (one per event).
+
+### Changed
+- The small map card on Home loads the map only when it scrolls into view, so the page stays light on mobile data.
+- Music › Setup: the Stages and Acts tables now run edge to edge.
+
+---
+
+## [1.67.0] - 2026-11-20
+
+### Added
+- **New Music section** in the sidebar, with two tabs:
+  - **Planner:** the event's slots on a day calendar with one column per stage. Drag a slot to another stage or time, drag its bottom edge to change its length, or select empty time to add one (on a phone: tap an empty slot). The sound check shows as a light striped band before its slot and moves with it. A clash (same stage at once, or the same act twice) shows an amber border and a "Clash" chip, and is listed in the slot panel before saving — it can still be saved. People who may only view tap a slot for its details (act, stage, times, sound check, genre, contact, notes). A red line marks the current time across every stage and moves each minute. A slot that runs past midnight shows on both days ("Continues after midnight" / "From the day before"), and the calendar starts early enough to show it; its times are changed from its panel.
+  - **Setup:** Stages (name, its Stage area on the Venue Map, notes) and Acts (artist / band, genre, contact name and phone, notes), each a sortable table; add and edit in a side panel (bottom sheet on phones).
+- **Music access key** in Admin › Users and Departments: Read (see the Planner and Setup), Write (also acts and slots), Manage (also stages). Music department members see the section; Helpdesk sees it read-only.
+- **Public page (`/live`): music** — Home shows "On stage today" (playing now and the rest of today; before the festival, Day 1) and the Schedule lists the picked day's music under "Music". Artist / band, genre, stage and times only.
+
+---
+
+## [1.66.0] - 2026-11-19
+
+### Added
+- **Hospitality › Today: check the kitchen count before saving it** (B-019). Save count opens Veg and Non-veg boxes with the expected numbers filled in and a running total; change them if needed, then save. It says when the numbers differ from the expected count. A saved count can be changed the same way.
+- **Admin › Departments: the details panel shows every department detail** (B-001) — the access key and what it opens, the other departments sharing that key, and for the selected event the volunteers needed against how many are in the department.
+- **Sort by any column in every list table** (B-003): tap a header to sort A–Z / lowest first, tap again to flip it. Bookings, Users, Accommodation Inventory, Medical Records, Volunteers (List and Deposits), Workshop Setup (Venues, Workshops, Categories), Workshop Reports (both views), session lists, WASH Setup, WASH Report (Facilities, Stock), My Department (Daily Summary, per-person report) and the Email Report. Empty values stay at the bottom. Session lists keep each person's place on the list in the # column. Date grids and fixed-order tables (Stay calendar, attendance grids, Hospitality Setup and Report meals, the Bulk Add preview) are not sorted. Email Report: Sent by can't be sorted.
+
+### Changed
+- **Volunteers tables look like the other tables** — same header row, cells and hover as Bookings and Users.
+
+---
+
+## [1.65.0] - 2026-11-19
+
+### Added
+- **Joining Time: Mark reported.** Admin › Users, the Volunteers profile and My Department's member panel show a person's **Expected Join Time** and **Reported Time**, with **Mark reported** (now or an earlier time), **Change time** and **Undo** for the people allowed (DEV / DIR / ADMIN, the Volunteer Team Lead, the person's home-department Team Lead). Reporting marks attendance for the rest of that day.
+- **Users and Volunteers: "Expected Join Time" and "Reported Time" columns** (B-008), with a "not reported" tag (late once the expected time has passed). Users filter by one day for each; Volunteers by date ranges and can sort by Reported Time.
+- **Stay › Allocate: the night table** (B-021). Everyone who may need a bed on the picked night, with search, status chips (No bed · Booked · Moved in · Moved out) and Staff / Guests. Tap a person with no bed to allocate for that night; tap a booked person for their stay — Moved in, Moved out, Undo, Cancel and "Allocate another range". "Not on this list?" searches everyone.
+- **A new date and time picker, app-wide.** One field for date and time where both are needed. On a computer it opens a panel with a calendar, hour and minute columns, a box to type any time, quick picks (Now, Today, Tomorrow), Clear and Done; days outside the allowed dates are greyed. On phones a tap opens the phone's own picker. Every date and time field uses it, and it looks like the other inputs.
+
+### Changed
+- **Who's counted says why:** "Reported 11:05", or "Expected to join 11:00 · late, not reported yet". Today's meal card adds how many are expected to join.
+- **Stay › Allocate: the search only finds staff who have joined by the picked night** (B-017), and says who has not reported yet. The separate Stays list is gone — its actions are in the night table's stay panel.
+- **Add / edit user: Expected Join Time is one date and time field**; a day picked alone means 11:00. Bulk Add keeps a time typed in a date cell. Veg and Non-veg sit on one line.
+- **My Department:** hovering an automatic mark says it was made when the person reported.
+
+---
+
+## [1.64.0] - 2026-11-19
+
+### Added
+- **My Department: tap a person to see their details** (Team Leads of the department and DEV / DIR / ADMIN) — from Attendance, History or Calendar. The side panel is the Volunteers profile: contact, details, staff band (Link / Replace band), seven days of attendance and location on request. A **Role** section turns a volunteer into a Team Lead of the department, or back, after a confirmation.
+
+### Changed
+- **My Department, redesigned.** The department sits in a header card (icon, description, Team Leads, volunteers, volunteers needed, Tasks marker), followed by stat cards for the day — people, marked, **Not marked** (tap to show only them) and open tasks — and pill tabs. The All departments view gets the same stat cards and tabs.
+- The Volunteers profile panel is now a shared piece used by both pages; it looks and works the same.
+- All departments: the arrow on a department row lines up with its name.
+- **My Department › Attendance, restyled** (B-004). Each person has a Morning / Afternoon / Night chip (filled when marked) and a "2/3" count; the date has ‹ › steppers, a calendar on tap and Back to today. Team Leads get **Mark all** per slot and a save bar that counts unsaved changes. Hovering a slot shows **who marked it and when** (or "ticked, not saved yet").
+- **My Department: the department's details are on top, and its tasks open in a side panel** (B-005). The card shows a Tasks marker — "Tasks · 2 open" with a red dot, or "No tasks".
+- **My Department › All departments: tap a department to open it** (B-006) — in Daily Summary and Department Calendar; the dropdown follows.
+
+---
+
+## [1.63.0] - 2026-11-18
+
+### Changed
+- **Serving desk: tapping a name never serves by mistake.** A tap in the Expected list only opens the person's card. If they are marked it says "Marked — not served yet" with a **Serve** button; the meal is recorded only when Serve is pressed. Scanning a meal QR or wrist band still serves at once.
+- **Stay: tabs are Allocate · Calendar · Units, and Allocate opens first** (B-013). People with a view-only Stay open on Calendar.
+- **Stay: unit dates are "First night → Leaving morning"** (B-016), with the number of nights shown. There is no bed on the leaving morning's night. A new unit starts with today to tomorrow morning; every unit keeps at least one set of dates. An older unit without dates gets the whole mess period filled in when it is edited.
+- **Stay: Allocate uses the gender on the person's profile** (B-011) and shows it instead of asking. Only when it is missing does it ask — and says it will be saved to their profile.
+- **Stay: allocating opens in a side panel** (a bottom sheet on phones) — from the search, the "without a bed" list, a unit's details or a calendar night.
+- **Stay › Units and Calendar: "Fill a vacant bed".** A unit's details and a tapped calendar night list who has no bed that night and a search; picking someone opens Allocate for that unit and night (with "Show all units" to look wider). The calendar's side card is replaced by the panel.
+- **Stay › Calendar: 7, 14 or 30 days on screen** (B-012).
+- **Stay › Allocate panel: its own Type filter and unit search**, and the units keep their own order — a unit no longer drops down the list after someone is given a bed there (a different gender in a unit is shown as a warning on its row).
+- **Stay: an empty "No bed" list says so** — "Every staff member has a bed on the night of …" — instead of showing nothing. The count reads "N staff without a bed" (guests are not counted).
+- **Stay › Allocate › Stays: its own search and filters** — find a person or unit, Booked / Moved in / Moved out, and "Night of …" for the stays that hold a bed on the picked night. The page search is not shown on Allocate.
+- **Stay › unit details: who stays there, by date** — earliest first, each marked Before / That night / Later against the picked night — and "Night of …: N of M beds taken" in place of the stay count.
+
+---
+
+## [1.62.0] - 2026-11-18
+
+### Changed
+- **Serving desk: find people in the Expected list** (B-009). The search box at the top is gone — on phones, Enter in it jumped to the list's own search. Scan QR and the Walk-in guest pass now sit on the Expected card. In "Find a name", Enter closes the keyboard and, when only one person matches, opens them.
+- **Serving desk: tap a name to open their card** (B-014). A tap does what picking a search result did. The person's card (serve, reason, block, extra plate, band) and the guest cards now open in a side panel — a bottom sheet on phones — with "Next person · scan" to go straight on. Names can be tapped while the list shows the meal that is open now.
+- **Serving desk on phones: the food preference shows again** in the Expected list — the veg / non-veg icon sits between the name and the status (the word is left out to save room; guest plates read "2V · 1NV").
+- **Serving desk: the meal on show is highlighted** in the day / meal picker from the start (B-015).
+- **Today › Who's counted:** a compact two-line list in the side panel — name, food icon and status on top, department and why below — with no profile photo and the food shown as an icon only, so the names stay readable on desktop (B-002). The Serving desk keeps its table and photos.
+
+---
+
+## [1.61.0] - 2026-11-18
+
+### Added
+- **Volunteers List: more columns.** Stay (the bed for the night: Moved in, Bed given or No bed), staff Band (Linked / No band) and Gender. "Today" is now called "Marked".
+- **Volunteers: pick a date.** A date above the stat cards (‹ › steppers, tap the date for a calendar, Back to today). It changes only the attendance marks and the bed status for that night; the rest stays as it is.
+- **Team Leads in the Volunteers List.** The event's Team Leads show with a TL badge and the departments they lead, plus a filter: Everyone / Volunteers / Team Leads. They are not on the Board, not in the counts and can't be picked or moved. Their profile opens from the List (no moves, location requests or deposits there).
+- **Link or replace a staff band from a volunteer's profile** (B-010). The Volunteer Team Lead can now do this for any volunteer or Team Lead on the event, as well as the people who could already.
+- **Sort the Volunteers List by any column** (B-003): tap a header for ascending, tap again for descending. Empty values stay at the bottom.
+
+### Changed
+- **The Volunteers page opens on the List** (B-018). List comes first in the List / Board toggle.
+
+---
+
 ## [1.60.0] - 2026-11-15
 
 ### Added

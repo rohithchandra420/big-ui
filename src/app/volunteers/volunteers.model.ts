@@ -1,18 +1,33 @@
 /** Volunteers page (V1) — the shapes big-api `routers/volunteers.js` answers with. */
 export interface VolSlots { morning: boolean; afternoon: boolean; night: boolean }
 
+/** Bed for the night of the picked date: moved in, bed given (not moved in yet), or none. */
+export type NightStay = 'in' | 'booked' | 'none';
+
 export interface Volunteer {
   _id: string;
   name: string;
   avatarVersion: number;
+  /** 'TL' rows (user, 2026-11-18) show in the List only: never on the board, in the counts or in moves. */
+  role: 'VOL' | 'TL';
   /** Home department id; null when unassigned (in the Volunteer department or none). */
   department: string | null;
+  /** A Team Lead's departments by name. */
+  teams?: string[];
   unassigned: boolean;
   phone: string;
+  gender: string;
+  /** Expected Join Time (date + time). */
   dateOfJoining: string | null;
+  /** Reported Time (Joining Time): when they actually arrived; null = not reported yet. */
+  reportedAt: string | null;
+  /** Attendance on the picked date (the board's `today`). */
   today: VolSlots;
-  /** Marked in any slot today. Shown only — marking stays in My Department. */
+  /** Marked in any slot on the picked date. Shown only — marking stays in My Department. */
   marked: boolean;
+  stay: NightStay;
+  /** Has an active staff band for this event. */
+  band: boolean;
   /** V3: shares their location when asked. Sent only to people who may ask (Manage). */
   sharing?: boolean;
 }
@@ -29,6 +44,7 @@ export interface VolDepartment {
 }
 
 export interface VolBoard {
+  /** The picked date (YYYY-MM-DD); today unless another date was asked for. */
   today: string;
   canAssign: boolean;
   /** V3: may ask volunteers for their location and read the answers. */
@@ -116,9 +132,13 @@ export interface VolProfile {
   email: string;
   phone: string;
   avatarVersion: number;
+  role?: 'VOL' | 'TL';
   department: { _id: string; name: string } | null;
+  teams?: string[];
   unassigned: boolean;
   dateOfJoining: string | null;
+  reportedAt: string | null;
+  reportedBy: { _id: string; name: string } | null;
   foodPreference: 'veg' | 'non-veg';
   gender: string;
   stay: { unit: string; type: string; from: string; to: string; movedIn: boolean } | null;
@@ -127,4 +147,6 @@ export interface VolProfile {
   /** Security deposit for the event; `amount` only for people who may see amounts. */
   deposit: { status: DepositStatus; amount?: number };
   attendance: ({ date: string } & VolSlots)[];
+  /** My Department only (2026-11-19): what the signed-in person may do for this member. */
+  can?: { role: boolean; location: boolean };
 }

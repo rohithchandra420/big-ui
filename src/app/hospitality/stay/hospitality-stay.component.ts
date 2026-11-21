@@ -6,20 +6,32 @@ import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.se
 import { EventItem } from '../../models/event.model';
 import { localDate } from '../../workshops/planner.utils';
 import { HospitalityService } from '../hospitality.service';
-import { GENDERS, Gender, StayItem, StayOverview, StayPerson, StayTypeItem, StayUnitItem } from '../hospitality.model';
+import { GENDERS, Gender, StayItem, StayNightRow, StayNightStatus, StayOverview, StayPerson, StayTypeItem, StayUnitItem } from '../hospitality.model';
+import { joinState } from '../../core/join-time';
 
 type Tab = 'units' | 'allocate' | 'calendar';
 interface UnitForm { _id?: string; batch: boolean; type: string; name: string; prefix: string; start: number; count: number; beds: number; area: string; notes: string; ranges: { from: string; to: string }[] }
 interface FreeUnit { unit: StayUnitItem; free: number; mixed: boolean }
+/** Someone on the "No bed" list of the picked night. */
+type NoBed = { _id: string; name: string; gender?: Gender | null; detail: string };
+/** The calendar night open in the slide panel. */
+interface CellView { unit: StayUnitItem; date: string; who: StayItem[]; free: number }
+/** Where a picked person goes: the Allocate panel as it is, or locked to one unit and night ("Fill a vacant bed"). */
+type PickMode = 'main' | 'fill';
+/** Calendar windows (B-012). */
+export const CAL_RANGES = [7, 14, 30];
 
 const DAY = 86400000;
 /** 'YYYY-MM-DD' + n days. */
 const plusDays = (d: string, n: number) => localDate(new Date(new Date(d + 'T00:00:00').getTime() + n * DAY));
 
 /**
- * Hospitality › Stay (H6): staff / guest accommodation — Units, Allocate,
- * Calendar. Separate from participant Tents. HospitalityGuard; the server
- * checks every rule (beds per night, availability, overlaps, gender).
+ * Hospitality › Stay (H6): staff / guest accommodation — Allocate, Calendar,
+ * Units (B-013, 1.63.0: Allocate first). Separate from participant Tents.
+ * HospitalityGuard; the server checks every rule (beds per night,
+ * availability, overlaps, gender). 1.63.0: allocating happens in a slide
+ * panel — from a search, the "No bed" list, a unit's details or a calendar
+ * night ("Fill a vacant bed", locked to that unit).
  */
 @Component({
   selector: 'app-hospitality-stay',
@@ -34,7 +46,8 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
   loading = false;
   loadError = '';
   busy = false;
-  tab: Tab = 'units';
+  /** B-013: Allocate first; a read-only view (Helpdesk) falls back to Calendar after load. */
+  tab: Tab = 'allocate';
   readonly genders = GENDERS;
 
   // Units
@@ -51,18 +64,42 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
   from = '';
   to = '';
   gender: Gender | '' = '';
+  /** B-011: the gender came from their profile — shown, not asked. */
+  genderFromProfile = false;
+  /** "Fill a vacant bed": only this unit is offered (until "show all units"). */
+  lockUnit = '';
   /** Guest groups: how many people (beds). */
   groupCount = 1;
   /** The night the counts are for (default tonight). */
   statsNight = '';
   freeUnits: FreeUnit[] = [];
-  stays: (StayItem & { unitName: string })[] = [];
+
+  // B-021 (Joining Time): the Allocate tab's table for the picked night
+  nightRows: StayNightRow[] = [];
+  shownRows: StayNightRow[] = [];
+  nightLoading = false;
+  ntQ = '';
+  ntStatus: '' | StayNightStatus = '';
+  ntKind: '' | 'staff' | 'guest' = '';
+  readonly ntStatuses: { value: '' | StayNightStatus; label: string }[] = [
+    { value: '', label: 'All' }, { value: 'none', label: 'No bed' }, { value: 'booked', label: 'Booked' },
+    { value: 'in', label: 'Moved in' }, { value: 'out', label: 'Moved out' }
+  ];
+  readonly statusLabel: Record<StayNightStatus, string> = { none: 'No bed', booked: 'Booked', in: 'Moved in', out: 'Moved out' };
+  /** The row whose stay is open in the slide panel (kept by kind + id, so a reload refreshes it). */
+  stayKey = '';
+  stayRow: StayNightRow | null = null;
+  /** "Not on this list?" — the search of all staff and guests. */
+  searchOpen = false;
 
   // Calendar (a window of days)
   calFrom = '';
   calDays = 14;
+  readonly calRanges = CAL_RANGES;
   calDates: string[] = [];
-  cell: { unit: StayUnitItem; date: string; who: StayItem[] } | null = null;
+  /** The calendar night in the slide panel (kept by id + date, so a reload refreshes it). */
+  cellAt: { unitId: string; date: string } | null = null;
+  cell: CellView | null = null;
 
   /** The search next to the tabs: units (Units / Calendar) or people and units (Allocate). */
   filter = '';
@@ -74,7 +111,6 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     { value: 'full', label: 'Full' }, { value: 'closed', label: 'Not available' }
   ];
   shownUnits: StayUnitItem[] = [];
-  shownStays: (StayItem & { unitName: string })[] = [];
 
   private sub = new Subscription();
 
@@ -103,11 +139,13 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
       this.data = await this.hospitality.getStay(this.event._id, undefined, undefined, this.statsNight || undefined);
       this.statsNight = this.data.nightStats.date;
       this.readOnly = (this.data as any)?.canManage === false;
+      if (this.readOnly && this.tab === 'allocate') this.tab = 'calendar';
       if (!this.calFrom) this.calFrom = this.data.today >= this.data.messDates.opensOn && this.data.today <= this.data.messDates.closesOn ? this.data.today : this.data.messDates.opensOn;
       this.buildCalendar();
-      this.buildStays();
+      this.refreshCell();
       this.applyFilter();
       this.buildFree();
+      await this.loadNight();
     } catch (err: any) {
       this.loadError = err?.error?.message || 'Could not load the stays.';
     } finally {
@@ -139,9 +177,22 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     this.shownUnits = units.filter(u =>
       (!this.typeFilter || u.type?._id === this.typeFilter) && nightOk(u) &&
       (has(u.name, u.type?.name, u.area?.name) || staysThen(u).some(s => has(s.person.name))));
-    const typeOf = new Map(units.map(u => [u._id, u.type?._id || '']));
-    this.shownStays = this.stays.filter(s => has(s.person.name, s.unitName) && (!this.typeFilter || typeOf.get(String(s.unit)) === this.typeFilter));
+    this.refreshUnitStays();
   }
+
+  // ── Unit details: its stays on a timeline ──
+  /** The open unit's stays by date (first night, then leaving morning) — not booking order (user, 2026-11-18). */
+  unitStays: StayItem[] = [];
+  private refreshUnitStays() {
+    const u = this.expandedUnit;
+    this.unitStays = !u ? [] : [...u.stays].sort((a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to) || a.person.name.localeCompare(b.person.name));
+  }
+  /** Where a stay sits against the picked night: before it, holding a bed that night, or later. */
+  phase(s: StayItem): 'past' | 'now' | 'next' {
+    return s.to <= this.statsNight ? 'past' : s.from <= this.statsNight ? 'now' : 'next';
+  }
+  /** Beds taken in a unit on the picked night. */
+  takenOn(u: StayUnitItem): number { return this.night(u, this.statsNight)?.taken ?? 0; }
 
   setTab(t: Tab) {
     this.tab = t;
@@ -152,11 +203,11 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
   get filtersOn(): boolean { return !!(this.filter || this.typeFilter || this.nightFilter); }
   clearFilters() { this.filter = ''; this.typeFilter = ''; this.nightFilter = ''; this.applyFilter(); this.buildFree(); }
   /** Type filter: also narrows the free units on Allocate. */
-  onTypeFilter() { this.applyFilter(); this.buildFree(); }
+  onTypeFilter() { this.freeType = this.typeFilter; this.applyFilter(); this.buildFree(); }
   trackOpt = (_: number, o: { value: string }) => o.value;
 
   get filterHint(): string {
-    return this.tab === 'allocate' ? 'Search stays by person or unit' : this.tab === 'calendar' ? 'Search units or who sleeps there' : 'Search units, types or areas';
+    return this.tab === 'allocate' ? 'Search' : this.tab === 'calendar' ? 'Search units or who sleeps there' : 'Search units, types or areas';
   }
 
   // ── Units ────────────────────────────────────────────────
@@ -176,16 +227,36 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Today inside the mess dates (else the nearest mess day): where new dates start. */
+  private get firstNight(): string {
+    const d = this.data;
+    if (!d) return '';
+    return d.today < d.messDates.opensOn ? d.messDates.opensOn : d.today > d.messDates.closesOn ? d.messDates.closesOn : d.today;
+  }
+  /** The latest leaving morning: the day after the last mess night. */
+  get lastMorning(): string { return this.data ? plusDays(this.data.messDates.closesOn, 1) : ''; }
+
+  /** B-016 (user, 2026-11-18): every unit has dates; a new one starts with today → tomorrow morning. */
   newUnit(batch: boolean) {
-    this.form = { batch, type: this.data?.types[0]?._id || '', name: '', prefix: 'A-', start: 1, count: 10, beds: 6, area: '', notes: '', ranges: [] };
+    const from = this.firstNight;
+    this.form = { batch, type: this.data?.types[0]?._id || '', name: '', prefix: 'A-', start: 1, count: 10, beds: 6, area: '', notes: '', ranges: [{ from, to: plusDays(from, 1) }] };
   }
 
+  /** An older unit with no dates (it used the whole mess period) gets the mess period filled in. */
   editUnit(u: StayUnitItem) {
-    this.form = { _id: u._id, batch: false, type: u.type?._id || '', name: u.name, prefix: '', start: 1, count: 1, beds: u.beds, area: u.area?._id || '', notes: u.notes, ranges: u.available.map(r => ({ ...r })) };
+    const ranges = u.available.length ? u.available.map(r => ({ ...r })) : [{ from: this.data?.messDates.opensOn || '', to: this.lastMorning }];
+    this.form = { _id: u._id, batch: false, type: u.type?._id || '', name: u.name, prefix: '', start: 1, count: 1, beds: u.beds, area: u.area?._id || '', notes: u.notes, ranges };
   }
 
-  addRange() { this.form?.ranges.push({ from: this.data?.messDates.opensOn || '', to: this.data?.messDates.closesOn || '' }); }
-  removeRange(i: number) { this.form?.ranges.splice(i, 1); }
+  addRange() { const from = this.firstNight; this.form?.ranges.push({ from, to: plusDays(from, 1) }); }
+  /** A unit keeps at least one range. */
+  removeRange(i: number) { if ((this.form?.ranges.length || 0) > 1) this.form!.ranges.splice(i, 1); }
+  /** Moving the first night onto or past the leaving morning pushes the morning along. */
+  fixRange(r: { from: string; to: string }) { if (r.from && (!r.to || r.to <= r.from)) r.to = plusDays(r.from, 1); }
+  /** Nights in one range (from ≤ night < to). */
+  rangeNights(r: { from: string; to: string }): number {
+    return r.from && r.to && r.to > r.from ? Math.round((Date.parse(r.to) - Date.parse(r.from)) / DAY) : 0;
+  }
 
   get batchPreview(): string {
     const f = this.form;
@@ -198,7 +269,9 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     const f = this.form;
     if (!f || !this.event) return;
     if (!f.type) { this.notify.openErrorSnackBar('Add a type first (Dorm, Tent, Villa…)'); return; }
-    const base = { type: f.type, beds: Number(f.beds), area: f.area || null, notes: f.notes.trim(), available: f.ranges.filter(r => r.from && r.to) };
+    const available = f.ranges.filter(r => r.from && r.to);
+    if (!available.length || available.some(r => r.to <= r.from)) { this.notify.openErrorSnackBar('Give the unit its dates: the first night and the morning they leave'); return; }
+    const base = { type: f.type, beds: Number(f.beds), area: f.area || null, notes: f.notes.trim(), available };
     await this.run(async () => {
       if (f._id) await this.hospitality.updateUnit(f._id, { ...base, name: f.name.trim() });
       else if (f.batch) await this.hospitality.addUnits(this.event!._id, { ...base, prefix: f.prefix, start: Number(f.start), count: Number(f.count) });
@@ -224,8 +297,9 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
 
   /** Busiest night in the mess period: "4 / 6". */
   peak(u: StayUnitItem): number { return u.nights.reduce((m, n) => Math.max(m, n.taken), 0); }
+  /** "21 Oct → 25 Oct morning" — the end is the morning they leave (B-016). */
   availText(u: StayUnitItem): string {
-    return u.available.length ? u.available.map(r => `${this.short(r.from)}–${this.short(r.to)}`).join(', ') : 'Whole mess period';
+    return u.available.length ? u.available.map(r => `${this.short(r.from)} → ${this.short(r.to)} morning`).join(', ') : 'Whole mess period (no dates yet — edit to add them)';
   }
 
   // ── Allocate ─────────────────────────────────────────────
@@ -234,31 +308,80 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     const q = this.q.trim();
     if (q.length < 2 || !this.event) return;
     try {
-      this.people = (await this.hospitality.searchStayPeople(this.event._id, q)).people;
+      // B-017: only people who have joined by the picked night (guests are not filtered)
+      this.people = (await this.hospitality.searchStayPeople(this.event._id, q, this.statsNight || undefined)).people;
       this.searched = true;
     } catch (err: any) {
       this.notify.openErrorSnackBar(err?.error?.message || 'Could not search.');
     }
   }
 
-  pick(p: StayPerson) {
+  /** Opens the Allocate panel for someone. `at` = fixed dates, and one unit for "Fill a vacant bed". */
+  pick(p: StayPerson, at?: { from: string; to: string; unit?: string }) {
     this.person = p;
-    this.people = [];
-    this.searched = false;
+    this.resetPicker();
     this.gender = p.gender || '';
+    this.genderFromProfile = !!p.gender;
     this.groupCount = 1;
+    this.lockUnit = at?.unit || '';
+    this.freeType = this.typeFilter;
+    this.freeQ = '';
+    if (at) { this.from = at.from; this.to = at.to; }
     if (!this.from && this.data) this.from = this.data.today > this.data.messDates.opensOn ? this.data.today : this.data.messDates.opensOn;
     if (!this.to && this.from) this.to = plusDays(this.from, 1);
     this.buildFree();
   }
 
-  /** Units with a bed free on every night of from..to (and open), most free first. */
+  /** A person picked in a picker: straight into Allocate, or into the unit / night being filled. */
+  choose(p: StayPerson, mode: PickMode) {
+    if (mode === 'main') { this.pick(p); return; }
+    const fill = this.fillTarget;
+    if (!fill) return;
+    this.expanded = '';
+    this.closeCell();
+    this.pick(p, { from: fill.date, to: plusDays(fill.date, 1), unit: fill.unitId });
+  }
+
+  /** A "No bed" entry as a person to allocate (their profile gender comes along — B-011). */
+  asPerson(p: NoBed): StayPerson {
+    return { kind: 'staff', _id: p._id, name: p.name, gender: p.gender || null, detail: p.detail, stays: [] };
+  }
+
+  /** Each panel starts with an empty search. */
+  resetPicker() { this.q = ''; this.people = []; this.searched = false; }
+
+  closeAllocate() { this.person = null; this.lockUnit = ''; this.genderFromProfile = false; this.freeUnits = []; }
+  /** "Show all units" from a locked Allocate panel. */
+  unlockUnit() { this.lockUnit = ''; this.buildFree(); }
+  get lockedUnitName(): string { return this.data?.units.find(u => u._id === this.lockUnit)?.name || ''; }
+
+  /** The unit and night "Fill a vacant bed" is for: the open calendar night, else the open unit on the picked night. */
+  get fillTarget(): { unitId: string; date: string } | null {
+    if (this.cellAt) return this.cellAt;
+    return this.expanded ? { unitId: this.expanded, date: this.statsNight } : null;
+  }
+
+  /** Free beds in a unit on one night (0 when it isn't open). */
+  freeOn(u: StayUnitItem, date: string): number {
+    const n = this.night(u, date);
+    return n && n.open ? Math.max(0, u.beds - n.taken) : 0;
+  }
+
+  /**
+   * Units with a bed free on every night of from..to (and open), in the units'
+   * own order (user, 2026-11-18: a unit never jumps down the list after an
+   * allocation; a different gender there is a warning on the row, not a move).
+   * The panel's own Type + search narrow it.
+   */
   buildFree() {
     this.freeUnits = [];
     if (!this.data || !this.person || !this.from || !this.to || this.to <= this.from) return;
     const out: FreeUnit[] = [];
+    const q = this.freeQ.trim().toLowerCase();
     for (const u of this.data.units) {
-      if (this.typeFilter && u.type?._id !== this.typeFilter) continue;
+      if (this.lockUnit && u._id !== this.lockUnit) continue;
+      if (!this.lockUnit && this.freeType && u.type?._id !== this.freeType) continue;
+      if (!this.lockUnit && q && ![u.name, u.type?.name, u.area?.name].some(x => (x || '').toLowerCase().includes(q))) continue;
       const nights = u.nights.filter(n => n.date >= this.from && n.date < this.to);
       const wanted = Math.round((Date.parse(this.to) - Date.parse(this.from)) / DAY);
       if (nights.length < wanted || nights.some(n => !n.open)) continue;
@@ -267,19 +390,22 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
       const mixed = !!this.gender && u.stays.some(s => s.from < this.to && s.to > this.from && s.gender !== this.gender);
       out.push({ unit: u, free, mixed });
     }
-    this.freeUnits = out.sort((a, b) => Number(a.mixed) - Number(b.mixed) || b.free - a.free || a.unit.name.localeCompare(b.unit.name));
+    this.freeUnits = out;
   }
+
+  /** The Allocate panel's unit filters: Type (starts from the page's) and a search. */
+  freeType = '';
+  freeQ = '';
+  get freeFiltersOn(): boolean { return !!(this.freeType || this.freeQ.trim()); }
+  clearFreeFilters() { this.freeType = ''; this.freeQ = ''; this.buildFree(); }
 
   /** Beds wanted: the group size for a guest, 1 for staff. */
   get groupSize(): number { return this.person?.kind === 'guest' ? Math.max(1, Math.min(50, Math.round(this.groupCount || 1))) : 1; }
   stepPeople(by: number) { this.groupCount = Math.max(1, Math.min(50, (this.groupCount || 1) + by)); this.buildFree(); }
 
-  /** Allocate someone from the "No bed tonight" list. */
-  allocateFor(p: { _id: string; name: string; detail: string }) {
-    this.tab = 'allocate';
-    this.from = this.statsNight;
-    this.to = plusDays(this.statsNight, 1);
-    this.pick({ kind: 'staff', _id: p._id, name: p.name, gender: null, detail: p.detail, stays: [] });
+  /** Allocate someone from the "No bed" list: that night, any unit. */
+  allocateFor(p: NoBed) {
+    this.pick(this.asPerson(p), { from: this.statsNight, to: plusDays(this.statsNight, 1) });
   }
 
   shiftStats(n: number) {
@@ -308,8 +434,8 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     try {
       await this.hospitality.addStay(this.event._id, { unit: f.unit._id, kind: p.kind, person: p._id, from: this.from, to: this.to, gender: this.gender, people: this.groupSize, confirmGender });
       this.notify.openSucessSnackBar(`${p.name}${this.groupSize > 1 ? ` (${this.groupSize} people)` : ''} → ${f.unit.name}, ${this.short(this.from)} to ${this.short(this.to)}`);
-      this.person = null;
-      this.q = '';
+      this.closeAllocate();
+      this.resetPicker();
       await this.load();
     } catch (err: any) {
       if (err?.error?.code === 'GENDER_MISMATCH') {
@@ -324,11 +450,62 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Every stay, soonest first, for the Allocate list. */
-  private buildStays() {
-    const list: (StayItem & { unitName: string })[] = [];
-    for (const u of this.data?.units || []) for (const s of u.stays) list.push({ ...s, unitName: u.name });
-    this.stays = list.sort((a, b) => a.from.localeCompare(b.from) || a.person.name.localeCompare(b.person.name));
+  // ── The night table (B-021) ──────────────────────────────
+
+  async loadNight() {
+    if (!this.event || this.readOnly || !this.statsNight) { this.nightRows = []; this.applyNight(); return; }
+    this.nightLoading = !this.nightRows.length;
+    try {
+      this.nightRows = (await this.hospitality.getStayNight(this.event._id, this.statsNight)).rows;
+    } catch (err: any) {
+      this.nightRows = [];
+      this.notify.openErrorSnackBar(err?.error?.message || 'Could not load that night.');
+    } finally {
+      this.nightLoading = false;
+      this.applyNight();
+    }
+  }
+
+  applyNight() {
+    const q = this.ntQ.trim().toLowerCase();
+    this.shownRows = this.nightRows.filter(r =>
+      (!q || [r.name, r.detail, r.stay?.unitName].some(x => (x || '').toLowerCase().includes(q))) &&
+      (!this.ntStatus || r.status === this.ntStatus) &&
+      (!this.ntKind || r.kind === this.ntKind));
+    // The open stay panel follows the fresh data
+    this.stayRow = this.stayKey ? this.nightRows.find(r => this.rowKey(r) === this.stayKey) || null : null;
+    if (!this.stayRow) this.stayKey = '';
+  }
+
+  countOf(v: '' | StayNightStatus): number { return v ? this.nightRows.filter(r => r.status === v).length : this.nightRows.length; }
+  setNtStatus(v: '' | StayNightStatus) { this.ntStatus = v; this.applyNight(); }
+  setNtKind(v: '' | 'staff' | 'guest') { this.ntKind = this.ntKind === v ? '' : v; this.applyNight(); }
+  get ntFiltersOn(): boolean { return !!(this.ntQ.trim() || this.ntStatus || this.ntKind); }
+  clearNtFilters() { this.ntQ = ''; this.ntStatus = ''; this.ntKind = ''; this.applyNight(); }
+  rowKey = (r: StayNightRow) => r.kind + ':' + r._id;
+  trackRow = (_: number, r: StayNightRow) => this.rowKey(r);
+
+  /** A row tapped: no bed → the Allocate panel for that night; a stay → the stay panel. */
+  openRow(r: StayNightRow) {
+    if (this.readOnly) return;
+    if (!r.stay) { this.pick(r, { from: this.statsNight, to: plusDays(this.statsNight, 1) }); return; }
+    this.stayKey = this.rowKey(r);
+    this.stayRow = r;
+  }
+  closeStay() { this.stayKey = ''; this.stayRow = null; }
+
+  /** From the stay panel: another range for the same person (starts the morning this stay ends). */
+  allocateAnother(r: StayNightRow) {
+    const from = r.stay?.to || this.statsNight;
+    this.closeStay();
+    this.pick(r, { from, to: plusDays(from, 1) });
+  }
+
+  /** B-017: "Expected to join · not reported yet" (late when that time has passed) for staff not reported. */
+  joinTag(p: StayPerson): { cls: string; label: string } | null {
+    if (p.kind !== 'staff' || p.reportedAt) return null;
+    const st = joinState(p.expectedAt, null);
+    return { cls: st === 'late' ? 'late' : 'expected', label: st === 'late' ? 'Expected · late, not reported' : 'Expected · not reported yet' };
   }
 
   move(s: StayItem, which: 'move-in' | 'move-out', undo = false) {
@@ -351,7 +528,13 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
       if (d > this.data.messDates.closesOn) break;
       this.calDates.push(d);
     }
-    this.cell = null;
+  }
+  /** B-012: 7 / 14 / 30 nights on screen. */
+  setCalDays(n: number) {
+    if (!CAL_RANGES.includes(n)) return;
+    this.calDays = n;
+    this.buildCalendar();
+    this.applyFilter();
   }
   shiftCal(n: number) {
     if (!this.data) return;
@@ -369,8 +552,32 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
     this.applyFilter();
   }
   night(u: StayUnitItem, d: string) { return u.nights.find(n => n.date === d); }
+  /** A tapped night opens the slide panel: who sleeps there, and "Fill a vacant bed". */
   openCell(u: StayUnitItem, d: string) {
-    this.cell = { unit: u, date: d, who: u.stays.filter(s => s.from <= d && s.to > d) };
+    this.expanded = '';
+    this.resetPicker();
+    this.cellAt = { unitId: u._id, date: d };
+    this.refreshCell();
+  }
+  closeCell() { this.cellAt = null; this.cell = null; }
+  private refreshCell() {
+    const at = this.cellAt;
+    const u = at && this.data?.units.find(x => x._id === at.unitId);
+    if (!at || !u) { this.cell = null; return; }
+    this.cell = { unit: u, date: at.date, who: u.stays.filter(s => s.from <= at.date && s.to > at.date), free: this.freeOn(u, at.date) };
+  }
+  /** The "No bed" quick picks are for the picked night only: move it to this night. */
+  noBedOn(date: string) {
+    this.statsNight = date;
+    this.load();
+  }
+
+  /** A unit's details panel (its own picker starts empty). */
+  openUnit(u: StayUnitItem) {
+    this.closeCell();
+    this.resetPicker();
+    this.expanded = u._id;
+    this.refreshUnitStays();
   }
 
   // ── helpers ──────────────────────────────────────────────

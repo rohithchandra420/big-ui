@@ -26,15 +26,21 @@ export interface PublicEvent {
 
 /** PH4a public map: whitelisted pins and areas only. */
 /** WASH: toilets are open / closed; a water station is refilled / empty. Only for places the WASH team set up. */
-export type PublicWash = 'open' | 'closed' | 'refilled' | 'empty';
+/** WASH words (2026-11-20): toilets cleaned / open / closed; water filled / empty. */
+export type PublicWash = 'open' | 'cleaned' | 'closed' | 'filled' | 'empty';
+/** What runs on a Workshop / Stage area now (or next today), or the Medical Bay switch. */
+export type PublicLive =
+  | { what: 'workshop'; now: boolean; title: string; start: string; end: string; state: SessionState; stateAt: string | null; full: boolean }
+  | { what: 'music'; now: boolean; act: string; genre: string; start: string; end: string }
+  | { what: 'medical'; open: boolean };
 export interface PublicMapPin { id: string; name: string; type: string; lat: number; lng: number; open?: boolean; note?: string; wash?: PublicWash; }
-export interface PublicMapArea { id: string; name: string; kind: string; points: [number, number][]; wash?: PublicWash; }
+export interface PublicMapArea { id: string; name: string; kind: string; points: [number, number][]; wash?: PublicWash; live?: PublicLive; }
 export type PublicMapAnswer = { off: false; pins: PublicMapPin[]; areas: PublicMapArea[] } | { off: true };
 
 /** PH6: photos staff chose to show, and "through the years". */
 export interface PublicPhoto { id: string; url: string; thumbUrl: string; caption: string; sub: string; layout: 'normal' | 'tall' | 'wide'; }
 export interface PublicEdition { edition: string; items: { value: string; label: string; icon: string }[]; }
-export type PublicHighlightsAnswer = { off: false; photos: PublicPhoto[]; stats: PublicEdition[] } | { off: true };
+export type PublicHighlightsAnswer = { off: false; photos: PublicPhoto[]; stats: PublicEdition[]; hero?: { url: string } | null } | { off: true };
 export type PublicEventAnswer = PublicEvent | { off: true };
 
 /** A workshop session's public status (big-api utils/publicSessionState.js). */
@@ -62,6 +68,17 @@ export interface PublicSession {
   placesLeft: number | null;
 }
 export type PublicSessionsAnswer = { off: false; sessions: PublicSession[] } | { off: true };
+
+/** A music slot (Music epic): artist / band, genre, stage and times only. */
+export interface PublicMusic {
+  id: string;
+  act: string;
+  genre: string;
+  stage: string;
+  start: string;
+  end: string;
+}
+export type PublicMusicAnswer = { off: false; music: PublicMusic[] } | { off: true };
 
 /** A news post from the organisers (PH3) — sent from staff Announcements. */
 export interface PublicNews {
@@ -105,6 +122,10 @@ export class PublicApiService {
 
   sessions(): Observable<Loaded<PublicSessionsAnswer>> {
     return this.get<PublicSessionsAnswer>('sessions');
+  }
+
+  music(): Observable<Loaded<PublicMusicAnswer>> {
+    return this.get<PublicMusicAnswer>('music');
   }
 
   news(): Observable<Loaded<PublicNewsAnswer>> {

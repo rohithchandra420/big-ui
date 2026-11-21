@@ -118,6 +118,9 @@ export class NavAccessService implements OnDestroy {
   /** WASH › Setup: DEV/DIR/ADMIN, the WASH TL, wash:manage. */
   get canSeeWashSetup(): boolean { return this.authService.canManageWash(this.user); }
 
+  /** Music Planner + Setup (view): the Music team, music grants, Helpdesk; changes are checked on the page and the server. */
+  get canSeeMusic(): boolean { return this.authService.canViewMusic(this.user); }
+
   /** Volunteers: DEV/DIR/ADMIN, the Volunteer department's TL, volunteer grants — never by membership. */
   get canSeeVolunteers(): boolean { return this.authService.canViewVolunteers(this.user); }
 
@@ -142,6 +145,8 @@ export class NavAccessService implements OnDestroy {
       case '/workshops': return true;
       case '/workshops/reports': return this.canSeeWorkshopReports;
       case '/workshops/setup': return this.canSeeWorkshopSetup;
+      case '/music':
+      case '/music/setup': return this.canSeeMusic;
       case '/hospitality':
       case '/hospitality/guests':
       case '/hospitality/report':

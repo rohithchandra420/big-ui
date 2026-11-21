@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DateTimeComponent } from '../../../shared/date-time/date-time.component';
+import { localDateTime } from '../../../core/join-time';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of, throwError } from 'rxjs';
@@ -32,7 +34,7 @@ describe('UserFormComponent', () => {
   let volunteersSpy: jasmine.SpyObj<VolunteersService>;
 
   const authStub = {
-    deptKeyOf: (d: any) => (['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk'].includes(d?.key) ? d.key : (d ? 'general' : ''))
+    deptKeyOf: (d: any) => (['general', 'box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk', 'music'].includes(d?.key) ? d.key : (d ? 'general' : ''))
   };
 
   const create = async (inputs: Partial<UserFormComponent>) => {
@@ -41,7 +43,7 @@ describe('UserFormComponent', () => {
     volunteersSpy = jasmine.createSpyObj('VolunteersService', ['createUser']);
 
     await TestBed.configureTestingModule({
-      declarations: [UserFormComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [DateTimeComponent, UserFormComponent, AppSelectComponent, AppOptionComponent],
       imports: [FormsModule, ReactiveFormsModule],
       providers: [
         { provide: AdminService, useValue: adminSpy },
@@ -183,7 +185,7 @@ describe('UserFormComponent', () => {
     });
 
     it('shows one row per built-in key that gives something — even with no department on it yet', () => {
-      expect(component.accessKeys.map(k => k.key)).toEqual(['box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk']);
+      expect(component.accessKeys.map(k => k.key)).toEqual(['box-office', 'tenting', 'workshop', 'hospitality', 'medical', 'wash', 'volunteer', 'helpdesk', 'music']);
       expect(component.accessKeys.find(k => k.key === 'box-office')!.names).toBe('Box Office');
       expect(component.accessKeys.find(k => k.key === 'wash')!.names).toBe('');
     });
@@ -194,7 +196,7 @@ describe('UserFormComponent', () => {
       expect(tiers('medical')).toEqual(['read']);
       expect(tiers('wash')).toEqual(['read', 'write', 'manage']);
       const rows = fixture.nativeElement.querySelectorAll('.dept-row');
-      expect(rows.length).toBe(8);
+      expect(rows.length).toBe(9);
       const hospitality = Array.from(rows as NodeListOf<HTMLElement>).find(r => r.textContent!.includes('Hospitality'))!;
       expect(hospitality.querySelectorAll('.access-chip').length).toBe(1);
     });
@@ -288,7 +290,8 @@ describe('UserFormComponent', () => {
     it('pre-fills the form and permission chips from the user', () => {
       expect(component.form.controls.userName.value).toBe('Vol Box');
       expect(component.form.controls.homeDepartment.value).toBe('d-box');
-      expect(component.form.controls.dateOfJoining.value).toBe('2026-03-15');
+      // one date + time field (local time of the stored value)
+      expect(component.form.controls.dateOfJoining.value).toBe(localDateTime(new Date('2026-03-15T00:00:00.000Z')));
       expect(component.keySelections['box-office']).toBe('write');
       expect('general' in component.keySelections).toBeFalse();   // an old general:read grant is not shown or re-sent
       expect(component.buildPermissions()).toEqual(['box-office:write']);   // opening Edit adds no default Read
@@ -307,7 +310,15 @@ describe('UserFormComponent', () => {
       const payload = adminSpy.updateUser.calls.mostRecent().args[0];
       expect(payload._id).toBe('u1');
       expect(payload.departments).toEqual([{ departmentId: 'd-box', access: ['read'] }]);
-      expect(payload.dateOfJoining).toBe('2026-03-15');
+      // Joining Time: the Expected Join Time goes as a full date-time (its stored time is kept)
+      expect(payload.dateOfJoining).toBe('2026-03-15T00:00:00.000Z');
+      // a changed time is sent; a date alone means 11:00
+      component.form.controls.dateOfJoining.setValue('2026-03-16');
+      component.submit();
+      expect(new Date(adminSpy.updateUser.calls.mostRecent().args[0].dateOfJoining).getHours()).toBe(11);
+      component.form.controls.dateOfJoining.setValue('2026-03-16T14:20');
+      component.submit();
+      expect(new Date(adminSpy.updateUser.calls.mostRecent().args[0].dateOfJoining).getMinutes()).toBe(20);
     });
   });
 

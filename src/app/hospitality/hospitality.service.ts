@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { DeskDecision, DeskExpected, DeskGuestHit, MealKey, DeskPerson, DeskState, Guest, GuestOutcome, GuestPass, FiguresInput, MealDay, MealRef, MessDay, MessReport, MessSetup, MessSetupInput, PassCard, PassInput, ScanOutcome, ServedRow, StayItem, StayOverview, StayPerson, StayTypeItem, UnitInput, Gender } from './hospitality.model';
+import { DeskDecision, DeskExpected, DeskGuestHit, MealKey, DeskPerson, DeskState, Guest, GuestOutcome, GuestPass, FiguresInput, MealDay, MealRef, MessDay, MessReport, MessSetup, MessSetupInput, PassCard, PassInput, ScanOutcome, ServedRow, StayItem, StayOverview, StayPerson, StayNightTable, StayTypeItem, UnitInput, Gender } from './hospitality.model';
 
 /** Hospitality (H1): the mess plan, the day's meals, kitchen count and alerts. */
 @Injectable({ providedIn: 'root' })
@@ -36,8 +36,9 @@ export class HospitalityService {
   reopen(ref: MealRef): Promise<MealDay> {
     return firstValueFrom(this.http.post<MealDay>(this.url + '/meals/reopen', ref));
   }
-  sendCount(ref: MealRef): Promise<MealDay> {
-    return firstValueFrom(this.http.post<MealDay>(this.url + '/meals/count', ref));
+  /** B-019: `nums` = the Veg / Non-veg numbers the person settled on (the server's expected count when left out). */
+  sendCount(ref: MealRef, nums?: { veg: number; nonVeg: number }): Promise<MealDay> {
+    return firstValueFrom(this.http.post<MealDay>(this.url + '/meals/count', nums ? { ...ref, ...nums } : ref));
   }
   remindTls(ref: MealRef): Promise<{ tls: number; delivered: number }> {
     return firstValueFrom(this.http.post<{ tls: number; delivered: number }>(this.url + '/remind-tls', ref));
@@ -56,7 +57,8 @@ export class HospitalityService {
   searchStaff(eventId: string, q: string): Promise<{ people: DeskPerson[]; guests: DeskGuestHit[] }> {
     return firstValueFrom(this.http.get<{ people: DeskPerson[]; guests: DeskGuestHit[] }>(this.url + '/staff', { params: { event: eventId, q } }));
   }
-  scan(eventId: string, who: { qr?: string; user?: string; pass?: string }): Promise<ScanOutcome> {
+  /** `preview` (with `user`): a tapped name — look only; a marked person comes back "ready", nothing is recorded. */
+  scan(eventId: string, who: { qr?: string; user?: string; pass?: string; preview?: boolean }): Promise<ScanOutcome> {
     return firstValueFrom(this.http.post<ScanOutcome>(this.url + '/desk/scan', { event: eventId, ...who }));
   }
   decide(eventId: string, user: string, decision: 'serve' | 'refuse' | 'block' | 'extra', reason?: string): Promise<{ decision: DeskDecision; person: DeskPerson }> {
@@ -141,8 +143,13 @@ export class HospitalityService {
   deleteUnit(id: string): Promise<unknown> {
     return firstValueFrom(this.http.delete(this.url + '/stay/units/' + id));
   }
-  searchStayPeople(eventId: string, q: string): Promise<{ people: StayPerson[] }> {
-    return firstValueFrom(this.http.get<{ people: StayPerson[] }>(this.url + '/stay/people', { params: { event: eventId, q } }));
+  /** B-017: with `night`, staff who join after that night are left out. */
+  searchStayPeople(eventId: string, q: string, night?: string): Promise<{ people: StayPerson[] }> {
+    return firstValueFrom(this.http.get<{ people: StayPerson[] }>(this.url + '/stay/people', { params: { event: eventId, q, ...(night ? { night } : {}) } }));
+  }
+  /** B-021: everyone who may need a bed that night, with their stay status. */
+  getStayNight(eventId: string, date: string): Promise<StayNightTable> {
+    return firstValueFrom(this.http.get<StayNightTable>(this.url + '/stay/night', { params: { event: eventId, date } }));
   }
   addStay(eventId: string, data: { unit: string; kind: 'staff' | 'guest'; person: string; from: string; to: string; gender?: Gender | null; people?: number; confirmGender?: boolean; note?: string }): Promise<StayItem> {
     return firstValueFrom(this.http.post<StayItem>(this.url + '/stay/stays', { event: eventId, ...data }));

@@ -1,17 +1,24 @@
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
 import { localTime } from '../../workshops/planner.utils';
 import { DeskExpected, ExpectedGuest, ExpectedPerson } from '../hospitality.model';
 
 /** Expected list filters (1.47.0). */
 export type ExpectedFilter = 'all' | 'not_yet' | 'served' | 'not_marked' | 'guests';
+/** A tapped row (B-014): a staff member, or a guest by their Meal Pass id. */
+export interface ExpectedPick { kind: 'staff' | 'guest'; id: string }
 const SERVED = new Set(['served', 'served_flagged', 'extra']);
-const WHY_LABELS: Record<string, string> = { marked: 'Marked', always: 'Always counted', not_marked: 'Not marked', not_expected: 'Not expected' };
+const WHY_LABELS: Record<string, string> = {
+  marked: 'Marked', always: 'Always counted', not_marked: 'Not marked', not_expected: 'Not expected',
+  expected: 'Expected to join', reported: 'Reported'
+};
 
 /**
  * Who is behind a meal's expected number (big-ui 1.47.0): counted staff, guest
  * Meal Passes and — greyed — staff not counted, with why and desk status.
  * Used on the Serving desk and on Today's Kitchen count. Styles are global
  * (.hx-e* in styles.css).
+ * 1.62.0: `pickable` makes the rows tappable (Serving desk, B-014) and
+ * `showAvatar` = false drops the photo (Today, B-002).
  */
 @Component({
   selector: 'app-expected-list',
@@ -19,6 +26,15 @@ const WHY_LABELS: Record<string, string> = { marked: 'Marked', always: 'Always c
 })
 export class ExpectedListComponent implements OnChanges {
   @Input() data: DeskExpected | null = null;
+  @Input() pickable = false;
+  @Input() showAvatar = true;
+  /**
+   * Narrow places (Today's Who's counted side panel): two-line rows — name,
+   * food icon and status on top, department and why below — and the food as an
+   * icon only, so the name always has room.
+   */
+  @Input() compact = false;
+  @Output() picked = new EventEmitter<ExpectedPick>();
 
   filter: ExpectedFilter = 'all';
   search = '';
@@ -52,11 +68,38 @@ export class ExpectedListComponent implements OnChanges {
     this.guests = f === 'all' || f === 'guests' ? guests.filter(g => hit(g.name) || hit(g.note)) : [];
   }
 
+  pickPerson(p: ExpectedPerson) { if (this.pickable) this.picked.emit({ kind: 'staff', id: p._id }); }
+  pickGuest(g: ExpectedGuest) { if (this.pickable) this.picked.emit({ kind: 'guest', id: g._id }); }
+
+  /**
+   * B-009: Enter in "Find a name" never moves on to another field (phones jump
+   * to the next box). It closes the keyboard, and picks the one match if there
+   * is exactly one.
+   */
+  onEnter(ev: Event) {
+    ev.preventDefault();
+    (ev.target as HTMLElement | null)?.blur?.();
+    const people = [...this.counted, ...this.others];
+    if (people.length + this.guests.length !== 1) return;
+    people.length ? this.pickPerson(people[0]) : this.pickGuest(this.guests[0]);
+  }
+
   time(iso: string): string { return localTime(new Date(iso)); }
+
+  /** "14:20" on the meal's day, else "13 Nov 14:20". */
+  private when(iso: string | null | undefined): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const sameDay = this.data?.meal?.date === `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return sameDay ? localTime(d) : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + localTime(d);
+  }
 
   whyLabel(p: ExpectedPerson): string {
     const slot = this.data?.meal?.basis;
     const base = WHY_LABELS[p.why];
+    // Joining Time: say clearly why they count before their attendance does
+    if (p.why === 'reported') return `Reported ${this.when(p.reportedAt)}`;
+    if (p.why === 'expected') return `Expected to join${p.expectedAt ? ' ' + this.when(p.expectedAt) : ''} · ${p.late ? 'late, not reported yet' : 'not reported yet'}`;
     return (p.why === 'marked' || p.why === 'not_marked') && slot ? `${base} · ${slot.label}${slot.previousDay ? ' (day before)' : ''}` : base;
   }
   statusLabel(p: ExpectedPerson): string {

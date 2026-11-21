@@ -167,42 +167,33 @@
 }
 .code-chip-unset { color: var(--text-secondary); font-style: italic; font-weight: 400; }
 
-.pt-code-input { flex: none; width: 70px; text-transform: uppercase; }
-
 .pt-actions {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
 }
 
-.pt-edit-form,
-.pt-add-form {
+/* Add / edit pass type slide panel (ui 1.69.0) */
+.pt-panel-form {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-primary);
+}
+.pt-panel-form .pt-code { text-transform: uppercase; max-width: 140px; }
+.pt-panel-form .pt-beds { max-width: 140px; }
+.pt-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.pt-panel-acts {
+  display: flex;
+  justify-content: flex-end;
   gap: 8px;
+  margin-top: 12px;
   flex-wrap: wrap;
 }
-
-.pt-add-form {
-  padding: 10px 12px;
-  background: var(--surface-card);
-  border: 1px dashed var(--border-default);
-  border-radius: 8px;
-}
-
-.pt-inline-input,
-.pt-inline-select {
-  padding: 6px 10px;
-  border: 1px solid var(--border-default);
-  border-radius: 8px; /* was 6px — bug fix (2026-08-20), matches .field select */
-  font-size: 12px;
-  font-family: inherit;
-  color: var(--text-primary);
-  background: #fff;
-  width: 100%;
-  box-sizing: border-box;
-}
-.pt-inline-input { flex: 1; min-width: 140px; }
 
 .btn-sm-outline {
   padding: 5px 12px;

@@ -131,28 +131,28 @@
       </div>
       <div class="field" *ngIf="!days.length">
         <label>Day *</label>
-        <input type="date" formControlName="day">
+        <app-date formControlName="day" ariaLabel="Day"></app-date>
       </div>
       <div class="form-two-col">
         <div class="field">
-          <label>Start *</label><input type="time" step="300" formControlName="start" (change)="onStartChange()">
+          <label>Start *</label><app-time formControlName="start" (change)="onStartChange()" ariaLabel="Start"></app-time>
           <span class="field-hint">Moving it moves the end, registration and cut-off too</span>
         </div>
-        <div class="field"><label>End *</label><input type="time" step="300" formControlName="end"></div>
+        <div class="field"><label>End *</label><app-time formControlName="end" ariaLabel="End"></app-time></div>
       </div>
       <div class="form-two-col">
         <div class="field">
-          <label>Registration opens</label><input type="time" step="300" formControlName="regOpens">
+          <label>Registration opens</label><app-time formControlName="regOpens" ariaLabel="Registration opens"></app-time>
           <span class="field-hint">Empty: open straight away</span>
         </div>
         <div class="field">
-          <label>Registration closes</label><input type="time" step="300" formControlName="regCloses">
+          <label>Registration closes</label><app-time formControlName="regCloses" ariaLabel="Registration closes"></app-time>
           <span class="field-hint">Empty: at the cut-off. The door opens then.</span>
         </div>
       </div>
       <div class="form-two-col">
         <div class="field">
-          <label>Cut-off</label><input type="time" step="300" formControlName="cutoff">
+          <label>Cut-off</label><app-time formControlName="cutoff" ariaLabel="Cut-off"></app-time>
           <span class="field-hint">Before the start. Empty: 15 min before. After it, people on the list who haven't come lose their place.</span>
         </div>
         <div class="field">

@@ -76,11 +76,11 @@
 
         <label class="date-filter">
           <span>From</span>
-          <input type="date" [(ngModel)]="fromDate" (ngModelChange)="onFilterChange()" [max]="toDate || null" />
+          <app-date [(ngModel)]="fromDate" (ngModelChange)="onFilterChange()" [max]="toDate || null" ariaLabel="From"></app-date>
         </label>
         <label class="date-filter">
           <span>To</span>
-          <input type="date" [(ngModel)]="toDate" (ngModelChange)="onFilterChange()" [min]="fromDate || null" />
+          <app-date [(ngModel)]="toDate" (ngModelChange)="onFilterChange()" [min]="fromDate || null" ariaLabel="To"></app-date>
         </label>
 
         <button class="btn-ghost clear-btn" *ngIf="hasFilters" (click)="clearFilters()">Clear</button>
@@ -91,12 +91,12 @@
       <table class="tbl">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Type</th>
-            <th>Recipient</th>
-            <th>Order #</th>
-            <th>Subject</th>
-            <th>Status</th>
+            <th appSort="date" [sort]="sort">Date</th>
+            <th appSort="type" [sort]="sort">Type</th>
+            <th appSort="recipient" [sort]="sort">Recipient</th>
+            <th appSort="order" [sort]="sort">Order #</th>
+            <th appSort="subject" [sort]="sort">Subject</th>
+            <th appSort="status" [sort]="sort">Status</th>
             <th>Sent by</th>
           </tr>
         </thead>

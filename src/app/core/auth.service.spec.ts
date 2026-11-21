@@ -294,6 +294,37 @@ describe('AuthService', () => {
             expect(service.isHelpdesk(v)).toBeFalse();
             expect(service.canViewWash(v)).toBeFalse();
             expect(service.canViewHospitality(v)).toBeFalse();
+            expect(service.canViewMusic(v)).toBeFalse();
+        });
+    });
+
+    describe('Music access (by department key, same rule as big-api musicAccess.js)', () => {
+        const music = { _id: 'd1', name: 'Sound & Stage', key: 'music' };
+        const desk = { _id: 'd2', name: 'Front Desk', key: 'helpdesk' };
+        const mk = (role: string, depts: any[] = [], perms: string[] = []) =>
+            new User('Test', 'a@b.com', '', role, '', '', '123', undefined, depts.map(d => ({ department: d, access: ['read'] })), perms);
+
+        it('Manage (stages): top roles, the Music TL, music:manage', () => {
+            expect(service.canManageMusic(mk('DIR'))).toBeTrue();
+            expect(service.canManageMusic(mk('TL', [music]))).toBeTrue();
+            expect(service.canManageMusic(mk('VOL', [], ['music:manage']))).toBeTrue();
+            expect(service.canManageMusic(mk('VOL', [music]))).toBeFalse();
+            expect(service.canManageMusic(mk('VOL', [], ['music:write']))).toBeFalse();
+        });
+
+        it('Edit (acts, slots): also music:write — a member alone does not edit', () => {
+            expect(service.canEditMusic(mk('VOL', [], ['music:write']))).toBeTrue();
+            expect(service.canEditMusic(mk('VOL', [music]))).toBeFalse();
+            expect(service.canEditMusic(mk('VOL', [], ['music:read']))).toBeFalse();
+        });
+
+        it('View: members, any music grant and Helpdesk; nobody else', () => {
+            expect(service.canViewMusic(mk('VOL', [music]))).toBeTrue();
+            expect(service.canViewMusic(mk('VOL', [], ['music:read']))).toBeTrue();
+            expect(service.canViewMusic(mk('VOL', [desk]))).toBeTrue();
+            expect(service.canEditMusic(mk('VOL', [desk]))).toBeFalse();
+            expect(service.canViewMusic(mk('TL', [{ _id: 'd3', name: 'Music', key: 'general' }]))).toBeFalse();
+            expect(service.canViewMusic(null)).toBeFalse();
         });
     });
 

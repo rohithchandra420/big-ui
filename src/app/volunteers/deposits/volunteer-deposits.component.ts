@@ -7,6 +7,9 @@ import { EventItem } from '../../models/event.model';
 import { VolunteersService } from '../volunteers.service';
 import { DepositList, DepositMode, DepositRow, DepositStatus } from '../volunteers.model';
 import { DEPOSIT_LABEL, MODE_LABEL, money } from '../volunteers.utils';
+import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
+
+type DepositSortKey = 'name' | 'dept' | 'status' | 'amount' | 'mode' | 'collected';
 
 type Mode = 'closed' | 'view' | 'record' | 'refund' | 'standard';
 type Filter = 'all' | DepositStatus;
@@ -88,7 +91,20 @@ export class VolunteerDepositsComponent implements OnInit, OnDestroy {
       .filter(r => (this.filter === 'all' || r.status === this.filter) && (!q || r.name.toLowerCase().includes(q) || r.phone.includes(q)))
       // People who left with a deposit still held come first, then by name
       .sort((a, b) => Number(!!b.flag) - Number(!!a.flag) || a.name.localeCompare(b.name));
+    // B-003: a header tap sorts by that column instead
+    if (this.sort.key) this.rows = this.sort.apply(this.rows, this.sortGetters);
   }
+
+  /** B-003: column sort (none = the default order above). */
+  sort = new TableSort<DepositSortKey>(null, 'asc', () => this.apply());
+  readonly sortGetters: Record<DepositSortKey, SortGetter<DepositRow>> = {
+    name: r => r.name,
+    dept: r => r.department || (r.flag ? '' : 'Unassigned'),
+    status: r => this.statusLabel[r.status],
+    amount: r => r.amount ?? null,
+    mode: r => r.mode ? this.modeLabel[r.mode] : '',
+    collected: r => r.collectedAt ? Date.parse(r.collectedAt) : null
+  };
 
   setFilter(f: Filter) {
     this.filter = this.filter === f ? 'all' : f;

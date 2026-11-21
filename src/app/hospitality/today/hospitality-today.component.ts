@@ -52,6 +52,9 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
   /** H4: kitchen figures form for the selected (closed) meal. */
   figOpen = false;
   fig = { veg: null as number | null, nonVeg: null as number | null, kg: null as number | null, note: '' };
+  /** B-019: the count form — check and change the numbers before saving them. */
+  countOpen = false;
+  countForm = { veg: null as number | null, nonVeg: null as number | null };
   alertText = '';
   /** 1.47.0: "Who's counted" under the Kitchen count, for the selected day + meal. */
   whoOpen = false;
@@ -126,6 +129,7 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
     this.selectedKey = key;
     this.editingTime = false;
     this.figOpen = false;
+    this.countOpen = false;
     this.whatsapp = '';
     this.apply();
     if (this.whoOpen) { this.who = null; this.loadWho(); }
@@ -217,7 +221,35 @@ export class HospitalityTodayComponent implements OnInit, OnDestroy {
     }
   }
 
-  sendCount() { this.run('count', r => this.hospitality.sendCount(r), 'Count saved — copy it for WhatsApp to give it to the kitchen'); }
+  /** B-019: open the count form with the numbers to start from (the saved count, else the live expected one). */
+  openCount() {
+    const s = this.selected;
+    if (!s) return;
+    const n = s.count || s.expected;
+    this.countForm = { veg: n.veg, nonVeg: n.nonVeg };
+    this.countOpen = true;
+  }
+
+  /** The two numbers as whole numbers from 0 to 5000, or null when one isn't. */
+  get countNums(): { veg: number; nonVeg: number } | null {
+    const ok = (v: any) => v !== null && v !== '' && Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 5000;
+    const { veg, nonVeg } = this.countForm;
+    return ok(veg) && ok(nonVeg) ? { veg: Number(veg), nonVeg: Number(nonVeg) } : null;
+  }
+
+  /** True when the form's numbers differ from the live expected count. */
+  get countChanged(): boolean {
+    const n = this.countNums, e = this.selected?.expected;
+    return !!n && !!e && (n.veg !== e.veg || n.nonVeg !== e.nonVeg);
+  }
+
+  async saveCount() {
+    const nums = this.countNums;
+    if (!nums) { this.notify.openErrorSnackBar('Enter Veg and Non-veg as whole numbers from 0 to 5000.'); return; }
+    await this.run('count', r => this.hospitality.sendCount(r, nums), 'Count saved — copy it for WhatsApp to give it to the kitchen');
+    const c = this.selected?.count;
+    if (c && c.veg === nums.veg && c.nonVeg === nums.nonVeg) this.countOpen = false;
+  }
   closeMess() { this.run('close', r => this.hospitality.close(r), 'Mess Hall closed — staff notified'); }
   reopenMess() { this.run('reopen', r => this.hospitality.reopen(r), 'Mess Hall open again — staff notified'); }
 

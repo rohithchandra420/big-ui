@@ -13,6 +13,8 @@ import {
   EmailDeliveryFilter, EmailLogEntry, EmailLogPage, EmailLogQuery, EmailLogStatus, EmailType
 } from '../../models/email.model';
 import { EventItem } from '../../models/event.model';
+import { EmailLogSortKey } from '../../models/email.model';
+import { TableSort } from '../../shared/table-sort/table-sort';
 import { deliveryBadge, deliveryLabel, deliveryProblem, deliveryStatus } from '../../box-office/email/email-delivery.utils';
 
 type ReportCard = 'sent' | 'delivered' | 'bounced' | 'failed' | 'opened';
@@ -127,9 +129,14 @@ export class EmailReportComponent implements OnInit, OnDestroy {
       sentBy: this.senderFilter,
       // Date inputs are local calendar days; "to" covers the whole day.
       from: this.fromDate ? new Date(`${this.fromDate}T00:00:00`).toISOString() : '',
-      to: this.toDate ? new Date(`${this.toDate}T23:59:59.999`).toISOString() : ''
+      to: this.toDate ? new Date(`${this.toDate}T23:59:59.999`).toISOString() : '',
+      sort: this.sort.key,
+      dir: this.sort.dir
     };
   }
+
+  /** B-003: column sort — the server sorts (the report is paged); a new sort starts on page 1. */
+  sort = new TableSort<EmailLogSortKey>(null, 'asc', () => this.onFilterChange());
 
   load() {
     const requestNo = ++this.requestNo;

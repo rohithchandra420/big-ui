@@ -58,6 +58,16 @@ describe('PublicPhotosComponent', () => {
     expect(c.photos[0].shown).toBeFalse();
   });
 
+  it('one hero photo: marking one clears the other here too', () => {
+    c.save(c.photos[0], { hero: true });
+    expect(admin.updatePublicPhoto).toHaveBeenCalledWith('a', { hero: true });
+    expect(c.photos.map(p => !!p.hero)).toEqual([true, false]);
+    c.save(c.photos[1], { hero: true });
+    expect(c.photos.map(p => !!p.hero)).toEqual([false, true]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.ph-btn.on').length).toBe(1);
+  });
+
   it('moving swaps neighbours and re-numbers the order', () => {
     c.move(0, 1);
     expect(c.photos.map(p => p._id)).toEqual(['b', 'a']);

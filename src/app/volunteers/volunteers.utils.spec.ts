@@ -1,9 +1,9 @@
 import { VolBoard, Volunteer } from './volunteers.model';
-import { askMessage, buildBoard, money, moveMessage, needStatus } from './volunteers.utils';
+import { askMessage, buildBoard, dayWord, money, moveMessage, needStatus, shiftDate, sortRows } from './volunteers.utils';
 
 const vol = (id: string, name: string, department: string | null, marked = true): Volunteer => ({
-  _id: id, name, avatarVersion: 0, department, unassigned: !department, phone: '900000' + id, dateOfJoining: null,
-  today: { morning: marked, afternoon: false, night: false }, marked
+  _id: id, name, avatarVersion: 0, role: 'VOL', department, unassigned: !department, phone: '900000' + id, gender: '', dateOfJoining: null, reportedAt: null,
+  today: { morning: marked, afternoon: false, night: false }, marked, stay: 'none', band: false
 });
 
 const board = (): VolBoard => ({
@@ -70,5 +70,49 @@ describe('volunteers utils', () => {
     expect(moveMessage(1, 'Anil', 'WASH')).toBe('Anil moved to WASH');
     expect(moveMessage(3, 'Anil', 'WASH')).toBe('3 volunteers moved to WASH');
     expect(moveMessage(2, 'Anil', null)).toBe('2 volunteers freed to Unassigned');
+  });
+
+  it('sortRows (B-003): sorts both ways, keeps missing phone / joining date at the bottom, ties A–Z', () => {
+    const v = (name: string, phone: string, dateOfJoining: string | null): Volunteer => ({
+      _id: name, name, avatarVersion: 0, role: 'VOL', department: null, unassigned: true, phone, gender: '', dateOfJoining, reportedAt: null,
+      today: { morning: false, afternoon: false, night: false }, marked: false, stay: 'none', band: false
+    });
+    const rows = [
+      { v: v('Dara', '', '2026-11-12T00:00:00.000Z'), deptName: '' },
+      { v: v('Esha', '+919000000002', null), deptName: 'WASH' },
+      { v: v('Faiz', '+919000000001', '2026-11-10T00:00:00.000Z'), deptName: 'Decor' }
+    ];
+    const names = (r: typeof rows) => r.map(x => x.v.name);
+    expect(names(sortRows(rows, 'phone', 'asc'))).toEqual(['Faiz', 'Esha', 'Dara']);
+    expect(names(sortRows(rows, 'phone', 'desc'))).toEqual(['Esha', 'Faiz', 'Dara']);
+    expect(names(sortRows(rows, 'joined', 'asc'))).toEqual(['Faiz', 'Dara', 'Esha']);
+    expect(names(sortRows(rows, 'joined', 'desc'))).toEqual(['Dara', 'Faiz', 'Esha']);
+    expect(names(sortRows(rows, 'dept', 'asc'))).toEqual(['Faiz', 'Dara', 'Esha']);   // Decor, Unassigned, WASH
+    expect(names(sortRows(rows, 'today', 'asc'))).toEqual(['Dara', 'Esha', 'Faiz']);  // all equal: A–Z
+    expect(names(rows)).toEqual(['Dara', 'Esha', 'Faiz']);                           // input left as it was
+  });
+
+  it('sortRows: gender with blanks last; dayWord and shiftDate', () => {
+    const g = (name: string, gender: string) => ({ v: { ...vol(name, name, null), gender }, deptName: '' });
+    const rows = [g('Gita', ''), g('Hari', 'Male'), g('Ila', 'Female')];
+    expect(sortRows(rows, 'gender', 'asc').map(r => r.v.name)).toEqual(['Ila', 'Hari', 'Gita']);
+    expect(sortRows(rows, 'gender', 'desc').map(r => r.v.name)).toEqual(['Hari', 'Ila', 'Gita']);
+    expect(dayWord('2026-11-18', '2026-11-18')).toBe('Today');
+    expect(dayWord('2026-11-16', '2026-11-18')).toBe('Mon 16 Nov');
+    expect(shiftDate('2026-11-30', 1)).toBe('2026-12-01');
+    expect(shiftDate('2026-03-01', -1)).toBe('2026-02-28');
+  });
+
+  it('Joining Time (B-008): date ranges on Expected Join Time and Reported Time; sort by Reported Time', () => {
+    const b = board();
+    b.volunteers[0].dateOfJoining = new Date(2026, 10, 10, 11).toISOString();
+    b.volunteers[0].reportedAt = new Date(2026, 10, 11, 9).toISOString();
+    b.volunteers[1].dateOfJoining = new Date(2026, 10, 14, 11).toISOString();
+    const names = (f: any) => buildBoard(b, { ...all, ...f }).rows.map(r => r.v.name);
+    expect(names({ expFrom: '2026-11-10', expTo: '2026-11-10' })).toEqual([b.volunteers[0].name]);
+    expect(names({ expFrom: '2026-11-12' })).toEqual([b.volunteers[1].name]);
+    expect(names({ repFrom: '2026-11-11', repTo: '2026-11-11' })).toEqual([b.volunteers[0].name]);
+    const rows = buildBoard(b, all).rows;
+    expect(sortRows(rows, 'reported', 'asc')[0].v.name).toBe(b.volunteers[0].name);   // the others have none: at the bottom
   });
 });

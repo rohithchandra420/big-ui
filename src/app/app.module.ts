@@ -81,6 +81,9 @@ import { EmailProgressComponent } from './box-office/email/email-progress/email-
 import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
 import { SectionHeaderComponent } from './shared/section-header/section-header.component';
 import { SlidePanelComponent } from './shared/slide-panel/slide-panel.component';
+import { SortThComponent } from './shared/table-sort/sort-th.component';
+import { ReportedComponent } from './shared/reported/reported.component';
+import { DateTimeComponent } from './shared/date-time/date-time.component';
 import { TaskPillComponent } from './shared/task/task-pill.component';
 import { TaskSheetComponent } from './shared/task/task-sheet.component';
 import { TaskListComponent } from './shared/task/task-list.component';
@@ -117,7 +120,10 @@ import { WashMonitorComponent } from './wash/monitor/wash-monitor.component';
 import { WashSetupComponent } from './wash/setup/wash-setup.component';
 import { WashStockComponent } from './wash/stock/wash-stock.component';
 import { WashReportComponent } from './wash/report/wash-report.component';
+import { MusicPlannerComponent } from './music/planner/music-planner.component';
+import { MusicSetupComponent } from './music/setup/music-setup.component';
 import { VolunteersComponent } from './volunteers/volunteers.component';
+import { VolProfileComponent } from './volunteers/vol-profile/vol-profile.component';
 import { VolunteerNeedComponent } from './volunteers/volunteer-need/volunteer-need.component';
 import { VolunteerDepositsComponent } from './volunteers/deposits/volunteer-deposits.component';
 import { LocationPromptComponent } from './volunteers/location-prompt/location-prompt.component';
@@ -183,6 +189,9 @@ LOAD_WASM().subscribe()
     PwaStatusComponent,
     SectionHeaderComponent,
     SlidePanelComponent,
+    SortThComponent,
+    ReportedComponent,
+    DateTimeComponent,
     TaskPillComponent,
     TaskSheetComponent,
     TaskListComponent,
@@ -220,7 +229,10 @@ LOAD_WASM().subscribe()
     WashSetupComponent,
     WashStockComponent,
     WashReportComponent,
+    MusicPlannerComponent,
+    MusicSetupComponent,
     VolunteersComponent,
+    VolProfileComponent,
     VolunteerNeedComponent,
     VolunteerDepositsComponent,
     LocationPromptComponent

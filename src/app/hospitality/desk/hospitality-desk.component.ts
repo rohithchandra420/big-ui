@@ -9,7 +9,8 @@ import { BoxOfficeQrscannerPopupComponent, QrScannerData } from '../../box-offic
 import { localDate, localTime } from '../../workshops/planner.utils';
 import { HospitalityService } from '../hospitality.service';
 import { StaffBandService } from '../../core/staff-band.service';
-import { DeskDecision, DeskExpected, DeskGuestHit, DeskPerson, DeskState, GuestOutcome, MealKey, MEALS, ScanOutcome, SLOT_LABELS } from '../hospitality.model';
+import { DeskDecision, DeskExpected, DeskState, GuestOutcome, MealKey, MEALS, ScanOutcome, SLOT_LABELS } from '../hospitality.model';
+import { ExpectedPick } from '../expected-list/expected-list.component';
 
 const REFRESH_MS = 30 * 1000;
 const REASONS = ['Arrived late', 'TL confirmed by phone', 'Off-site duty', 'New joiner'];
@@ -19,9 +20,11 @@ const DECISION_LABELS: Record<DeskDecision, string> = {
 
 /**
  * Hospitality › Serving desk (H2, layout as mocks/mock-hospitality.html):
- * scan a staff meal QR or search, then serve. Marked → served at once; not
- * marked → serve with a reason or refuse; already ate → block or allow an extra
- * plate. Only while a meal is open. HospitalityGuard; the server checks too.
+ * scan a staff meal QR, or tap a name in the Expected list (B-009 / B-014,
+ * 1.62.0 — the old search box is gone), then serve in the slide panel. Marked →
+ * served at once; not marked → serve with a reason or refuse; already ate →
+ * block or allow an extra plate. Only while a meal is open. HospitalityGuard;
+ * the server checks too.
  */
 @Component({
   selector: 'app-hospitality-desk',
@@ -34,11 +37,6 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
   loading = false;
   loadError = '';
   busy = false;
-
-  search = '';
-  results: DeskPerson[] = [];
-  guestResults: DeskGuestHit[] = [];
-  searched = false;
 
   outcome: ScanOutcome | null = null;
   /** The last decision made on the current card (shown on it after Serve / Refuse / Block / Extra). */
@@ -133,8 +131,34 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     if (seq === this.expSeq) this.expected = r;
   }
   trackMealChip = (_: number, m: { key: string }) => m.key;
-  trackPerson = (_: number, p: DeskPerson) => p._id;
   trackLog = (_: number, r: { _id: string }) => r._id;
+
+  /** B-015: the meal on show — the picked one, else the desk's own meal. */
+  get shownMeal(): MealKey | null { return this.expMeal || this.expected?.meal?.meal || null; }
+
+  /** B-014: names can be tapped only while the list shows the meal that is open now. */
+  get listPickable(): boolean {
+    const o = this.desk?.open, m = this.expected?.meal;
+    return !!o && !!m && m.status === 'open' && m.meal === o.meal && m.date === o.date;
+  }
+
+  /**
+   * A tapped row opens the person's card only (user, 2026-11-18: a tap must
+   * never serve by mistake). A marked person comes back "ready" with a Serve
+   * button; a guest's Meal Pass already waits for Serve. Scanning still serves at once.
+   */
+  onPicked(p: ExpectedPick) {
+    if (!this.listPickable) return;
+    this.walkOpen = false;
+    this.check(p.kind === 'guest' ? { pass: p.id } : { user: p.id, preview: true });
+  }
+
+  /** "Serve" on a ready card: the real check — the server looks at attendance and plates again. */
+  serveReady() {
+    const o = this.outcome;
+    if (o?.result !== 'ready') return;
+    this.check({ user: o.person._id });
+  }
 
   get closesIn(): string {
     const o = this.desk?.open;
@@ -184,42 +208,13 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
       .subscribe(raw => this.check({ qr: raw }));
   }
 
-  async findStaff() {
-    const q = this.search.trim();
-    if (!this.event || q.length < 2) return;
-    this.gate.unlock();
-    try {
-      const found = await this.hospitality.searchStaff(this.event._id, q);
-      this.results = found.people;
-      this.guestResults = found.guests || [];
-      this.searched = true;
-    } catch (err: any) {
-      this.notify.openErrorSnackBar(err?.error?.message || err?.error?.errors?.[0]?.msg || 'Could not search staff.');
-    }
-  }
-
-  /** A guest from the search → their card, as if their pass was scanned. */
-  pickGuest(g: DeskGuestHit) {
-    this.results = [];
-    this.guestResults = [];
-    this.search = '';
-    this.searched = false;
-    this.check({ pass: g.passId });
-  }
-  trackGuestHit = (_: number, g: DeskGuestHit) => g.passId;
-
-  pick(p: DeskPerson) {
-    this.guestResults = [];
-    this.results = [];
-    this.search = '';
-    this.searched = false;
-    this.check({ user: p._id });
-  }
-
   /** Scan or pick → the server says served / flag / duplicate. */
-  async check(who: { qr?: string; user?: string; pass?: string }) {
+  async check(who: { qr?: string; user?: string; pass?: string; preview?: boolean }) {
     if (!this.event || this.busy) return;
+    this.gate.unlock();
     this.busy = true;
+    this.bandReasonOpen = false;
+    this.bandReason = '';
     this.done = '';
     this.reason = '';
     this.otherReason = '';
@@ -227,7 +222,9 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     try {
       this.outcome = await this.hospitality.scan(this.event._id, who);
       if (this.outcome.result === 'guest') this.prepareGuest(this.outcome);
-      if (this.outcome.result === 'served' || (this.outcome.result === 'guest' && this.guestHasPlates)) this.gate.found(); else this.gate.notFound();
+      // A tapped name that is ready makes no sound — the sound comes with Serve
+      if (this.outcome.result === 'ready') { /* no sound */ }
+      else if (this.outcome.result === 'served' || (this.outcome.result === 'guest' && this.guestHasPlates)) this.gate.found(); else this.gate.notFound();
       await this.load();
     } catch (err: any) {
       this.outcome = null;
@@ -269,6 +266,35 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     this.done = '';
     this.bandReasonOpen = false;
     this.bandReason = '';
+  }
+
+  // ── the slide panel (B-014) ──
+  get panelOpen(): boolean { return !!this.outcome || !!this.notStaff || this.walkOpen; }
+  get panelTitle(): string {
+    const o = this.outcome;
+    if (o) return o.result === 'guest' ? o.guest.name : o.person.name;
+    return this.notStaff ? 'No meal' : this.walkOpen ? 'Walk-in guest' : '';
+  }
+  get panelSubtitle(): string {
+    const o = this.outcome;
+    if (o) return o.result === 'guest' ? 'Guest · Meal Pass' : `${o.person.role} · ${o.person.department?.name || 'No department'}`;
+    return this.notStaff ? 'Not on the staff list' : this.walkOpen ? `Guest pass for ${this.desk?.open?.label || 'this meal'}` : '';
+  }
+  get panelIcon(): string {
+    if (this.outcome?.result === 'guest' || (!this.outcome && this.walkOpen)) return 'confirmation_number';
+    return this.notStaff ? 'block' : 'restaurant';
+  }
+
+  /** Closing the panel = ready for the next person. */
+  closePanel() {
+    this.clear();
+    this.walkOpen = false;
+  }
+
+  /** At a busy desk: close this card and open the scanner straight away. */
+  nextPerson() {
+    this.closePanel();
+    this.scanQr();
   }
 
   /** The staff result card (served / flag / duplicate), or null for a guest. */
@@ -320,6 +346,8 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
   }
 
   openWalkIn() {
+    if (!this.desk?.open) return;
+    this.clear();
     this.walk = { name: '', note: '', veg: 1, nonVeg: 0 };
     this.walkOpen = true;
   }
@@ -332,6 +360,7 @@ export class HospitalityDeskComponent implements OnInit, OnDestroy {
     this.busy = true;
     try {
       const g = await this.hospitality.walkIn(this.event._id, { name: w.name.trim(), note: w.note.trim(), vegPlates: w.veg, nonVegPlates: w.nonVeg });
+      // The panel stays open and swaps to the new guest's card
       this.walkOpen = false;
       this.done = '';
       this.outcome = g;

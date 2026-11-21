@@ -13,6 +13,11 @@ import { ConfirmDialogData } from '../../shared/confirm-dialog/confirm-dialog.co
 import { AvatarService } from '../../core/avatar.service';
 import { EventService } from '../../core/event.service';
 import { StaffBandInfo, StaffBandService } from '../../core/staff-band.service';
+import { JOIN_STATE_LABEL, JoinState, inDayRange, joinState } from '../../core/join-time';
+import { ReportedChange } from '../../shared/reported/reported.component';
+import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
+
+type UserSortKey = 'name' | 'email' | 'role' | 'dept' | 'access' | 'joined' | 'reported' | 'staff';
 
 type UserStatFilter = 'admins' | 'leads' | 'volunteers' | 'noDept' | null;
 export type UserStatusFilter = 'active' | 'deactivated' | 'all';
@@ -56,6 +61,10 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
    *  Status dropdown and the Deactivated stat card, so the two always agree. */
   statusFilter: UserStatusFilter = 'active';
   searchTerm = '';
+  // Joining Time (B-008): one day each for Expected Join Time and Reported Time ('' = any day; user, 2026-11-19)
+  expOn = '';
+  repOn = '';
+  joinLabel = JOIN_STATE_LABEL;
   roleFilter = '';
   deptFilter = '';
   /** Opens on "On <event>" (user, 2026-11-07). */
@@ -343,10 +352,25 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     return dept._id;
   }
 
+  /** B-003: column sort, Name A–Z to start with (the list's old fixed order); a new sort starts again on the first page. */
+  sort = new TableSort<UserSortKey>('name', 'asc', () => { this.pageIndex = 0; });
+  readonly sortGetters: Record<UserSortKey, SortGetter<any>> = {
+    name: u => u.name,
+    email: u => u.email,
+    role: u => this.roleName(u),
+    dept: u => this.homeDeptName(u),
+    access: u => this.getAccessLabel(u),
+    joined: u => u.dateOfJoining ? Date.parse(u.dateOfJoining) : null,
+    reported: u => u.reportedAt ? Date.parse(u.reportedAt) : null,
+    staff: u => this.isAlwaysStaff(u) ? 0 : u.onEvent ? 1 : 2
+  };
+
   get filteredUsers(): any[] {
-    let result = this.statusFilter === 'deactivated' ? this.deactivatedUsers
-      : this.statusFilter === 'all' ? this.users
-      : this.activeUsers;
+    // Sort the stored list (cached), then filter: a filter keeps the order.
+    const all = this.sort.sorted(this.users, this.sortGetters);
+    let result = this.statusFilter === 'deactivated' ? all.filter(u => !this.isActive(u))
+      : this.statusFilter === 'all' ? all
+      : all.filter(u => this.isActive(u));
 
     if (this.activeFilter === 'admins') {
       result = result.filter(u => TOP_LEVEL_ROLES.includes(this.roleName(u)));
@@ -369,6 +393,9 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
       result = result.filter(u => !!u.onEvent === want);
     }
 
+    if (this.expOn) result = result.filter(u => inDayRange(u.dateOfJoining, this.expOn, this.expOn));
+    if (this.repOn) result = result.filter(u => inDayRange(u.reportedAt, this.repOn, this.repOn));
+
     const term = this.searchTerm.trim().toLowerCase();
     if (term) {
       result = result.filter(u =>
@@ -377,7 +404,8 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
       );
     }
 
-    return [...result].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    // Already in the column sort's order (Name A–Z to start with).
+    return result;
   }
 
   get pagedUsers(): any[] {
@@ -386,7 +414,8 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
   }
 
   get hasFilters(): boolean {
-    return !!(this.activeFilter || this.searchTerm.trim() || this.roleFilter || this.deptFilter || (this.showStaff && this.staffFilter !== 'on'))
+    return !!(this.activeFilter || this.searchTerm.trim() || this.roleFilter || this.deptFilter || (this.showStaff && this.staffFilter !== 'on')
+      || this.expOn || this.repOn)
       || this.statusFilter !== 'active';
   }
 
@@ -412,7 +441,27 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     this.roleFilter = '';
     this.deptFilter = '';
     this.staffFilter = 'on';
+    this.expOn = this.repOn = '';
     this.pageIndex = 0;
+  }
+
+  // ── Joining Time ─────────────────────────────────────────
+
+  joinStateOf(u: any): JoinState {
+    return joinState(u?.dateOfJoining, u?.reportedAt);
+  }
+
+  /** The event picked in the sidebar (Reported is marked for its staff). */
+  get reportEventId(): string {
+    return this.eventService.currentActiveEvent?._id || '';
+  }
+
+  /** After Mark reported / Undo in the panel: update the row too. */
+  onReported(u: any, change: ReportedChange) {
+    u.reportedAt = change.reportedAt;
+    u.reportedBy = change.reportedBy;
+    const row = this.users.find(x => x._id === u._id);
+    if (row && row !== u) { row.reportedAt = change.reportedAt; row.reportedBy = change.reportedBy; }
   }
 
   // ── Staff list (STAFF_LIST_CONTEXT.md) ───────────────────

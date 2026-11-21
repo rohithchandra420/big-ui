@@ -58,7 +58,7 @@
           <button type="button" class="pill-btn" *ngIf="!readOnly && (s.closedEarly && s.status === 'closed')" [disabled]="!!busy" (click)="reopenMess()"><mat-icon>door_open</mat-icon>Reopen</button>
         </ng-container>
         <div class="ht-time" *ngIf="editingTime">
-          <input type="time" [(ngModel)]="newTime" aria-label="New opening time" />
+          <app-time [(ngModel)]="newTime" ariaLabel="New opening time"></app-time>
           <button type="button" class="btn-cta" [disabled]="!newTime" (click)="saveTime()">Save</button>
           <button type="button" class="btn-ghost" *ngIf="s.ownTimes" (click)="resetTime()">Usual time</button>
           <button type="button" class="btn-ghost" (click)="editingTime = false">Cancel</button>
@@ -106,6 +106,7 @@
             </div>
             <div class="ht-total"><b>{{ s.expected.total }}</b> plates expected</div>
             <div class="ht-basis">Count from <span class="hx-tag"><mat-icon class="ms-fill">{{ basisIcon }}</mat-icon>{{ basisText }}</span> + guest passes valid for this meal</div>
+            <div class="ht-basis" *ngIf="s.expectedToJoin">+ {{ s.expectedToJoin }} expected to join (not reported yet<ng-container *ngIf="s.lateToReport">, {{ s.lateToReport }} late</ng-container>)</div>
 
             <div class="ht-dl done" *ngIf="s.count">
               <mat-icon class="ms-fill">check_circle</mat-icon>
@@ -116,8 +117,23 @@
               <div>Kitchen needs the count by <b>{{ time(s.countDueAt) }}</b><ng-container *ngIf="isToday"> — {{ minutesToDue >= 0 ? minutesToDue + ' min left' : -minutesToDue + ' min late' }}</ng-container>. {{ s.notMarkedTotal }} {{ s.notMarkedTotal === 1 ? 'person' : 'people' }} not marked yet.</div>
             </div>
 
-            <div class="ht-acts">
-              <button *ngIf="!readOnly" type="button" class="pill-btn hx-primary" [disabled]="!!busy" (click)="sendCount()"><mat-icon>save</mat-icon>{{ s.count ? 'Save updated count' : 'Save count' }}</button>
+            <!-- B-019: check / change the numbers before saving them -->
+            <div class="ht-cform" *ngIf="countOpen && !readOnly">
+              <div class="ht-cgrid">
+                <div class="field"><label for="ht-cv"><span class="food-mark veg"></span>Veg</label><input id="ht-cv" type="number" min="0" max="5000" step="1" inputmode="numeric" [(ngModel)]="countForm.veg" (keyup.enter)="saveCount()" /></div>
+                <div class="field"><label for="ht-cn"><span class="food-mark nonveg"></span>Non-veg</label><input id="ht-cn" type="number" min="0" max="5000" step="1" inputmode="numeric" [(ngModel)]="countForm.nonVeg" (keyup.enter)="saveCount()" /></div>
+                <div class="ht-ctot"><small>Total</small><b>{{ countNums ? countNums.veg + countNums.nonVeg : '–' }}</b></div>
+              </div>
+              <p class="hx-muted ht-chint" *ngIf="!countNums">Whole numbers from 0 to 5000.</p>
+              <p class="hx-muted ht-chint" *ngIf="countNums">{{ countChanged ? 'Changed from the expected count (' + s.expected.veg + ' Veg · ' + s.expected.nonVeg + ' Non-veg).' : 'Same as the expected count.' }}</p>
+              <div class="ht-acts">
+                <button type="button" class="pill-btn hx-primary" [disabled]="!!busy || !countNums" (click)="saveCount()"><mat-icon>save</mat-icon>Save count</button>
+                <button type="button" class="btn-ghost" (click)="countOpen = false">Cancel</button>
+              </div>
+            </div>
+
+            <div class="ht-acts" *ngIf="!countOpen">
+              <button *ngIf="!readOnly" type="button" class="pill-btn hx-primary" [disabled]="!!busy" (click)="openCount()"><mat-icon>{{ s.count ? 'edit' : 'save' }}</mat-icon>{{ s.count ? 'Change saved count' : 'Save count' }}</button>
               <button type="button" class="pill-btn hx-wa" (click)="copyWhatsapp()"><mat-icon>chat</mat-icon>Copy for WhatsApp</button>
             </div>
             <pre class="hx-wa-prev" *ngIf="whatsapp">{{ whatsapp }}</pre>
@@ -128,7 +144,7 @@
             <app-slide-panel [open]="whoOpen" icon="checklist" title="Who's counted"
                              [subtitle]="dayLabel + ' · ' + s.expected.total + ' expected'" (closed)="toggleWho()">
               <p class="hx-muted" *ngIf="!who">Loading…</p>
-              <app-expected-list [data]="who"></app-expected-list>
+              <app-expected-list [data]="who" [showAvatar]="false" [compact]="true"></app-expected-list>
             </app-slide-panel>
           </div>
         </section>

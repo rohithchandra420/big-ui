@@ -96,10 +96,10 @@
       <div class="tbl-container">
         <div class="tbl-scroll">
           <table class="tbl" *ngIf="grp.rows.length; else none">
-            <thead><tr><th>#</th><th>Name</th><th class="hide-sm">Order · band</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th appSort="pos" [sort]="sort">#</th><th appSort="name" [sort]="sort">Name</th><th class="hide-sm" appSort="order" [sort]="sort">Order · band</th><th appSort="status" [sort]="sort">Status</th><th></th></tr></thead>
             <tbody>
-              <tr *ngFor="let e of grp.rows; let i = index; trackBy: trackId">
-                <td>{{ i + 1 }}</td>
+              <tr *ngFor="let e of grp.rows; trackBy: trackId">
+                <td>{{ posOf(e) }}</td>
                 <td class="strong">{{ e.pass?.name || '(deleted pass)' }}<span class="badge ba late" *ngIf="e.late">Late</span></td>
                 <td class="hide-sm">{{ e.pass?.order_id }}{{ e.pass?.band ? ' · ' + e.pass?.band?.code : '' }}</td>
                 <td>

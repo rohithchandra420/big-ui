@@ -18,6 +18,9 @@ import { EmailService } from '../../core/email.service';
 import { EmailBatchTrackerService } from '../../core/email-batch-tracker.service';
 import { EmailDialogsService } from '../email/email-dialogs.service';
 import { AttendeeListComponent } from '../attendee-list/attendee-list.component';
+import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
+
+type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'emailStatus' | 'admitted';
 
 type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | null;
 
@@ -191,8 +194,21 @@ export class BookingsComponent implements OnInit, OnDestroy {
     return this.bookings.filter(b => isSpotRegistration(b)).length;
   }
 
+  /** B-003: column sort; a new sort starts again on the first page. */
+  sort = new TableSort<BookingSortKey>(null, 'asc', () => { this.pageIndex = 0; });
+  readonly sortGetters: Record<BookingSortKey, SortGetter<Ticket>> = {
+    name: b => `${b.first_name || ''} ${b.last_name || ''}`.trim(),
+    email: b => b.email,
+    order: b => b.order_id,
+    ticket: b => b._id,
+    passes: b => this.passSummary(b),
+    amount: b => Number(b.totalPrice),
+    emailStatus: b => this.emailStatusLabel(b),
+    admitted: b => this.admittedCountFor(b)
+  };
+
   get filteredBookings(): Ticket[] {
-    let result = this.bookings;
+    let result = this.sort.sorted(this.bookings, this.sortGetters);
 
     if (this.activeFilter === 'emailSent') {
       result = result.filter(b => ticketEmailStatus(b) === 'sent');

@@ -46,7 +46,7 @@
       <!-- Venues -->
       <table class="tbl" *ngIf="tab === 'venue'">
         <thead>
-          <tr><th>Venue</th><th>Capacity</th><th>Workshop area</th><th class="hide-sm">Amenities</th><th>Sessions</th></tr>
+          <tr><th appSort="name" [sort]="venueSort">Venue</th><th appSort="capacity" [sort]="venueSort">Capacity</th><th appSort="area" [sort]="venueSort">Workshop area</th><th class="hide-sm" appSort="amenities" [sort]="venueSort">Amenities</th><th appSort="sessions" [sort]="venueSort">Sessions</th></tr>
         </thead>
         <tbody>
           <tr *ngFor="let v of venues; trackBy: trackId" [class.selected]="isOpen(v._id)" (click)="openItem('venue', v)">
@@ -63,7 +63,7 @@
       <!-- Workshops -->
       <table class="tbl" *ngIf="tab === 'workshop'">
         <thead>
-          <tr><th>Workshop</th><th>Category</th><th class="hide-sm">Facilitators</th><th class="hide-sm">Language</th><th>Sessions</th></tr>
+          <tr><th appSort="title" [sort]="workshopSort">Workshop</th><th appSort="category" [sort]="workshopSort">Category</th><th class="hide-sm" appSort="facilitators" [sort]="workshopSort">Facilitators</th><th class="hide-sm" appSort="language" [sort]="workshopSort">Language</th><th appSort="sessions" [sort]="workshopSort">Sessions</th></tr>
         </thead>
         <tbody>
           <tr *ngFor="let w of workshops; trackBy: trackId" [class.selected]="isOpen(w._id)" (click)="openItem('workshop', w)">
@@ -79,7 +79,7 @@
       <!-- Categories -->
       <table class="tbl" *ngIf="tab === 'category'">
         <thead>
-          <tr><th>Category</th><th>Workshops</th></tr>
+          <tr><th appSort="name" [sort]="categorySort">Category</th><th appSort="workshops" [sort]="categorySort">Workshops</th></tr>
         </thead>
         <tbody>
           <tr *ngFor="let c of categories; trackBy: trackId" [class.selected]="isOpen(c._id)" (click)="openItem('category', c)">

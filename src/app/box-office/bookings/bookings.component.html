@@ -71,14 +71,14 @@
               <span class="cb-box"></span>
             </label>
           </th>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Order ID</th>
-          <th>Ticket ID</th>
-          <th>Passes</th>
-          <th>Amount</th>
-          <th>Ticket Email</th>
-          <th>Admitted</th>
+          <th appSort="name" [sort]="sort">Name</th>
+          <th appSort="email" [sort]="sort">Email</th>
+          <th appSort="order" [sort]="sort">Order ID</th>
+          <th appSort="ticket" [sort]="sort">Ticket ID</th>
+          <th appSort="passes" [sort]="sort">Passes</th>
+          <th appSort="amount" [sort]="sort">Amount</th>
+          <th appSort="emailStatus" [sort]="sort">Ticket Email</th>
+          <th appSort="admitted" [sort]="sort">Admitted</th>
         </tr>
       </thead>
       <tbody>

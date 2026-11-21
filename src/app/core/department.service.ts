@@ -1,3 +1,5 @@
+import { firstValueFrom } from 'rxjs';
+import type { VolProfile } from '../volunteers/volunteers.model';
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { environment } from "src/environments/environment.development";
@@ -27,6 +29,9 @@ export interface AttendanceRosterEntry {
   morning: boolean;
   afternoon: boolean;
   night: boolean;
+  /** B-004 (api 1.55.0): who marked each saved slot and when. */
+  // Joining Time: `auto` + `note` = marked by BiG when the person was marked Reported
+  marks?: Partial<Record<'morning' | 'afternoon' | 'night', { by: string; at: string; auto?: 'reported'; note?: string }>>;
 }
 
 export interface AttendanceGrid {
@@ -192,6 +197,9 @@ export interface UsersMatrix {
   totals: { [date: string]: SlotTotals };
 }
 
+/** My Department › a member's details (2026-11-19). */
+export type MemberRole = 'VOL' | 'TL';
+
 @Injectable({ providedIn: 'root' })
 export class DepartmentService {
 
@@ -206,6 +214,16 @@ export class DepartmentService {
 
   getMyDepartments() {
     return this.http.get<MyDept[]>(this.url + '/department/mine');
+  }
+
+  /** A member's profile (the Volunteers profile + `can`): this department's TL or a top role. */
+  memberProfile(deptId: string, userId: string, eventId: string): Promise<VolProfile> {
+    return firstValueFrom(this.http.get<VolProfile>(`${this.url}/department/${deptId}/members/${userId}/profile`, { params: { event: eventId } }));
+  }
+
+  /** VOL <-> TL for a member of this department. */
+  setMemberRole(deptId: string, userId: string, eventId: string, role: MemberRole): Promise<{ _id: string; role: MemberRole }> {
+    return firstValueFrom(this.http.put<{ _id: string; role: MemberRole }>(`${this.url}/department/${deptId}/members/${userId}/role`, { event: eventId, role }));
   }
 
   getDepartmentDetail(id: string) {

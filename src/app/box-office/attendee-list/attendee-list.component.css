@@ -12,6 +12,19 @@
   color: var(--text-secondary);
   margin-top: 2px;
 }
+/* Pass line (ui 1.69.0): type icon + pass name in one colour per type, no background */
+.att-kind {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+}
+.att-kind .att-type-icon { margin-right: 4px; vertical-align: middle; flex-shrink: 0; color: inherit; }
+.att-pass-name { overflow-wrap: anywhere; min-width: 0; }
+.pk-festival { color: #16a34a; }
+.pk-tent { color: #d97706; }
+.pk-addon { color: #4f46e5; }
 /* .att-badges is a global utility in styles.css — margin-top here is component-specific. */
 .att-badges {
   margin-top: 4px;
@@ -123,3 +136,12 @@
   font-size: 11px;
   color: var(--text-secondary);
 }
+
+/* Bed model (I0): the people in a Tent Pass's beds */
+.att-beds { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; color: var(--text-primary); }
+.att-bed { display: inline-flex; align-items: center; gap: 3px; padding: 2px 4px 2px 7px; border-radius: 999px; font-size: 11px;
+  background: var(--surface-body); border: 1px solid var(--border-default); color: var(--text-primary); max-width: 100%; }
+.att-bed-unit { color: var(--text-muted); }
+.att-bed-x { border: 0; background: none; padding: 0 2px; display: inline-flex; cursor: pointer; color: var(--text-muted); }
+.att-bed-x mat-icon { font-size: 14px; width: 14px; height: 14px; }
+.att-bed-x:hover { color: var(--color-danger); }

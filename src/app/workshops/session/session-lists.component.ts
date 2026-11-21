@@ -8,6 +8,9 @@ import { BandLookup } from '../../box-office/box-office.service';
 import { BoxOfficeQrscannerPopupComponent, QrScannerData } from '../../box-office/registration/qrscanner-popup/qrscanner-popup.component';
 import { WorkshopService } from '../workshop.service';
 import { DoorAnswer, EntryPass, PersonRef, SessionLists, WorkshopEntry } from '../workshops.model';
+import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
+
+type EntrySortKey = 'pos' | 'name' | 'order' | 'status';
 import { effectiveCutoff, effectiveRegCloses, localTime } from '../planner.utils';
 
 type Tab = 'list' | 'door';
@@ -94,16 +97,36 @@ export class SessionListsComponent implements OnInit, OnDestroy {
       this.pre = e.filter(x => x.list === 'pre');
       this.wait = e.filter(x => x.list === 'wait');
       this.walkin = e.filter(x => x.list === 'walkin');
-      this.groups = [
-        { key: 'pre', title: 'Pre-registration list', rows: this.pre, empty: 'Nobody on the list yet' },
-        { key: 'wait', title: 'Waitlist', rows: this.wait, empty: 'Nobody waiting' },
-        { key: 'walkin', title: 'Walk-ins', rows: this.walkin, empty: 'No walk-ins' }
-      ];
+      this.buildGroups();
     } catch (err: any) {
       this.loadError = err?.status === 404 ? 'This session was not found.' : 'Could not load the lists.';
     } finally {
       this.loading = false;
     }
+  }
+
+  /** B-003: one column sort for the three lists (same columns). `#` stays the place on the list. */
+  sort = new TableSort<EntrySortKey>(null, 'asc', () => this.buildGroups());
+  readonly sortGetters: Record<EntrySortKey, SortGetter<WorkshopEntry>> = {
+    pos: x => this.posOf(x),
+    name: x => x.pass?.name,
+    order: x => x.pass?.order_id,
+    status: x => x.attendedAt ? Date.parse(x.attendedAt) : null
+  };
+
+  private buildGroups() {
+    const rows = (list: WorkshopEntry[]) => this.sort.key ? this.sort.apply(list, this.sortGetters) : list;
+    this.groups = [
+      { key: 'pre', title: 'Pre-registration list', rows: rows(this.pre), empty: 'Nobody on the list yet' },
+      { key: 'wait', title: 'Waitlist', rows: rows(this.wait), empty: 'Nobody waiting' },
+      { key: 'walkin', title: 'Walk-ins', rows: rows(this.walkin), empty: 'No walk-ins' }
+    ];
+  }
+
+  /** The entry's place on its own list (1 = first), whatever the sort. */
+  posOf(x: WorkshopEntry): number {
+    const list = x.list === 'pre' ? this.pre : x.list === 'wait' ? this.wait : this.walkin;
+    return list.indexOf(x) + 1;
   }
 
   get s() { return this.data?.session; }

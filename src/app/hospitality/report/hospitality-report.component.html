@@ -26,9 +26,9 @@
       </div>
       <button type="button" class="pill-btn day-nav-today" *ngIf="mode === 'day' && r.from !== r.today" (click)="toToday()"><mat-icon>today</mat-icon>Back to today</button>
       <div class="hr-range" *ngIf="mode === 'range'">
-        <input type="date" class="hr-date" [(ngModel)]="from" (change)="load()" aria-label="From" />
+        <app-date class="hr-date" [(ngModel)]="from" (change)="load()" [max]="to || null" ariaLabel="From"></app-date>
         <span class="hx-muted">to</span>
-        <input type="date" class="hr-date" [(ngModel)]="to" (change)="load()" aria-label="To" />
+        <app-date class="hr-date" [(ngModel)]="to" (change)="load()" [min]="from || null" ariaLabel="To"></app-date>
       </div>
       <button type="button" class="pill-btn" (click)="wholeMess()"><mat-icon>date_range</mat-icon>Whole mess period</button>
       <span class="grow"></span>

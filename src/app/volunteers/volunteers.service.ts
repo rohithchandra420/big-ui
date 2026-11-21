@@ -14,8 +14,9 @@ export class VolunteersService {
 
   constructor(private http: HttpClient) {}
 
-  board(eventId: string): Promise<VolBoard> {
-    return firstValueFrom(this.http.get<VolBoard>(this.url, { params: { event: eventId } }));
+  /** `date` (YYYY-MM-DD) changes only the attendance marks and the bed status; default today. */
+  board(eventId: string, date?: string): Promise<VolBoard> {
+    return firstValueFrom(this.http.get<VolBoard>(this.url, { params: date ? { event: eventId, date } : { event: eventId } }));
   }
 
   /** `departmentId` null = free them back to the Unassigned pool. */

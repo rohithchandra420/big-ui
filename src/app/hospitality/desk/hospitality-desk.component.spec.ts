@@ -107,11 +107,79 @@ describe('HospitalityDeskComponent', () => {
       discardPeriodicTasks();
     }));
 
-    it('the desk still works when the list fails', fakeAsync(() => {
+    it('the desk still works when the list fails: Scan stays on the card, no list', fakeAsync(() => {
       service.getDeskExpected.and.returnValue(Promise.reject(new Error('offline')));
       start();
       expect(text()).toContain('Lunch is open');
-      expect(fixture.nativeElement.querySelector('.hx-exp')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.hx-exp .hd-scanbtn')).not.toBeNull();
+      expect(fixture.nativeElement.querySelector('app-expected-list')).toBeNull();
+      discardPeriodicTasks();
+    }));
+
+    it('B-009: no top search box any more; Scan and Walk-in sit on the Expected card', fakeAsync(() => {
+      service.getDeskExpected.and.returnValue(Promise.resolve(exp()));
+      start();
+      expect(fixture.nativeElement.querySelector('input[aria-label="Search staff"]')).toBeNull();
+      const tools = fixture.nativeElement.querySelector('.hx-exp .hd-etools') as HTMLElement;
+      expect(tools.textContent).toContain('Scan QR');
+      expect(tools.textContent).toContain('Walk-in guest pass');
+      discardPeriodicTasks();
+    }));
+
+    it('B-014: a tapped row = the old search pick (staff or guest), only while the list shows the open meal', fakeAsync(() => {
+      service.getDeskExpected.and.returnValue(Promise.resolve(exp()));
+      start();
+      expect(component.listPickable).toBeTrue();
+      service.scan.and.returnValue(Promise.resolve({ result: 'ready', person }));
+      component.onPicked({ kind: 'staff', id: 'u1' });
+      flushMicrotasks(); fixture.detectChanges();
+      // A tap only looks (user, 2026-11-18): "ready", no sound, a Serve button
+      expect(service.scan).toHaveBeenCalledWith('e1', { user: 'u1', preview: true });
+      expect(gate.found).not.toHaveBeenCalled();
+      expect(gate.notFound).not.toHaveBeenCalled();
+      expect(text()).toContain('Marked — not served yet');
+      service.scan.and.returnValue(Promise.resolve({ result: 'served', person }));
+      (fixture.nativeElement.querySelector('.hd-result.ready .hx-primary') as HTMLButtonElement).click();
+      flushMicrotasks(); fixture.detectChanges();
+      expect(service.scan.calls.mostRecent().args).toEqual(['e1', { user: 'u1' }]);
+      expect(gate.found).toHaveBeenCalled();
+      expect(text()).toContain('Enjoy your meal');
+      expect(component.panelOpen).toBeTrue();
+      expect(component.panelTitle).toBe('Kavya Iyer');
+      expect(component.panelSubtitle).toBe('VOL · Stage Crew');
+
+      component.closePanel();
+      expect(component.panelOpen).toBeFalse();
+      component.onPicked({ kind: 'guest', id: 'p1' });
+      flushMicrotasks();
+      expect(service.scan).toHaveBeenCalledWith('e1', { pass: 'p1' });
+
+      // Another meal on show: rows don't serve
+      service.scan.calls.reset();
+      component.expected = { ...exp(), meal: { ...exp().meal!, meal: 'dinner', status: 'upcoming' } };
+      expect(component.listPickable).toBeFalse();
+      component.onPicked({ kind: 'staff', id: 'u1' });
+      expect(service.scan).not.toHaveBeenCalled();
+      discardPeriodicTasks();
+    }));
+
+    it('B-014: no taps while the Mess Hall is closed', fakeAsync(() => {
+      service.getDesk.and.returnValue(Promise.resolve({ open: null, next: 'Closed · Snacks at 16:30' }));
+      service.getDeskExpected.and.returnValue(Promise.resolve({ ...exp(), meal: { ...exp().meal!, status: 'upcoming' } }));
+      start();
+      expect(component.listPickable).toBeFalse();
+      discardPeriodicTasks();
+    }));
+
+    it('B-015: the meal on show is highlighted before anything is picked', fakeAsync(() => {
+      service.getDeskExpected.and.returnValue(Promise.resolve(exp()));
+      start();
+      const on = Array.from(fixture.nativeElement.querySelectorAll('.hx-emeals .toggle-chip.on')) as HTMLElement[];
+      expect(on.map(b => b.textContent!.trim())).toEqual(['Lunch']);
+      component.expMeal = 'dinner';
+      fixture.detectChanges();
+      const now = Array.from(fixture.nativeElement.querySelectorAll('.hx-emeals .toggle-chip.on')) as HTMLElement[];
+      expect(now.map(b => b.textContent!.trim())).toEqual(['Dinner']);
       discardPeriodicTasks();
     }));
   });
@@ -272,25 +340,23 @@ describe('HospitalityDeskComponent', () => {
     discardPeriodicTasks();
   }));
 
-  it('search shows guests with a pass valid now; picking one opens their card', fakeAsync(() => {
+  it('Next person closes the card and opens the scanner', fakeAsync(() => {
     start();
-    service.searchStaff.and.returnValue(Promise.resolve({ people: [], guests: [{ guestId: 'g1', name: 'Sound crew', note: 'Echo Rentals', passId: 'p1', label: 'One Day · 12 Nov' }] }));
-    component.search = 'echo';
-    component.findStaff();
+    service.scan.and.returnValue(Promise.resolve({ result: 'served', person }));
+    component.check({ user: 'u1' });
     flushMicrotasks();
-    fixture.detectChanges();
-    expect(text()).toContain('Guest · One Day · 12 Nov');
-    service.scan.and.returnValue(Promise.resolve(guestOut({ veg: 3, nonVeg: 2 })));
-    component.pickGuest(component.guestResults[0]);
-    flushMicrotasks();
-    expect(service.scan).toHaveBeenCalledWith('e1', { pass: 'p1' });
-    expect(component.guest?.guest.name).toBe('Sound crew');
+    dialog.open.and.returnValue({ afterClosed: () => of(null) } as any);
+    component.nextPerson();
+    expect(component.outcome).toBeNull();
+    expect(dialog.open).toHaveBeenCalled();
     discardPeriodicTasks();
   }));
 
-  it('a walk-in guest gets a pass for the open meal', fakeAsync(() => {
+  it('a walk-in guest gets a pass for the open meal, in the panel', fakeAsync(() => {
     start();
     component.openWalkIn();
+    expect(component.panelOpen).toBeTrue();
+    expect(component.panelTitle).toBe('Walk-in guest');
     component.walk.name = 'Bus driver';
     service.walkIn.and.returnValue(Promise.resolve(guestOut({ veg: 1, nonVeg: 0 })));
     component.submitWalkIn();

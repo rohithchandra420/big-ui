@@ -6,6 +6,10 @@ import { EventItem } from '../../models/event.model';
 import { WorkshopService } from '../workshop.service';
 import { ReportPerson, SessionReport, WorkshopReport, WorkshopReports } from '../workshops.model';
 import { localDate, localTime } from '../planner.utils';
+import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
+
+type SessionSortKey = 'workshop' | 'when' | 'venue' | 'list' | 'wait' | 'walkin' | 'attended' | 'noShows';
+type WorkshopSortKey = 'workshop' | 'sessions' | 'list' | 'wait' | 'walkin' | 'attended' | 'noShows';
 
 type View = 'session' | 'workshop';
 
@@ -78,7 +82,23 @@ export class WorkshopReportsComponent implements OnInit, OnDestroy {
     const has = (...parts: (string | undefined | null)[]) => !q || parts.some(p => (p || '').toLowerCase().includes(q));
     this.sessions = (this.data?.sessions || []).filter(s => has(s.workshop?.title, s.venue?.name, this.day(s.start)));
     this.workshops = (this.data?.workshops || []).filter(w => has(w.title, w.category?.name));
+    // B-003: a header tap sorts that table
+    if (this.sessionSort.key) this.sessions = this.sessionSort.apply(this.sessions, this.sessionGetters);
+    if (this.workshopSort.key) this.workshops = this.workshopSort.apply(this.workshops, this.workshopGetters);
   }
+
+  /** B-003: column sort, one per table. */
+  sessionSort = new TableSort<SessionSortKey>(null, 'asc', () => this.applySearch());
+  workshopSort = new TableSort<WorkshopSortKey>(null, 'asc', () => this.applySearch());
+  readonly sessionGetters: Record<SessionSortKey, SortGetter<SessionReport>> = {
+    workshop: s => s.workshop?.title, when: s => Date.parse(s.start), venue: s => s.venue?.name,
+    list: s => s.pre, wait: s => s.wait, walkin: s => s.walkin, attended: s => s.attended,
+    noShows: s => s.over ? s.noShows : null
+  };
+  readonly workshopGetters: Record<WorkshopSortKey, SortGetter<WorkshopReport>> = {
+    workshop: w => w.title, sessions: w => w.sessions, list: w => w.pre, wait: w => w.wait,
+    walkin: w => w.walkin, attended: w => w.attended, noShows: w => w.noShows
+  };
 
   day(iso: string): string {
     return new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });

@@ -31,11 +31,11 @@
     <table class="tbl">
       <thead>
         <tr>
-          <th>Accom No</th>
-          <th>Type</th>
-          <th>Capacity</th>
-          <th>Occupants</th>
-          <th>Gender</th>
+          <th appSort="no" [sort]="sort">Accom No</th>
+          <th appSort="type" [sort]="sort">Type</th>
+          <th appSort="capacity" [sort]="sort">Capacity</th>
+          <th appSort="occupants" [sort]="sort">Occupants</th>
+          <th appSort="gender" [sort]="sort">Gender</th>
           <th *ngIf="canManage"></th>
         </tr>
       </thead>

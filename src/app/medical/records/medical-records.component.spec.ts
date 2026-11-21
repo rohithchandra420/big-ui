@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { DateTimeComponent } from '../../shared/date-time/date-time.component';
 import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { Router } from '@angular/router';
@@ -25,7 +26,7 @@ describe('MedicalRecordsComponent', () => {
     }));
     router = jasmine.createSpyObj('Router', ['navigate']);
     await TestBed.configureTestingModule({
-      declarations: [MedicalRecordsComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [DateTimeComponent, MedicalRecordsComponent, AppSelectComponent, AppOptionComponent],
       imports: [FormsModule],
       providers: [
         { provide: MedicalService, useValue: medical },

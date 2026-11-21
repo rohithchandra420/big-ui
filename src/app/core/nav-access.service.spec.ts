@@ -33,6 +33,7 @@ describe('NavAccessService', () => {
       canViewWash: jasmine.createSpy('canViewWash').and.returnValue(false),
       canManageWash: jasmine.createSpy('canManageWash').and.returnValue(false),
       canViewVolunteers: jasmine.createSpy('canViewVolunteers').and.returnValue(false),
+      canViewMusic: jasmine.createSpy('canViewMusic').and.returnValue(false),
       canAnnounce: jasmine.createSpy('canAnnounce').and.callFake((u: any) => ['DEV', 'DIR', 'ADMIN'].includes(u?.role)),
       // Accommodation (key `tenting`): top roles by default, like the real service.
       canReadTenting: jasmine.createSpy('canReadTenting').and.callFake((u: any) => ['DEV', 'DIR', 'ADMIN'].includes(u?.role)),
@@ -63,6 +64,14 @@ describe('NavAccessService', () => {
     expect(labels('workshops')).toEqual(['Planner', 'Reports', 'Setup']);
     expect(labels('hospitality').length).toBe(6);
     expect(svc.canSeeSection('medical')).toBeTrue();
+  });
+
+  it('Music: Planner and Setup for the Music team, music grants and Helpdesk; nothing for others', () => {
+    user$.next({ _id: 'm1', role: 'VOL' });
+    expect(svc.canSeeSection('music')).toBeFalse();
+    auth.canViewMusic.and.returnValue(true);
+    user$.next({ _id: 'm2', role: 'VOL' });
+    expect(labels('music')).toEqual(['Planner', 'Setup']);
   });
 
   it('a Box Office volunteer sees Box Office and only Inventory under Accommodation', () => {

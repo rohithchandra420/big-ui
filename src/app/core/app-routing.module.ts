@@ -51,6 +51,9 @@ import { WashMonitorComponent } from "../wash/monitor/wash-monitor.component";
 import { WashSetupComponent } from "../wash/setup/wash-setup.component";
 import { WashStockComponent } from "../wash/stock/wash-stock.component";
 import { WashReportComponent } from "../wash/report/wash-report.component";
+import { MusicGuard } from "../music/music.guard";
+import { MusicPlannerComponent } from "../music/planner/music-planner.component";
+import { MusicSetupComponent } from "../music/setup/music-setup.component";
 import { VolunteersGuard } from "../volunteers/volunteers.guard";
 import { VolunteersComponent } from "../volunteers/volunteers.component";
 import { VolunteerDepositsComponent } from "../volunteers/deposits/volunteer-deposits.component";
@@ -125,6 +128,9 @@ const appRoutes: Routes = [
     { path: 'wash/stock', canActivate: [AuthGuard, WashGuard], component: WashStockComponent },
     { path: 'wash/report', canActivate: [AuthGuard, WashGuard], component: WashReportComponent },
     { path: 'wash/setup', canActivate: [AuthGuard, WashGuard], component: WashSetupComponent, data: { washManage: true } },
+    // Music (MUSIC_CONTEXT.md): the Music team, music grants, Helpdesk; changes are checked per action, server-side too.
+    { path: 'music', canActivate: [AuthGuard, MusicGuard], component: MusicPlannerComponent },
+    { path: 'music/setup', canActivate: [AuthGuard, MusicGuard], component: MusicSetupComponent },
     // Volunteers (V1): DEV/DIR/ADMIN, the Volunteer department's TL, volunteer grants.
     { path: 'volunteers', canActivate: [AuthGuard, VolunteersGuard], component: VolunteersComponent },
     { path: 'volunteers/deposits', canActivate: [AuthGuard, VolunteersGuard], component: VolunteerDepositsComponent },

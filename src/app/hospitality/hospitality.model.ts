@@ -71,6 +71,9 @@ export interface MealDay {
   countDueAt: string;
   notMarked: NotMarkedRow[];
   notMarkedTotal: number;
+  /** Joining Time (1.65.0): counted from their Expected Join Time, not reported yet (late = that time has passed). */
+  expectedToJoin?: number;
+  lateToReport?: number;
   /** Plates handed out at the Serving desk (H2). */
   served: number;
   /** H4: what the kitchen prepared, once entered. */
@@ -112,18 +115,22 @@ export interface DeskState {
 }
 
 /** Serving desk "Expected for <meal>" list (1.47.0). */
-export type ExpectedWhy = 'marked' | 'always' | 'not_marked' | 'not_expected';
+// Joining Time (1.65.0): 'expected' = counted from the Expected Join Time (not reported yet; late = that time has passed),
+// 'reported' = reported today before this meal.
+export type ExpectedWhy = 'marked' | 'always' | 'not_marked' | 'not_expected' | 'expected' | 'reported';
 export type ExpectedStatus = 'none' | DeskDecision;
 export interface ExpectedPerson {
   _id: string; name: string; avatarVersion: number; department: string | null; food: 'veg' | 'non-veg';
   counted: boolean; why: ExpectedWhy; status: ExpectedStatus; at: string | null; reason?: string;
+  late?: boolean; expectedAt?: string | null; reportedAt?: string | null;
 }
 export interface ExpectedGuest { _id: string; name: string; note: string; veg: number; nonVeg: number; used: number; }
 export interface DeskExpected {
   meal: { meal: MealKey; label: string; date: string; status: 'upcoming' | 'open' | 'closed'; start: string; end: string;
     basis: { slot: Slot; label: string; date: string; previousDay: boolean } } | null;
   next?: string;
-  summary?: { expected: number; served: number; notYet: number; marked: number; always: number; guestPlates: number };
+  summary?: { expected: number; served: number; notYet: number; marked: number; always: number; guestPlates: number;
+    reported?: number; expectedToJoin?: number; late?: number };
   counted?: ExpectedPerson[];
   others?: ExpectedPerson[];
   guests?: ExpectedGuest[];
@@ -131,6 +138,8 @@ export interface DeskExpected {
 
 export type ScanOutcome =
   | { result: 'served'; person: DeskPerson }
+  /** A tapped name that is marked and hasn't eaten (api 1.54.0): nothing recorded until Serve. */
+  | { result: 'ready'; person: DeskPerson }
   | { result: 'flag'; person: DeskPerson; slot: Slot; teamLeads: string[] }
   | { result: 'duplicate'; person: DeskPerson; lastServedAt: string; lastServedBy: string }
   | GuestOutcome;
@@ -283,7 +292,8 @@ export interface NightStats {
   guestsInBed: number;
   movedIn: number;
   staffTotal: number;
-  withoutBed: { _id: string; name: string; detail: string }[];
+  /** `gender` = their profile gender (api 1.54.0, B-011), so Allocate asks only when it is missing. */
+  withoutBed: { _id: string; name: string; gender?: Gender | null; detail: string }[];
 }
 export interface StayPerson {
   kind: 'staff' | 'guest';
@@ -292,6 +302,9 @@ export interface StayPerson {
   gender: Gender | null;
   detail: string;
   stays: { _id: string; unit: string; from: string; to: string }[];
+  /** Joining Time (staff only): Expected Join Time and Reported Time (null = not reported yet). */
+  expectedAt?: string | null;
+  reportedAt?: string | null;
 }
 export interface UnitInput {
   type?: string;
@@ -301,3 +314,12 @@ export interface UnitInput {
   area?: string | null;
   notes?: string;
 }
+
+/** B-021 (Joining Time, 1.65.0): one row of the Allocate tab's night table. */
+export type StayNightStatus = 'none' | 'booked' | 'in' | 'out';
+export interface StayNightRow extends StayPerson {
+  status: StayNightStatus;
+  /** Their stay that night (with the unit's name), or null = no bed. */
+  stay: (StayItem & { unitName: string }) | null;
+}
+export interface StayNightTable { date: string; rows: StayNightRow[]; }

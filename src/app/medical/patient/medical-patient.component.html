@@ -152,7 +152,7 @@
 
       <div class="md-grid md-grid-2">
         <label class="field"><span>Complaint *</span><input name="complaint" [(ngModel)]="form.complaint" required maxlength="500" placeholder="What brought them in"></label>
-        <label class="field"><span>Time of visit</span><input name="at" type="datetime-local" [(ngModel)]="form.atLocal"></label>
+        <label class="field"><span>Time of visit</span><app-date-time name="at" [(ngModel)]="form.atLocal" ariaLabel="Time of visit"></app-date-time></label>
       </div>
 
       <div class="md-sub">Vitals <small>(optional)</small></div>
@@ -207,7 +207,7 @@
           <mat-icon>event_repeat</mat-icon>Follow-up needed
         </label>
         <ng-container *ngIf="form.followUp.needed">
-          <label class="field"><span>When</span><input name="fuat" type="datetime-local" [(ngModel)]="form.followUpAtLocal"></label>
+          <label class="field"><span>When</span><app-date-time name="fuat" [(ngModel)]="form.followUpAtLocal" ariaLabel="Follow-up when"></app-date-time></label>
           <label class="field md-grow"><span>What to check</span><input name="funote" [(ngModel)]="form.followUp.note" maxlength="300"></label>
         </ng-container>
       </div>

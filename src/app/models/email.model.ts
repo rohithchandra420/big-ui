@@ -106,7 +106,13 @@ export interface EmailLogQuery {
   q?: string;
   page?: number;
   pageSize?: number;
+  /** B-003: column sort, done by the server (the report is paged). None = newest first. */
+  sort?: EmailLogSortKey | null;
+  dir?: 'asc' | 'desc';
 }
+
+/** The Email Report columns the server can sort. */
+export type EmailLogSortKey = 'date' | 'type' | 'recipient' | 'order' | 'subject' | 'status';
 
 export type EmailDeliveryFilter = 'delivered' | 'bounced' | 'deferred' | 'spam' | 'error' | 'opened' | 'none';
 

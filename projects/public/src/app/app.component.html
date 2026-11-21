@@ -14,7 +14,9 @@
 </div>
 
 <ng-container *ngIf="event as ev">
-  <header class="hero">
+  <header class="hero" [class.photo]="!!heroUrl">
+    <!-- The hero photo picked on Admin › Public Page (2026-11-20), under a dark veil -->
+    <div class="hero-bg" *ngIf="heroUrl"><img [src]="heroUrl" alt="" (error)="heroUrl = null"></div>
     <svg class="petal" width="180" height="180" viewBox="0 0 100 100" aria-hidden="true">
       <g fill="#fff"><ellipse cx="50" cy="25" rx="12" ry="24"/><ellipse cx="50" cy="75" rx="12" ry="24"/><ellipse cx="25" cy="50" rx="24" ry="12"/><ellipse cx="75" cy="50" rx="24" ry="12"/></g>
     </svg>
@@ -57,12 +59,31 @@
   <main class="wrap">
     <pub-news-ticker *ngIf="view === 'home'" [news]="news" [now]="now" (all)="go('news')"></pub-news-ticker>
     <pub-alerts-card *ngIf="view === 'home'"></pub-alerts-card>
-    <pub-home-view *ngIf="view === 'home'" [event]="ev" [sessions]="sessions" [now]="now"
-                   (open)="openSession($event)" (schedule)="go('schedule')"></pub-home-view>
-    <pub-find-way *ngIf="view === 'home'" [pins]="pins" [areas]="areas" [help]="help"
-                  (openMap)="openMap($event)" (openHelp)="openHelp($event)"></pub-find-way>
-    <pub-highlights *ngIf="view === 'home'" [photos]="photos" [stats]="stats" [phase]="ev.phase"></pub-highlights>
-    <pub-schedule-view *ngIf="view === 'schedule'" [event]="ev" [sessions]="sessions" [now]="now"
+
+    <ng-container *ngIf="view === 'home'">
+      <!-- A starred session changed (V2 mock) -->
+      <div class="changed-banner" *ngIf="changedCount" role="status">
+        <span class="ms fill">star</span>
+        <span class="t">{{ changedCount === 1 ? ('changed.one' | t) : ('changed.many' | t: { n: changedCount }) }}</span>
+        <button type="button" (click)="go('plan')">{{ 'changed.go' | t }}</button>
+      </div>
+
+      <!-- V2 order: sessions + music | map card + Find your way; then highlights, through the years, help -->
+      <div class="home-layout">
+        <div class="home-main">
+          <pub-home-view [event]="ev" [sessions]="sessions" [music]="music" [now]="now"
+                         (open)="openSession($event)" (schedule)="go('schedule')"></pub-home-view>
+        </div>
+        <aside class="home-side">
+          <pub-find-way part="find" [pins]="pins" [areas]="areas" (openMap)="openMap($event)"></pub-find-way>
+          <pub-map-view *ngIf="pins.length || areas.length" class="home-map" [preview]="true" [pins]="pins" [areas]="areas"
+                        (openMap)="openMap(null)"></pub-map-view>
+        </aside>
+      </div>
+      <pub-highlights [photos]="photos" [stats]="stats" [phase]="ev.phase"></pub-highlights>
+      <pub-find-way part="help" [help]="help" (openHelp)="openHelp($event)"></pub-find-way>
+    </ng-container>
+    <pub-schedule-view *ngIf="view === 'schedule'" [event]="ev" [sessions]="sessions" [music]="music" [now]="now"
                        (open)="openSession($event)"></pub-schedule-view>
 
     <pub-news-view *ngIf="view === 'news'" [news]="news" [now]="now"></pub-news-view>
