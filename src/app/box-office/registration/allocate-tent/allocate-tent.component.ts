@@ -188,6 +188,9 @@ export class AllocateTentComponent implements OnInit {
     return p.order_id != null ? 'Order #' + p.order_id : '';
   }
 
+  /** Imported passes have no item_name, only passTypeName. */
+  get passName(): string { return this.shopItem.passTypeName || this.shopItem.item_name || ''; }
+
   trackSuggestion = (_: number, p: SuggestedPass) => p._id;
 
   get selectedFestivalPass(): Shopcart | null {

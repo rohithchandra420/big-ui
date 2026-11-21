@@ -21,11 +21,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Admin › Events › Pass Types:** "Sales system code".
 
 ### Changed
-- **Allocate Tent:** each suggestion shows its **Booking ID** (or the order number). The booking's own people come first, tagged **This booking**. When some of the booking's Festival Passes still need their details, the panel says how many, to be filled at the counter first. The booking's own people are also listed when the Tent Pass and the buyer have no details to search on.
+- **Allocate Tent:** each suggestion shows its **Booking ID** (or the order number) next to the name. The booking's own people come first, tagged **This booking**. When some of the booking's Festival Passes still need their details, the panel says how many, to be filled at the counter first. The booking's own people are also listed when the Tent Pass and the buyer have no details to search on.
 - Places that showed "Order #" now handle a booking that has no order number.
 
 ### Fixed
 - **Booking details:** an add-on (Extra bed, Car Pass…) showed **Allocate Tent**, which could only fail. Only a Tent Pass has Allocate / Vacate now.
+- **Allocate Tent:** the title and "Choose Tent" showed empty brackets for an imported Tent Pass; they now show the pass type.
 
 ---
 

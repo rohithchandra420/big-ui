@@ -1,6 +1,6 @@
 <div class="card">
   <div class="card-title" style="margin-bottom: 12px;">
-    Allocate Tent — <span class="mono">{{ shopItem._id }}</span> ({{ shopItem.item_name }})
+    Allocate Tent — <span class="mono">{{ shopItem._id }}</span> ({{ passName }})
   </div>
   <!-- Bed model (I0): one Tent Pass, one Festival Pass per bed -->
   <div class="at-bed" *ngIf="bedCount > 1">
@@ -50,10 +50,11 @@
     <div class="att-info">
       <div class="att-name">
         {{ candidate.name || 'Attendee' }}
+        <span class="at-bid mono" *ngIf="bookingLabel(candidate)">{{ bookingLabel(candidate) }}</span>
         <span class="badge bb at-same" *ngIf="candidate.sameBooking">This booking</span>
       </div>
       <div class="att-pass">
-        <span class="mono" *ngIf="bookingLabel(candidate)">{{ bookingLabel(candidate) }} · </span>{{ candidate.phone_no }} · {{ candidate.email }}{{ candidate.gender ? ' · ' + candidate.gender : '' }}
+        {{ candidate.phone_no }} · {{ candidate.email }}{{ candidate.gender ? ' · ' + candidate.gender : '' }}
       </div>
     </div>
   </div>
@@ -67,7 +68,7 @@
   </div>
 
   <div class="divider"></div>
-  <div class="section-lbl" style="margin-bottom: 8px;">Choose Tent ({{ shopItem.item_name }})</div>
+  <div class="section-lbl" style="margin-bottom: 8px;">Choose Tent ({{ passName }})</div>
 
   <div class="at-tent-row">
     <div class="field" style="max-width: 280px; flex: 1 1 220px; margin: 0;">

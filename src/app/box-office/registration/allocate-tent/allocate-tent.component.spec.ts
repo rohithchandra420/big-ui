@@ -213,10 +213,15 @@ describe('AllocateTentComponent', () => {
       const el: HTMLElement = fixture.nativeElement;
       const rows = el.querySelectorAll('.att-row');
       expect(rows[0].textContent).toContain('This booking');
-      expect(rows[0].textContent).toContain('Booking BK-1');
+      expect(rows[0].querySelector('.att-name .at-bid')?.textContent).toContain('Booking BK-1');
       expect(rows[1].textContent).not.toContain('This booking');
       expect(rows[1].textContent).toContain('Order #77');
       expect(el.querySelector('.at-unfilled')?.textContent).toContain('1 Festival Pass in this booking still needs its details');
+    });
+
+    it('names the pass by its pass type when item_name is empty (imported passes)', () => {
+      component.shopItem = { ...component.shopItem, item_name: '', passTypeName: 'Twin Tent' } as any;
+      expect(component.passName).toBe('Twin Tent');
     });
 
     it('bookingLabel() prefers the Booking ID, then the order id, else nothing', () => {
