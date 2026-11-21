@@ -39,7 +39,7 @@ describe('AllocateTentComponent', () => {
       'suggestFestivalPassMatches', 'getAvailableTents', 'allocateTentSlot', 'getStay'
     ]);
     accomodationServiceSpy.getStay.and.returnValue(of({ tentPassId: 'x', beds: 1, used: 0, tentId: null, people: [] }));
-    accomodationServiceSpy.suggestFestivalPassMatches.and.returnValue(of([]));
+    accomodationServiceSpy.suggestFestivalPassMatches.and.returnValue(of({ matches: [], unfilledInBooking: 0 }));
     accomodationServiceSpy.getAvailableTents.and.returnValue(of([]));
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     eventServiceStub = { currentActiveEvent: mockActiveEvent };
@@ -63,7 +63,7 @@ describe('AllocateTentComponent', () => {
   });
 
   it('loads suggestions and vacant tents using the shop item\'s own details plus the active event id', () => {
-    expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', {
+    expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', 't1', {
       name: 'Existing Attendee', phone: '9000000001', email: 'existing@example.com'
     });
     expect(accomodationServiceSpy.getAvailableTents).toHaveBeenCalledWith('pt1');
@@ -74,26 +74,28 @@ describe('AllocateTentComponent', () => {
   // details, which exact-matched every OTHER blank Festival Pass event-wide —
   // "other attendees" showing up as suggestions. Auto-search is now skipped
   // entirely when there's nothing meaningful to search on.
+  // 2026-11-21: still asked (for this booking's own passes), but with no
+  // search terms at all — blank / placeholder values are never sent.
   describe('auto-search guard for a blank shop item', () => {
     const blankItem = { ...mockShopItem, name: '', phone_no: '', email: '' } as Shopcart;
 
-    it('does not auto-search on init for a genuinely blank item', () => {
+    it('asks only for this booking\'s passes (no search terms) for a genuinely blank item', () => {
       accomodationServiceSpy.suggestFestivalPassMatches.calls.reset();
       (component as any).shopItem = blankItem;
 
       component.ngOnInit();
 
-      expect(accomodationServiceSpy.suggestFestivalPassMatches).not.toHaveBeenCalled();
+      expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', 't1', {});
       expect(component.festivalPassSuggestions).toEqual([]);
     });
 
-    it('does not auto-search when phone_no is still the old "+91" filler value', () => {
+    it('does not search on the old "+91" filler value', () => {
       accomodationServiceSpy.suggestFestivalPassMatches.calls.reset();
       (component as any).shopItem = { ...blankItem, phone_no: '+91' };
 
       component.ngOnInit();
 
-      expect(accomodationServiceSpy.suggestFestivalPassMatches).not.toHaveBeenCalled();
+      expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', 't1', {});
     });
 
     it('still auto-searches for a blank item once staff types a manual search term', () => {
@@ -102,7 +104,7 @@ describe('AllocateTentComponent', () => {
 
       component.searchManually();
 
-      expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', {
+      expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', 't1', {
         name: 'Kavya', phone: 'Kavya', email: 'Kavya'
       });
     });
@@ -117,7 +119,7 @@ describe('AllocateTentComponent', () => {
 
       component.ngOnInit();
 
-      expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', {
+      expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', 't1', {
         name: 'Ravi Kumar', phone: '9123456780', email: 'ravi@example.com'
       });
     });
@@ -129,7 +131,7 @@ describe('AllocateTentComponent', () => {
 
       component.ngOnInit();
 
-      expect(accomodationServiceSpy.suggestFestivalPassMatches).not.toHaveBeenCalled();
+      expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', 't1', {});
     });
 
     it('prefers the shop item\'s own details over the ticket\'s when the item already has some', () => {
@@ -139,7 +141,7 @@ describe('AllocateTentComponent', () => {
 
       component.ngOnInit();
 
-      expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', {
+      expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', 't1', {
         name: 'Existing Attendee', phone: '9000000001', email: 'existing@example.com'
       });
     });
@@ -158,7 +160,7 @@ describe('AllocateTentComponent', () => {
   it('searchManually() re-queries suggestions using the typed term for all three fields', () => {
     component.manualSearchTerm = 'Kavya';
     component.searchManually();
-    expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', {
+    expect(accomodationServiceSpy.suggestFestivalPassMatches).toHaveBeenCalledWith('event1', 't1', {
       name: 'Kavya', phone: 'Kavya', email: 'Kavya'
     });
   });
@@ -189,6 +191,52 @@ describe('AllocateTentComponent', () => {
 
     expect(accomodationServiceSpy.suggestFestivalPassMatches).not.toHaveBeenCalled();
     expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('No event selected');
+  });
+
+  describe('this booking\'s own Festival Passes', () => {
+    it('keeps the matches and the count of unfilled passes from the reply', () => {
+      const own = { _id: 'f9', name: 'Wren Haldane', bookingId: 'BK-1', sameBooking: true } as any;
+      accomodationServiceSpy.suggestFestivalPassMatches.and.returnValue(of({ matches: [own], unfilledInBooking: 2 }));
+      component.ngOnInit();
+      expect(component.festivalPassSuggestions).toEqual([own]);
+      expect(component.unfilledInBooking).toBe(2);
+    });
+
+    it('shows the "This booking" tag, the Booking ID and the unfilled hint', () => {
+      accomodationServiceSpy.suggestFestivalPassMatches.and.returnValue(of({
+        matches: [{ _id: 'f9', name: 'Wren Haldane', bookingId: 'BK-1', sameBooking: true } as any,
+                  { _id: 'f8', name: 'Other Person', order_id: 77 } as any],
+        unfilledInBooking: 1
+      }));
+      component.ngOnInit();
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      const rows = el.querySelectorAll('.att-row');
+      expect(rows[0].textContent).toContain('This booking');
+      expect(rows[0].querySelector('.att-name .at-bid')?.textContent).toContain('Booking BK-1');
+      expect(rows[1].textContent).not.toContain('This booking');
+      expect(rows[1].textContent).toContain('Order #77');
+      expect(el.querySelector('.at-unfilled')?.textContent).toContain('1 Festival Pass in this booking still needs its details');
+    });
+
+    it('names the pass by its pass type when item_name is empty (imported passes)', () => {
+      component.shopItem = { ...component.shopItem, item_name: '', passTypeName: 'Twin Tent' } as any;
+      expect(component.passName).toBe('Twin Tent');
+    });
+
+    it('bookingLabel() prefers the Booking ID, then the order id, else nothing', () => {
+      expect(component.bookingLabel({ bookingId: 'BK-2', order_id: 5 } as any)).toBe('Booking BK-2');
+      expect(component.bookingLabel({ order_id: 5 } as any)).toBe('Order #5');
+      expect(component.bookingLabel({} as any)).toBe('');
+    });
+
+    it('clears the list on an error', () => {
+      accomodationServiceSpy.suggestFestivalPassMatches.and.returnValue(throwError(() => new Error('x')));
+      component.unfilledInBooking = 3;
+      component.ngOnInit();
+      expect(component.festivalPassSuggestions).toEqual([]);
+      expect(component.unfilledInBooking).toBe(0);
+    });
   });
 
   it('selectFestivalPass() toggles selection and pre-fills gender from the candidate', () => {

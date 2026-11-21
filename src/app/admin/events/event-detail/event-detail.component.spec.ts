@@ -251,7 +251,7 @@ describe('EventDetailComponent', () => {
 
     it('savePassType() creates the pass type and reloads detail', () => {
       component.startAddPassType();
-      component.passTypeForm.setValue({ name: 'Day Pass', category: 'festival', code: '', beds: 1 });
+      component.passTypeForm.setValue({ name: 'Day Pass', category: 'festival', code: '', beds: 1 , externalCode: ''});
       eventServiceSpy.createPassType.and.returnValue(of({ _id: 'pt3', event: 'evt1', name: 'Day Pass', category: 'festival' }));
 
       component.savePassType();
@@ -263,7 +263,7 @@ describe('EventDetailComponent', () => {
 
     it('savePassType() trims and forwards a code for a tent pass type', () => {
       component.startAddPassType();
-      component.passTypeForm.setValue({ name: 'Solo Tent', category: 'tent', code: ' so ', beds: 1 });
+      component.passTypeForm.setValue({ name: 'Solo Tent', category: 'tent', code: ' so ', beds: 1 , externalCode: ''});
       eventServiceSpy.createPassType.and.returnValue(of({ _id: 'pt3', event: 'evt1', name: 'Solo Tent', category: 'tent', code: 'SO' }));
 
       component.savePassType();
@@ -271,9 +271,31 @@ describe('EventDetailComponent', () => {
       expect(eventServiceSpy.createPassType).toHaveBeenCalledWith('evt1', { name: 'Solo Tent', category: 'tent', code: 'so', beds: 1 });
     });
 
+    it('savePassType() forwards a trimmed sales system code for any category', () => {
+      component.startAddPassType();
+      component.passTypeForm.setValue({ name: 'Day Pass', category: 'festival', code: '', beds: 1, externalCode: ' pass_day ' });
+      eventServiceSpy.createPassType.and.returnValue(of({ _id: 'pt3', event: 'evt1', name: 'Day Pass', category: 'festival', externalCode: 'pass_day' }));
+
+      component.savePassType();
+
+      expect(eventServiceSpy.createPassType).toHaveBeenCalledWith('evt1', jasmine.objectContaining({ externalCode: 'pass_day' }));
+    });
+
+    it('the sales system code may not contain spaces', () => {
+      component.startAddPassType();
+      component.passTypeForm.patchValue({ name: 'Day Pass', externalCode: 'pass day' });
+      expect(component.passTypeForm.invalid).toBeTrue();
+    });
+
+    it('the panel shows the Sales system code field for every category', () => {
+      component.startAddPassType();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('#pt-ext')).toBeTruthy();
+    });
+
     it('savePassType() shows an error notification on failure (e.g. duplicate name)', () => {
       component.startAddPassType();
-      component.passTypeForm.setValue({ name: 'Festival Ticket', category: 'festival', code: '', beds: 1 });
+      component.passTypeForm.setValue({ name: 'Festival Ticket', category: 'festival', code: '', beds: 1 , externalCode: ''});
       eventServiceSpy.createPassType.and.returnValue(throwError(() => ({
         error: { message: 'A pass type with this name already exists for this event' }
       })));
@@ -286,7 +308,7 @@ describe('EventDetailComponent', () => {
     it('startEditPassType() populates the edit form from the given pass type', () => {
       component.startEditPassType(mockDetail.passTypes[1]);
       expect(component.editingPassTypeId).toBe('pt2');
-      expect(component.editPassTypeForm.value).toEqual({ name: 'Solo Tent', category: 'tent', code: '', beds: 1 });
+      expect(component.editPassTypeForm.value).toEqual({ name: 'Solo Tent', category: 'tent', code: '', beds: 1, externalCode: '' });
     });
 
     it('startEditPassType() carries over an existing code', () => {
@@ -302,12 +324,12 @@ describe('EventDetailComponent', () => {
 
     it('saveEditPassType() updates the pass type and reloads detail', () => {
       component.startEditPassType(mockDetail.passTypes[1]);
-      component.editPassTypeForm.setValue({ name: 'Solo Tent (Renamed)', category: 'tent', code: 'so', beds: 1 });
+      component.editPassTypeForm.setValue({ name: 'Solo Tent (Renamed)', category: 'tent', code: 'so', beds: 1 , externalCode: ''});
       eventServiceSpy.updatePassType.and.returnValue(of({ _id: 'pt2', event: 'evt1', name: 'Solo Tent (Renamed)', category: 'tent', code: 'SO' }));
 
       component.saveEditPassType(mockDetail.passTypes[1]);
 
-      expect(eventServiceSpy.updatePassType).toHaveBeenCalledWith('evt1', 'pt2', { name: 'Solo Tent (Renamed)', category: 'tent', code: 'so', beds: 1 });
+      expect(eventServiceSpy.updatePassType).toHaveBeenCalledWith('evt1', 'pt2', { name: 'Solo Tent (Renamed)', category: 'tent', code: 'so', externalCode: '', beds: 1 });
       expect(notificationSpy.openSucessSnackBar).toHaveBeenCalledWith('Pass type updated');
       expect(component.editingPassTypeId).toBeNull();
     });
@@ -322,7 +344,7 @@ describe('EventDetailComponent', () => {
         expect(component.passTypePanelTitle).toBe('Add pass type');
         expect(component.passTypePanelForm).toBe(component.passTypeForm);
         const labels = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.pt-panel-form label')).map(l => l.textContent!.trim());
-        expect(labels).toEqual(['Name *', 'Category *']);
+        expect(labels).toEqual(['Name *', 'Category *', 'Sales system code']);
       });
 
       it('shows Code and Beds per pass only for a tent pass type', () => {
@@ -330,7 +352,7 @@ describe('EventDetailComponent', () => {
         component.passTypeForm.patchValue({ category: 'tent' });
         fixture.detectChanges();
         const labels = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.pt-panel-form label')).map(l => l.textContent!.trim());
-        expect(labels).toEqual(['Name *', 'Category *', 'Code', 'Beds per pass']);
+        expect(labels).toEqual(['Name *', 'Category *', 'Sales system code', 'Code', 'Beds per pass']);
       });
 
       it('Edit opens the panel filled in, and closing it clears both modes', () => {

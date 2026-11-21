@@ -7,7 +7,7 @@ import { Observable, Subscription } from 'rxjs';
 import { Ticket, TicketEmailStatus } from '../../models/ticket.model';
 import { BoxOfficeService } from '../box-office.service';
 import {
-  isFestivalPass, isSpotRegistration, passSummary as buildPassSummary,
+  isFestivalPass, isSpotRegistration, passSummary as buildPassSummary, bookingIdOf, paymentMethodLabel,
   ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, TICKET_EMAIL_FILTER_OPTIONS
 } from '../box-office.utils';
 import { Shopcart } from '../../models/ticket.model';
@@ -20,7 +20,7 @@ import { EmailDialogsService } from '../email/email-dialogs.service';
 import { AttendeeListComponent } from '../attendee-list/attendee-list.component';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
 
-type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'emailStatus' | 'admitted';
+type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'payment' | 'emailStatus' | 'admitted';
 
 type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | null;
 
@@ -53,6 +53,8 @@ export class BookingsComponent implements OnInit, OnDestroy {
   /** Closing the panel only hides it, so the attendee list (and any open Allocate Tent / Counter Form) survives — reset it on every open. */
   @ViewChild(AttendeeListComponent) attendeeList?: AttendeeListComponent;
   editingTicket = false;
+  /** External Booking Import panel (I2). */
+  importOpen = false;
 
   /** Email epic — DEV/DIR/ADMIN or a Box Office TL (decided server-side). */
   canSendEmail$!: Observable<boolean>;
@@ -139,6 +141,23 @@ export class BookingsComponent implements OnInit, OnDestroy {
     return buildPassSummary(booking.shopcart);
   }
 
+  /** Booking ID: the sales system's reference, else the order number. */
+  bookingId(booking: Ticket): string {
+    return bookingIdOf(booking);
+  }
+
+  /** Online / Offline / Guest list (imported bookings); '' otherwise. */
+  paymentMethod(booking: Ticket): string {
+    return paymentMethodLabel(booking);
+  }
+
+  /** A linked booking's reference was tapped: close the panel and search for it. */
+  findBooking(ref: string) {
+    this.searchTerm = ref;
+    this.onSearchChange();
+    this.closePanel();
+  }
+
   /** Bug fix (2026-08-20) — the detail panel's "Attendees" count was just the
    *  raw shopcart length, which double-counts Tent Pass items alongside the
    *  Festival Pass each is paired with. Split into the actual attendee count
@@ -199,10 +218,11 @@ export class BookingsComponent implements OnInit, OnDestroy {
   readonly sortGetters: Record<BookingSortKey, SortGetter<Ticket>> = {
     name: b => `${b.first_name || ''} ${b.last_name || ''}`.trim(),
     email: b => b.email,
-    order: b => b.order_id,
+    order: b => b.reference || b.order_id,
     ticket: b => b._id,
     passes: b => this.passSummary(b),
     amount: b => Number(b.totalPrice),
+    payment: b => this.paymentMethod(b),
     emailStatus: b => this.emailStatusLabel(b),
     admitted: b => this.admittedCountFor(b)
   };
@@ -227,7 +247,10 @@ export class BookingsComponent implements OnInit, OnDestroy {
       result = result.filter(b =>
         `${b.first_name} ${b.last_name}`.toLowerCase().includes(term) ||
         b.email?.toLowerCase().includes(term) ||
-        String(b.order_id).includes(term) ||
+        String(b.order_id ?? '').includes(term) ||
+        b.reference?.toLowerCase().includes(term) ||
+        b.paymentOrderId?.toLowerCase().includes(term) ||
+        b.paymentId?.toLowerCase().includes(term) ||
         b._id?.toLowerCase().includes(term)
       );
     }

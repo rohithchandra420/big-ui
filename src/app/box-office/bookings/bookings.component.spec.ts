@@ -87,6 +87,54 @@ describe('BookingsComponent', () => {
     fixture.detectChanges();
   });
 
+  describe('External Booking Import (I2)', () => {
+    const imported = Object.assign(new Ticket(null as any, 'Wren', 'Abernathy', 'wren@example.test', '919800000009', 'pay_X', 'not_sent', 1180, [], 't9'), {
+      reference: 'TST5-WREN', kind: 'guest_list', paidAt: '2026-11-10T13:00:00.000Z', paymentOrderId: 'order_X', linkedReferences: ['TST5-LINK']
+    }) as Ticket;
+
+    beforeEach(() => {
+      component.bookings = [...mockBookings, imported];
+      fixture.detectChanges();
+    });
+
+    it('shows the Booking ID (reference, else order number) and the payment method', () => {
+      const rows = Array.from(fixture.nativeElement.querySelectorAll('tbody tr')) as HTMLElement[];
+      const text = rows.map(r => r.textContent || '').join('|');
+      expect(text).toContain('TST5-WREN');
+      expect(text).toContain('Guest list');
+      expect(component.bookingId(mockBookings[0])).toBe('1');
+      expect(component.paymentMethod(mockBookings[0])).toBe('');
+    });
+
+    it('finds an imported booking by its reference or payment ids in the table search', () => {
+      component.searchTerm = 'tst5-wren';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['t9']);
+      component.searchTerm = 'order_x';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['t9']);
+    });
+
+    it('shows payment method, paid at and linked bookings in the detail panel; a link searches for it', () => {
+      component.openPanel(imported);
+      fixture.detectChanges();
+      const panel = fixture.nativeElement.querySelector('.panel') as HTMLElement;
+      expect(panel.textContent).toContain('Booking ID: TST5-WREN');
+      expect(panel.textContent).toContain('Payment method');
+      expect(panel.textContent).toContain('Paid 10 Nov 2026');
+      const link = panel.querySelector('.bk-link') as HTMLButtonElement;
+      expect(link.textContent).toContain('TST5-LINK');
+      link.click();
+      expect(component.searchTerm).toBe('TST5-LINK');
+    });
+
+    it('opens the import panel from the header for people who may Bulk Upload', () => {
+      const btn = Array.from(fixture.nativeElement.querySelectorAll('.page-ph button') as NodeListOf<HTMLButtonElement>)
+        .find(b => b.textContent?.includes('Import from sales system'));
+      expect(btn).toBeTruthy();
+      btn!.click();
+      expect(component.importOpen).toBeTrue();
+    });
+  });
+
   it('loads bookings on init', () => {
     expect(boxOfficeServiceSpy.getAllTickets).toHaveBeenCalled();
     expect(component.bookings).toEqual(mockBookings);

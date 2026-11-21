@@ -5,6 +5,15 @@ import { environment } from "src/environments/environment.development";
 import { Tent } from "../models/tent.model";
 import { Gender, Shopcart } from "../models/ticket.model";
 
+/** A suggested Festival Pass for a bed; sameBooking = in the Tent Pass's own booking. */
+export type SuggestedPass = Shopcart & { sameBooking?: boolean };
+
+export interface FestivalPassSuggestions {
+    matches: SuggestedPass[];
+    /** The booking's Festival Passes with no bed yet whose details are not filled in. */
+    unfilledInBooking: number;
+}
+
 export interface TentAllocationResult {
     tent: Tent;
     tentPassItem: Shopcart;
@@ -87,11 +96,14 @@ export class AccomodationService {
 
     // eventId is required server-side (validated in tenting.js) — the caller
     // must supply the active event's id, e.g. via EventService.currentActiveEvent.
-    suggestFestivalPassMatches(eventId: string, params: { name?: string; phone?: string; email?: string }) {
-        let httpParams = new HttpParams().set('eventId', eventId);
+    // tentPassId: the Tent Pass being allocated — its own booking's filled-in
+    // Festival Passes come first (sameBooking), and the reply counts the
+    // booking's passes still missing details.
+    suggestFestivalPassMatches(eventId: string, tentPassId: string, params: { name?: string; phone?: string; email?: string }) {
+        let httpParams = new HttpParams().set('eventId', eventId).set('tentPassId', tentPassId);
         if (params.name) httpParams = httpParams.set('name', params.name);
         if (params.phone) httpParams = httpParams.set('phone', params.phone);
         if (params.email) httpParams = httpParams.set('email', params.email);
-        return this.http.get<Shopcart[]>(this.url + '/suggestFestivalPassMatches', { params: httpParams });
+        return this.http.get<FestivalPassSuggestions>(this.url + '/suggestFestivalPassMatches', { params: httpParams });
     }
 }

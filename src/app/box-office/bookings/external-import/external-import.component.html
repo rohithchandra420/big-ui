@@ -1,0 +1,112 @@
+<app-slide-panel [open]="open" icon="move_to_inbox" title="Import from sales system"
+                 subtitle="Bookings file (.csv or .xlsx)" (closed)="close()">
+  <div class="xi">
+
+    <!-- 1. File -->
+    <div class="xi-drop" *ngIf="step !== 'done'" [class.xi-drop-on]="dragOver"
+         (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)"
+         (click)="fileInput.click()" role="button" tabindex="0" (keydown.enter)="fileInput.click()"
+         aria-label="Pick the bookings file">
+      <input #fileInput type="file" accept=".csv,.xlsx" hidden (change)="onFileInput($event)">
+      <mat-icon class="xi-drop-ic">upload_file</mat-icon>
+      <div class="xi-drop-t" *ngIf="!file">Drop the sales system's bookings file here, or tap to pick it</div>
+      <div class="xi-drop-t" *ngIf="file"><strong>{{ file.name }}</strong> · tap or drop to pick another</div>
+      <div class="xi-drop-s">One row per item line. Rows with the same <span class="mono">reference</span> make one booking.</div>
+    </div>
+
+    <div class="xi-wait" *ngIf="step === 'checking'">
+      <mat-icon class="xi-spin">progress_activity</mat-icon> Checking the file…
+    </div>
+
+    <!-- 2. Preview / 3. Report -->
+    <ng-container *ngIf="step !== 'checking' && (report || preview) as res">
+        <div class="xi-tiles">
+          <div class="xi-tile xi-tile-go">
+            <div class="xi-n">{{ report ? report.created : res.toCreate }}</div>
+            <div class="xi-l">{{ report ? 'Bookings created' : 'New bookings' }}</div>
+          </div>
+          <div class="xi-tile" *ngIf="!report">
+            <div class="xi-n">{{ res.passes }}</div>
+            <div class="xi-l">Passes</div>
+          </div>
+          <div class="xi-tile">
+            <div class="xi-n">{{ res.skipped.length }}</div>
+            <div class="xi-l">Already in BiG</div>
+          </div>
+          <div class="xi-tile" [class.xi-tile-warn]="res.changedSince.length">
+            <div class="xi-n">{{ res.changedSince.length }}</div>
+            <div class="xi-l">Changed since</div>
+          </div>
+          <div class="xi-tile" [class.xi-tile-bad]="res.errors.length">
+            <div class="xi-n">{{ res.errors.length }}</div>
+            <div class="xi-l">With errors</div>
+          </div>
+        </div>
+        <p class="xi-meta">{{ res.rows }} row{{ res.rows === 1 ? '' : 's' }} · {{ res.bookings }} booking{{ res.bookings === 1 ? '' : 's' }} in the file</p>
+
+        <!-- Missing pass types -->
+        <div class="xi-block xi-miss" *ngIf="!report && drafts.length">
+          <div class="xi-h"><mat-icon>confirmation_number</mat-icon>{{ drafts.length }} pass type{{ drafts.length === 1 ? '' : 's' }} not on this event yet</div>
+          <ng-container *ngIf="canCreatePassTypes; else askAdmin">
+            <p class="xi-hint">Check each one. They are created on the active event, then the file is imported.</p>
+            <div class="xi-pt" *ngFor="let d of drafts; let i = index; trackBy: trackDraft">
+              <div class="xi-pt-code mono" *ngIf="d.externalCode">{{ d.externalCode }}</div>
+              <div class="xi-pt-fields">
+                <div class="field xi-pt-name">
+                  <label [for]="'xi-name-' + i">Name</label>
+                  <input [id]="'xi-name-' + i" type="text" maxlength="60" [(ngModel)]="d.name">
+                </div>
+                <div class="field xi-pt-cat">
+                  <label>Category</label>
+                  <app-select [(ngModel)]="d.category" [attr.aria-label]="'Category for ' + d.name">
+                    <app-option *ngFor="let o of categoryOptions; trackBy: trackCategory" [value]="o.value">{{ o.label }}</app-option>
+                  </app-select>
+                </div>
+                <div class="field xi-pt-beds" *ngIf="d.category === 'tent'">
+                  <label [for]="'xi-beds-' + i">Beds per pass</label>
+                  <input [id]="'xi-beds-' + i" type="number" min="1" [max]="maxBeds" [ngModel]="d.beds" (ngModelChange)="setBeds(d, $event)">
+                </div>
+              </div>
+              <div class="xi-rows">{{ rowsText(d.rows) }}</div>
+            </div>
+          </ng-container>
+          <ng-template #askAdmin>
+            <div class="xi-pt" *ngFor="let d of drafts; trackBy: trackDraft">
+              <div class="xi-pt-line"><strong>{{ d.name }}</strong><span class="mono" *ngIf="d.externalCode"> · {{ d.externalCode }}</span></div>
+              <div class="xi-rows">{{ rowsText(d.rows) }}</div>
+            </div>
+            <p class="xi-hint xi-ask">Ask an admin to add these in Admin › Events (with the sales system code). The import stays blocked until they exist.</p>
+          </ng-template>
+        </div>
+
+        <!-- Changed since the last import -->
+        <div class="xi-block xi-list" *ngIf="res.changedSince.length">
+          <div class="xi-h"><mat-icon>update</mat-icon>Changed in the sales system since they were imported</div>
+          <p class="xi-hint">Not updated here. Fix them with Edit on the booking if needed.</p>
+          <div class="xi-chips"><span class="xi-chip mono" *ngFor="let ref of res.changedSince">{{ ref }}</span></div>
+        </div>
+
+        <!-- Errors -->
+        <div class="xi-block xi-list xi-errs" *ngIf="res.errors.length">
+          <div class="xi-h"><mat-icon>error</mat-icon>Not imported: fix these rows and upload the whole file again</div>
+          <div class="xi-err" *ngFor="let e of res.errors; let i = index; trackBy: trackError">
+            <div class="xi-err-hd"><span class="mono">{{ e.reference || 'No reference' }}</span><span class="xi-rows">{{ rowsText(e.rows) }}</span></div>
+            <ul><li *ngFor="let m of e.messages">{{ m }}</li></ul>
+          </div>
+        </div>
+
+        <p class="xi-ok" *ngIf="!report && !drafts.length && res.toCreate === 0">Nothing new to import in this file.</p>
+    </ng-container>
+
+    <div class="xi-acts">
+      <ng-container *ngIf="step !== 'done'; else doneActs">
+        <button type="button" class="btn-ghost" (click)="close()">Cancel</button>
+        <button type="button" class="btn-cta" [disabled]="!canImport" (click)="runImport()">{{ importLabel }}</button>
+      </ng-container>
+      <ng-template #doneActs>
+        <button type="button" class="btn-ghost" (click)="reset()">Import another file</button>
+        <button type="button" class="btn-cta" (click)="close()">Done</button>
+      </ng-template>
+    </div>
+  </div>
+</app-slide-panel>
