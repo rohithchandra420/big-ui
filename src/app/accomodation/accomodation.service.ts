@@ -5,13 +5,16 @@ import { environment } from "src/environments/environment.development";
 import { Tent } from "../models/tent.model";
 import { Gender, Shopcart } from "../models/ticket.model";
 
-/** A suggested Festival Pass for a bed; sameBooking = in the Tent Pass's own booking. */
-export type SuggestedPass = Shopcart & { sameBooking?: boolean };
+/** A suggested Festival Pass for a bed; sameBooking = in the Tent Pass's own booking;
+ *  linkedBooking = the reference of a booking this one links to (I5). */
+export type SuggestedPass = Shopcart & { sameBooking?: boolean; linkedBooking?: string };
 
 export interface FestivalPassSuggestions {
     matches: SuggestedPass[];
     /** The booking's Festival Passes with no bed yet whose details are not filled in. */
     unfilledInBooking: number;
+    /** The same, for the bookings this one links to. */
+    unfilledInLinked?: number;
 }
 
 export interface TentAllocationResult {

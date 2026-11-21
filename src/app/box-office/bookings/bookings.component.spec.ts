@@ -126,6 +126,27 @@ describe('BookingsComponent', () => {
       expect(component.searchTerm).toBe('TST5-LINK');
     });
 
+    it('names a linked booking that is loaded and lists the bookings linking back (I5)', () => {
+      const target = Object.assign(new Ticket(null as any, 'Ansel', 'Quarrie', 'ansel@example.test', '919800000010', 'pay_Y', 'not_sent', 900, [], 't10'), {
+        reference: 'TST5-LINK'
+      }) as Ticket;
+      component.bookings = [...mockBookings, imported, target];
+      expect(component.linkedName('TST5-LINK')).toBe('Ansel Quarrie');
+      expect(component.linkedName('NOT-HERE')).toBe('');
+      expect(component.linkedFrom(target)).toEqual(['TST5-WREN']);
+      expect(component.linkedFrom(imported)).toEqual([]);
+
+      component.openPanel(target);
+      fixture.detectChanges();
+      const panel = fixture.nativeElement.querySelector('.panel') as HTMLElement;
+      expect(panel.textContent).toContain('Linked from');
+      const back = panel.querySelector('.bk-link-from') as HTMLButtonElement;
+      expect(back.textContent).toContain('TST5-WREN');
+      expect(back.textContent).toContain('(Wren Abernathy)');
+      back.click();
+      expect(component.searchTerm).toBe('TST5-WREN');
+    });
+
     it('opens the import panel from the header for people who may Bulk Upload', () => {
       const btn = Array.from(fixture.nativeElement.querySelectorAll('.page-ph button') as NodeListOf<HTMLButtonElement>)
         .find(b => b.textContent?.includes('Import from sales system'));

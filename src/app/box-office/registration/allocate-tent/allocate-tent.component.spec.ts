@@ -239,6 +239,35 @@ describe('AllocateTentComponent', () => {
     });
   });
 
+  describe('linked bookings (I5)', () => {
+    it('tags a linked booking\'s pass and shows the linked unfilled hint', () => {
+      accomodationServiceSpy.suggestFestivalPassMatches.and.returnValue(of({
+        matches: [{ _id: 'f9', name: 'Wren Haldane', bookingId: 'BK-1', sameBooking: true } as any,
+                  { _id: 'f7', name: 'Lorcan Pryde', bookingId: 'FP-3', linkedBooking: 'FP-3' } as any],
+        unfilledInBooking: 0,
+        unfilledInLinked: 2
+      }));
+      component.ngOnInit();
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      const rows = el.querySelectorAll('.att-row');
+      expect(rows[0].textContent).not.toContain('Linked booking');
+      expect(rows[1].textContent).toContain('Linked booking FP-3');
+      expect(rows[1].textContent).not.toContain('This booking');
+      expect(component.unfilledInLinked).toBe(2);
+      expect(el.querySelector('.at-unfilled')?.textContent).toContain('2 Festival Passes in a linked booking still need their details');
+    });
+
+    it('treats a missing unfilledInLinked as 0 and clears it on an error', () => {
+      component.ngOnInit();
+      expect(component.unfilledInLinked).toBe(0);
+      accomodationServiceSpy.suggestFestivalPassMatches.and.returnValue(throwError(() => new Error('x')));
+      component.unfilledInLinked = 4;
+      component.ngOnInit();
+      expect(component.unfilledInLinked).toBe(0);
+    });
+  });
+
   it('selectFestivalPass() toggles selection and pre-fills gender from the candidate', () => {
     const candidate = { _id: 'f1', gender: 'Female' } as Shopcart;
     component.festivalPassSuggestions = [candidate];

@@ -151,6 +151,22 @@ export class BookingsComponent implements OnInit, OnDestroy {
     return paymentMethodLabel(booking);
   }
 
+  /** Linked bookings (I5): the buyer's name of the booking with this reference,
+   *  when it is loaded on this page; '' otherwise (target not in BiG yet). */
+  linkedName(ref: string): string {
+    const b = this.bookings.find(x => x.reference === ref);
+    return b ? `${b.first_name || ''} ${b.last_name || ''}`.trim() : '';
+  }
+
+  /** Linked bookings (I5): references of the bookings that link to this one. */
+  linkedFrom(booking: Ticket): string[] {
+    const ref = booking.reference;
+    if (!ref) return [];
+    return this.bookings
+      .filter(b => b._id !== booking._id && b.reference && b.linkedReferences?.includes(ref))
+      .map(b => b.reference as string);
+  }
+
   /** A linked booking's reference was tapped: close the panel and search for it. */
   findBooking(ref: string) {
     this.searchTerm = ref;

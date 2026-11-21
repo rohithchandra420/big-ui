@@ -176,8 +176,14 @@
       <!-- Bookings this one links to (a stay booking → its Festival Pass booking) -->
       <div class="bk-links" *ngIf="activeBooking.linkedReferences?.length">
         <span class="bk-links-l"><mat-icon>link</mat-icon>Linked bookings</span>
-        <button type="button" class="bk-link mono" *ngFor="let ref of activeBooking.linkedReferences"
-                (click)="findBooking(ref)" [title]="'Show booking ' + ref">{{ ref }}</button>
+        <button type="button" class="bk-link" *ngFor="let ref of activeBooking.linkedReferences"
+                (click)="findBooking(ref)" [title]="'Show booking ' + ref"><span class="mono">{{ ref }}</span><span class="bk-link-n" *ngIf="linkedName(ref) as n"> ({{ n }})</span></button>
+      </div>
+      <!-- Linked bookings (I5): the bookings that link to this one -->
+      <div class="bk-links" *ngIf="linkedFrom(activeBooking).length">
+        <span class="bk-links-l"><mat-icon>link</mat-icon>Linked from</span>
+        <button type="button" class="bk-link bk-link-from" *ngFor="let ref of linkedFrom(activeBooking)"
+                (click)="findBooking(ref)" [title]="'Show booking ' + ref"><span class="mono">{{ ref }}</span><span class="bk-link-n" *ngIf="linkedName(ref) as n"> ({{ n }})</span></button>
       </div>
 
       <div class="btn-row" style="margin-top: 8px;">

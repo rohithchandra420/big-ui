@@ -29,6 +29,8 @@ export class AllocateTentComponent implements OnInit {
   festivalPassSuggestions: SuggestedPass[] = [];
   /** This booking's Festival Passes with no bed yet that still need their details. */
   unfilledInBooking = 0;
+  /** The same, for the bookings this one links to (I5). */
+  unfilledInLinked = 0;
   selectedFestivalPassId: string | null = null;
   manualSearchTerm = '';
 
@@ -128,8 +130,9 @@ export class AllocateTentComponent implements OnInit {
       next: (res) => {
         this.festivalPassSuggestions = res?.matches ?? [];
         this.unfilledInBooking = res?.unfilledInBooking ?? 0;
+        this.unfilledInLinked = res?.unfilledInLinked ?? 0;
       },
-      error: () => { this.festivalPassSuggestions = []; this.unfilledInBooking = 0; }
+      error: () => { this.festivalPassSuggestions = []; this.unfilledInBooking = 0; this.unfilledInLinked = 0; }
     });
   }
 
