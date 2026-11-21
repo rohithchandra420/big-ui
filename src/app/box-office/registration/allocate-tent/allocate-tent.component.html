@@ -24,6 +24,11 @@
     <mat-icon aria-hidden="true">info</mat-icon>
     <span>{{ unfilledInBooking }} Festival {{ unfilledInBooking === 1 ? 'Pass' : 'Passes' }} in this booking still {{ unfilledInBooking === 1 ? 'needs its' : 'need their' }} details: fill {{ unfilledInBooking === 1 ? 'it' : 'them' }} at the counter first.</span>
   </div>
+  <!-- Linked bookings (I5): same note for the bookings this one links to -->
+  <div class="at-unfilled" *ngIf="unfilledInLinked > 0">
+    <mat-icon aria-hidden="true">link</mat-icon>
+    <span>{{ unfilledInLinked }} Festival {{ unfilledInLinked === 1 ? 'Pass' : 'Passes' }} in a linked booking still {{ unfilledInLinked === 1 ? 'needs its' : 'need their' }} details: fill {{ unfilledInLinked === 1 ? 'it' : 'them' }} at the counter first.</span>
+  </div>
 
   <div *ngIf="festivalPassSuggestions.length === 0" style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
     No matches yet — try searching by name, phone or email.
@@ -52,6 +57,7 @@
         {{ candidate.name || 'Attendee' }}
         <span class="at-bid mono" *ngIf="bookingLabel(candidate)">{{ bookingLabel(candidate) }}</span>
         <span class="badge bb at-same" *ngIf="candidate.sameBooking">This booking</span>
+        <span class="badge ba at-same" *ngIf="candidate.linkedBooking">Linked booking {{ candidate.linkedBooking }}</span>
       </div>
       <div class="att-pass">
         {{ candidate.phone_no }} · {{ candidate.email }}{{ candidate.gender ? ' · ' + candidate.gender : '' }}

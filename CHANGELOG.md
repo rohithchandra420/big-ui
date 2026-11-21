@@ -13,6 +13,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.71.0] - 2026-11-22
+
+### Added
+- **Allocate Tent: linked bookings.** The Festival Passes of the bookings a stay is linked to are listed right after the booking's own passes, tagged "Linked booking <Booking ID>". A note says how many of them still need their details.
+- **Booking details: both directions of a link.** "Linked bookings" now shows each booking's buyer name next to its Booking ID. A new "Linked from" row lists the bookings that link to this one. Tap one to find it.
+
+---
+
 ## [1.70.0] - 2026-11-21
 
 ### Added
