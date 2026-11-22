@@ -258,6 +258,27 @@ describe('AllocateTentComponent', () => {
       expect(el.querySelector('.at-unfilled')?.textContent).toContain('2 Festival Passes in a linked booking still need their details');
     });
 
+    it('a linked pass\'s Booking ID goes to that booking without picking the row; own passes stay plain', () => {
+      accomodationServiceSpy.suggestFestivalPassMatches.and.returnValue(of({
+        matches: [{ _id: 'f9', name: 'Wren Haldane', bookingId: 'BK-1', sameBooking: true } as any,
+                  { _id: 'f7', name: 'Lorcan Pryde', bookingId: 'FP-3', linkedBooking: 'FP-3' } as any],
+        unfilledInBooking: 0,
+        unfilledInLinked: 0
+      }));
+      component.ngOnInit();
+      fixture.detectChanges();
+      const emitted: string[] = [];
+      component.openBooking.subscribe(id => emitted.push(id));
+      const rows = fixture.nativeElement.querySelectorAll('.att-row');
+      expect(rows[0].querySelector('button.at-bid-link')).toBeNull();
+      expect(rows[0].querySelector('.at-bid')?.textContent).toContain('Booking BK-1');
+      const link = rows[1].querySelector('button.at-bid-link') as HTMLButtonElement;
+      expect(link.textContent).toContain('Booking FP-3');
+      link.click();
+      expect(emitted).toEqual(['FP-3']);
+      expect(component.selectedFestivalPassId).toBeNull();
+    });
+
     it('treats a missing unfilledInLinked as 0 and clears it on an error', () => {
       component.ngOnInit();
       expect(component.unfilledInLinked).toBe(0);

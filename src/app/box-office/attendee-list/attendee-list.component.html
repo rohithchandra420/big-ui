@@ -8,7 +8,8 @@
                    [shopItem]="activeAllocateItem"
                    [ticket]="ticket"
                    (allocated)="onTentAllocated($event)"
-                   (cancelled)="onAllocateCancelled()">
+                   (cancelled)="onAllocateCancelled()"
+                   (openBooking)="openBooking.emit($event)">
 </app-allocate-tent>
 
 <ng-container *ngIf="!activeCounterItem && !activeAllocateItem">

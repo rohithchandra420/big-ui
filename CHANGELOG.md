@@ -13,6 +13,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.72.0] - 2026-11-22
+
+### Added
+- **Bookings: Paid at and Source columns** (both sortable). Source is Sales system, Spot registration or Bulk Upload.
+- **Bookings search** also finds bookings by payment method, source and the date paid (e.g. "10 nov").
+- **Booking details:** a Source box with the payment method; the payment's order and payment IDs under the Booking ID.
+- **Go to a linked booking.** In the booking details, tapping a linked booking opens it in the same panel (a booking not in BiG yet is shown but can't be opened). In Allocate Tent, a linked pass's Booking ID opens that booking, from Bookings and from Booking Found.
+
+### Changed
+- **Bookings header:** Bulk Upload and Import from sales system are now one **Import** menu.
+
+### Fixed
+- After allocating or vacating a bed, moving to another booking showed its old tent and bed. The booking and its tents are now read again.
+
+---
+
 ## [1.71.0] - 2026-11-22
 
 ### Added
