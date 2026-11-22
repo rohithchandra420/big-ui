@@ -27,7 +27,7 @@
   <div class="divider"></div>
   <div class="section-lbl">Attendees under this booking</div>
 
-  <app-attendee-list [ticket]="ticket" [allowEdit]="true"></app-attendee-list>
+  <app-attendee-list [ticket]="ticket" [allowEdit]="true" (openBooking)="openBooking($event)"></app-attendee-list>
 
   <div class="divider"></div>
   <app-email-actions [ticket]="ticket"></app-email-actions>

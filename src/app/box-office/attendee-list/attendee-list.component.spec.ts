@@ -97,6 +97,24 @@ describe('AttendeeListComponent', () => {
     expect(accomodationServiceSpy.getTentById).toHaveBeenCalledWith('tent1');
   });
 
+  it('re-reads the tent on every new copy of the booking (beds may have changed)', () => {
+    const ticketWithTent = { ...mockTicket, shopcart: [{ ...mockTicket.shopcart![1], allocatedTentId: 'tent1' } as any] } as Ticket;
+    configureWith(ticketWithTent);
+    component.ngOnChanges({ ticket: {} as any });
+    component.ticket = { ...ticketWithTent };
+    component.ngOnChanges({ ticket: {} as any });
+    expect(accomodationServiceSpy.getTentById.calls.allArgs().filter(a => a[0] === 'tent1').length).toBe(2);
+  });
+
+  it('passes Allocate Tent\'s "open this booking" up to the page (linked bookings)', () => {
+    component.activeAllocateItem = mockTicket.shopcart![1];
+    fixture.detectChanges();
+    const emitted: string[] = [];
+    component.openBooking.subscribe(id => emitted.push(id));
+    fixture.debugElement.query(el => el.name === 'app-allocate-tent').triggerEventHandler('openBooking', 'FP-3');
+    expect(emitted).toEqual(['FP-3']);
+  });
+
   describe('sortedShopcart', () => {
     it('lists Festival Pass rows before Tent Pass rows, keeping original order within each group', () => {
       const localTicket = {

@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { filter } from 'rxjs';
 
@@ -50,6 +50,8 @@ export class AttendeeListComponent implements OnChanges {
    * per explicit request; Booking Found (gate-day check-in) doesn't need it.
    */
   @Input() allowEdit = false;
+  /** Allocate Tent: a linked booking's Booking ID was tapped (the host page moves to it). */
+  @Output() openBooking = new EventEmitter<string>();
 
   activeCounterItem: Shopcart | null = null;
   activeAllocateItem: Shopcart | null = null;
@@ -114,10 +116,13 @@ export class AttendeeListComponent implements OnChanges {
   }
 
   private loadTentDetails() {
+    // Fetched again on every new copy of the booking (not just the first):
+    // a tent cached earlier may show beds that were allocated / vacated since,
+    // e.g. after moving to a linked booking from Allocate Tent (I6).
     const tentIds = new Set(
       (this.ticket?.shopcart ?? [])
         .map(item => item.allocatedTentId)
-        .filter((id): id is string => !!id && !this.tentLookup[id])
+        .filter((id): id is string => !!id)
     );
     tentIds.forEach(id => {
       this.accomodationService.getTentById(id).subscribe({

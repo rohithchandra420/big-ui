@@ -21,6 +21,8 @@ export class AllocateTentComponent implements OnInit {
   @Input() ticket?: Ticket;
   @Output() allocated = new EventEmitter<TentAllocationResult>();
   @Output() cancelled = new EventEmitter<void>();
+  /** A linked candidate's Booking ID was tapped: the host page moves to that booking. */
+  @Output() openBooking = new EventEmitter<string>();
 
   readonly genderOptions: Gender[] = ['Male', 'Female', 'Prefer not to say'];
   /** Only used as a fallback when the selected Festival Pass has no gender on file yet. */
@@ -189,6 +191,13 @@ export class AllocateTentComponent implements OnInit {
   bookingLabel(p: Shopcart): string {
     if (p.bookingId) return 'Booking ' + p.bookingId;
     return p.order_id != null ? 'Order #' + p.order_id : '';
+  }
+
+  /** Tap on a linked candidate's Booking ID: go to that booking, without selecting the row. */
+  goToBooking(candidate: SuggestedPass, event: Event) {
+    event.stopPropagation();
+    const id = candidate.linkedBooking || candidate.bookingId;
+    if (id) this.openBooking.emit(id);
   }
 
   /** Imported passes have no item_name, only passTypeName. */

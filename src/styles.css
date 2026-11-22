@@ -469,6 +469,50 @@ select:focus {
 .btn-cta:hover:not(:disabled) { background: var(--color-secondary); }
 .btn-cta:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* Bookings header "Import" menu (I6): same fill and hover as .btn-cta, light
+   border + soft shadow. Global because the panel opens on the CDK overlay. */
+.mat-mdc-menu-panel.bk-menu {
+  --bk-menu-bg: color-mix(in srgb, var(--color-primary) 82%, #000);
+  --mat-menu-container-color: var(--bk-menu-bg);
+  min-width: 240px;
+  margin-top: 2px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--bk-menu-bg);
+  border: 0.5px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22), 0 3px 8px rgba(0, 0, 0, 0.12);
+  color: #fff;
+}
+/* The global .mat-mdc-menu-content rule paints menus --color-secondary: not here. */
+.bk-menu .mat-mdc-menu-content { padding: 0; background: transparent; }
+.bk-menu .bk-menu-lbl {
+  padding: 8px 12px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+.bk-menu .mat-mdc-menu-item {
+  min-height: 40px;
+  border-radius: 8px;
+  color: #fff;
+  transition: background 0.12s;
+}
+.bk-menu .mat-mdc-menu-item .mat-mdc-menu-item-text { color: #fff; font-size: 13px; font-weight: 500; }
+.bk-menu .mat-mdc-menu-item .mat-icon { color: #fff; margin-right: 10px; }
+/* Hover = the button's hover colour. Only keyboard focus highlights an item:
+   the first item is focused by the menu on open, which looked like a lighter panel. */
+.bk-menu .mat-mdc-menu-item.cdk-program-focused:not(:hover),
+.bk-menu .mat-mdc-menu-item.cdk-mouse-focused:not(:hover) { background: transparent; }
+.bk-menu .mat-mdc-menu-item:hover:not([disabled]),
+.bk-menu .mat-mdc-menu-item.cdk-keyboard-focused {
+  background: var(--color-secondary);
+  box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.85);
+}
+.bk-menu .mat-mdc-menu-item .mat-icon { transition: transform 0.15s ease; }
+.bk-menu .mat-mdc-menu-item:hover:not([disabled]) .mat-icon { transform: translateX(2px) scale(1.08); }
+
 .btn-danger {
   padding: 6px 16px;
   background: #dc2626;

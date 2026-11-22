@@ -37,6 +37,18 @@
 .bk-link { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
 .bk-link-n { color: var(--text-secondary); }
 .bk-link:hover, .bk-link:focus-visible { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary); outline: none; }
+/* A linked booking not in BiG yet: shown, not openable. */
+.bk-link-off { cursor: default; border-style: dashed; color: var(--text-secondary); }
+.bk-link-off:hover { border-color: var(--border-default); box-shadow: none; }
+
+/* I6: one "Import" button for every way of adding bookings. */
+.bk-add { display: inline-flex; align-items: center; gap: 4px; }
+.bk-add mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.bk-add .bk-add-chev { transition: transform .18s ease; }
+.bk-add.open { background: var(--color-secondary); }
+.bk-add.open .bk-add-chev { transform: rotate(180deg); }
+.nowrap { white-space: nowrap; }
+.pay-id { overflow-wrap: anywhere; }
 
 /* Ticket Email status filter, next to the search box (same sizing as the Users page filters). */
 .email-status-filter {

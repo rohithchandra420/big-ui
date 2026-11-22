@@ -22,6 +22,10 @@
 /* Booking ID chip on the name line */
 .at-bid { margin-left: 6px; padding: 1px 6px; border-radius: 6px; font-size: 11px; font-weight: 500; vertical-align: middle;
   background: var(--surface-body); border: 1px solid var(--border-default); color: var(--text-secondary); white-space: nowrap; }
+/* Linked candidate's Booking ID: a link to that booking */
+.at-bid-link { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; color: var(--color-primary); font-family: inherit; }
+.at-bid-link mat-icon { font-size: 13px; width: 13px; height: 13px; }
+.at-bid-link:hover, .at-bid-link:focus-visible { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary); outline: none; }
 .at-unfilled { display: flex; align-items: flex-start; gap: 6px; margin: 0 0 10px; padding: 6px 10px; border-radius: 10px;
   background: var(--surface-body); border: 1px dashed var(--border-default); font-size: 12px; color: var(--text-secondary); }
 .at-unfilled mat-icon { font-size: 16px; width: 16px; height: 16px; flex: none; color: var(--color-primary); }

@@ -55,7 +55,10 @@
     <div class="att-info">
       <div class="att-name">
         {{ candidate.name || 'Attendee' }}
-        <span class="at-bid mono" *ngIf="bookingLabel(candidate)">{{ bookingLabel(candidate) }}</span>
+        <!-- Linked candidate: the Booking ID moves to that booking (it does not pick the row) -->
+        <button type="button" class="at-bid at-bid-link mono" *ngIf="candidate.linkedBooking && bookingLabel(candidate); else plainBid"
+                (click)="goToBooking(candidate, $event)" [title]="'Go to ' + bookingLabel(candidate)">{{ bookingLabel(candidate) }}<mat-icon aria-hidden="true">arrow_outward</mat-icon></button>
+        <ng-template #plainBid><span class="at-bid mono" *ngIf="bookingLabel(candidate)">{{ bookingLabel(candidate) }}</span></ng-template>
         <span class="badge bb at-same" *ngIf="candidate.sameBooking">This booking</span>
         <span class="badge ba at-same" *ngIf="candidate.linkedBooking">Linked booking {{ candidate.linkedBooking }}</span>
       </div>

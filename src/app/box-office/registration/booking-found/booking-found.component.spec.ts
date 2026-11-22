@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { ActivatedRoute, ParamMap, Router, convertToParamMap } from '@angular/router';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 
 import { BookingFoundComponent } from './booking-found.component';
 import { BoxOfficeService } from '../../box-office.service';
+import { NotificationService } from '../../../core/notification.service';
 import { Ticket } from '../../../models/ticket.model';
 
 const mockTicket: Ticket = new Ticket(1, 'Arjun', 'Mehta', 'arjun@example.com', '9000000001', 'TXN1', 'sent', 100, [
@@ -17,21 +18,23 @@ describe('BookingFoundComponent', () => {
   let fixture: ComponentFixture<BookingFoundComponent>;
   let boxOfficeServiceSpy: jasmine.SpyObj<BoxOfficeService>;
   let routerSpy: jasmine.SpyObj<Router>;
+  let notifySpy: jasmine.SpyObj<NotificationService>;
+  let params$: BehaviorSubject<ParamMap>;
 
   const configureWith = async (id: string | null) => {
-    boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['getTicketById']);
+    boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['getTicketById', 'searchTickets']);
     boxOfficeServiceSpy.getTicketById.and.returnValue(of(mockTicket));
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    notifySpy = jasmine.createSpyObj('NotificationService', ['openErrorSnackBar', 'openSucessSnackBar']);
+    params$ = new BehaviorSubject<ParamMap>(convertToParamMap(id ? { id } : {}));
 
     await TestBed.configureTestingModule({
       declarations: [BookingFoundComponent],
       providers: [
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },
         { provide: Router, useValue: routerSpy },
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}) } },
-        },
+        { provide: NotificationService, useValue: notifySpy },
+        { provide: ActivatedRoute, useValue: { paramMap: params$.asObservable() } },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -77,6 +80,37 @@ describe('BookingFoundComponent', () => {
   it('passSummary reflects the ticket shopcart', async () => {
     await configureWith('t1');
     expect(component.passSummary).toBe('Festival Ticket, Camping');
+  });
+
+  it('reloads when the address moves to another booking', async () => {
+    await configureWith('t1');
+    params$.next(convertToParamMap({ id: 't2' }));
+    expect(boxOfficeServiceSpy.getTicketById).toHaveBeenCalledWith('t2');
+  });
+
+  describe('linked pass Booking ID from Allocate Tent', () => {
+    const linked = Object.assign(new Ticket(null as any, 'Ansel', 'Quarrie', 'ansel@example.test', '9', 'pay_Y', 'not_sent', 900, [], 't10'),
+      { reference: 'TST5-LINK' }) as Ticket;
+    const nearMiss = Object.assign(new Ticket(null as any, 'B', 'C', 'b@example.test', '9', 'pay_Z', 'not_sent', 1, [], 't11'),
+      { reference: 'TST5-LINK-2' }) as Ticket;
+
+    it('finds the booking with that exact Booking ID and opens it on this page', async () => {
+      await configureWith('t1');
+      component.ticket = Object.assign(mockTicket, { event: 'evt1' });
+      boxOfficeServiceSpy.searchTickets.and.returnValue(of([nearMiss, linked]));
+      component.openBooking('TST5-LINK');
+      expect(boxOfficeServiceSpy.searchTickets).toHaveBeenCalledWith('TST5-LINK', 'evt1');
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/box-office/registration', 't10']);
+    });
+
+    it('says so when that booking is not in BiG yet', async () => {
+      await configureWith('t1');
+      component.ticket = Object.assign(mockTicket, { event: 'evt1' });
+      boxOfficeServiceSpy.searchTickets.and.returnValue(of([nearMiss]));
+      component.openBooking('TST5-LINK');
+      expect(routerSpy.navigate).not.toHaveBeenCalled();
+      expect(notifySpy.openErrorSnackBar).toHaveBeenCalled();
+    });
   });
 
   it('goBack navigates to /box-office/registration', async () => {

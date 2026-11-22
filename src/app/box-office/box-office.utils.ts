@@ -48,6 +48,13 @@ export function paymentMethodLabel(ticket: Pick<Ticket, 'kind'> | null | undefin
     return ticket?.kind ? (PAYMENT_METHOD_LABELS[ticket.kind] || '') : '';
 }
 
+/** Where a booking came from (I6): the sales system import, a Spot Registration, else Bulk Upload. */
+export function bookingSourceLabel(ticket: Pick<Ticket, 'source' | 'transaction_id'> | null | undefined): string {
+    if (!ticket) return '';
+    if (ticket.source === 'external') return 'Sales system';
+    return isSpotRegistration(ticket as Ticket) ? 'Spot registration' : 'Bulk Upload';
+}
+
 const EXTRA_BED = /extra[\s_-]*bed/i;
 
 /** The booking has an "Extra bed" add-on (no bed of its own: shown as a tag on its Tent Pass). */
