@@ -1,5 +1,7 @@
 export type Gender = 'Male' | 'Female' | 'Prefer not to say';
 export type PassCategory = 'festival' | 'tent' | 'addon';
+/** Payment method of an imported booking (External Booking Import). */
+export type TicketKind = 'online' | 'offline' | 'guest_list';
 
 export class Shopcart {
     public item_name: string;
@@ -27,6 +29,13 @@ export class Shopcart {
     public passTypeName?: string;
     /** The linked wrist band's id (Workshops epic, W1) — null until admitted. */
     public band?: string | null;
+    // External Booking Import (I1): the sales system's item_code / item_id and prices.
+    public externalCode?: string | null;
+    public externalItemId?: string | null;
+    public unitPriceExGst?: number | null;
+    public lineTotalExGst?: number | null;
+    /** The booking's ID, copied onto each pass when the booking is created (reference, else the order id). */
+    public bookingId?: string | null;
 
     constructor(item_name: string, item_quantity: number, order_id: number, admissionId: string,
          isAdmitted: boolean, isActive:boolean, name?: string, phone_no?: string, email?: string,  _id?: string,
@@ -69,6 +78,17 @@ export class Ticket {
     public shopcart?: Shopcart[];
     public _id?: string;
     public event?: string; // Introducing Events — see Shopcart.event above
+    // External Booking Import (I1). Imported bookings have no order_id.
+    /** The sales system's Booking ID. */
+    public reference?: string;
+    public kind?: TicketKind | null;
+    public paidAt?: string | null;
+    public paymentOrderId?: string | null;
+    public paymentId?: string | null;
+    /** Bookings this one links to (a stay booking → its Festival Pass booking(s)). */
+    public linkedReferences?: string[];
+    public sourceUpdatedAt?: string | null;
+    public source?: 'external' | null;
 
 
    constructor(order_id: number, first_name: string, last_name: string, email: string, phone_no:string, transaction_id: string,

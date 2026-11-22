@@ -350,6 +350,8 @@ export class DepartmentDetailComponent implements OnChanges {
         if (needOk) this.notificationService.openSucessSnackBar('Department updated');
         else this.notificationService.openErrorSnackBar('Department updated, but the volunteers needed number was not saved');
         this.loadDetail(this.detail!._id);
+        // B-044: the kept copy of every department's name (the "Shared with" line) must take the new name too.
+        this.loadExistingKeys();
         this.changed.emit(this.detail!._id);
       }),
       error: (err) => {

@@ -10,6 +10,24 @@ import { ACCESS_KEYS, AccessKey, AccessKeyTier, grantTier } from '../../../core/
 import { PHONE_PATTERN } from '../../../core/phone';
 import { joinIso, localDateTime } from '../../../core/join-time';
 
+/** B-034 / B-040: same limits as the server (User.NAME_MIN / NAME_MAX). */
+export const NAME_MIN = 2;
+export const NAME_MAX = 60;
+/** The server needs a dot in the domain part; Angular's email check does not. */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+/** Same rule as the server: 8+ characters with upper and lower case, a number and a symbol. */
+const STRONG_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const notBlank = (c: AbstractControl): ValidationErrors | null =>
+  typeof c.value === 'string' && c.value.length && !c.value.trim() ? { whitespace: true } : null;
+/** Name length counted without the spaces at either end (the server trims). */
+const nameLength = (c: AbstractControl): ValidationErrors | null => {
+  const n = typeof c.value === 'string' ? c.value.trim().length : 0;
+  if (!n) return null;
+  if (n < NAME_MIN) return { minlength: { requiredLength: NAME_MIN, actualLength: n } };
+  if (n > NAME_MAX) return { maxlength: { requiredLength: NAME_MAX, actualLength: n } };
+  return null;
+};
+
 export type PermLevel = 'none' | 'read' | 'write' | 'manage';
 export type UserFormMode = 'create' | 'edit';
 
@@ -71,9 +89,9 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
   saving = false;
 
   form = new FormGroup({
-    userName: new FormControl<string | null>(null, Validators.required),
-    email: new FormControl<string | null>(null, [Validators.required, Validators.email]),
-    password: new FormControl<string | null>(null, Validators.required),
+    userName: new FormControl<string | null>(null, [Validators.required, notBlank, nameLength]),
+    email: new FormControl<string | null>(null, [Validators.required, Validators.email, Validators.pattern(EMAIL_PATTERN), Validators.maxLength(254)]),
+    password: new FormControl<string | null>(null, [Validators.required, Validators.pattern(STRONG_PASSWORD), Validators.maxLength(128)]),
     confirmPassword: new FormControl<string | null>(null, Validators.required),
     role: new FormControl<string>('', Validators.required),
     homeDepartment: new FormControl<string>('', Validators.required),
@@ -250,8 +268,21 @@ export class UserFormComponent implements OnInit, OnChanges, OnDestroy {
       .map(([key, level]) => `${key}:${level}`);
   }
 
+  readonly NAME_MAX = NAME_MAX;
+  /** B-080: our own show / hide button (Edge's built-in eye disappears after the first entry). */
+  showPassword = false;
+  /** B-041: pattern errors in plain words. */
+  readonly emailMessages = { pattern: 'Enter a valid email address, like name@example.com' };
+  readonly passwordMessages = { pattern: 'Use 8+ characters with upper and lower case, a number and a symbol' };
+  readonly phoneMessages = { pattern: '7 to 15 digits. A leading + is allowed.' };
+
+  /** B-041: Save stays clickable; an invalid form shows every field's message instead of doing nothing. */
   submit() {
-    if (this.form.invalid || this.saving) return;
+    if (this.saving) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
     this.isEdit ? this.update() : this.create();
   }
 

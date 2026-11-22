@@ -11,6 +11,8 @@ import { AdminService } from '../../admin.service';
 
 /** Beds per pass from the form: a whole number 1–20 (1 when empty). */
 const bedsOf = (v: number | null | undefined): number => Math.min(20, Math.max(1, Math.round(Number(v) || 1)));
+/** Sales system code: no spaces inside (spaces around it are trimmed on save). */
+const SALES_CODE_PATTERN = /^\s*\S*\s*$/;
 @Component({
   selector: 'app-event-detail',
   templateUrl: './event-detail.component.html',
@@ -44,7 +46,9 @@ export class EventDetailComponent implements OnInit {
     name: new FormControl('', Validators.required),
     category: new FormControl<PassTypeCategory>('festival', Validators.required),
     code: new FormControl('', Validators.maxLength(4)),
-    beds: new FormControl<number>(1, [Validators.min(1), Validators.max(20)])
+    beds: new FormControl<number>(1, [Validators.min(1), Validators.max(20)]),
+    // External Booking Import (I1): the sales system's item_code; any category.
+    externalCode: new FormControl('', [Validators.maxLength(64), Validators.pattern(SALES_CODE_PATTERN)])
   });
   savingPassType = false;
 
@@ -55,7 +59,9 @@ export class EventDetailComponent implements OnInit {
     name: new FormControl('', Validators.required),
     category: new FormControl<PassTypeCategory>('festival', Validators.required),
     code: new FormControl('', Validators.maxLength(4)),
-    beds: new FormControl<number>(1, [Validators.min(1), Validators.max(20)])
+    beds: new FormControl<number>(1, [Validators.min(1), Validators.max(20)]),
+    // External Booking Import (I1): the sales system's item_code; any category.
+    externalCode: new FormControl('', [Validators.maxLength(64), Validators.pattern(SALES_CODE_PATTERN)])
   });
 
   constructor(
@@ -154,8 +160,24 @@ export class EventDetailComponent implements OnInit {
     this.editMode = false;
   }
 
+  /** B-052: an active event set to Draft / Archived asks first (Team Leads and Volunteers lose it). */
   save() {
     if (!this.detail || this.editForm.invalid || this.saving) return;
+    const next = this.editForm.value.status;
+    if (this.detail.status === 'active' && next && next !== 'active') {
+      this.confirmationService.confirm({
+        title: next === 'archived' ? 'Archive the active event?' : 'Move the active event back to Draft?',
+        message: `"${this.detail.name}" is active. Team Leads and Volunteers lose access to it, and it leaves their event picker.`,
+        confirmText: next === 'archived' ? 'Archive' : 'Set to Draft',
+        danger: true
+      }).subscribe(ok => { if (ok) this.doSave(); });
+      return;
+    }
+    this.doSave();
+  }
+
+  private doSave() {
+    if (!this.detail || this.saving) return;
     this.saving = true;
     const { name, description, startDate, endDate, status, emailSubject, emailIntro } = this.editForm.value;
     this.eventService.updateEvent(this.detail._id, {
@@ -232,7 +254,7 @@ export class EventDetailComponent implements OnInit {
 
   startAddPassType() {
     this.cancelEditPassType();
-    this.passTypeForm.reset({ name: '', category: 'festival', code: '', beds: 1 });
+    this.passTypeForm.reset({ name: '', category: 'festival', code: '', beds: 1, externalCode: '' });
     this.addingPassType = true;
   }
 
@@ -243,8 +265,8 @@ export class EventDetailComponent implements OnInit {
   savePassType() {
     if (!this.detail || this.passTypeForm.invalid || this.savingPassType) return;
     this.savingPassType = true;
-    const { name, category, code, beds } = this.passTypeForm.value;
-    this.eventService.createPassType(this.detail._id, { name: name!.trim(), category: category!, code: code?.trim() || undefined, ...(category === 'tent' ? { beds: bedsOf(beds) } : {}) }).subscribe({
+    const { name, category, code, beds, externalCode } = this.passTypeForm.value;
+    this.eventService.createPassType(this.detail._id, { name: name!.trim(), category: category!, code: code?.trim() || undefined, ...(externalCode?.trim() ? { externalCode: externalCode.trim() } : {}), ...(category === 'tent' ? { beds: bedsOf(beds) } : {}) }).subscribe({
       next: () => {
         this.savingPassType = false;
         this.addingPassType = false;
@@ -262,7 +284,7 @@ export class EventDetailComponent implements OnInit {
     this.cancelAddPassType();
     this.editingPassTypeId = pt._id;
     this.editingPassType = pt;
-    this.editPassTypeForm.setValue({ name: pt.name, category: pt.category, code: pt.code || '', beds: pt.beds || 1 });
+    this.editPassTypeForm.setValue({ name: pt.name, category: pt.category, code: pt.code || '', beds: pt.beds || 1, externalCode: pt.externalCode || '' });
   }
 
   cancelEditPassType() {
@@ -273,8 +295,8 @@ export class EventDetailComponent implements OnInit {
   saveEditPassType(pt: PassType) {
     if (!this.detail || this.editPassTypeForm.invalid || this.savingPassType) return;
     this.savingPassType = true;
-    const { name, category, code, beds } = this.editPassTypeForm.value;
-    this.eventService.updatePassType(this.detail._id, pt._id, { name: name!.trim(), category: category!, code: code?.trim() || '', ...(category === 'tent' ? { beds: bedsOf(beds) } : {}) }).subscribe({
+    const { name, category, code, beds, externalCode } = this.editPassTypeForm.value;
+    this.eventService.updatePassType(this.detail._id, pt._id, { name: name!.trim(), category: category!, code: code?.trim() || '', externalCode: externalCode?.trim() || '', ...(category === 'tent' ? { beds: bedsOf(beds) } : {}) }).subscribe({
       next: () => {
         this.savingPassType = false;
         this.cancelEditPassType();

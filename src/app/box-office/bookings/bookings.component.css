@@ -20,6 +20,36 @@
   word-break: break-word;
 }
 
+/* Header actions: wrap on phones instead of pushing the page wide. */
+.bk-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* Paid-at time under the payment method (External Booking Import). */
+.pay-sub { margin-top: 4px; font-size: 11px; color: var(--text-secondary); }
+
+/* Linked bookings in the detail panel: tap one to find it. */
+.bk-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; color: var(--text-primary); }
+.bk-links-l { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.bk-links-l mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.bk-link {
+  font-size: 11px; padding: 3px 9px; border-radius: 20px; cursor: pointer;
+  border: 1px solid var(--border-default); background: var(--surface-input); color: var(--text-primary);
+}
+.bk-link { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
+.bk-link-n { color: var(--text-secondary); }
+.bk-link:hover, .bk-link:focus-visible { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary); outline: none; }
+/* A linked booking not in BiG yet: shown, not openable. */
+.bk-link-off { cursor: default; border-style: dashed; color: var(--text-secondary); }
+.bk-link-off:hover { border-color: var(--border-default); box-shadow: none; }
+
+/* I6: one "Import" button for every way of adding bookings. */
+.bk-add { display: inline-flex; align-items: center; gap: 4px; }
+.bk-add mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.bk-add .bk-add-chev { transition: transform .18s ease; }
+.bk-add.open { background: var(--color-secondary); }
+.bk-add.open .bk-add-chev { transform: rotate(180deg); }
+.nowrap { white-space: nowrap; }
+.pay-id { overflow-wrap: anywhere; }
+
 /* Ticket Email status filter, next to the search box (same sizing as the Users page filters). */
 .email-status-filter {
   width: 220px;

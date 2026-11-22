@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { Gender, Shopcart, Ticket } from "../models/ticket.model";
+import { Gender, PassCategory, Shopcart, Ticket } from "../models/ticket.model";
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { AuthService } from "../core/auth.service";
 import { environment } from "src/environments/environment.development";
@@ -7,6 +7,38 @@ import { environment } from "src/environments/environment.development";
 export interface BulkUploadResult {
     message: string;
     ticketCount?: number;
+}
+
+/** External Booking Import (I2): a pass type in the file that the event doesn't have yet. */
+export interface ExternalImportUnknownPassType {
+    externalCode: string | null;
+    name: string;
+    category: PassCategory;
+    /** Beds per pass (tent only), from item_guests ÷ quantity. */
+    beds: number | null;
+    rows: number[];
+}
+
+/** A booking in the file that can't be imported, with its row numbers. */
+export interface ExternalImportError {
+    reference: string | null;
+    rows: number[];
+    messages: string[];
+}
+
+/** What a preview found, or what an import did (`created` set). */
+export interface ExternalImportResult {
+    message?: string;
+    rows: number;
+    bookings: number;
+    toCreate: number;
+    passes: number;
+    skipped: string[];
+    changedSince: string[];
+    unknownPassTypes: ExternalImportUnknownPassType[];
+    errors: ExternalImportError[];
+    canCreatePassTypes?: boolean;
+    created?: number;
 }
 
 /** Who a band (or a band conflict) belongs to. */
@@ -83,6 +115,15 @@ export class BoxOfficeService {
     //    same auth level as the rest of Box Office (not admin-only like the legacy route). ──
     uploadBoxOfficeExcel(excelFile: FormData) {
         return this.http.post<BulkUploadResult>(this.url + "/box-office/uploadExcel", excelFile);
+    }
+
+    // ── External Booking Import (I2): same people as Bulk Upload. `form` holds
+    //    `file` (.csv / .xlsx) and `eventId`. Preview saves nothing. ──
+    previewExternalImport(form: FormData) {
+        return this.http.post<ExternalImportResult>(this.url + "/box-office/external-import/preview", form);
+    }
+    runExternalImport(form: FormData) {
+        return this.http.post<ExternalImportResult>(this.url + "/box-office/external-import", form);
     }
 
     // ── Bookings / Registration — duplicated from TicketsService, hitting the /box-office

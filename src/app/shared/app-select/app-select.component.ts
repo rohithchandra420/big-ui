@@ -43,6 +43,8 @@ export class AppSelectComponent implements ControlValueAccessor, AfterContentIni
   @ContentChildren(AppOptionComponent, { descendants: true }) optionsList!: QueryList<AppOptionComponent>;
 
   @Input() placeholder = 'Select…';
+  /** B-058: the open list is at least this wide (px), even when the box is narrow. */
+  @Input() panelMinWidth = 0;
   @Input() disabled = false;
 
   /** Mirrors a native <select>'s (change) event — fires on every value
@@ -109,7 +111,8 @@ export class AppSelectComponent implements ControlValueAccessor, AfterContentIni
         panelClass: 'app-select-overlay'
       });
     }
-    this.overlayRef.updateSize({ width: this.triggerRef.nativeElement.getBoundingClientRect().width });
+    const boxWidth = this.triggerRef.nativeElement.getBoundingClientRect().width;
+    this.overlayRef.updateSize({ width: Math.max(boxWidth, this.panelMinWidth || 0) });
     if (!this.overlayRef.hasAttached()) {
       this.overlayRef.attach(new TemplatePortal(this.panelTpl, this.viewContainerRef));
     }

@@ -19,6 +19,10 @@ export interface ConfirmDialogData {
   /** true → confirm button styled .btn-danger (destructive actions, e.g.
    *  delete/vacate); false/omitted → .btn-cta (neutral/positive actions). */
   danger?: boolean;
+  /** B-056: optional labelled lines under the message (e.g. To / Departments / Public page). */
+  details?: { label: string; value: string }[];
+  /** B-056: optional warning line at the bottom (e.g. "Can't be recalled"). */
+  note?: string;
 }
 
 @Component({

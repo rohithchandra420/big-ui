@@ -12,6 +12,7 @@ import { NotificationService } from '../../../core/notification.service';
 import { VolunteersService } from '../../../volunteers/volunteers.service';
 import { AppSelectComponent } from '../../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../../shared/app-select/app-option.component';
+import { FieldErrorComponent } from '../../../shared/field-error/field-error.component';
 
 const general = { _id: 'd-gen', name: 'General', key: 'general' };
 const box = { _id: 'd-box', name: 'Box Office', key: 'box-office' };
@@ -43,7 +44,7 @@ describe('UserFormComponent', () => {
     volunteersSpy = jasmine.createSpyObj('VolunteersService', ['createUser']);
 
     await TestBed.configureTestingModule({
-      declarations: [DateTimeComponent, UserFormComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [DateTimeComponent, UserFormComponent, AppSelectComponent, AppOptionComponent, FieldErrorComponent],
       imports: [FormsModule, ReactiveFormsModule],
       providers: [
         { provide: AdminService, useValue: adminSpy },
@@ -359,6 +360,59 @@ describe('UserFormComponent', () => {
       expect(payload.dateOfJoining).toBeUndefined();
       expect(payload.permissions).toEqual(['box-office:write']);
       expect(payload.foodPreference).toBe('veg');      // a TL may set it
+    });
+  });
+
+  describe('field messages (B-034 / B-040 / B-041)', () => {
+    beforeEach(async () => await create({
+      mode: 'create', roles: [{ _id: 'r-vol', name: 'VOL' }], departments: [general, box], isTopLevel: true
+    }));
+    const msgs = () => Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('app-field-error .field-error'))
+      .map(e => (e.textContent || '').trim());
+
+    it('Save stays clickable; an invalid form shows why on every field instead of saving', () => {
+      const save = (fixture.nativeElement as HTMLElement).querySelector('.form-actions .btn-cta') as HTMLButtonElement;
+      expect(save.disabled).toBeFalse();
+      component.submit();
+      fixture.detectChanges();
+      expect(adminSpy.createUser).not.toHaveBeenCalled();
+      expect(msgs()).toContain('Name is required');
+      expect(msgs()).toContain('Email is required');
+      expect(msgs()).toContain('Expected Join Time is required');
+    });
+
+    it('name: 2 to 60 characters, spaces at the ends not counted', () => {
+      const name = component.form.controls.userName;
+      name.setValue(' A ');
+      expect(name.hasError('minlength')).toBeTrue();
+      name.setValue('B'.repeat(61));
+      expect(name.hasError('maxlength')).toBeTrue();
+      name.setValue('   ');
+      expect(name.hasError('whitespace')).toBeTrue();
+      name.setValue('Jo');
+      expect(name.valid).toBeTrue();
+    });
+
+    it('email needs a domain with a dot; password follows the server rule', () => {
+      component.form.patchValue({ email: 'a@b', password: 'weakpass' });
+      component.form.markAllAsTouched();
+      fixture.detectChanges();
+      expect(msgs()).toContain('Enter a valid email address, like name@example.com');
+      expect(msgs()).toContain('Use 8+ characters with upper and lower case, a number and a symbol');
+      fillCreateForm();
+      expect(component.form.valid).toBeTrue();
+    });
+  });
+
+  describe('password show / hide (B-080)', () => {
+    beforeEach(async () => await create({ mode: 'create', roles: [{ _id: 'r-vol', name: 'VOL' }], departments: [general, box], isTopLevel: true }));
+    it('the eye button shows and hides both password boxes', () => {
+      const el = fixture.nativeElement as HTMLElement;
+      const types = () => Array.from(el.querySelectorAll('.pw-wrap input')).map(i => (i as HTMLInputElement).type);
+      expect(types()).toEqual(['password', 'password']);
+      (el.querySelector('.pw-eye') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(types()).toEqual(['text', 'text']);
     });
   });
 });

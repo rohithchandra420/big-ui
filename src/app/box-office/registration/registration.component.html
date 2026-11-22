@@ -67,7 +67,7 @@
     <div class="card" style="cursor: pointer;" *ngFor="let result of searchResults" (click)="goToBooking(result._id!)">
       <div style="font-weight: 600; font-size: 13px;">{{ result.first_name }} {{ result.last_name }}</div>
       <div class="mono" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-        Order ID: {{ result.order_id }} · Ticket ID: {{ result._id }}
+        {{ result.reference ? 'Booking ID: ' + result.reference : 'Order ID: ' + result.order_id }} · Ticket ID: {{ result._id }}
       </div>
       <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">{{ result.email }} · {{ result.phone_no }}</div>
       <div class="att-badges" style="margin-top: 6px;">

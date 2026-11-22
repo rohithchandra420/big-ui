@@ -56,6 +56,7 @@
             <span class="cat-chip" [class]="'cat-' + pt.category">{{ pt.category }}</span>
             <span class="code-chip" *ngIf="pt.category === 'tent'" [class.code-chip-unset]="!pt.code">{{ pt.code || 'no code' }}</span>
             <span class="code-chip" *ngIf="pt.category === 'tent'" title="Beds per pass: one Festival Pass per bed">{{ pt.beds || 1 }} {{ (pt.beds || 1) === 1 ? 'bed' : 'beds' }}</span>
+            <span class="code-chip pt-ext-chip" *ngIf="pt.externalCode" title="Sales system code">{{ pt.externalCode }}</span>
             <div class="pt-actions">
               <button class="btn-sm-outline" (click)="startEditPassType(pt)">Edit</button>
               <button class="btn-sm-danger" (click)="deletePassType(pt)">Delete</button>
@@ -78,6 +79,11 @@
             <app-select formControlName="category" aria-label="Category">
               <app-option *ngFor="let c of categories" [value]="c">{{ c }}</app-option>
             </app-select>
+          </div>
+          <div class="field">
+            <label for="pt-ext">Sales system code</label>
+            <input id="pt-ext" type="text" formControlName="externalCode" maxlength="40" class="pt-ext" placeholder="e.g. pass_3day" autocomplete="off">
+            <p class="pt-hint">The item code in the sales system's file, so Import from sales system finds this pass type. No spaces. Optional.</p>
           </div>
           <ng-container *ngIf="passTypePanelForm.value.category === 'tent'">
             <div class="field">
@@ -119,13 +125,13 @@
 
         <div class="field">
           <label>Name *</label>
-          <input type="text" formControlName="name">
+          <input type="text" formControlName="name" maxlength="60">
           <span class="field-error" *ngIf="editForm.get('name')?.hasError('required')">Name is required</span>
         </div>
 
         <div class="field">
           <label>Description</label>
-          <textarea formControlName="description" rows="3"></textarea>
+          <textarea formControlName="description" rows="3" maxlength="500"></textarea>
         </div>
 
         <div class="form-two-col">
@@ -151,7 +157,7 @@
         <div class="section-lbl">Ticket email</div>
         <p class="field-hint" style="margin-top: 0;">
           Wording of the ticket email buyers get for this event. Leave empty to use the default shown in grey.
-          You can use {{ "{name}" }}, {{ "{first_name}" }}, {{ "{order_id}" }} and {{ "{event}" }}.
+          You can use {{ "{name}" }}, {{ "{first_name}" }}, {{ "{order_id}" }}, {{ "{booking_id}" }} (Booking ID, else the order number) and {{ "{event}" }}.
         </p>
 
         <div class="field">

@@ -48,8 +48,10 @@ describe('BookingsComponent', () => {
   let finished$: Subject<EmailBatch>;
 
   beforeEach(async () => {
-    boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['getAllTickets']);
+    boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['getAllTickets', 'getTicketById']);
     boxOfficeServiceSpy.getAllTickets.and.returnValue(of(mockBookings as any));
+    // Jumping to a linked booking re-reads it; by default the server sends nothing new.
+    boxOfficeServiceSpy.getTicketById.and.returnValue(throwError(() => new Error('offline')));
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
     activeEventSubject = new BehaviorSubject<EventItem | null>(mockActiveEvent);
@@ -85,6 +87,169 @@ describe('BookingsComponent', () => {
     fixture = TestBed.createComponent(BookingsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  describe('External Booking Import (I2)', () => {
+    const imported = Object.assign(new Ticket(null as any, 'Wren', 'Abernathy', 'wren@example.test', '919800000009', 'pay_X', 'not_sent', 1180, [], 't9'), {
+      reference: 'TST5-WREN', kind: 'guest_list', paidAt: '2026-11-10T13:00:00.000Z', paymentOrderId: 'order_X', linkedReferences: ['TST5-LINK'], source: 'external'
+    }) as Ticket;
+
+    beforeEach(() => {
+      component.bookings = [...mockBookings, imported];
+      fixture.detectChanges();
+    });
+
+    it('shows the Booking ID (reference, else order number) and the payment method', () => {
+      const rows = Array.from(fixture.nativeElement.querySelectorAll('tbody tr')) as HTMLElement[];
+      const text = rows.map(r => r.textContent || '').join('|');
+      expect(text).toContain('TST5-WREN');
+      expect(text).toContain('Guest list');
+      expect(component.bookingId(mockBookings[0])).toBe('1');
+      expect(component.paymentMethod(mockBookings[0])).toBe('');
+    });
+
+    it('finds an imported booking by its reference or payment ids in the table search', () => {
+      component.searchTerm = 'tst5-wren';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['t9']);
+      component.searchTerm = 'order_x';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['t9']);
+    });
+
+    it('panel: payment ids under the Booking ID, Source box with the payment method; a link not in BiG cannot be opened', () => {
+      component.openPanel(imported);
+      fixture.detectChanges();
+      const panel = fixture.nativeElement.querySelector('.panel') as HTMLElement;
+      const head = panel.querySelector('.panel-hd') as HTMLElement;
+      expect(head.textContent).toContain('Booking ID: TST5-WREN');
+      expect(head.textContent).toContain('Order ID: order_X');
+      expect(head.textContent).not.toContain('Payment ID:');
+      const boxes = Array.from(panel.querySelectorAll('.pay-box')) as HTMLElement[];
+      const sourceBox = boxes.find(b => b.textContent?.includes('Source'))!;
+      expect(sourceBox.textContent).toContain('Sales system');
+      expect(sourceBox.textContent).toContain('Payment method: Guest list');
+      expect(sourceBox.textContent).not.toContain('order_X');
+      expect(sourceBox.textContent).not.toContain('Paid');
+      // TST5-LINK is not loaded: shown, not a button
+      expect(panel.querySelector('button.bk-link')).toBeNull();
+      const off = panel.querySelector('.bk-link-off') as HTMLElement;
+      expect(off.textContent).toContain('TST5-LINK');
+      expect(off.textContent).toContain('not in BiG yet');
+    });
+
+    it('shows Paid at and Source columns (I6)', () => {
+      const head = (fixture.nativeElement.querySelector('thead') as HTMLElement).textContent || '';
+      expect(head).toContain('Paid at');
+      expect(head).toContain('Source');
+      const text = (fixture.nativeElement.querySelector('tbody') as HTMLElement).textContent || '';
+      expect(text).toContain('10 Nov 2026');
+      expect(text).toContain('Sales system');
+      expect(text).toContain('Bulk Upload');
+    });
+
+    it('labels the source: sales system, spot registration, else Bulk Upload', () => {
+      expect(component.source(imported)).toBe('Sales system');
+      expect(component.source(mockBookings[0])).toBe('Bulk Upload');
+      const spot = new Ticket(3, 'S', 'R', 's@example.test', '9', 'SPOT-123', 'not_sent', 1, [], 't3');
+      expect(component.source(spot)).toBe('Spot registration');
+    });
+
+    it('searches by payment method, source and the Paid at date (I6)', () => {
+      component.searchTerm = 'guest list';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['t9']);
+      component.searchTerm = 'sales system';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['t9']);
+      component.searchTerm = '10 nov';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['t9']);
+      component.searchTerm = 'bulk upload';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['t1', 't2']);
+    });
+
+    it('sorts by Paid at (bookings with no date sort as empty)', () => {
+      component.sort.toggle('paidAt');
+      const ids = component.filteredBookings.map(b => b._id);
+      expect(ids.length).toBe(3);
+      expect(ids).toContain('t9');
+    });
+
+    it('names a linked booking that is loaded and lists the bookings linking back (I5)', () => {
+      const target = Object.assign(new Ticket(null as any, 'Ansel', 'Quarrie', 'ansel@example.test', '919800000010', 'pay_Y', 'not_sent', 900, [], 't10'), {
+        reference: 'TST5-LINK'
+      }) as Ticket;
+      component.bookings = [...mockBookings, imported, target];
+      expect(component.linkedName('TST5-LINK')).toBe('Ansel Quarrie');
+      expect(component.linkedName('NOT-HERE')).toBe('');
+      expect(component.linkedFrom(target)).toEqual(['TST5-WREN']);
+      expect(component.linkedFrom(imported)).toEqual([]);
+
+      component.openPanel(target);
+      fixture.detectChanges();
+      const panel = fixture.nativeElement.querySelector('.panel') as HTMLElement;
+      expect(panel.textContent).toContain('Linked from');
+      const back = panel.querySelector('.bk-link-from') as HTMLButtonElement;
+      expect(back.textContent).toContain('TST5-WREN');
+      expect(back.textContent).toContain('(Wren Abernathy)');
+      // Tap moves the panel to that booking (stays in place, no search)
+      back.click();
+      expect(component.activeBooking?._id).toBe('t9');
+      expect(component.panelOpen).toBeTrue();
+      expect(component.searchTerm).toBe('');
+
+      fixture.detectChanges();
+      const fwd = (fixture.nativeElement.querySelector('.panel') as HTMLElement).querySelector('button.bk-link') as HTMLButtonElement;
+      expect(fwd.textContent).toContain('TST5-LINK');
+      fwd.click();
+      expect(component.activeBooking?._id).toBe('t10');
+    });
+
+    it('Allocate Tent: a linked pass\'s Booking ID opens that booking in the panel', () => {
+      const target = Object.assign(new Ticket(null as any, 'Ansel', 'Quarrie', 'ansel@example.test', '919800000010', 'pay_Y', 'not_sent', 900, [], 't10'), {
+        reference: 'TST5-LINK'
+      }) as Ticket;
+      component.bookings = [...mockBookings, imported, target];
+      component.openPanel(imported);
+      component.openByBookingId('TST5-LINK');
+      expect(component.activeBooking?._id).toBe('t10');
+      component.openByBookingId('2');
+      expect(component.activeBooking?._id).toBe('t2');
+      component.openByBookingId('NOT-HERE');
+      expect(component.activeBooking?._id).toBe('t2');
+    });
+
+    it('jumping to a linked booking swaps in a fresh copy (a bed allocated / vacated since load)', () => {
+      const stale = Object.assign(new Ticket(null as any, 'Ansel', 'Quarrie', 'ansel@example.test', '9', 'pay_Y', 'not_sent', 900,
+        [{ _id: 'fp1', allocatedTentId: 'tentOld' } as any], 't10'), { reference: 'TST5-LINK' }) as Ticket;
+      const fresh = Object.assign(new Ticket(null as any, 'Ansel', 'Quarrie', 'ansel@example.test', '9', 'pay_Y', 'not_sent', 900,
+        [{ _id: 'fp1', allocatedTentId: null } as any], 't10'), { reference: 'TST5-LINK' }) as Ticket;
+      component.bookings = [...mockBookings, imported, stale];
+      boxOfficeServiceSpy.getTicketById.and.returnValue(of(fresh));
+      component.openPanel(imported);
+      component.jumpTo(stale);
+      expect(boxOfficeServiceSpy.getTicketById).toHaveBeenCalledWith('t10');
+      expect(component.activeBooking).toBe(fresh);
+      expect(component.bookings.find(b => b._id === 't10')).toBe(fresh);
+      expect(component.activeBooking!.shopcart![0].allocatedTentId).toBeNull();
+    });
+
+    it('a failed re-read keeps the list copy open', () => {
+      const target = Object.assign(new Ticket(null as any, 'Ansel', 'Quarrie', 'a@example.test', '9', 'p', 'not_sent', 1, [], 't10'),
+        { reference: 'TST5-LINK' }) as Ticket;
+      component.bookings = [...mockBookings, imported, target];
+      component.jumpTo(target);
+      expect(component.activeBooking).toBe(target);
+      expect(component.panelOpen).toBeTrue();
+    });
+
+    it('one Import button holds Bulk Upload and Import from sales system', () => {
+      const trigger = fixture.nativeElement.querySelector('.page-ph .bk-add') as HTMLButtonElement;
+      expect(trigger).toBeTruthy();
+      trigger.click();
+      fixture.detectChanges();
+      const items = Array.from(document.querySelectorAll('.mat-mdc-menu-item')) as HTMLButtonElement[];
+      expect(items.map(i => (i.textContent || '').trim())).toEqual(
+        jasmine.arrayContaining([jasmine.stringMatching('Bulk Upload'), jasmine.stringMatching('Import from sales system')]));
+      items.find(i => i.textContent?.includes('Import from sales system'))!.click();
+      expect(component.importOpen).toBeTrue();
+    });
   });
 
   it('loads bookings on init', () => {
@@ -482,8 +647,8 @@ describe('BookingsComponent', () => {
   });
 
   describe('who sees Bulk Upload (Box Office access rule)', () => {
-    const bulkButton = () => Array.from(fixture.nativeElement.querySelectorAll('.page-ph button') as NodeListOf<HTMLElement>)
-      .find(b => b.textContent!.includes('Bulk Upload'));
+    // Bulk Upload sits in the header's Import menu (I6): the menu button is the gate.
+    const bulkButton = () => (fixture.nativeElement.querySelector('.page-ph .bk-add') as HTMLElement | null) || undefined;
 
     it('a Box Office volunteer works bookings but has no Bulk Upload', () => {
       const auth = TestBed.inject(AuthService) as any;

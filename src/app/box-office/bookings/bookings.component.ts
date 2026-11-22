@@ -1,4 +1,5 @@
 import { Component, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { formatDate } from '@angular/common';
 import { PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
@@ -7,7 +8,7 @@ import { Observable, Subscription } from 'rxjs';
 import { Ticket, TicketEmailStatus } from '../../models/ticket.model';
 import { BoxOfficeService } from '../box-office.service';
 import {
-  isFestivalPass, isSpotRegistration, passSummary as buildPassSummary,
+  isFestivalPass, isSpotRegistration, passSummary as buildPassSummary, bookingIdOf, paymentMethodLabel, bookingSourceLabel,
   ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, TICKET_EMAIL_FILTER_OPTIONS
 } from '../box-office.utils';
 import { Shopcart } from '../../models/ticket.model';
@@ -20,7 +21,7 @@ import { EmailDialogsService } from '../email/email-dialogs.service';
 import { AttendeeListComponent } from '../attendee-list/attendee-list.component';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
 
-type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'emailStatus' | 'admitted';
+type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'payment' | 'paidAt' | 'source' | 'emailStatus' | 'admitted';
 
 type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | null;
 
@@ -53,6 +54,8 @@ export class BookingsComponent implements OnInit, OnDestroy {
   /** Closing the panel only hides it, so the attendee list (and any open Allocate Tent / Counter Form) survives — reset it on every open. */
   @ViewChild(AttendeeListComponent) attendeeList?: AttendeeListComponent;
   editingTicket = false;
+  /** External Booking Import panel (I2). */
+  importOpen = false;
 
   /** Email epic — DEV/DIR/ADMIN or a Box Office TL (decided server-side). */
   canSendEmail$!: Observable<boolean>;
@@ -139,6 +142,74 @@ export class BookingsComponent implements OnInit, OnDestroy {
     return buildPassSummary(booking.shopcart);
   }
 
+  /** Booking ID: the sales system's reference, else the order number. */
+  bookingId(booking: Ticket): string {
+    return bookingIdOf(booking);
+  }
+
+  /** Online / Offline / Guest list (imported bookings); '' otherwise. */
+  paymentMethod(booking: Ticket): string {
+    return paymentMethodLabel(booking);
+  }
+
+  /** Sales system / Spot registration / Bulk Upload (I6). */
+  source(booking: Ticket): string {
+    return bookingSourceLabel(booking);
+  }
+
+  /** Paid at as searched from the search bar ("10 nov 2026"); '' when not paid / not imported. */
+  private paidAtText(booking: Ticket): string {
+    if (!booking.paidAt) return '';
+    try {
+      return formatDate(booking.paidAt, 'd MMM y', 'en-US').toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+
+  /** The loaded booking with this reference; null when it is not in BiG yet. */
+  bookingByRef(ref: string): Ticket | null {
+    return this.bookings.find(x => x.reference === ref) || null;
+  }
+
+  /** Linked bookings (I5): the buyer's name of the booking with this reference,
+   *  when it is loaded on this page; '' otherwise (target not in BiG yet). */
+  linkedName(ref: string): string {
+    const b = this.bookingByRef(ref);
+    return b ? `${b.first_name || ''} ${b.last_name || ''}`.trim() : '';
+  }
+
+  /** Allocate Tent: a linked pass's Booking ID was tapped — show that booking in this panel. */
+  openByBookingId(id: string) {
+    const target = this.bookings.find(b => bookingIdOf(b) === id);
+    if (target) this.jumpTo(target);
+  }
+
+  /** Move the open panel to another booking (linked chips, Allocate Tent).
+   *  The list copy may be old (a bed was allocated / vacated in the panel
+   *  since the page loaded), so it is fetched fresh and swapped in. */
+  jumpTo(target: Ticket) {
+    this.openPanel(target);
+    if (!target._id) return;
+    this.boxOfficeService.getTicketById(target._id).subscribe({
+      next: (fresh) => {
+        if (!fresh?._id) return;
+        this.bookings = this.bookings.map(b => (b._id === fresh._id ? fresh : b));
+        if (this.activeBooking?._id === fresh._id) this.activeBooking = fresh;
+      },
+      error: () => { /* keep the list copy */ }
+    });
+  }
+
+  /** Linked bookings (I5): references of the bookings that link to this one. */
+  linkedFrom(booking: Ticket): string[] {
+    const ref = booking.reference;
+    if (!ref) return [];
+    return this.bookings
+      .filter(b => b._id !== booking._id && b.reference && b.linkedReferences?.includes(ref))
+      .map(b => b.reference as string);
+  }
+
   /** Bug fix (2026-08-20) — the detail panel's "Attendees" count was just the
    *  raw shopcart length, which double-counts Tent Pass items alongside the
    *  Festival Pass each is paired with. Split into the actual attendee count
@@ -199,10 +270,13 @@ export class BookingsComponent implements OnInit, OnDestroy {
   readonly sortGetters: Record<BookingSortKey, SortGetter<Ticket>> = {
     name: b => `${b.first_name || ''} ${b.last_name || ''}`.trim(),
     email: b => b.email,
-    order: b => b.order_id,
+    order: b => b.reference || b.order_id,
     ticket: b => b._id,
     passes: b => this.passSummary(b),
     amount: b => Number(b.totalPrice),
+    payment: b => this.paymentMethod(b),
+    paidAt: b => (b.paidAt ? new Date(b.paidAt).getTime() : null),
+    source: b => this.source(b),
     emailStatus: b => this.emailStatusLabel(b),
     admitted: b => this.admittedCountFor(b)
   };
@@ -227,8 +301,15 @@ export class BookingsComponent implements OnInit, OnDestroy {
       result = result.filter(b =>
         `${b.first_name} ${b.last_name}`.toLowerCase().includes(term) ||
         b.email?.toLowerCase().includes(term) ||
-        String(b.order_id).includes(term) ||
-        b._id?.toLowerCase().includes(term)
+        String(b.order_id ?? '').includes(term) ||
+        b.reference?.toLowerCase().includes(term) ||
+        b.paymentOrderId?.toLowerCase().includes(term) ||
+        b.paymentId?.toLowerCase().includes(term) ||
+        b._id?.toLowerCase().includes(term) ||
+        // I6: payment method, source and the Paid at date ("10 nov")
+        this.paymentMethod(b).toLowerCase().includes(term) ||
+        this.source(b).toLowerCase().includes(term) ||
+        this.paidAtText(b).includes(term)
       );
     }
 

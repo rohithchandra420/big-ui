@@ -25,7 +25,7 @@
       (keydown.enter)="openDepartment(dept)">
 
       <div class="dept-card-hd">
-        <span class="dept-name">{{ dept.name }}</span>
+        <span class="dept-name" [title]="dept.name">{{ dept.name }}</span>
         <mat-icon class="dept-open">chevron_right</mat-icon>
       </div>
 
@@ -37,7 +37,7 @@
           <span class="meta-label">TL</span>
           <span class="meta-value">
             <span class="tl-list" *ngIf="dept.tls.length; else noTl">
-              <span class="tl-item" *ngFor="let t of dept.tls">
+              <span class="tl-item" *ngFor="let t of dept.tls" [title]="t.name">
                 <app-user-avatar [userId]="t._id" [name]="t.name" [version]="t.avatarVersion" [size]="18"></app-user-avatar>
                 {{ t.name }}
               </span>

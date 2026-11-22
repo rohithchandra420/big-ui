@@ -1,7 +1,34 @@
-import { isFestivalPass, isSpotRegistration, passChips, passChipsTyped, passSummary, ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, lookupErrorMessage } from './box-office.utils';
+import { isFestivalPass, isSpotRegistration, passChips, passChipsTyped, passSummary, ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, lookupErrorMessage, bookingIdOf, paymentMethodLabel, hasExtraBed } from './box-office.utils';
 import { Shopcart, Ticket } from '../models/ticket.model';
 
 describe('box-office.utils', () => {
+  describe('External Booking Import helpers', () => {
+    it('bookingIdOf() gives the reference, else the order number', () => {
+      expect(bookingIdOf({ reference: 'TST4-ABCD', order_id: null as any })).toBe('TST4-ABCD');
+      expect(bookingIdOf({ order_id: 812 } as Ticket)).toBe('812');
+      expect(bookingIdOf({ order_id: null as any } as Ticket)).toBe('');
+      expect(bookingIdOf(null)).toBe('');
+    });
+
+    it('paymentMethodLabel() names the payment method of imported bookings only', () => {
+      expect(paymentMethodLabel({ kind: 'online' })).toBe('Online');
+      expect(paymentMethodLabel({ kind: 'offline' })).toBe('Offline');
+      expect(paymentMethodLabel({ kind: 'guest_list' })).toBe('Guest list');
+      expect(paymentMethodLabel({ kind: null })).toBe('');
+      expect(paymentMethodLabel({} as Ticket)).toBe('');
+    });
+
+    it('hasExtraBed() spots an active Extra bed add-on by name or code', () => {
+      const t = (items: Partial<Shopcart>[]) => ({ shopcart: items as Shopcart[] });
+      expect(hasExtraBed(t([{ category: 'addon', passTypeName: 'Extra bed', isActive: true }]))).toBeTrue();
+      expect(hasExtraBed(t([{ category: 'addon', passTypeName: 'Add-on', externalCode: 'terra_extra_bed', isActive: true }]))).toBeTrue();
+      expect(hasExtraBed(t([{ category: 'addon', passTypeName: 'Extra bed', isActive: false }]))).toBeFalse();
+      expect(hasExtraBed(t([{ category: 'tent', passTypeName: 'Extra bed room', isActive: true }]))).toBeFalse();
+      expect(hasExtraBed(t([{ category: 'addon', passTypeName: 'Car Pass', isActive: true }]))).toBeFalse();
+      expect(hasExtraBed(null)).toBeFalse();
+    });
+  });
+
   describe('isFestivalPass()', () => {
     it('is true when category is festival', () => {
       expect(isFestivalPass({ category: 'festival' } as Shopcart)).toBeTrue();

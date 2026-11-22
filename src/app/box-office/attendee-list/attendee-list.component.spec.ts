@@ -97,6 +97,24 @@ describe('AttendeeListComponent', () => {
     expect(accomodationServiceSpy.getTentById).toHaveBeenCalledWith('tent1');
   });
 
+  it('re-reads the tent on every new copy of the booking (beds may have changed)', () => {
+    const ticketWithTent = { ...mockTicket, shopcart: [{ ...mockTicket.shopcart![1], allocatedTentId: 'tent1' } as any] } as Ticket;
+    configureWith(ticketWithTent);
+    component.ngOnChanges({ ticket: {} as any });
+    component.ticket = { ...ticketWithTent };
+    component.ngOnChanges({ ticket: {} as any });
+    expect(accomodationServiceSpy.getTentById.calls.allArgs().filter(a => a[0] === 'tent1').length).toBe(2);
+  });
+
+  it('passes Allocate Tent\'s "open this booking" up to the page (linked bookings)', () => {
+    component.activeAllocateItem = mockTicket.shopcart![1];
+    fixture.detectChanges();
+    const emitted: string[] = [];
+    component.openBooking.subscribe(id => emitted.push(id));
+    fixture.debugElement.query(el => el.name === 'app-allocate-tent').triggerEventHandler('openBooking', 'FP-3');
+    expect(emitted).toEqual(['FP-3']);
+  });
+
   describe('sortedShopcart', () => {
     it('lists Festival Pass rows before Tent Pass rows, keeping original order within each group', () => {
       const localTicket = {
@@ -131,6 +149,40 @@ describe('AttendeeListComponent', () => {
 
     it('is false for tent pass items', () => {
       expect(component.isFestivalPass(mockTicket.shopcart![1])).toBeFalse();
+    });
+  });
+
+  describe('add-ons take no bed (Extra bed, Car Pass…)', () => {
+    const t = () => ({ ...mockTicket, _id: 'tk-addon', shopcart: [
+      { ...mockTicket.shopcart![1], _id: 'a1', category: 'addon', item_name: 'Extra bed', allocatedTentId: null },
+      { ...mockTicket.shopcart![1], _id: 'a2', category: 'tent', item_name: 'Shared Tent', allocatedTentId: null }
+    ] } as any as Ticket);
+    const actionsOf = (name: string) => {
+      const row = (Array.from(fixture.nativeElement.querySelectorAll('.att-pass')) as HTMLElement[])
+        .find(r => r.textContent!.includes(name))!.closest('.att-row') ?? fixture.nativeElement;
+      return (Array.from(row.querySelectorAll('.att-actions button')) as HTMLElement[]).map(b => b.textContent!.trim());
+    };
+
+    it('shows Allocate Tent on the Tent Pass only, never on an add-on', () => {
+      configureWith(t());
+      const all = (Array.from(fixture.nativeElement.querySelectorAll('.att-actions button')) as HTMLElement[]).map(b => b.textContent!.trim());
+      expect(all.filter(x => x === 'Allocate Tent').length).toBe(1);
+      expect(actionsOf('Extra bed')).not.toContain('Allocate Tent');
+    });
+
+    it('isTentPass(): tent yes; add-on and Festival Pass no; legacy non-festival without a category yes', () => {
+      expect(component.isTentPass({ category: 'tent' } as any)).toBeTrue();
+      expect(component.isTentPass({ category: 'addon' } as any)).toBeFalse();
+      expect(component.isTentPass({ category: 'festival' } as any)).toBeFalse();
+      expect(component.isTentPass({ item_name: 'Camping' } as any)).toBeTrue();
+      expect(component.isTentPass({ item_name: 'Festival Ticket' } as any)).toBeFalse();
+    });
+
+    it('loads beds for the Tent Pass only', () => {
+      configureWith(t());
+      accomodationServiceSpy.getStay.calls.reset();
+      component.ngOnChanges({ ticket: {} as any });
+      expect(accomodationServiceSpy.getStay.calls.allArgs().map(a => a[0])).toEqual(['a2']);
     });
   });
 

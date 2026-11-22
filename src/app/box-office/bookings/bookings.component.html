@@ -3,9 +3,20 @@
     <div class="page-ph-title">Bookings</div>
     <div class="page-ph-sub">{{ totalBookings }} booking{{ totalBookings === 1 ? '' : 's' }}</div>
   </div>
-  <div style="display: flex; gap: 8px;">
+  <div class="bk-actions">
     <button *ngIf="!readOnly" class="btn-ghost" (click)="exportBookings()" [disabled]="!bookings.length">Export</button>
-    <button *ngIf="canBulkUpload" class="btn-cta" (click)="openBulkUpload()">Bulk Upload</button>
+    <!-- One button for every way of adding bookings (a "pull" option comes later) -->
+    <ng-container *ngIf="canBulkUpload">
+      <button class="btn-cta bk-add" [matMenuTriggerFor]="addMenu" #addTrigger="matMenuTrigger" [class.open]="addTrigger.menuOpen">
+        <mat-icon aria-hidden="true">upload</mat-icon>Import<mat-icon class="bk-add-chev" aria-hidden="true">expand_more</mat-icon>
+      </button>
+      <!-- Styled in styles.css (.bk-menu): the panel opens on the overlay -->
+      <mat-menu #addMenu="matMenu" xPosition="before" class="bk-menu">
+        <div class="bk-menu-lbl">Add bookings</div>
+        <button mat-menu-item (click)="openBulkUpload()"><mat-icon>upload_file</mat-icon>Bulk Upload</button>
+        <button mat-menu-item (click)="importOpen = true"><mat-icon>sync_alt</mat-icon>Import from sales system</button>
+      </mat-menu>
+    </ng-container>
   </div>
   <!-- Navigation Tabs: Back + this section's pages -->
   <app-section-header></app-section-header>
@@ -34,7 +45,7 @@
 <div class="tbl-container">
   <div class="tbl-filters">
     <div class="filter-bar">
-      <input type="text" placeholder="Search name, email, order ID or ticket ID..."
+      <input type="text" placeholder="Search name, email, booking ID or ticket ID..."
              [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
       <app-select class="email-status-filter" [(ngModel)]="emailStatusFilter" (ngModelChange)="onSearchChange()">
         <app-option value="">All Ticket Email statuses</app-option>
@@ -73,10 +84,13 @@
           </th>
           <th appSort="name" [sort]="sort">Name</th>
           <th appSort="email" [sort]="sort">Email</th>
-          <th appSort="order" [sort]="sort">Order ID</th>
+          <th appSort="order" [sort]="sort">Booking ID</th>
           <th appSort="ticket" [sort]="sort">Ticket ID</th>
           <th appSort="passes" [sort]="sort">Passes</th>
           <th appSort="amount" [sort]="sort">Amount</th>
+          <th appSort="payment" [sort]="sort">Payment method</th>
+          <th appSort="paidAt" [sort]="sort">Paid at</th>
+          <th appSort="source" [sort]="sort">Source</th>
           <th appSort="emailStatus" [sort]="sort">Ticket Email</th>
           <th appSort="admitted" [sort]="sort">Admitted</th>
         </tr>
@@ -95,10 +109,13 @@
           </td>
           <td>{{ booking.first_name }} {{ booking.last_name }}</td>
           <td>{{ booking.email }}</td>
-          <td class="mono">{{ booking.order_id }}</td>
+          <td class="mono">{{ bookingId(booking) }}</td>
           <td class="mono">{{ booking._id }}</td>
           <td>{{ passSummary(booking) }}</td>
           <td>₹{{ booking.totalPrice }}</td>
+          <td>{{ paymentMethod(booking) || '—' }}</td>
+          <td class="nowrap">{{ booking.paidAt ? (booking.paidAt | date:'d MMM y, HH:mm') : '—' }}</td>
+          <td>{{ source(booking) }}</td>
           <td>
             <span class="badge" [ngClass]="emailStatusBadge(booking)" [data-tooltip]="emailStatusError(booking)">{{ emailStatusLabel(booking) }}</span>
           </td>
@@ -107,7 +124,7 @@
           </td>
         </tr>
         <tr *ngIf="!loading && pagedBookings.length === 0">
-          <td colspan="9" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
+          <td colspan="12" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
         </tr>
       </tbody>
     </table>
@@ -128,6 +145,8 @@
   </div>
 </div>
 
+<app-external-import [open]="importOpen" (closed)="importOpen = false" (imported)="loadBookings()"></app-external-import>
+
 <div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
 
 <div class="panel" [class.open]="panelOpen" *ngIf="activeBooking">
@@ -137,7 +156,14 @@
         {{ activeBooking.first_name }} {{ activeBooking.last_name }}
       </div>
       <div class="mono" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-        Ticket ID: {{ activeBooking._id }} · Order ID: {{ activeBooking.order_id }}
+        Ticket ID: {{ activeBooking._id }} · Booking ID: {{ bookingId(activeBooking) }}
+      </div>
+      <!-- I6: the payment's own ids (searchable from the search bar) -->
+      <div class="mono pay-id" *ngIf="activeBooking.paymentOrderId || activeBooking.paymentId"
+           style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+        <span *ngIf="activeBooking.paymentOrderId">Order ID: {{ activeBooking.paymentOrderId }}</span>
+        <span *ngIf="activeBooking.paymentOrderId && activeBooking.paymentId"> · </span>
+        <span *ngIf="activeBooking.paymentId">Payment ID: {{ activeBooking.paymentId }}</span>
       </div>
       <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
         {{ activeBooking.email }} · {{ activeBooking.phone_no }}
@@ -160,6 +186,31 @@
           </div>
           <div class="pay-err" *ngIf="emailStatusError(activeBooking)">{{ emailStatusError(activeBooking) }}</div>
         </div>
+        <!-- I6: where the booking came from + its payment method (imported ones) -->
+        <div class="pay-box">
+          <div class="pay-l">Source</div>
+          <div class="pay-v">{{ source(activeBooking) }}</div>
+          <div class="pay-sub" *ngIf="paymentMethod(activeBooking)">Payment method: {{ paymentMethod(activeBooking) }}</div>
+        </div>
+      </div>
+
+      <!-- Bookings this one links to (a stay booking → its Festival Pass booking).
+           Tap one to open it here; one not in BiG yet can't be opened. -->
+      <div class="bk-links" *ngIf="activeBooking.linkedReferences?.length">
+        <span class="bk-links-l"><mat-icon>link</mat-icon>Linked bookings</span>
+        <ng-container *ngFor="let ref of activeBooking.linkedReferences">
+          <button type="button" class="bk-link" *ngIf="bookingByRef(ref) as target; else notInBig"
+                  (click)="jumpTo(target)" [title]="'Open booking ' + ref"><span class="mono">{{ ref }}</span><span class="bk-link-n" *ngIf="linkedName(ref) as n"> ({{ n }})</span></button>
+          <ng-template #notInBig><span class="bk-link bk-link-off" title="Not in BiG yet"><span class="mono">{{ ref }}</span><span class="bk-link-n"> · not in BiG yet</span></span></ng-template>
+        </ng-container>
+      </div>
+      <!-- Linked bookings (I5): the bookings that link to this one -->
+      <div class="bk-links" *ngIf="linkedFrom(activeBooking).length">
+        <span class="bk-links-l"><mat-icon>link</mat-icon>Linked from</span>
+        <ng-container *ngFor="let ref of linkedFrom(activeBooking)">
+          <button type="button" class="bk-link bk-link-from" *ngIf="bookingByRef(ref) as target"
+                  (click)="jumpTo(target)" [title]="'Open booking ' + ref"><span class="mono">{{ ref }}</span><span class="bk-link-n" *ngIf="linkedName(ref) as n"> ({{ n }})</span></button>
+        </ng-container>
       </div>
 
       <div class="btn-row" style="margin-top: 8px;">
@@ -169,7 +220,7 @@
 
       <div class="divider"></div>
       <div class="section-lbl">Attendees ({{ festivalPassCount(activeBooking.shopcart) }}) / Passes ({{ activeBooking.shopcart?.length || 0 }})</div>
-      <app-attendee-list [ticket]="activeBooking" [allowEdit]="true"></app-attendee-list>
+      <app-attendee-list [ticket]="activeBooking" [allowEdit]="true" (openBooking)="openByBookingId($event)"></app-attendee-list>
 
       <div class="divider"></div>
       <app-email-history *ngIf="!readOnly" [ticketId]="activeBooking._id"></app-email-history>

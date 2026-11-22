@@ -99,7 +99,7 @@
             <mat-icon class="vl-tick" *ngIf="selected.has(v._id)">check</mat-icon>
           </span>
           <span class="vl-who">
-            <b>{{ v.name }}</b>
+            <b [title]="v.name">{{ v.name }}</b>
             <small><i class="vl-dot" [class.no]="!v.marked"></i>{{ (v.marked ? 'Marked ' : 'Not marked ') + dayPhrase }}<mat-icon class="vl-loc" *ngIf="v.sharing" title="Shares their location when asked" aria-label="Shares their location when asked">location_on</mat-icon></small>
           </span>
         </button>
@@ -132,8 +132,8 @@
           <header class="vl-lane-h">
             <mat-icon>{{ l.icon }}</mat-icon>
             <div>
-              <h3>{{ l.dept.name }}</h3>
-              <p>{{ l.dept.tls.length ? 'TL: ' + l.dept.tls.join(', ') : 'No Team Lead on this event' }}</p>
+              <h3 [title]="l.dept.name">{{ l.dept.name }}</h3>
+              <p [title]="l.dept.tls.join(', ')">{{ l.dept.tls.length ? 'TL: ' + l.dept.tls.join(', ') : 'No Team Lead on this event' }}</p>
             </div>
             <span class="vl-count">{{ l.have }}<ng-container *ngIf="l.dept.needed"> / {{ l.dept.needed }}</ng-container></span>
           </header>

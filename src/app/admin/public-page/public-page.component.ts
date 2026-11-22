@@ -113,6 +113,11 @@ export class PublicPageComponent implements OnInit {
   trackEvent = (_: number, e: { _id: string }) => e._id;
   trackIndex = (i: number) => i;
   trackIcon = (_: number, icon: string) => icon;
+  /** B-058: "local_activity" → "Local activity", shown next to the icon in the picker. */
+  iconLabel(icon: string): string {
+    const s = String(icon || '').replace(/_/g, ' ');
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
 
   addContact(): void { if (this.contacts.length < MAX_CONTACTS) this.contacts.push({ label: '', phone: '' }); }
   removeContact(i: number): void { this.contacts.splice(i, 1); }

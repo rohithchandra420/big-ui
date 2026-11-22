@@ -13,6 +13,77 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.73.0] - 2026-11-22
+
+### Added
+- Form fields say what is wrong with them (red outline + a small message under the field). Save stays clickable and shows every problem instead of silently doing nothing. Users and Volunteers add / edit form first; other forms follow (B-041).
+- Bulk Add template: Role, Home department, food_preference and gender are dropdowns filled from the live roles and departments; the phone column is text (B-036, B-038). Uses the `exceljs` package (4.4.0), loaded only when the template is downloaded.
+- New alert design: a light card with a coloured icon and a close button (B-043).
+- Show / hide button on password fields (Users form and Login) (B-080).
+- Confirm dialogs can show labelled lines; the "Send announcement?" confirm uses them (Title, Type, To, Departments, Event, Public page) (B-056).
+- Setting the active event to Draft or Archived asks first (B-052).
+
+### Changed
+- The sidebar header shows the selected event's name and dates instead of fixed text (B-029).
+- Login page: no fixed festival dates; username and password have a maximum length; a badly formed email gets a clear message (B-025, B-027, B-028).
+- Names are 2 to 60 characters; a long name in the Users table is cut with "…" and shown in full on hover (B-034, B-040).
+- The Reported Time picker only offers 15 days before or after the Expected Join Time (B-032).
+- Maximum lengths on the department, event and pass type forms (B-046, B-050).
+- Thin green scroll bars app-wide; side panels (e.g. Admin › Departments) scroll when their content is long (B-047).
+- Long names on department cards and on the Volunteers board end in "…" or stay within two lines, with the full text on hover (B-048, B-049, B-063).
+- Public Page › Through the years: the icon list opens wider and shows each icon's name (B-058).
+- Email Report: Export with no emails listed says so instead of looking disabled (B-055).
+- Alerts: success closes by itself after 4 s (a thin bar shows the time left; hovering pauses it). Errors stay until closed (B-043).
+
+### Fixed
+- Dropdowns: hovering the already selected option no longer turns its text unreadable (B-031).
+- Admin › Departments: after renaming a department, the panel shows the new name everywhere (B-044).
+- Hospitality › Today on a phone: the "Count due" / "Count saved" chip sits above the meal title instead of covering it (B-022).
+- WASH › Report on a phone: facility names no longer break in the middle of a word (B-023).
+
+---
+
+## [1.72.0] - 2026-11-22
+
+### Added
+- **Bookings: Paid at and Source columns** (both sortable). Source is Sales system, Spot registration or Bulk Upload.
+- **Bookings search** also finds bookings by payment method, source and the date paid (e.g. "10 nov").
+- **Booking details:** a Source box with the payment method; the payment's order and payment IDs under the Booking ID.
+- **Go to a linked booking.** In the booking details, tapping a linked booking opens it in the same panel (a booking not in BiG yet is shown but can't be opened). In Allocate Tent, a linked pass's Booking ID opens that booking, from Bookings and from Booking Found.
+
+### Changed
+- **Bookings header:** Bulk Upload and Import from sales system are now one **Import** menu.
+
+### Fixed
+- After allocating or vacating a bed, moving to another booking showed its old tent and bed. The booking and its tents are now read again.
+
+---
+
+## [1.71.0] - 2026-11-22
+
+### Added
+- **Allocate Tent: linked bookings.** The Festival Passes of the bookings a stay is linked to are listed right after the booking's own passes, tagged "Linked booking <Booking ID>". A note says how many of them still need their details.
+- **Booking details: both directions of a link.** "Linked bookings" now shows each booking's buyer name next to its Booking ID. A new "Linked from" row lists the bookings that link to this one. Tap one to find it.
+
+---
+
+## [1.70.0] - 2026-11-21
+
+### Added
+- **Bookings › Import bookings:** upload the sales system's CSV or Excel export in a slide panel (bottom sheet on phones). A preview lists what will be created, skipped or changed since the last import, rows with errors and unknown pass types (an admin can create these on the spot). Then **Import**, and a report.
+- **Bookings and booking details:** the Booking ID, payment method (Online / Offline / Guest list), when it was paid and the linked bookings. A Tent Pass shows an **Extra bed** tag when the booking bought one.
+- **Admin › Events › Pass Types:** "Sales system code".
+
+### Changed
+- **Allocate Tent:** each suggestion shows its **Booking ID** (or the order number) next to the name. The booking's own people come first, tagged **This booking**. When some of the booking's Festival Passes still need their details, the panel says how many, to be filled at the counter first. The booking's own people are also listed when the Tent Pass and the buyer have no details to search on.
+- Places that showed "Order #" now handle a booking that has no order number.
+
+### Fixed
+- **Booking details:** an add-on (Extra bed, Car Pass…) showed **Allocate Tent**, which could only fail. Only a Tent Pass has Allocate / Vacate now.
+- **Allocate Tent:** the title and "Choose Tent" showed empty brackets for an imported Tent Pass; they now show the pass type.
+
+---
+
 ## [1.69.0] - 2026-11-20
 
 ### Changed

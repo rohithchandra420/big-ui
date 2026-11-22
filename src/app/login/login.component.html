@@ -6,7 +6,6 @@
     <div class="brand-mark">
       <div class="brand-logo">BiG</div>
       <div class="brand-name">Bloom in Green</div>
-      <div class="brand-sub">6.0 &middot; Jan 16&ndash;18, 2026</div>
     </div>
 
     <!-- Form -->
@@ -14,12 +13,16 @@
 
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Username</mat-label>
-        <input matInput [(ngModel)]="username" name="username" required autocomplete="username">
+        <input matInput type="email" [(ngModel)]="username" name="username" required email maxlength="254" autocomplete="username" #userCtl="ngModel">
+        <mat-error *ngIf="userCtl.errors?.['email']">Enter a valid email address</mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Password</mat-label>
-        <input matInput [(ngModel)]="password" type="password" name="password" required autocomplete="current-password">
+        <input matInput [(ngModel)]="password" [type]="showPassword ? 'text' : 'password'" name="password" required maxlength="128" autocomplete="current-password">
+        <button mat-icon-button matSuffix type="button" class="login-eye" (click)="showPassword = !showPassword" [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showPassword">
+          <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
       </mat-form-field>
 
       <div class="login-error" *ngIf="loginError">

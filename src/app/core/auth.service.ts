@@ -374,7 +374,10 @@ export class AuthService {
     }
 
     private handleError(errorRes: HttpErrorResponse) {
-        let errorMessage =  errorRes.error && errorRes.error.message ? errorRes.error.message :"An unknown error occured";
+        // B-028: a field check failing on the server answers { errors: [{ msg }] }, not { message }.
+        const fieldMsg = errorRes.error?.errors?.[0]?.msg;
+        let errorMessage = errorRes.error?.message || fieldMsg || "An unknown error occured";
+        if (fieldMsg && !errorRes.error?.message) return throwError(() => new Error(fieldMsg));
         if (!errorRes.error || !errorRes.error.message) {
             return throwError(errorMessage);
         }

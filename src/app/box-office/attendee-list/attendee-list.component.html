@@ -8,7 +8,8 @@
                    [shopItem]="activeAllocateItem"
                    [ticket]="ticket"
                    (allocated)="onTentAllocated($event)"
-                   (cancelled)="onAllocateCancelled()">
+                   (cancelled)="onAllocateCancelled()"
+                   (openBooking)="openBooking.emit($event)">
 </app-allocate-tent>
 
 <ng-container *ngIf="!activeCounterItem && !activeAllocateItem">
@@ -56,6 +57,10 @@
           <span class="badge" *ngIf="bedsOf(item) > 1" [ngClass]="bedsFree(item) ? 'ba' : 'bg'">
             <mat-icon class="att-type-icon">bed</mat-icon>Beds {{ bedsUsed(item) }} / {{ bedsOf(item) }}
           </span>
+          <!-- External Booking Import: the booking bought an extra bed (an add-on, no bed of its own) -->
+          <span class="badge bb" *ngIf="item.category === 'tent' && extraBed" title="This booking has an Extra bed add-on">
+            <mat-icon class="att-type-icon">single_bed</mat-icon>Extra bed
+          </span>
         </ng-container>
       </div>
       <!-- Who is in this Tent Pass's beds (one Festival Pass per bed) -->
@@ -92,7 +97,8 @@
         </ng-template>
       </ng-container>
 
-      <ng-template #tentActions>
+      <!-- Only a Tent Pass takes beds: an add-on (Extra bed, Car Pass…) has no tent actions -->
+      <ng-template #tentActions><ng-container *ngIf="isTentPass(item)">
         <button class="btn-secondary att-action" *ngIf="bedsFree(item)" (click)="openAllocateTent(item)">
           {{ bedsOf(item) > 1 ? (bedsUsed(item) ? 'Allocate next bed' : 'Allocate bed') : 'Allocate Tent' }}
         </button>
@@ -100,7 +106,7 @@
         <button class="btn-secondary att-action" *ngIf="bedsUsed(item) === 1" (click)="vacateAttendee(item, peopleIn(item)[0])">
           Vacate
         </button>
-      </ng-template>
+      </ng-container></ng-template>
 
       <button class="btn-secondary att-action" *ngIf="allowEdit && isDetailsComplete(item)" (click)="openCounterForm(item)">
         Edit
