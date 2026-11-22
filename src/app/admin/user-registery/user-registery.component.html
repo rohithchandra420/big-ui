@@ -137,7 +137,7 @@
                 <div class="name-cell">
                   <app-user-avatar [userId]="u._id" [name]="u.name" [version]="u.avatarVersion"
                                    [size]="24" [muted]="!isActive(u)"></app-user-avatar>
-                  <span class="name-txt">{{ u.name }}</span>
+                  <span class="name-txt" [title]="u.name">{{ u.name }}</span>
                   <span class="badge bx" *ngIf="!isActive(u)">Deactivated</span>
                 </div>
               </td>

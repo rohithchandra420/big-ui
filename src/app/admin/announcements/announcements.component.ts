@@ -366,16 +366,26 @@ export class AnnouncementsComponent implements OnInit, OnDestroy {
   async send(): Promise<void> {
     if (!this.canSend) return;
     const roles = this.orderedRoles(this.roles);
-    const label = `"${this.typeOption.prefix}${this.title.trim()}"`;
-    const parts: string[] = [];
+    // B-056: labelled lines instead of one long sentence.
+    const details: { label: string; value: string }[] = [
+      { label: 'Title', value: `${this.typeOption.prefix}${this.title.trim()}` },
+      { label: 'Type', value: this.typeLabel(this.type) }
+    ];
+    const notes: string[] = [];
     if (this.hasStaffAudience) {
       const names = this.departmentOptions.filter(d => this.departments.has(d._id)).map(d => d.name);
-      parts.push(`goes to ${this.audienceText(roles, names)}${this.staffNote(this.sendStaffEventName)} on every phone with BiG notifications on — that can't be recalled`);
+      details.push({ label: 'To', value: this.audienceText(roles, []) });
+      if (names.length) details.push({ label: 'Departments', value: names.join(', ') });
+      if (this.sendStaffEventName) details.push({ label: 'Event', value: `${this.sendStaffEventName} staff list only` });
+      notes.push("Goes to every phone with BiG notifications on and can't be recalled.");
     }
-    if (this.publicPost) parts.push('appears on the public festival page, where anyone on the internet can read it (you can remove it from there later)');
+    details.push({ label: 'Public page', value: this.publicPost ? 'Yes: anyone on the internet can read it' : 'No' });
+    if (this.publicPost) notes.push('You can remove it from the public page later.');
     const ok = await firstValueFrom(this.confirm.confirm({
       title: this.type === 'urgent' ? 'Send an URGENT announcement?' : 'Send announcement?',
-      message: `${label} ${parts.join(', and ')}.`,
+      message: '',
+      details,
+      note: notes.join(' '),
       confirmText: 'Send',
       danger: this.type === 'urgent' || this.publicPost
     }));

@@ -42,4 +42,13 @@ describe('ConfirmDialogComponent', () => {
     await setup(data);
     expect(component.data).toEqual(data);
   });
+
+  it('B-056: shows labelled detail lines and a note', async () => {
+    await setup({ title: 'Send announcement?', message: '', details: [{ label: 'To', value: 'Volunteers' }, { label: 'Public page', value: 'No' }], note: "Can't be recalled." });
+    const el = fixture.nativeElement as HTMLElement;
+    expect(Array.from(el.querySelectorAll('.confirm-details dt')).map(e => e.textContent)).toEqual(['To', 'Public page']);
+    expect(Array.from(el.querySelectorAll('.confirm-details dd')).map(e => e.textContent)).toEqual(['Volunteers', 'No']);
+    expect(el.querySelector('.confirm-note')?.textContent).toContain("Can't be recalled.");
+    expect(el.querySelector('.confirm-text')).toBeNull();
+  });
 });

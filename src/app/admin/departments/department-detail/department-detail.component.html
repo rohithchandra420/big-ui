@@ -101,8 +101,8 @@
     <form [formGroup]="editForm" class="edit-form">
       <div class="field">
         <label>Name *</label>
-        <input type="text" formControlName="name" placeholder="e.g. Finance">
-        <span class="field-error" *ngIf="editForm.get('name')?.touched && editForm.get('name')?.hasError('required')">Name is required</span>
+        <input type="text" formControlName="name" placeholder="e.g. Finance" maxlength="40">
+        <app-field-error [control]="editForm.controls.name" label="Name"></app-field-error>
       </div>
 
       <div class="field" *ngIf="mode === 'create'">
@@ -119,7 +119,8 @@
 
       <div class="field">
         <label>Description</label>
-        <textarea formControlName="description" rows="3" placeholder="What does this department handle?"></textarea>
+        <textarea formControlName="description" rows="3" placeholder="What does this department handle?" maxlength="300"></textarea>
+        <span class="field-hint">{{ (editForm.controls.description.value || '').length }} / 300</span>
       </div>
 
       <div class="field need-field" *ngIf="showNeeded">

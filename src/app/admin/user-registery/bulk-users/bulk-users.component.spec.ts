@@ -4,7 +4,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatIconModule } from '@angular/material/icon';
 import { of, throwError } from 'rxjs';
 
-import { BULK_VOLUNTEER_COLUMNS, BulkUsersComponent, cellText, headerKey, toBulkRows } from './bulk-users.component';
+import { BULK_VOLUNTEER_COLUMNS, BulkUsersComponent, cellText, headerKey, toBulkRows, loadExcelJS } from './bulk-users.component';
 import { VolunteersService } from '../../../volunteers/volunteers.service';
 import { AdminService, BulkUsersResponse } from '../../admin.service';
 import { NotificationService } from '../../../core/notification.service';
@@ -195,5 +195,46 @@ describe('BulkUsersComponent', () => {
   it('rejects files that are not .xlsx', () => {
     component.handleFile(new File(['x'], 'users.csv'));
     expect(component.error).toContain('.xlsx');
+  });
+
+  describe('template dropdowns (B-036 / B-038)', () => {
+    let blob: Blob | null;
+    beforeEach(() => {
+      blob = null;
+      spyOn(URL, 'createObjectURL').and.callFake((b: any) => { blob = b; return 'blob:test'; });
+      spyOn(URL, 'revokeObjectURL');
+      spyOn(HTMLAnchorElement.prototype, 'click');
+    });
+
+    it('role, department, food and gender columns are dropdowns fed from a hidden Lists sheet', async () => {
+      (component as any).data = { departments: ['Box Office', 'Kitchen Crew'], roles: ['VOL', 'TL'] };
+      await component.downloadTemplate();
+      expect(blob).not.toBeNull();
+      const ExcelJS = await loadExcelJS();
+      const book = new ExcelJS.Workbook();
+      await book.xlsx.load(await blob!.arrayBuffer());
+      const users = book.getWorksheet('Users')!;
+      const lists = book.getWorksheet('Lists')!;
+      expect(lists.state).toBe('veryHidden');
+      const col = (name: string) => (users.getRow(1).values as any[]).indexOf(name);
+      const listOf = (name: string) => {
+        const f = String(users.getCell(2, col(name)).dataValidation?.formulae?.[0] || '');
+        const letter = /!\$([A-Z]+)\$/.exec(f)![1];
+        return (lists.getColumn(letter).values as any[]).filter(v => v !== undefined && v !== null);
+      };
+      expect(users.getCell(2, col('role')).dataValidation?.type).toBe('list');
+      expect(listOf('role')).toEqual(['VOL', 'TL']);
+      expect(listOf('home_department')).toEqual(['Box Office', 'Kitchen Crew']);
+      expect(listOf('food_preference')).toEqual(['veg', 'non-veg']);
+      expect(listOf('gender')).toEqual(['Male', 'Female', 'Prefer not to say']);
+      expect(users.getCell(501, col('gender')).dataValidation?.type).toBe('list');
+      expect(book.getWorksheet('How to fill')).toBeTruthy();
+    });
+
+    it('without names from the page: the fixed role list, no department dropdown', async () => {
+      (component as any).data = null;
+      expect(component.roleChoices).toEqual(['VOL', 'TL', 'ADMIN', 'DIR']);
+      expect(component.departmentChoices).toEqual([]);
+    });
   });
 });

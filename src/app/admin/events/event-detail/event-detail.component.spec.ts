@@ -142,6 +142,31 @@ describe('EventDetailComponent', () => {
       expect(component.editMode).toBeFalse();
     });
 
+    it('B-052: an active event set to Archived asks first; Cancel saves nothing', () => {
+      component.detail = { ...mockDetail, status: 'active' } as any;
+      component.enterEditMode();
+      component.editForm.patchValue({ status: 'archived' });
+      confirmationServiceSpy.confirm.and.returnValue(of(false));
+      component.save();
+      expect(confirmationServiceSpy.confirm).toHaveBeenCalled();
+      expect(confirmationServiceSpy.confirm.calls.mostRecent().args[0].danger).toBeTrue();
+      expect(eventServiceSpy.updateEvent).not.toHaveBeenCalled();
+
+      confirmationServiceSpy.confirm.and.returnValue(of(true));
+      eventServiceSpy.updateEvent.and.returnValue(of(mockDetail as any));
+      component.save();
+      expect(eventServiceSpy.updateEvent).toHaveBeenCalledWith('evt1', jasmine.objectContaining({ status: 'archived' }));
+    });
+
+    it('B-052: no question when the event is not active', () => {
+      component.enterEditMode();
+      component.editForm.patchValue({ status: 'archived' });
+      eventServiceSpy.updateEvent.and.returnValue(of(mockDetail as any));
+      component.save();
+      expect(confirmationServiceSpy.confirm).not.toHaveBeenCalled();
+      expect(eventServiceSpy.updateEvent).toHaveBeenCalled();
+    });
+
     it('save() shows an error notification on failure', () => {
       component.enterEditMode();
       eventServiceSpy.updateEvent.and.returnValue(throwError(() => ({ error: { message: 'Bad status' } })));

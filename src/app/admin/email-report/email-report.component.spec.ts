@@ -225,4 +225,12 @@ describe('EmailReportComponent', () => {
       expect(component.exporting).toBeFalse();
     });
   });
+
+  it('B-055: Export with nothing listed says so instead of doing nothing', () => {
+    component.total = 0;
+    emailSpy.getLog.calls.reset();
+    component.exportReport();
+    expect(emailSpy.getLog).not.toHaveBeenCalled();
+    expect(notifySpy.openErrorSnackBar).toHaveBeenCalledWith('No emails to export for these filters');
+  });
 });

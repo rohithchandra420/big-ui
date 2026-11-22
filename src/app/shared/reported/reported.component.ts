@@ -4,6 +4,10 @@ import { NotificationService } from '../../core/notification.service';
 import { ReportedService } from '../../core/reported.service';
 import { JOIN_STATE_LABEL, JoinState, joinState, localDateTime } from '../../core/join-time';
 
+/** B-032: same window as the server. */
+export const REPORT_WINDOW_DAYS = 15;
+const REPORT_WINDOW_MS = REPORT_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
 export interface ReportedChange {
   reportedAt: string | null;
   reportedBy: { _id: string; name: string } | null;
@@ -36,6 +40,8 @@ export class ReportedComponent implements OnChanges {
   editing = false;
   when = '';
   maxNow = '';
+  /** B-032: the earliest Reported Time allowed (15 days before the Expected Join Time). */
+  minWhen = '';
   busy = false;
 
   constructor(private reported: ReportedService, private confirm: ConfirmationService, private notify: NotificationService) {}
@@ -49,7 +55,11 @@ export class ReportedComponent implements OnChanges {
 
   startEdit() {
     const now = new Date();
-    this.maxNow = localDateTime(now);
+    // B-032: within 15 days either side of the Expected Join Time, never in the future.
+    const expected = this.expectedAt ? new Date(this.expectedAt).getTime() : NaN;
+    const latest = isNaN(expected) ? now.getTime() : Math.min(now.getTime(), expected + REPORT_WINDOW_MS);
+    this.maxNow = localDateTime(new Date(latest));
+    this.minWhen = isNaN(expected) ? '' : localDateTime(new Date(expected - REPORT_WINDOW_MS));
     this.when = this.reportedAt ? localDateTime(new Date(this.reportedAt)) : this.maxNow;
     this.editing = true;
   }
@@ -58,6 +68,10 @@ export class ReportedComponent implements OnChanges {
     const at = new Date(this.when);
     if (!this.when || isNaN(at.getTime())) return;
     if (at.getTime() > Date.now() + 60_000) { this.notify.openErrorSnackBar('The Reported Time cannot be in the future'); return; }
+    if (this.expectedAt && Math.abs(at.getTime() - new Date(this.expectedAt).getTime()) > REPORT_WINDOW_MS) {
+      this.notify.openErrorSnackBar(`The Reported Time must be within ${REPORT_WINDOW_DAYS} days of the Expected Join Time`);
+      return;
+    }
     this.busy = true;
     try {
       const res = await this.reported.mark(this.userId, this.eventId, at.toISOString());

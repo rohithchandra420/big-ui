@@ -104,6 +104,13 @@
   color: #fff;
 }
 
+/* B-031: hovering the selected option used to give it the light hover
+   background with its white text still on — unreadable. Keep it dark. */
+.app-select-option.selected:hover:not(.disabled) {
+  background: var(--color-secondary);
+  color: #fff;
+}
+
 .app-select-option.disabled {
   color: #bbb;
   cursor: not-allowed;

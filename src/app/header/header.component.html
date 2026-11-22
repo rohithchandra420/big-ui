@@ -3,7 +3,8 @@
   <!-- Logo block -->
   <div class="sidebar-logo">
     <div class="logo-name">Bloom in Green</div>
-    <div class="logo-sub">BiG 6.0 · Jan 16–18</div>
+    <!-- B-029: the selected event's name and dates (was fixed text) -->
+    <div class="logo-sub" *ngIf="activeEvent">{{ activeEvent.name }}<ng-container *ngIf="activeEventDates"> · {{ activeEventDates }}</ng-container></div>
   </div>
 
   <!-- Navigation -->

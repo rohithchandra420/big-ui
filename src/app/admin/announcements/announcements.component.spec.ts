@@ -243,7 +243,9 @@ describe('AnnouncementsComponent', () => {
     component.send(); tick();
     const arg = confirm.confirm.calls.mostRecent().args[0];
     expect(arg.danger).toBeTrue();
-    expect(arg.message).toContain('Urgent: Storm');
+    // B-056: labelled lines instead of one sentence
+    expect(arg.details).toContain({ label: 'Title', value: 'Urgent: Storm' });
+    expect(arg.note).toContain("can't be recalled");
   }));
 
   it('does not send when the confirmation is cancelled', fakeAsync(() => {
@@ -291,7 +293,7 @@ describe('AnnouncementsComponent', () => {
       expect(component.audiencePreview).toBe('Volunteers (BiG 7.0 staff only) and the public page');
       await component.send();
       expect(push.sendAnnouncement).toHaveBeenCalledWith(jasmine.objectContaining({ public: true, roles: ['VOL'] }));
-      expect(confirm.confirm.calls.mostRecent().args[0].message).toContain('anyone on the internet can read it');
+      expect(confirm.confirm.calls.mostRecent().args[0].details).toContain({ label: 'Public page', value: 'Yes: anyone on the internet can read it' });
       expect(component.publicPost).toBeFalse();   // form reset
     });
 

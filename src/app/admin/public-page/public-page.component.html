@@ -136,8 +136,8 @@
           <button type="button" class="pp-x" (click)="removeEdition(i)" aria-label="Remove edition"><mat-icon>close</mat-icon></button>
         </div>
         <div class="pp-row-edit" *ngFor="let it of e.items; let j = index; trackBy: trackIndex">
-          <app-select class="pp-icon-pick" [(ngModel)]="it.icon" aria-label="Icon">
-            <app-option *ngFor="let ic of statIcons; trackBy: trackIcon" [value]="ic"><mat-icon class="pp-opt-ic">{{ ic }}</mat-icon></app-option>
+          <app-select class="pp-icon-pick" [(ngModel)]="it.icon" aria-label="Icon" [panelMinWidth]="200">
+            <app-option *ngFor="let ic of statIcons; trackBy: trackIcon" [value]="ic"><mat-icon class="pp-opt-ic">{{ ic }}</mat-icon> {{ iconLabel(ic) }}</app-option>
           </app-select>
           <input class="pp-in pp-phone" type="text" maxlength="12" [(ngModel)]="it.value" placeholder="2,000" aria-label="Number">
           <input class="pp-in" type="text" maxlength="30" [(ngModel)]="it.label" placeholder="participants" aria-label="Label">

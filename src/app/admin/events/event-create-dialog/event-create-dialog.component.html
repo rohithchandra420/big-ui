@@ -5,7 +5,7 @@
 
     <div class="field">
       <label>Name *</label>
-      <input type="text" formControlName="name" placeholder="e.g. BloomNight 01">
+      <input type="text" formControlName="name" placeholder="e.g. BloomNight 01" maxlength="60">
       <span class="field-error" *ngIf="form.get('name')?.touched && form.get('name')?.hasError('required')">
         Name is required
       </span>
@@ -13,7 +13,7 @@
 
     <div class="field">
       <label>Description</label>
-      <textarea formControlName="description" rows="3"
+      <textarea formControlName="description" rows="3" maxlength="500"
         placeholder="What is this event?"></textarea>
     </div>
 

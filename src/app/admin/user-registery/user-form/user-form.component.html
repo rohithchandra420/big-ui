@@ -2,26 +2,35 @@
 
   <div class="field">
     <label>Name *</label>
-    <input type="text" formControlName="userName" placeholder="Full name">
+    <input type="text" formControlName="userName" placeholder="Full name" [attr.maxlength]="NAME_MAX">
+    <app-field-error [control]="form.controls.userName" label="Name"></app-field-error>
   </div>
 
   <div class="field">
     <label>Email *</label>
-    <input type="email" formControlName="email" placeholder="email@example.com">
+    <input type="email" formControlName="email" placeholder="email@example.com" maxlength="254">
+    <app-field-error [control]="form.controls.email" label="Email" [messages]="emailMessages"></app-field-error>
   </div>
 
   <ng-container *ngIf="!isEdit">
     <div class="form-two-col">
       <div class="field">
         <label>Password *</label>
-        <input type="password" formControlName="password" placeholder="Min. 8 characters">
+        <span class="pw-wrap">
+          <input [type]="showPassword ? 'text' : 'password'" formControlName="password" placeholder="Min. 8 characters" maxlength="128" autocomplete="new-password">
+          <button type="button" class="pw-eye" (click)="showPassword = !showPassword" [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showPassword"><mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon></button>
+        </span>
+        <app-field-error [control]="form.controls.password" label="Password" [messages]="passwordMessages"></app-field-error>
       </div>
       <div class="field">
         <label>Confirm Password *</label>
-        <input type="password" formControlName="confirmPassword" placeholder="Repeat password">
+        <span class="pw-wrap">
+          <input [type]="showPassword ? 'text' : 'password'" formControlName="confirmPassword" placeholder="Repeat password" maxlength="128" autocomplete="new-password">
+        </span>
+        <app-field-error [control]="form.controls.confirmPassword" label="Confirm Password"></app-field-error>
+        <div class="fe-msg" role="alert" *ngIf="form.hasError('passwordMismatch') && !form.controls.confirmPassword.errors">Passwords do not match</div>
       </div>
     </div>
-    <div class="field-error" *ngIf="form.hasError('passwordMismatch')">Passwords do not match.</div>
   </ng-container>
 
   <div class="form-two-col">
@@ -31,6 +40,7 @@
         <app-option value="" [disabled]="true">Select a role</app-option>
         <app-option *ngFor="let r of roleOptions; trackBy: trackRole" [value]="r.name">{{ r.name }}</app-option>
       </app-select>
+      <app-field-error [control]="form.controls.role" label="Role"></app-field-error>
     </div>
     <div class="field">
       <label>Home Department *</label>
@@ -38,6 +48,7 @@
         <app-option value="" [disabled]="true">Select a department</app-option>
         <app-option *ngFor="let d of departments; trackBy: trackDept" [value]="d._id">{{ d.name }}</app-option>
       </app-select>
+      <app-field-error [control]="form.controls.homeDepartment" label="Home Department"></app-field-error>
     </div>
   </div>
 
@@ -46,6 +57,7 @@
       <label>Expected Join Time *</label>
       <!-- One field for date and time; a day picked alone starts at 11:00 -->
       <app-date-time formControlName="dateOfJoining" ariaLabel="Expected Join Time"></app-date-time>
+      <app-field-error [control]="form.controls.dateOfJoining" label="Expected Join Time"></app-field-error>
     </div>
     <div class="field">
       <label>Food</label>
@@ -63,7 +75,7 @@
   <div class="field">
     <label for="uf-phone">Phone</label>
     <input id="uf-phone" type="tel" formControlName="phone" maxlength="24" inputmode="tel" autocomplete="off" placeholder="e.g. +91 90000 00000">
-    <div class="field-error" *ngIf="form.controls.phone.invalid">7 to 15 digits. A leading + is allowed.</div>
+    <app-field-error [control]="form.controls.phone" label="Phone" [messages]="phoneMessages"></app-field-error>
   </div>
 
   <div class="field">
@@ -107,7 +119,7 @@
 
   <div class="btn-row form-actions">
     <button class="btn-ghost" type="button" (click)="cancelled.emit()">Cancel</button>
-    <button class="btn-cta" type="submit" [disabled]="form.invalid || saving">
+    <button class="btn-cta" type="submit" [disabled]="saving">
       {{ isEdit ? 'Save Changes' : 'Create User' }}
     </button>
   </div>

@@ -19,6 +19,8 @@ export class LoginComponent implements OnInit, OnDestroy {
   user: User;
   private errorSub: Subscription;
   loginError;
+  /** B-080: show / hide the password. */
+  showPassword = false;
 
 
 

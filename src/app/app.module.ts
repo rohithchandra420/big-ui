@@ -70,6 +70,8 @@ import { EventCreateDialogComponent } from './admin/events/event-create-dialog/e
 import { AccommodationSetupComponent } from './accommodation/setup/accommodation-setup.component';
 import { AccommodationInventoryComponent } from './accommodation/inventory/accommodation-inventory.component';
 import { AppSelectComponent } from './shared/app-select/app-select.component';
+import { FieldErrorComponent } from './shared/field-error/field-error.component';
+import { AppToastComponent } from './shared/app-toast/app-toast.component';
 import { AppOptionComponent } from './shared/app-select/app-option.component';
 import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.component';
 import { UserAvatarComponent } from './shared/user-avatar/user-avatar.component';
@@ -177,6 +179,8 @@ LOAD_WASM().subscribe()
     AccommodationSetupComponent,
     AccommodationInventoryComponent,
     AppSelectComponent,
+    FieldErrorComponent,
+    AppToastComponent,
     AppOptionComponent,
     ConfirmDialogComponent,
     UserAvatarComponent,

@@ -328,6 +328,11 @@ export class EmailReportComponent implements OnInit, OnDestroy {
 
   exportReport() {
     if (this.exporting) return;
+    // B-055: the button stays clickable; with nothing listed it says why instead of looking broken.
+    if (!this.total) {
+      this.notificationService.openErrorSnackBar('No emails to export for these filters');
+      return;
+    }
     this.exporting = true;
     this.emailService.getLog({ ...this.buildQuery(), page: 0, pageSize: EXPORT_LIMIT }).subscribe({
       next: res => {

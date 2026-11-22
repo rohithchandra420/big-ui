@@ -3,7 +3,7 @@
     <div class="page-ph-title">Email Report</div>
     <div class="page-ph-sub">{{ total }} email{{ total === 1 ? '' : 's' }}{{ hasFilters ? ' (filtered)' : '' }}</div>
   </div>
-  <button class="btn-ghost" (click)="exportReport()" [disabled]="exporting || total === 0">
+  <button class="btn-ghost" (click)="exportReport()" [disabled]="exporting">
     {{ exporting ? 'Exporting…' : 'Export' }}
   </button>
   <!-- Navigation Tabs: Back + this section's pages -->

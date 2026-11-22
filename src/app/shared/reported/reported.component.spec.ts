@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of } from 'rxjs';
 import { ReportedComponent } from './reported.component';
+import { localDateTime } from '../../core/join-time';
 import { ReportedService } from '../../core/reported.service';
 import { ConfirmationService } from '../confirm-dialog/confirmation.service';
 import { NotificationService } from '../../core/notification.service';
@@ -93,5 +94,21 @@ describe('ReportedComponent', () => {
     flushMicrotasks();
     expect(svc.undo).toHaveBeenCalledWith('u1', 'e1');
     expect(changed).toHaveBeenCalledWith({ reportedAt: null, reportedBy: null });
+  }));
+
+  it('B-032: the picker only offers 15 days either side of the Expected Join Time', () => {
+    c.expectedAt = '2020-01-20T05:30:00Z';
+    c.startEdit();
+    expect(c.minWhen).toBe(localDateTime(new Date('2020-01-05T05:30:00Z')));
+    expect(c.maxNow).toBe(localDateTime(new Date('2020-02-04T05:30:00Z')));
+  });
+
+  it('B-032: refuses a time outside the window without calling the server', fakeAsync(() => {
+    c.expectedAt = '2020-01-20T05:30:00Z';
+    c.startEdit();
+    c.when = localDateTime(new Date('2019-12-01T05:30:00Z'));
+    c.save();
+    flushMicrotasks();
+    expect(svc.mark).not.toHaveBeenCalled();
   }));
 });

@@ -160,8 +160,24 @@ export class EventDetailComponent implements OnInit {
     this.editMode = false;
   }
 
+  /** B-052: an active event set to Draft / Archived asks first (Team Leads and Volunteers lose it). */
   save() {
     if (!this.detail || this.editForm.invalid || this.saving) return;
+    const next = this.editForm.value.status;
+    if (this.detail.status === 'active' && next && next !== 'active') {
+      this.confirmationService.confirm({
+        title: next === 'archived' ? 'Archive the active event?' : 'Move the active event back to Draft?',
+        message: `"${this.detail.name}" is active. Team Leads and Volunteers lose access to it, and it leaves their event picker.`,
+        confirmText: next === 'archived' ? 'Archive' : 'Set to Draft',
+        danger: true
+      }).subscribe(ok => { if (ok) this.doSave(); });
+      return;
+    }
+    this.doSave();
+  }
+
+  private doSave() {
+    if (!this.detail || this.saving) return;
     this.saving = true;
     const { name, description, startDate, endDate, status, emailSubject, emailIntro } = this.editForm.value;
     this.eventService.updateEvent(this.detail._id, {

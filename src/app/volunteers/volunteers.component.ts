@@ -159,7 +159,7 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
 
   openBulk() {
     if (!this.event || !this.canManage) return;
-    this.dialog.open(BulkUsersComponent, { width: '920px', maxWidth: '95vw', disableClose: true, data: { volunteersMode: true } })
+    this.dialog.open(BulkUsersComponent, { width: '920px', maxWidth: '95vw', disableClose: true, data: { volunteersMode: true, departments: (this.board?.departments || []).filter(d => d.key !== 'medical').map(d => d.name) } })
       .afterClosed().subscribe(added => { if (added) this.load(); });
   }
 
