@@ -18,8 +18,21 @@ export const BULK_USER_MAX_ROWS = 500;
 /** Volunteers page: everyone is a Volunteer, so its template has no role column. */
 export const BULK_VOLUNTEER_COLUMNS = BULK_USER_COLUMNS.filter(c => c !== 'role');
 
-/** Dialog data. `volunteersMode` = opened from the Volunteers page (1.60.0). */
-export interface BulkUsersData { volunteersMode?: boolean }
+/** Dialog data. `volunteersMode` = opened from the Volunteers page (1.60.0).
+ *  `departments` / `roles`: the names offered in the template's dropdowns (B-036 / B-038). */
+export interface BulkUsersData { volunteersMode?: boolean; departments?: string[]; roles?: string[] }
+
+/** exceljs' browser bundle, loaded only when a template is made (its types need Node, so untyped). */
+export async function loadExcelJS(): Promise<any> {
+  const mod: any = await import('exceljs/dist/exceljs.min.js');
+  return mod.default || mod;
+}
+
+/** The template's hidden sheet holding the dropdown values; never read as users. */
+export const TEMPLATE_LISTS_SHEET = 'Lists';
+const TEMPLATE_WIDTH: { [col: string]: number } = {
+  name: 24, email: 28, password: 16, role: 10, home_department: 24, food_preference: 16, gender: 18, date_of_joining: 20, phone: 18
+};
 
 type Phase = 'pick' | 'checking' | 'preview' | 'adding' | 'done';
 
@@ -102,7 +115,7 @@ export class BulkUsersComponent {
     private notificationService: NotificationService,
     private eventService: EventService,
     private volunteersService: VolunteersService,
-    @Optional() @Inject(MAT_DIALOG_DATA) data: BulkUsersData | null
+    @Optional() @Inject(MAT_DIALOG_DATA) private data: BulkUsersData | null
   ) {
     this.volunteersMode = !!data?.volunteersMode;
     this.columns = this.volunteersMode ? BULK_VOLUNTEER_COLUMNS : BULK_USER_COLUMNS;
@@ -126,37 +139,93 @@ export class BulkUsersComponent {
   trackName(_: number, n: string): string { return n; }
 
   // ── Template ────────────────────────────────────────────────
-  downloadTemplate(): void {
-    import('xlsx').then(XLSX => {
-      const users = XLSX.utils.aoa_to_sheet([[...this.columns]]);
-      const help = XLSX.utils.aoa_to_sheet(this.volunteersMode ? [
-        ['Column', 'Required', 'What to put'],
-        ['name', 'Yes', 'Full name'],
-        ['email', 'Yes', 'Used to sign in. Must be new — existing emails are skipped'],
-        ['password', 'Yes', '8+ characters with upper and lower case, a number and a symbol'],
-        ['home_department', 'No', 'Department name exactly as on the Volunteers page. Leave empty for Unassigned. Medical cannot be used here'],
-        ['food_preference', 'No', 'veg or non-veg'],
-        ['gender', 'No', 'Male, Female or Prefer not to say'],
-        ['date_of_joining', 'No', 'Expected Join Time: a date, e.g. 2026-11-07 (= 11:00), or a date and time, e.g. 2026-11-07 14:30. Leave empty if not known'],
-        ['phone', 'No', '7 to 15 digits; a leading + is allowed. Format the column as Text so the + and leading zeros stay'],
-        ['', '', 'Everyone in this file is added as a Volunteer']
-      ] : [
-        ['Column', 'Required', 'What to put'],
-        ['name', 'Yes', 'Full name'],
-        ['email', 'Yes', 'Used to sign in. Must be new — existing emails are skipped'],
-        ['password', 'Yes', '8+ characters with upper and lower case, a number and a symbol'],
-        ['role', 'Yes', 'VOL, TL, ADMIN, DIR (DEV only when a Developer uploads)'],
-        ['home_department', 'For VOL and TL', 'Department name exactly as in Admin › Departments'],
-        ['food_preference', 'No', 'veg or non-veg'],
-        ['gender', 'No', 'Male, Female or Prefer not to say'],
-        ['date_of_joining', 'No', 'Expected Join Time: a date, e.g. 2026-11-07 (= 11:00), or a date and time, e.g. 2026-11-07 14:30. Leave empty if not known'],
-        ['phone', 'No', '7 to 15 digits; a leading + is allowed. Format the column as Text so the + and leading zeros stay']
-      ]);
-      const book = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(book, users, 'Users');
-      XLSX.utils.book_append_sheet(book, help, 'How to fill');
-      XLSX.writeFile(book, this.volunteersMode ? 'bulk-volunteers-template.xlsx' : 'bulk-users-template.xlsx');
-    });
+  /** B-036 / B-038: the template has real dropdowns (exceljs, loaded only here). */
+  async downloadTemplate(): Promise<void> {
+    try {
+      const ExcelJS = await loadExcelJS();
+      const book = new ExcelJS.Workbook();
+      const users = book.addWorksheet('Users');
+      users.addRow([...this.columns]);
+      users.getRow(1).font = { bold: true };
+      this.columns.forEach((c, i) => users.getColumn(i + 1).width = TEMPLATE_WIDTH[c] || 18);
+
+      // Dropdown values live on a hidden sheet: an inline list is capped at 255 characters.
+      const lists = book.addWorksheet(TEMPLATE_LISTS_SHEET, { state: 'veryHidden' });
+      const choices: { [col: string]: string[] } = {
+        role: this.roleChoices,
+        home_department: this.departmentChoices,
+        food_preference: ['veg', 'non-veg'],
+        gender: ['Male', 'Female', 'Prefer not to say']
+      };
+      let listCol = 0;
+      for (const col of Object.keys(choices)) {
+        const at = this.columns.indexOf(col);
+        const values = choices[col];
+        if (at < 0 || !values.length) continue;
+        listCol++;
+        values.forEach((v, r) => lists.getCell(r + 1, listCol).value = v);
+        const letter = lists.getColumn(listCol).letter;
+        const range = TEMPLATE_LISTS_SHEET + '!$' + letter + '$1:$' + letter + '$' + values.length;
+        for (let row = 2; row <= BULK_USER_MAX_ROWS + 1; row++) {
+          users.getCell(row, at + 1).dataValidation = {
+            type: 'list', allowBlank: true, formulae: [range],
+            showErrorMessage: true, errorStyle: 'stop', errorTitle: 'Pick from the list', error: 'Choose one of the values in the dropdown.'
+          };
+        }
+      }
+      // Phone as text, so the + and leading zeros stay.
+      const phoneAt = this.columns.indexOf('phone');
+      if (phoneAt >= 0) users.getColumn(phoneAt + 1).numFmt = '@';
+
+      const help = book.addWorksheet('How to fill');
+      help.addRows(this.helpRows());
+      help.getRow(1).font = { bold: true };
+      help.getColumn(1).width = 18; help.getColumn(2).width = 16; help.getColumn(3).width = 90;
+
+      const buf = await book.xlsx.writeBuffer();
+      const url = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = this.volunteersMode ? 'bulk-volunteers-template.xlsx' : 'bulk-users-template.xlsx';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      this.notificationService.openErrorSnackBar('Could not make the template');
+    }
+  }
+
+  /** Role dropdown: what the page passed, else the fixed list. Volunteers: no role column. */
+  get roleChoices(): string[] {
+    return this.data?.roles?.length ? this.data.roles : ['VOL', 'TL', 'ADMIN', 'DIR'];
+  }
+
+  get departmentChoices(): string[] { return this.data?.departments || []; }
+
+  /** The "How to fill" sheet. */
+  helpRows(): string[][] {
+    return this.volunteersMode ? [
+      ['Column', 'Required', 'What to put'],
+      ['name', 'Yes', 'Full name, 2 to 60 characters'],
+      ['email', 'Yes', 'Used to sign in. Must be new — existing emails are skipped'],
+      ['password', 'Yes', '8+ characters with upper and lower case, a number and a symbol'],
+      ['home_department', 'No', 'Pick from the dropdown. Leave empty for Unassigned. Medical cannot be used here'],
+      ['food_preference', 'No', 'Pick veg or non-veg'],
+      ['gender', 'No', 'Pick from the dropdown'],
+      ['date_of_joining', 'No', 'Expected Join Time, within a year of today: a date, e.g. 2026-11-07 (= 11:00), or a date and time, e.g. 2026-11-07 14:30. Leave empty if not known'],
+      ['phone', 'No', '7 to 15 digits; a leading + is allowed'],
+      ['', '', 'Everyone in this file is added as a Volunteer']
+    ] : [
+      ['Column', 'Required', 'What to put'],
+      ['name', 'Yes', 'Full name, 2 to 60 characters'],
+      ['email', 'Yes', 'Used to sign in. Must be new — existing emails are skipped'],
+      ['password', 'Yes', '8+ characters with upper and lower case, a number and a symbol'],
+      ['role', 'Yes', 'Pick from the dropdown (DEV only when a Developer uploads)'],
+      ['home_department', 'For VOL and TL', 'Pick from the dropdown'],
+      ['food_preference', 'No', 'Pick veg or non-veg'],
+      ['gender', 'No', 'Pick from the dropdown'],
+      ['date_of_joining', 'No', 'Expected Join Time, within a year of today: a date, e.g. 2026-11-07 (= 11:00), or a date and time, e.g. 2026-11-07 14:30. Leave empty if not known'],
+      ['phone', 'No', '7 to 15 digits; a leading + is allowed']
+    ];
   }
 
   // ── File ────────────────────────────────────────────────────
@@ -192,7 +261,7 @@ export class BulkUsersComponent {
           this.error = 'This file could not be read.';
           return;
         }
-        this.sheetNames = this.workbook.SheetNames.filter((n: string) => n !== 'How to fill');
+        this.sheetNames = this.workbook.SheetNames.filter((n: string) => n !== 'How to fill' && n !== TEMPLATE_LISTS_SHEET);
         if (!this.sheetNames.length) this.sheetNames = this.workbook.SheetNames;
         this.selectSheet(this.sheetNames[0]);
       });

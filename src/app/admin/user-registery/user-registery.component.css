@@ -43,9 +43,15 @@
   gap: 8px;
 }
 
+/* B-034: a long name is cut with "…" (full name on hover) instead of stretching the table. */
 .name-txt {
   font-weight: 500;
   color: var(--text-primary);
+  max-width: 220px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tbl tr.inactive-row td {

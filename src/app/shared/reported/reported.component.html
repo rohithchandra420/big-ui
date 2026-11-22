@@ -18,7 +18,7 @@
   <div class="rp-edit" *ngIf="editing">
     <div class="field">
       <label for="rp-when-{{ userId }}">Reported at</label>
-      <app-date-time inputId="rp-when-{{ userId }}" [(ngModel)]="when" [max]="maxNow" ariaLabel="Reported at"></app-date-time>
+      <app-date-time inputId="rp-when-{{ userId }}" [(ngModel)]="when" [min]="minWhen" [max]="maxNow" ariaLabel="Reported at"></app-date-time>
     </div>
     <p class="rp-hint">Attendance is marked for the rest of that day's slots. Later days stay with the Team Lead.</p>
     <div class="rp-btns">

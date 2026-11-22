@@ -1,6 +1,7 @@
 import { Component, EventEmitter, OnDestroy, OnInit, Output } from "@angular/core";
 import { AuthService } from "../core/auth.service";
 import { EventService } from "../core/event.service";
+import { eventDateRange } from "../core/event-dates";
 import { AvatarService } from "../core/avatar.service";
 import { BillboardService } from "../core/billboard.service";
 import { SosService } from "../core/sos.service";
@@ -57,6 +58,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
     events: EventItem[] = [];
     activeEvent: EventItem | null = null;
+    /** B-029: e.g. "16–18 Jan 2026" for the sidebar header. */
+    get activeEventDates(): string { return eventDateRange(this.activeEvent?.startDate, this.activeEvent?.endDate); }
 
     constructor(
         private authService: AuthService,

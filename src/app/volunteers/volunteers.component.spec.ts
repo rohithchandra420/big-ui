@@ -453,7 +453,7 @@ describe('VolunteersComponent', () => {
     dialog.open.and.returnValue({ afterClosed: () => of(true) } as any);
     component.openBulk();
     flushMicrotasks();
-    expect(dialog.open).toHaveBeenCalledWith(BulkUsersComponent, jasmine.objectContaining({ data: { volunteersMode: true } }));
+    expect(dialog.open).toHaveBeenCalledWith(BulkUsersComponent, jasmine.objectContaining({ data: jasmine.objectContaining({ volunteersMode: true, departments: jasmine.any(Array) }) }));
     expect(service.board).toHaveBeenCalledTimes(3);
 
     component.board = { ...component.board!, canManage: true };

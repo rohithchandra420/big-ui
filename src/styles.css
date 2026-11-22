@@ -119,28 +119,42 @@ input:disabled {
   background-color: var(--color-secondary);
 }
 
-/* ── Snackbars ──────────────────────────────────────────── */
-.snackbar-success {
-  .mdc-snackbar__surface {
-    border: 2px solid var(--color-secondary);
-    border-radius: 10px !important;
-    background-color: var(--color-primary) !important;
-    box-shadow: var(--shadow-md) !important;
-  }
-  .mdc-snackbar__label {
-    color: white !important;
-  }
+/* ── Alerts (B-043, option A of the mock, user 2026-11-22) ──
+   <app-toast> inside Material's snack bar: the snack-bar surface is made
+   invisible and the card draws itself. Success closes after 4 s (bar shows the
+   time left, hover pauses); errors stay until closed. */
+.mat-mdc-snack-bar-container.app-toast-panel .mdc-snackbar__surface {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-width: 0 !important;
 }
-
-.snackbar-error {
-  .mdc-snackbar__surface {
-    background-color: rgb(151, 9, 9) !important;
-    border-radius: 10px !important;
-    box-shadow: 0 8px 16px 0 rgba(255, 0, 0, 0.2), 0 6px 20px 0 rgba(255, 0, 0, 0.19) !important;
-  }
-  .mdc-snackbar__label {
-    color: white !important;
-  }
+.mat-mdc-snack-bar-container.app-toast-panel .mdc-snackbar__label { padding: 0 !important; }
+.app-toast {
+  --c: var(--color-secondary);
+  --bg: #ecfdf3;
+  position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr) 28px; gap: 12px; align-items: center;
+  width: 380px; max-width: calc(100vw - 32px);
+  background: #fff; color: var(--text-primary);
+  border: 1px solid var(--border-default); border-radius: 14px;
+  padding: 12px 12px 14px 14px; overflow: hidden;
+  box-shadow: 0 12px 28px rgba(16, 24, 20, 0.14), 0 2px 6px rgba(16, 24, 20, 0.06);
+  font-size: 13.5px; line-height: 1.35;
+}
+.app-toast.ok { --c: #15803d; --bg: #ecfdf3; }
+.app-toast.err { --c: #b91c1c; --bg: #fdecec; }
+.app-toast::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--c); }
+.app-toast .at-ic { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--bg); color: var(--c); }
+.app-toast .at-ic mat-icon { font-size: 20px; width: 20px; height: 20px; color: var(--c); }
+.app-toast .at-msg { color: var(--text-primary); font-weight: 600; overflow-wrap: break-word; }
+.app-toast .at-x { width: 28px; height: 28px; border: 0; border-radius: 50%; background: transparent; color: #888; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.app-toast .at-x:hover { background: #f1f1f1; color: var(--text-primary); }
+.app-toast .at-x mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.app-toast .at-bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--c); opacity: 0.55; animation-name: app-toast-drain; animation-timing-function: linear; animation-fill-mode: forwards; }
+.app-toast .at-bar.paused { animation-play-state: paused; }
+@keyframes app-toast-drain { from { width: 100%; } to { width: 0; } }
+@media (max-width: 600px) {
+  .app-toast { width: calc(100vw - 32px); }
 }
 
 /* ── Scrollbar ──────────────────────────────────────────── */
@@ -154,18 +168,19 @@ input:disabled {
   border-radius: 10px;
 }
 
+/* B-047: the thin green scroll bar (first made for the date picker) everywhere. */
 ::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 10px;
+  background: #9cc3b2;
+  border-radius: 99px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #999;
+  background: var(--color-secondary);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #ccc var(--border-subtle);
+  scrollbar-color: #9cc3b2 transparent;
 }
 
 /* ── Standard form fields (wireframe pattern) ───────────── */
@@ -532,6 +547,50 @@ select:focus {
   font-size: 11px;
   color: #dc2626;
   margin-top: 2px;
+}
+/* B-080: our own show / hide password button; Edge's own eye is hidden (it vanishes after the first entry). */
+input::-ms-reveal, input::-ms-clear { display: none; }
+.pw-wrap { position: relative; display: block; }
+.pw-wrap input { padding-right: 36px; }
+.pw-eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border: 0; border-radius: 50%; background: transparent; color: var(--text-secondary); cursor: pointer; display: grid; place-items: center; padding: 0; }
+.pw-eye:hover { background: #f1f1f1; color: var(--text-primary); }
+.pw-eye mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+/* B-056: labelled lines in a confirm dialog */
+.confirm-details { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 4px 0 10px; font-size: 13px; color: var(--text-primary); }
+.confirm-details dt { color: var(--text-secondary); font-weight: 600; }
+.confirm-details dd { margin: 0; color: var(--text-primary); overflow-wrap: break-word; }
+.confirm-note { display: flex; gap: 6px; align-items: flex-start; font-size: 12.5px; color: #92400e; background: #fff7e6; border-radius: 8px; padding: 8px 10px; margin: 0; }
+.confirm-note mat-icon { font-size: 16px; width: 16px; height: 16px; flex: none; margin-top: 1px; color: #b45309; }
+
+/* B-048 / B-049: long department and Team Lead names on the department cards end in "…" (full text on hover). */
+.dept-card .dept-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dept-card .tl-list { min-width: 0; }
+.dept-card .tl-item { max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dept-card .meta-value { min-width: 0; }
+/* B-063: Volunteers board lanes: department name and Team Leads stay within two lines (full text on hover). */
+.vl-lane-h > div { min-width: 0; flex: 1; }
+.vl-lane-h h3, .vl-lane-h p { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word !important; }
+
+/* B-041: the message under a field (app-field-error, and the password-match
+   line): small, lined up with the text inside the box, close under it. */
+.field app-field-error { display: block; margin-top: -2px; }
+.field .fe-msg,
+.field app-field-error .field-error {
+  font-size: 10.5px;
+  line-height: 1.3;
+  margin: 0;
+  padding-left: 10px;
+  color: #dc2626;
+}
+/* B-041: a field the person left wrong is outlined red (app-field-error says why). */
+.field input.ng-invalid.ng-touched,
+.field textarea.ng-invalid.ng-touched {
+  border-color: #dc2626;
+}
+.field input.ng-invalid.ng-touched:focus,
+.field textarea.ng-invalid.ng-touched:focus {
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.12);
 }
 
 /* ── Field informational hint (neutral, not an error) ───── */
@@ -1134,6 +1193,15 @@ th[aria-sort="ascending"] .th-sort .mat-icon, th[aria-sort="descending"] .th-sor
   padding: 1.1rem 1.25rem;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
+}
+/* B-047: a component placed straight inside .panel (e.g. <app-department-detail>)
+   must fill it as a column too, or .panel-body never gets a height to scroll in. */
+.panel > :not(.panel-hd):not(.panel-body):not(.panel-actions) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Action row rule (app-wide, user decision 2026-11-03): one row at the

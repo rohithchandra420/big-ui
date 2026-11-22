@@ -1,7 +1,13 @@
 <h2 mat-dialog-title>{{ data.title }}</h2>
 
 <mat-dialog-content>
-  <p class="confirm-text">{{ data.message }}</p>
+  <p class="confirm-text" *ngIf="data.message">{{ data.message }}</p>
+  <dl class="confirm-details" *ngIf="data.details?.length">
+    <ng-container *ngFor="let d of data.details">
+      <dt>{{ d.label }}</dt><dd>{{ d.value }}</dd>
+    </ng-container>
+  </dl>
+  <p class="confirm-note" *ngIf="data.note"><mat-icon aria-hidden="true">info</mat-icon>{{ data.note }}</p>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">

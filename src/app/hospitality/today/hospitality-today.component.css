@@ -67,6 +67,7 @@
 
 @media (max-width: 900px) {
   .ht-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ht-cnt { position: static; display: inline-block; margin-bottom: 6px; }
   .ht-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 520px) {

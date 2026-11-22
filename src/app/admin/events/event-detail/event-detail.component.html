@@ -82,7 +82,7 @@
           </div>
           <div class="field">
             <label for="pt-ext">Sales system code</label>
-            <input id="pt-ext" type="text" formControlName="externalCode" maxlength="64" class="pt-ext" placeholder="e.g. pass_3day" autocomplete="off">
+            <input id="pt-ext" type="text" formControlName="externalCode" maxlength="40" class="pt-ext" placeholder="e.g. pass_3day" autocomplete="off">
             <p class="pt-hint">The item code in the sales system's file, so Import from sales system finds this pass type. No spaces. Optional.</p>
           </div>
           <ng-container *ngIf="passTypePanelForm.value.category === 'tent'">
@@ -125,13 +125,13 @@
 
         <div class="field">
           <label>Name *</label>
-          <input type="text" formControlName="name">
+          <input type="text" formControlName="name" maxlength="60">
           <span class="field-error" *ngIf="editForm.get('name')?.hasError('required')">Name is required</span>
         </div>
 
         <div class="field">
           <label>Description</label>
-          <textarea formControlName="description" rows="3"></textarea>
+          <textarea formControlName="description" rows="3" maxlength="500"></textarea>
         </div>
 
         <div class="form-two-col">

@@ -1,7 +1,7 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { MatDialog } from '@angular/material/dialog';
-import { BulkUsersComponent } from './bulk-users/bulk-users.component';
+import { BulkUsersComponent, BulkUsersData } from './bulk-users/bulk-users.component';
 import { Subscription } from 'rxjs';
 
 import { AdminService, UserDeleteCheck } from '../admin.service';
@@ -669,7 +669,12 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
   /** Bulk Add users from a spreadsheet (v1.42.0). Reloads the list when anyone was added. */
   openBulk() {
     if (!this.canCreateUsers) return;
-    this.dialog.open(BulkUsersComponent, { width: '920px', maxWidth: '95vw', disableClose: true })
+    // B-036 / B-038: the template's dropdowns offer these names (DEV only for a Developer).
+    const data: BulkUsersData = {
+      departments: this.departments.map(d => d.name),
+      roles: this.roles.map(r => r.name).filter(n => n !== 'DEV' || this.userRole === 'DEV')
+    };
+    this.dialog.open(BulkUsersComponent, { width: '920px', maxWidth: '95vw', disableClose: true, data })
       .afterClosed().subscribe(added => { if (added) this.loadUsers(); });
   }
 
