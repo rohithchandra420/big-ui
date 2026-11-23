@@ -59,6 +59,10 @@
         <app-option value="">All Ticket Email statuses</app-option>
         <app-option *ngFor="let o of emailStatusOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
       </app-select>
+      <app-select class="email-status-filter" [(ngModel)]="checkinStatusFilter" (ngModelChange)="onSearchChange()">
+        <app-option value="">All Early Check-In statuses</app-option>
+        <app-option *ngFor="let o of checkinStatusOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
+      </app-select>
     </div>
   </div>
 
@@ -72,6 +76,7 @@
       <mat-menu #emailMenu="matMenu" xPosition="before">
         <button mat-menu-item *ngIf="canSendTicket$ | async" (click)="sendTicketEmails()">Send Ticket Email</button>
         <button mat-menu-item *ngIf="canSendCustom$ | async" (click)="sendCustomEmails()">Send Custom Email</button>
+        <button mat-menu-item *ngIf="canSendCheckin$ | async" (click)="sendCheckinEmails()">Send Early Check-In</button>
       </mat-menu>
     </ng-container>
   </div>
@@ -102,6 +107,7 @@
           <th appSort="emailStatus" [sort]="sort">Ticket Email</th>
           <th appSort="admitted" [sort]="sort">Admitted</th>
           <th appSort="details" [sort]="sort" title="Festival Passes with every detail filled">Festival details</th>
+          <th appSort="earlyCheckin" [sort]="sort">Early Check-In</th>
         </tr>
       </thead>
       <tbody>
@@ -139,9 +145,12 @@
             <span *ngIf="festivalDetailsText(booking) !== '—'; else noFestival" class="badge" [ngClass]="festivalDetailsBadge(booking)">{{ festivalDetailsText(booking) }}</span>
             <ng-template #noFestival>—</ng-template>
           </td>
+          <td>
+            <span class="badge" [ngClass]="checkinStatusBadge(booking)" [data-tooltip]="checkinStatusHint(booking)">{{ checkinStatusLabel(booking) }}</span>
+          </td>
         </tr>
         <tr *ngIf="!loading && pagedBookings.length === 0">
-          <td colspan="13" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
+          <td colspan="14" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
         </tr>
       </tbody>
     </table>
@@ -217,6 +226,17 @@
             <span *ngIf="festivalDetailsText(activeBooking) !== '—'; else noFestivalPanel" class="badge" [ngClass]="festivalDetailsBadge(activeBooking)">{{ festivalDetailsText(activeBooking) }}</span>
             <ng-template #noFestivalPanel>—</ng-template>
           </div>
+        </div>
+        <!-- Early Check-In EC2: the email with the one-time link -->
+        <div class="pay-box">
+          <div class="pay-l">Early Check-In</div>
+          <div class="pay-v">
+            <span class="badge" [ngClass]="checkinStatusBadge(activeBooking)">{{ checkinStatusLabel(activeBooking) }}</span>
+          </div>
+          <div class="pay-sub" *ngIf="activeBooking.earlyCheckin?.sentAt">Sent {{ activeBooking.earlyCheckin!.sentAt | date:'d MMM, HH:mm' }}</div>
+          <div class="pay-sub" *ngIf="activeBooking.earlyCheckin?.expiresAt && activeBooking.earlyCheckin?.status === 'sent'">Link works until {{ activeBooking.earlyCheckin!.expiresAt | date:'d MMM y' }}</div>
+          <div class="pay-sub" *ngIf="activeBooking.earlyCheckin?.submittedAt">Submitted {{ activeBooking.earlyCheckin!.submittedAt | date:'d MMM, HH:mm' }}</div>
+          <div class="pay-err" *ngIf="checkinStatusHint(activeBooking)">{{ checkinStatusHint(activeBooking) }}</div>
         </div>
       </div>
 

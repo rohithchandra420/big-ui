@@ -31,6 +31,8 @@ export interface EventItem {
   /** Ticket Email wording for this edition (Email epic). Empty = the
    *  default built from the event name. */
   ticketEmail?: { subject: string; intro: string };
+  /** Early Check-In email wording (EC2); empty = default. */
+  checkinEmail?: { subject: string; intro: string };
   /** Sales system sync (I3 / I4): the ONE event that bookings from the sales
    *  system go into. Top roles switch it in Admin › Events. */
   salesSync?: boolean;

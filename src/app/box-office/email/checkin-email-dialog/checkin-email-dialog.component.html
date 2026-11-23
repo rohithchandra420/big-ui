@@ -1,0 +1,101 @@
+<h2 mat-dialog-title>Send Early Check-In</h2>
+
+<mat-dialog-content class="email-dlg">
+  <div class="test-banner" *ngIf="safeMode">
+    <strong>Test mode</strong> — emails go <u>only</u> to the tester address below, never to the buyers.
+    The link in a test email opens nothing.
+  </div>
+
+  <p class="lead" *ngIf="single">
+    Email {{ data.tickets[0].first_name }} {{ data.tickets[0].last_name }} a link to fill in the details for
+    every Festival Pass on the booking, to <strong>{{ data.tickets[0].email || 'no email on file' }}</strong>.
+  </p>
+  <p class="lead" *ngIf="!single">
+    Each buyer gets one email with a link to fill in the details for every Festival Pass on their booking.
+    The link is for that booking only; a new send replaces the old link.
+  </p>
+
+  <div class="count-grid">
+    <div class="count-box">
+      <div class="count-n">{{ missing.length }}</div>
+      <div class="count-l">details missing</div>
+    </div>
+    <div class="count-box">
+      <div class="count-n">{{ complete.length }}</div>
+      <div class="count-l">all details filled</div>
+    </div>
+    <div class="count-box" *ngIf="noEmail.length">
+      <div class="count-n">{{ noEmail.length }}</div>
+      <div class="count-l">no buyer email · skipped</div>
+    </div>
+    <div class="count-box" *ngIf="notEligible.length">
+      <div class="count-n">{{ notEligible.length }}</div>
+      <div class="count-l">cancelled or no Festival Pass · skipped</div>
+    </div>
+    <div class="count-box" *ngIf="inProgress.length">
+      <div class="count-n">{{ inProgress.length }}</div>
+      <div class="count-l">sending now · skipped</div>
+    </div>
+  </div>
+
+  <div class="mode-choice" *ngIf="complete.length">
+    <label class="radio-row">
+      <input type="radio" name="ecmode" value="missing" [(ngModel)]="mode" [disabled]="!missing.length">
+      <span>Send only to the {{ missing.length }} with details missing</span>
+    </label>
+    <label class="radio-row">
+      <input type="radio" name="ecmode" value="all" [(ngModel)]="mode">
+      <span>Send to all {{ missing.length + complete.length }}</span>
+    </label>
+  </div>
+
+  <div class="field ec-days">
+    <label for="ecDays">Link works for (days) *</label>
+    <div class="ec-days-row">
+      <input id="ecDays" type="number" min="1" [max]="maxDays" step="1" inputmode="numeric"
+             [(ngModel)]="days" (change)="previewOpen && loadPreview()">
+      <button type="button" class="toggle-chip" *ngFor="let d of dayPresets" [class.on]="days === d"
+              (click)="setDays(d)">{{ d }} days</button>
+    </div>
+    <div class="ec-hint" *ngIf="worksUntil">Works until {{ worksUntil | date:'d MMMM y' }}.</div>
+    <div class="field-error" *ngIf="!daysValid">Enter a whole number of days from 1 to {{ maxDays }}.</div>
+  </div>
+
+  <div class="field" *ngIf="safeMode">
+    <label for="ecTester">Tester email *</label>
+    <input id="ecTester" type="email" [(ngModel)]="tester" placeholder="you@example.com" autocomplete="email">
+    <div class="field-error" *ngIf="tester && !testerValid">Enter a valid email address.</div>
+  </div>
+
+  <div class="quota" *ngIf="remaining !== null">
+    {{ remaining }} of {{ data.config.dailyCap }} emails left in the next 24 hours.
+  </div>
+  <div class="warn-banner" *ngIf="overCap">
+    That's more than today's allowance — select fewer bookings or try again later.
+  </div>
+
+  <ng-container *ngIf="previewOpen">
+    <div class="preview-meta" *ngIf="previewSubject">
+      <div><span class="pm-l">To</span> {{ previewTo }}<span class="pm-hint"> (first booking that gets one)</span></div>
+      <div><span class="pm-l">Subject</span> {{ previewSubject }}</div>
+    </div>
+    <div class="preview-loading" *ngIf="previewing">Building preview…</div>
+    <iframe class="preview-frame" *ngIf="previewHtml" [srcdoc]="previewHtml" sandbox="" title="Email preview"></iframe>
+  </ng-container>
+
+  <div class="field-error" *ngIf="error">{{ error }}</div>
+</mat-dialog-content>
+
+<mat-dialog-actions class="email-actions">
+  <button class="btn-ghost" (click)="cancel()">Cancel</button>
+  <button class="btn-ghost" (click)="togglePreview()" [disabled]="!sampleTicket || !daysValid">
+    {{ previewOpen ? 'Hide preview' : 'Preview' }}
+  </button>
+  <button class="btn-ghost test-btn" (click)="sendTest()" [disabled]="testing || !sampleTicket || !daysValid"
+          title="Sends one copy to your own email address">
+    {{ testing ? 'Sending test…' : 'Send test to me' }}
+  </button>
+  <button class="btn-cta" (click)="send()" [disabled]="!canSend">
+    {{ sending ? 'Starting…' : 'Send ' + toSendCount + ' email' + (toSendCount === 1 ? '' : 's') }}
+  </button>
+</mat-dialog-actions>

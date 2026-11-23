@@ -13,6 +13,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.77.0] - 2026-11-23
+
+### Added
+- Box Office › Bookings: **Email ▾ › Send Early Check-In** emails the selected bookings a personal link to fill in their Festival Pass details. The dialog shows how many have details missing or all filled and which are skipped, lets you pick how many days the link works (7 / 14 / 30 or your own, up to 60; default 14) and whether to send only to bookings with details missing (default) or to all. Preview, "Send test to me" and test mode as for the Ticket Email. Shown to Developers, Directors, Admins and the Box Office Team Lead.
+- New **Early Check-In** column (Not sent, Sending, Sent, Submitted, Expired, Failed, No email; the reason on hover) with its own filter, sortable. The booking panel shows the status, when it was sent and until when the link works.
+- Admin › Events: subject and intro for the event's Early Check-In email.
+- Email Report and a booking's email history: new type "Early Check-In".
+
+---
+
 ## [1.76.0] - 2026-11-23
 
 ### Added

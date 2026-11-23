@@ -9,6 +9,7 @@ import { EmailService } from '../../core/email.service';
 import { EmailBatchTrackerService } from '../../core/email-batch-tracker.service';
 import { TicketEmailDialogComponent, TicketEmailDialogData } from './ticket-email-dialog/ticket-email-dialog.component';
 import { CustomEmailDialogComponent, CustomEmailDialogData } from './custom-email-dialog/custom-email-dialog.component';
+import { CheckinEmailDialogComponent, CheckinEmailDialogData } from './checkin-email-dialog/checkin-email-dialog.component';
 
 /**
  * One way to send emails from anywhere in Box Office (Email epic): reads a
@@ -53,8 +54,23 @@ export class EmailDialogsService {
     );
   }
 
-  private label(type: 'ticket' | 'custom', batch: EmailBatch, tickets: Ticket[]): string {
-    const what = type === 'ticket' ? 'Ticket email' : 'Custom email';
+  /** Early Check-In (EC2): DEV/DIR/ADMIN or a Box Office TL only (the server checks again). */
+  openCheckinEmail(tickets: Ticket[]): Observable<EmailBatch | undefined> {
+    return this.emailService.getConfig(true).pipe(
+      switchMap(config => {
+        if (!config.canSendCheckin || !tickets.length) return of(undefined);
+        return this.dialog.open<CheckinEmailDialogComponent, CheckinEmailDialogData, EmailBatch>(CheckinEmailDialogComponent, {
+          width: '600px', maxWidth: '95vw', autoFocus: false, data: { tickets, config }
+        }).afterClosed();
+      }),
+      tap(batch => {
+        if (batch) this.tracker.track(batch, this.label('checkin', batch, tickets));
+      })
+    );
+  }
+
+  private label(type: 'ticket' | 'custom' | 'checkin', batch: EmailBatch, tickets: Ticket[]): string {
+    const what = { ticket: 'Ticket email', custom: 'Custom email', checkin: 'Early Check-In email' }[type];
     if (tickets.length === 1) return `${what} · ${tickets[0].first_name} ${tickets[0].last_name}`.trim();
     return `${what}s · ${batch.total} booking${batch.total === 1 ? '' : 's'}`;
   }

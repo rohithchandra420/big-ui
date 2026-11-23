@@ -35,7 +35,10 @@ export class EventDetailComponent implements OnInit {
     status: new FormControl<EventStatus>('draft'),
     // Email epic — this edition's Ticket Email wording (empty = default).
     emailSubject: new FormControl('', Validators.maxLength(200)),
-    emailIntro: new FormControl('', Validators.maxLength(2000))
+    emailIntro: new FormControl('', Validators.maxLength(2000)),
+    // Early Check-In EC2 — the email with the one-time link (empty = default).
+    checkinSubject: new FormControl('', Validators.maxLength(200)),
+    checkinIntro: new FormControl('', Validators.maxLength(2000))
   });
 
   // New pass type form, shown in the pass type slide panel (ui 1.69.0; was
@@ -171,7 +174,9 @@ export class EventDetailComponent implements OnInit {
       endDate: this.detail.endDate ? this.detail.endDate.substring(0, 10) : '',
       status: this.detail.status,
       emailSubject: this.detail.ticketEmail?.subject || '',
-      emailIntro: this.detail.ticketEmail?.intro || ''
+      emailIntro: this.detail.ticketEmail?.intro || '',
+      checkinSubject: this.detail.checkinEmail?.subject || '',
+      checkinIntro: this.detail.checkinEmail?.intro || ''
     });
     this.editMode = true;
   }
@@ -187,6 +192,21 @@ export class EventDetailComponent implements OnInit {
     const name = this.editForm.value.name || this.detail?.name || 'the festival';
     return `Here are your tickets to ${name}! We're thrilled to have you join us and to welcome you to the BiG community. `
       + 'If you have any questions, feel free to reach out. Enjoy the festival!';
+  }
+
+  get defaultCheckinSubject(): string {
+    const name = this.editForm.value.name || this.detail?.name || 'Bloom in Green';
+    return `${name}: fill in your festival details`;
+  }
+
+  get defaultCheckinIntro(): string {
+    const name = this.editForm.value.name || this.detail?.name || 'the festival';
+    return `Help us get you through the gate faster at ${name}! `
+      + 'Please fill in the details for everyone on your booking before you arrive.';
+  }
+
+  get hasCustomCheckinWording(): boolean {
+    return !!(this.detail?.checkinEmail?.subject || this.detail?.checkinEmail?.intro);
   }
 
   get hasCustomEmailWording(): boolean {
@@ -216,14 +236,15 @@ export class EventDetailComponent implements OnInit {
   private doSave() {
     if (!this.detail || this.saving) return;
     this.saving = true;
-    const { name, description, startDate, endDate, status, emailSubject, emailIntro } = this.editForm.value;
+    const { name, description, startDate, endDate, status, emailSubject, emailIntro, checkinSubject, checkinIntro } = this.editForm.value;
     this.eventService.updateEvent(this.detail._id, {
       name: name!.trim(),
       description: description || '',
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       status: status || undefined,
-      ticketEmail: { subject: (emailSubject || '').trim(), intro: (emailIntro || '').trim() }
+      ticketEmail: { subject: (emailSubject || '').trim(), intro: (emailIntro || '').trim() },
+      checkinEmail: { subject: (checkinSubject || '').trim(), intro: (checkinIntro || '').trim() }
     }).subscribe({
       next: () => {
         this.saving = false;

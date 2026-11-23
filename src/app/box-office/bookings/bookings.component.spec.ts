@@ -61,7 +61,7 @@ describe('BookingsComponent', () => {
     };
 
     canSend = true;
-    emailDialogsSpy = jasmine.createSpyObj('EmailDialogsService', ['openTicketEmail', 'openCustomEmail']);
+    emailDialogsSpy = jasmine.createSpyObj('EmailDialogsService', ['openTicketEmail', 'openCustomEmail', 'openCheckinEmail']);
     emailDialogsSpy.openTicketEmail.and.returnValue(of(mockBatch));
     emailDialogsSpy.openCustomEmail.and.returnValue(of({ ...mockBatch, type: 'custom' } as EmailBatch));
     finished$ = new Subject<EmailBatch>();
@@ -77,7 +77,7 @@ describe('BookingsComponent', () => {
         { provide: Router, useValue: routerSpy },
         { provide: MatDialog, useValue: dialogSpy },
         { provide: EventService, useValue: eventServiceStub },
-        { provide: EmailService, useValue: { canSend: () => of(canSend), canSendTicket: () => of(canSend), canSendCustom: () => of(canSend) } },
+        { provide: EmailService, useValue: { canSend: () => of(canSend), canSendTicket: () => of(canSend), canSendCustom: () => of(canSend), canSendCheckin: () => of(canSend) } },
         { provide: EmailDialogsService, useValue: emailDialogsSpy },
         { provide: EmailBatchTrackerService, useValue: { finished$: finished$.asObservable() } },
       ],
@@ -725,6 +725,53 @@ describe('BookingsComponent', () => {
       expect(heads).toContain('Festival details');
       expect(el.textContent).toContain('Details missing');
       expect(el.textContent).toContain('1 / 2');
+    });
+  });
+
+  describe('Early Check-In email (EC2)', () => {
+    const later = new Date(Date.now() + 5 * 86400000).toISOString();
+    const earlier = new Date(Date.now() - 86400000).toISOString();
+    let a: Ticket, b: Ticket, c: Ticket;
+
+    beforeEach(() => {
+      a = new Ticket(31, 'Ilsa', 'Thornbury', 'ilsa@example.test', '9000000051', 'TXN31', 'not_sent', 10, [], 'e1');
+      b = new Ticket(32, 'Mateo', 'Quillfeather', 'mateo@example.test', '9000000052', 'TXN32', 'not_sent', 10, [], 'e2');
+      b.earlyCheckin = { status: 'sent', expiresAt: later };
+      c = new Ticket(33, 'Rosalind', 'Ebbet', 'rosalind@example.test', '9000000053', 'TXN33', 'not_sent', 10, [], 'e3');
+      c.earlyCheckin = { status: 'sent', expiresAt: earlier };
+      component.bookings = [a, b, c];
+    });
+
+    it('labels the status and works out Expired', () => {
+      expect(component.checkinStatusLabel(a)).toBe('Not sent');
+      expect(component.checkinStatusLabel(b)).toBe('Sent');
+      expect(component.checkinStatusLabel(c)).toBe('Expired');
+    });
+
+    it('filters by the Early Check-In status', () => {
+      component.checkinStatusFilter = 'expired';
+      expect(component.filteredBookings.map(x => x._id)).toEqual(['e3']);
+      component.checkinStatusFilter = 'not_sent';
+      expect(component.filteredBookings.map(x => x._id)).toEqual(['e1']);
+    });
+
+    it('shows the failure reason on hover only for failed / no email', () => {
+      b.earlyCheckin = { status: 'failed', error: 'SMTP said no' };
+      expect(component.checkinStatusHint(b)).toBe('SMTP said no');
+      expect(component.checkinStatusHint(a)).toBe('');
+    });
+
+    it('opens the Early Check-In dialog for the selected bookings', () => {
+      emailDialogsSpy.openCheckinEmail.and.returnValue(of(undefined));
+      component.selectedIds = new Set(['e2', 'e3']);
+      component.sendCheckinEmails();
+      expect(emailDialogsSpy.openCheckinEmail).toHaveBeenCalledWith([b, c]);
+    });
+
+    it('renders the column', () => {
+      fixture.detectChanges();
+      const heads = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('th')).map(t => t.textContent?.trim());
+      expect(heads).toContain('Early Check-In');
     });
   });
 });
