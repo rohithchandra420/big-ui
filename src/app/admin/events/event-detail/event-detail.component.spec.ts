@@ -168,6 +168,16 @@ describe('EventDetailComponent', () => {
       expect(eventServiceSpy.updateEvent).not.toHaveBeenCalled();
     });
 
+    it('save() sends the Early Check-In wording (EC2), trimmed', () => {
+      component.enterEditMode();
+      component.editForm.patchValue({ checkinSubject: ' Fill in {event} ', checkinIntro: 'Please' });
+      eventServiceSpy.updateEvent.and.returnValue(of(mockDetail as any));
+      component.save();
+      expect(eventServiceSpy.updateEvent).toHaveBeenCalledWith('evt1', jasmine.objectContaining({
+        checkinEmail: { subject: 'Fill in {event}', intro: 'Please' }
+      }));
+    });
+
     it('save() updates the event, reloads detail, and refreshes the shared event list', () => {
       component.enterEditMode();
       component.editForm.patchValue({ name: 'BiG 6.0', status: 'active' });

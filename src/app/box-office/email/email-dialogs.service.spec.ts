@@ -43,6 +43,17 @@ describe('EmailDialogsService', () => {
     expect(trackerSpy.track).toHaveBeenCalledWith(batch, 'Ticket emails · 2 bookings');
   });
 
+  it('opens the Early Check-In dialog only for people who may send it (EC2)', () => {
+    config = { canSend: true, canSendTicket: true, canSendCheckin: false, safeMode: true };
+    service.openCheckinEmail([ticket('a', 'Asha')]).subscribe();
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+
+    config = { canSend: true, canSendTicket: true, canSendCheckin: true, safeMode: true };
+    service.openCheckinEmail([ticket('a', 'Asha'), ticket('b', 'Ravi')]).subscribe();
+    expect(dialogSpy.open).toHaveBeenCalledTimes(1);
+    expect(trackerSpy.track).toHaveBeenCalledWith(batch, 'Early Check-In emails · 2 bookings');
+  });
+
   it('names the booking when sending to just one', () => {
     service.openCustomEmail([ticket('a', 'Asha')]).subscribe();
     expect(trackerSpy.track).toHaveBeenCalledWith(batch, 'Custom email · Asha Menon');

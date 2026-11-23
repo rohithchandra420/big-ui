@@ -1,4 +1,4 @@
-import { isFestivalPass, isSpotRegistration, passChips, passChipsTyped, passSummary, ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, lookupErrorMessage, bookingIdOf, paymentMethodLabel, hasExtraBed, FESTIVAL_DETAIL_FIELDS, festivalDetailsFilled, festivalDetailsCount, festivalDetailsMissing } from './box-office.utils';
+import { isFestivalPass, isSpotRegistration, passChips, passChipsTyped, passSummary, ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, lookupErrorMessage, bookingIdOf, paymentMethodLabel, hasExtraBed, FESTIVAL_DETAIL_FIELDS, festivalDetailsFilled, festivalDetailsCount, festivalDetailsMissing, earlyCheckinStatus, earlyCheckinLabel, earlyCheckinBadge, EARLY_CHECKIN_FILTER_OPTIONS } from './box-office.utils';
 import { Shopcart, Ticket } from '../models/ticket.model';
 
 describe('box-office.utils', () => {
@@ -189,5 +189,28 @@ describe('Festival Pass details (Early Check-In EC1)', () => {
     expect(festivalDetailsCount({ shopcart: [{ category: 'tent', isActive: true } as any] } as Ticket)).toEqual({ filled: 0, total: 0 });
     expect(festivalDetailsMissing({ shopcart: [] } as any)).toBeFalse();
     expect(festivalDetailsCount(null)).toEqual({ filled: 0, total: 0 });
+  });
+});
+
+describe('Early Check-In email status (EC2)', () => {
+  const now = new Date('2026-12-01T10:00:00Z').getTime();
+
+  it('reads a missing status as not sent', () => {
+    expect(earlyCheckinStatus({} as Ticket, now)).toBe('not_sent');
+    expect(earlyCheckinStatus(null, now)).toBe('not_sent');
+  });
+
+  it('shows a sent link past its end date as Expired, never a submitted one', () => {
+    const sent = (expiresAt: string, status: any = 'sent') => ({ earlyCheckin: { status, expiresAt } }) as Ticket;
+    expect(earlyCheckinStatus(sent('2026-12-05T00:00:00Z'), now)).toBe('sent');
+    expect(earlyCheckinStatus(sent('2026-11-30T00:00:00Z'), now)).toBe('expired');
+    expect(earlyCheckinStatus(sent('2026-11-30T00:00:00Z', 'submitted'), now)).toBe('submitted');
+  });
+
+  it('has a label and badge for every filter option', () => {
+    expect(EARLY_CHECKIN_FILTER_OPTIONS.map(o => o.value)).toEqual(['not_sent', 'sending', 'sent', 'submitted', 'expired', 'failed', 'no_email']);
+    expect(earlyCheckinLabel('expired')).toBe('Expired');
+    expect(earlyCheckinBadge('submitted')).toBe('bg');
+    expect(earlyCheckinBadge('failed')).toBe('br');
   });
 });

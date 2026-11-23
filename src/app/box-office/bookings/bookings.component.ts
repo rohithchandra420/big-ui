@@ -10,7 +10,8 @@ import { BoxOfficeService } from '../box-office.service';
 import {
   isFestivalPass, isSpotRegistration, passSummary as buildPassSummary, bookingIdOf, paymentMethodLabel, bookingSourceLabel,
   ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, TICKET_EMAIL_FILTER_OPTIONS,
-  festivalDetailsCount, festivalDetailsMissing
+  festivalDetailsCount, festivalDetailsMissing,
+  earlyCheckinStatus, earlyCheckinLabel, earlyCheckinBadge, EARLY_CHECKIN_FILTER_OPTIONS, EarlyCheckinView
 } from '../box-office.utils';
 import { Shopcart } from '../../models/ticket.model';
 import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
@@ -22,7 +23,7 @@ import { EmailDialogsService } from '../email/email-dialogs.service';
 import { AttendeeListComponent } from '../attendee-list/attendee-list.component';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
 
-type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'payment' | 'paidAt' | 'source' | 'emailStatus' | 'admitted' | 'details';
+type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'payment' | 'paidAt' | 'source' | 'emailStatus' | 'admitted' | 'details' | 'earlyCheckin';
 
 type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | 'detailsMissing' | null;
 
@@ -41,6 +42,9 @@ export class BookingsComponent implements OnInit, OnDestroy {
   /** Ticket Email status dropdown; '' = all. Combines with the stat cards and search. */
   emailStatusFilter: TicketEmailStatus | '' = '';
   readonly emailStatusOptions = TICKET_EMAIL_FILTER_OPTIONS;
+  /** Early Check-In status dropdown (EC2); '' = all. */
+  checkinStatusFilter: EarlyCheckinView | '' = '';
+  readonly checkinStatusOptions = EARLY_CHECKIN_FILTER_OPTIONS;
 
   selectedIds = new Set<string>();
 
@@ -64,6 +68,8 @@ export class BookingsComponent implements OnInit, OnDestroy {
   canSendEmail$!: Observable<boolean>;
   canSendTicket$!: Observable<boolean>;
   canSendCustom$!: Observable<boolean>;
+  /** Early Check-In (EC2): DEV/DIR/ADMIN or a Box Office TL. */
+  canSendCheckin$!: Observable<boolean>;
   private subs: Subscription[] = [];
 
   constructor(
@@ -95,6 +101,7 @@ export class BookingsComponent implements OnInit, OnDestroy {
     this.canSendEmail$ = this.emailService.canSend();
     this.canSendTicket$ = this.emailService.canSendTicket();
     this.canSendCustom$ = this.emailService.canSendCustom();
+    this.canSendCheckin$ = this.emailService.canSendCheckin();
     // A background email send finished — pick up the new Ticket Email statuses.
     this.subs.push(this.emailTracker.finished$.subscribe(() => this.loadBookings()));
   }
@@ -259,6 +266,31 @@ export class BookingsComponent implements OnInit, OnDestroy {
     this.emailDialogs.openCustomEmail(tickets).subscribe();
   }
 
+  sendCheckinEmails() {
+    const tickets = this.selectedBookings();
+    if (!tickets.length) return;
+    this.emailDialogs.openCheckinEmail(tickets).subscribe(batch => {
+      if (batch) this.loadBookings();
+    });
+  }
+
+  // ── Early Check-In EC2: email status ──
+
+  checkinStatusLabel(booking: Ticket): string {
+    return earlyCheckinLabel(earlyCheckinStatus(booking));
+  }
+
+  checkinStatusBadge(booking: Ticket): string {
+    return earlyCheckinBadge(earlyCheckinStatus(booking));
+  }
+
+  /** Why the last send failed or was skipped (hover + panel). */
+  checkinStatusHint(booking: Ticket): string {
+    const status = earlyCheckinStatus(booking);
+    if (status === 'failed' || status === 'no_email') return booking.earlyCheckin?.error || '';
+    return '';
+  }
+
   /** A single-booking send started from the detail panel. */
   onPanelEmailStarted() {
     this.loadBookings();
@@ -300,6 +332,7 @@ export class BookingsComponent implements OnInit, OnDestroy {
     source: b => this.source(b),
     emailStatus: b => this.emailStatusLabel(b),
     admitted: b => this.admittedCountFor(b),
+    earlyCheckin: b => this.checkinStatusLabel(b),
     // Share filled (0 = nothing filled, 1 = all); no Festival Pass sorts as empty.
     details: b => {
       const c = festivalDetailsCount(b);
@@ -322,6 +355,9 @@ export class BookingsComponent implements OnInit, OnDestroy {
 
     if (this.emailStatusFilter) {
       result = result.filter(b => ticketEmailStatus(b) === this.emailStatusFilter);
+    }
+    if (this.checkinStatusFilter) {
+      result = result.filter(b => earlyCheckinStatus(b) === this.checkinStatusFilter);
     }
 
     const term = this.searchTerm.trim().toLowerCase();

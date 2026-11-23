@@ -1,4 +1,4 @@
-import { Shopcart, Ticket, TicketEmailStatus, TicketKind } from '../models/ticket.model';
+import { EarlyCheckinStatus, Shopcart, Ticket, TicketEmailStatus, TicketKind } from '../models/ticket.model';
 
 // Introducing Events (see INTRODUCING_EVENTS_CONTEXT.md) — replaces the old
 // hardcoded FESTIVAL_PASS_NAMES/ALL_ITEM_NAMES lists. Which passes exist and
@@ -29,7 +29,9 @@ export function isTentPass(item: Pick<Shopcart, 'category' | 'item_name'>): bool
 
 /** The details every Festival Pass must have. The ONE list in the app: the
  *  Bookings "Festival details" count uses it now, the Early Check-In form
- *  (EC3) will too. Add a field here and both follow. */
+ *  (EC3) will too. Add a field here and both follow.
+ *  KEEP IN STEP with big-api `utils/festivalDetails.js` (it picks which
+ *  bookings get the Early Check-In email). */
 export const FESTIVAL_DETAIL_FIELDS = ['name', 'phone_no', 'email', 'gender'] as const;
 
 export type FestivalDetailField = typeof FESTIVAL_DETAIL_FIELDS[number];
@@ -60,6 +62,53 @@ export function festivalDetailsCount(ticket: Pick<Ticket, 'shopcart'> | null | u
 export function festivalDetailsMissing(ticket: Pick<Ticket, 'shopcart'> | null | undefined): boolean {
     const c = festivalDetailsCount(ticket);
     return c.filled < c.total;
+}
+
+// ── Early Check-In email (EC2) ──
+
+/** What the Bookings "Early Check-In" column shows: the stored status, plus
+ *  'expired' = sent, link end date passed, not submitted. */
+export type EarlyCheckinView = EarlyCheckinStatus | 'expired';
+
+const EARLY_CHECKIN_LABELS: Record<EarlyCheckinView, string> = {
+    not_sent: 'Not sent',
+    sending: 'Sending…',
+    sent: 'Sent',
+    submitted: 'Submitted',
+    expired: 'Expired',
+    failed: 'Failed',
+    no_email: 'No email'
+};
+
+const EARLY_CHECKIN_BADGES: Record<EarlyCheckinView, string> = {
+    not_sent: 'bx',
+    sending: 'bb',
+    sent: 'bb',
+    submitted: 'bg',
+    expired: 'ba',
+    failed: 'br',
+    no_email: 'ba'
+};
+
+/** Fixed order for the Bookings "Early Check-In" filter (a constant list, see the *ngFor rule). */
+export const EARLY_CHECKIN_FILTER_OPTIONS: { value: EarlyCheckinView; label: string }[] =
+    (['not_sent', 'sending', 'sent', 'submitted', 'expired', 'failed', 'no_email'] as EarlyCheckinView[])
+        .map(value => ({ value, label: EARLY_CHECKIN_LABELS[value] }));
+
+/** A booking's Early Check-In status; missing reads as not sent. `now` for tests. */
+export function earlyCheckinStatus(ticket: Pick<Ticket, 'earlyCheckin'> | null | undefined, now = Date.now()): EarlyCheckinView {
+    const ec = ticket?.earlyCheckin;
+    const status = ec?.status || 'not_sent';
+    if (status === 'sent' && ec?.expiresAt && new Date(ec.expiresAt).getTime() < now) return 'expired';
+    return status;
+}
+
+export function earlyCheckinLabel(status: EarlyCheckinView): string {
+    return EARLY_CHECKIN_LABELS[status] || EARLY_CHECKIN_LABELS.not_sent;
+}
+
+export function earlyCheckinBadge(status: EarlyCheckinView): string {
+    return EARLY_CHECKIN_BADGES[status] || 'bx';
 }
 
 // Spot Registration has no dedicated "source" field on Ticket — instead the backend

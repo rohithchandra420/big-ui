@@ -1,0 +1,46 @@
+/* Early Check-In dialog (EC2). Shared dialog styles are in ../email-dialog.css. */
+
+.ec-days-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.ec-days-row input {
+  width: 96px;
+  flex: 0 0 auto;
+}
+.ec-hint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.preview-meta {
+  font-size: 13px;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pm-l {
+  display: inline-block;
+  min-width: 60px;
+  color: var(--text-muted);
+}
+.pm-hint { color: var(--text-faint); }
+.preview-loading {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.preview-frame {
+  width: 100%;
+  height: 460px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: #fff;
+}
+
+@media (max-width: 600px) {
+  .preview-frame { height: 360px; }
+}
