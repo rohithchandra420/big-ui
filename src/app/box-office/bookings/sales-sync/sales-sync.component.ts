@@ -8,16 +8,10 @@ import { EventService } from '../../../core/event.service';
 import { NotificationService } from '../../../core/notification.service';
 import { PassCategory } from '../../../models/ticket.model';
 import { MAX_BEDS } from '../bulk-upload/bulk-upload.component';
+import { syncAlertText, syncCountsText, syncKindLabel } from './sales-sync.utils';
 
-/** Plain labels for the sales system's webhook events. */
-const KIND_LABEL: Record<string, string> = {
-  'booking.paid': 'New booking',
-  'booking.updated': 'Booking changed',
-  'booking.cancelled': 'Booking cancelled',
-  pull: 'Pull',
-  check: 'Check all bookings',
-  fetch: 'Fetch one booking'
-};
+/** Where a waiting booking was last tried. */
+const VIA_LABEL: Record<string, string> = { webhook: 'live update', pull: 'pull', check: 'check', fetch: 'fetch' };
 
 /** What Fetch one booking did, in words. */
 const FETCH_TEXT: Record<SalesSyncFetch['result'], string> = {
@@ -112,7 +106,8 @@ export class SalesSyncComponent implements OnChanges {
   get canFetch(): boolean { return this.canPull && /^[A-Za-z0-9_-]{1,64}$/.test(this.fetchRef.trim()); }
   get canPull(): boolean { return !!this.status?.on && !!this.status?.pullReady && !this.busy; }
   get canCreatePassTypes(): boolean {
-    return !!(this.report?.canCreatePassTypes || this.check?.canCreatePassTypes || this.fetched?.canCreatePassTypes);
+    return !!(this.status?.canCreatePassTypes || this.report?.canCreatePassTypes
+      || this.check?.canCreatePassTypes || this.fetched?.canCreatePassTypes);
   }
   get draftsValid(): boolean {
     return this.drafts.every(d => d.name.trim() && (d.category !== 'tent' || (d.beds >= 1 && d.beds <= MAX_BEDS)));
@@ -128,7 +123,12 @@ export class SalesSyncComponent implements OnChanges {
     if (!id) { this.status = null; return; }
     this.loading = true;
     this.boxOffice.getSalesSync(id).subscribe({
-      next: (s) => { this.status = s; this.loading = false; },
+      next: (s) => {
+        this.status = s;
+        this.loading = false;
+        // No pull / check / fetch on screen: offer the missing pass types of the waiting list.
+        if (!this.report && !this.check && !this.fetched && !this.busy) this.draftsFrom(s.missingPassTypes || []);
+      },
       error: (err) => {
         this.loading = false;
         this.notify.openErrorSnackBar(err?.error?.message || 'Could not load the sales system status');
@@ -218,7 +218,13 @@ export class SalesSyncComponent implements OnChanges {
 
   /** Missing pass types from a pull / check / fetch, as editable drafts. */
   private showDrafts(r: SalesSyncReport): void {
-    this.drafts = (r.unknownPassTypes || []).map((u, i) => ({
+    this.draftsFrom(r.unknownPassTypes || []);
+  }
+
+  private draftsFrom(list: SalesSyncReport['unknownPassTypes']): void {
+    // Keep what the person already typed when the same list comes back.
+    const typed = new Map(this.drafts.map(d => [d.externalCode || d.name, d]));
+    this.drafts = list.map((u, i) => typed.get(u.externalCode || u.name) || ({
       key: (u.externalCode || u.name) + ':' + i,
       externalCode: u.externalCode,
       name: u.name,
@@ -226,6 +232,7 @@ export class SalesSyncComponent implements OnChanges {
       beds: u.beds || 1,
       bookings: u.bookings
     }));
+    this.drafts.forEach((d, i) => d.bookings = list[i].bookings);
   }
 
   /** Top roles: creates the missing pass types on this event, then pulls again. */
@@ -259,18 +266,19 @@ export class SalesSyncComponent implements OnChanges {
 
   close(): void { this.closed.emit(); }
 
-  kindLabel(l: SalesSyncLogEntry): string { return KIND_LABEL[l.kind || ''] || (l.via === 'pull' ? 'Pull' : 'Live update'); }
+  kindLabel(l: SalesSyncLogEntry): string { return syncKindLabel(l); }
+  countsText(c: SalesSyncLogEntry['counts']): string { return syncCountsText(c); }
+  alertText(l: SalesSyncLogEntry): string { return syncAlertText(l.alert); }
+  viaLabel(v: string): string { return VIA_LABEL[v] || v; }
 
-  /** "3 new · 1 changed · 2 no change" — only the counts that are not zero. */
-  countsText(c: SalesSyncLogEntry['counts']): string {
-    const parts = [
-      [c.created, 'new'], [c.updated, 'changed'], [c.cancelled, 'cancelled'],
-      [c.skipped, 'no change'], [c.errors, 'not stored']
-    ].filter(([n]) => (n as number) > 0).map(([n, l]) => `${n} ${l}`);
-    return parts.length ? parts.join(' · ') : 'nothing to do';
+  /** "pass type glamp_dome not on this event" / the reasons. */
+  waitingReason(w: { messages: string[]; unknownCodes: string[] }): string {
+    if (w.unknownCodes?.length) return `pass type ${w.unknownCodes.join(', ')} not on this event`;
+    return w.messages?.join('; ') || 'could not be stored';
   }
 
   trackLog = (i: number) => i;
+  trackWaiting = (_: number, w: { reference: string }) => w.reference;
   trackRef = (_: number, r: string) => r;
   trackDraft = (_: number, d: PassTypeDraft) => d.key;
   trackCategory = (_: number, o: CategoryOption) => o.value;

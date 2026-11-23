@@ -83,6 +83,13 @@ export class NavAccessService implements OnDestroy {
            this.isHelpdesk;   // HD2: read-only
   }
 
+  /** Sales Sync Report: top roles, the Box Office TL, box-office:manage (the server checks again). */
+  get canSeeSalesSyncReport(): boolean {
+    if (!this.user) return false;
+    if (TOP_ROLES.includes(this.role)) return true;
+    return !!this.authService.canManageBoxOffice?.(this.user);
+  }
+
   /** Accommodation Setup: DEV/DIR/ADMIN and the Tenting team (key `tenting`, Read and up) —
    *  creating units needs Write, the page hides the form otherwise. */
   get canSeeAccommodationSetup(): boolean {
@@ -138,6 +145,8 @@ export class NavAccessService implements OnDestroy {
     switch (path) {
       case '/box-office/bookings':
       case '/box-office/registration': return this.canSeeBoxOffice;
+      // Sales Sync Report: same people as the pull (top roles, Box Office TL, box-office:manage)
+      case '/box-office/sales-sync-report': return this.canSeeSalesSyncReport;
       case '/accommodation/inventory': return this.canSeeAccommodationInventory;
       case '/accommodation/setup': return this.canSeeAccommodationSetup;
       // Tent Fields: viewed by the Inventory rule; editing is checked on the page and the server

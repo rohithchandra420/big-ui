@@ -1,0 +1,152 @@
+<div class="page-ph">
+  <div>
+    <div class="page-ph-title">Sales Sync Report</div>
+    <div class="page-ph-sub">{{ total }} entr{{ total === 1 ? 'y' : 'ies' }}<ng-container *ngIf="eventName"> · {{ eventName }}</ng-container> · kept 90 days</div>
+  </div>
+  <!-- Navigation Tabs: Back + this section's pages -->
+  <app-section-header></app-section-header>
+</div>
+
+<div class="sr-page">
+  <div class="tbl-container">
+    <div class="tbl-filters sr-filters">
+      <app-select class="sr-source" [(ngModel)]="source" (ngModelChange)="applyFilters()" aria-label="Source">
+        <app-option *ngFor="let o of sourceOptions; trackBy: trackSource" [value]="o.value">{{ o.label }}</app-option>
+      </app-select>
+      <button type="button" class="toggle-chip" [class.on]="problemsOnly" [attr.aria-pressed]="problemsOnly" (click)="toggleProblems()">
+        <mat-icon>error</mat-icon>Only with problems
+      </button>
+      <app-date class="dtp-sm" prefix="From" [(ngModel)]="from" (ngModelChange)="applyFilters()" ariaLabel="From date"></app-date>
+      <app-date class="dtp-sm" prefix="To" [(ngModel)]="to" (ngModelChange)="applyFilters()" ariaLabel="To date"></app-date>
+      <button type="button" class="btn-ghost sr-clear" *ngIf="hasFilters" (click)="clearFilters()">Clear</button>
+    </div>
+
+    <!-- Fits the width (no sideways scroll): long text wraps; on phones the counts fold into "Result" -->
+    <div class="tbl-scroll">
+      <table class="tbl sr-tbl">
+        <thead>
+          <tr>
+            <th appSort="at" [sort]="sort">Time</th>
+            <th>Activity</th>
+            <th class="sr-c" appSort="created" [sort]="sort">New</th>
+            <th class="sr-c" appSort="updated" [sort]="sort">Changed</th>
+            <th class="sr-c" appSort="cancelled" [sort]="sort">Cancelled</th>
+            <th class="sr-c" appSort="skipped" [sort]="sort">No change</th>
+            <th class="sr-c" appSort="errors" [sort]="sort">Not stored</th>
+            <th class="sr-res">Result</th>
+            <th>Problem</th>
+            <th class="sr-al">Alert</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of entries; trackBy: trackEntry" (click)="open(e)" [class.selected]="selected === e" class="sr-row">
+            <td class="sr-time">{{ e.at | date:'d MMM, HH:mm' }}</td>
+            <td class="sr-act">
+              <span class="sr-src" [class.sr-src-live]="e.via === 'webhook'">{{ sourceLabel(e) }}</span>
+              <span class="sr-what">{{ kindLabel(e) }}</span>
+              <div class="sr-sub" *ngIf="e.by">by {{ e.by }}</div>
+              <div class="sr-sub" *ngIf="e.note">{{ e.note }}</div>
+            </td>
+            <td class="sr-c num">{{ e.counts.created || 0 }}</td>
+            <td class="sr-c num">{{ e.counts.updated || 0 }}</td>
+            <td class="sr-c num">{{ e.counts.cancelled || 0 }}</td>
+            <td class="sr-c num">{{ e.counts.skipped || 0 }}</td>
+            <td class="sr-c num"><span [class.sr-bad]="e.counts.errors">{{ e.counts.errors || 0 }}</span></td>
+            <td class="sr-res">{{ countsText(e) }}</td>
+            <td class="sr-prob">
+              <ng-container *ngIf="problemOf(e) as p; else noProb">
+                <div class="sr-reason" [class.sr-reason-flag]="p.flag">{{ p.reason }}</div>
+                <div class="sr-sub" *ngIf="p.first"><span class="mono">{{ p.first }}</span><span *ngIf="p.more"> +{{ p.more }} more</span></div>
+              </ng-container>
+              <ng-template #noProb><span class="sr-none">—</span></ng-template>
+            </td>
+            <td class="sr-al" [title]="alertText(e)">{{ alertShort(e) || '—' }}</td>
+          </tr>
+          <tr *ngIf="!loading && !entries.length">
+            <td colspan="10" class="sr-empty">{{ hasFilters ? 'Nothing matches these filters.' : 'Nothing yet. Live updates and pulls show here.' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tbl-foot">
+      <span>{{ loading ? 'Loading…' : total + ' entr' + (total === 1 ? 'y' : 'ies') }}</span>
+      <mat-paginator [length]="total" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" [pageIndex]="pageIndex"
+                     [selectConfig]="{ panelClass: 'app-select-panel' }" (page)="onPage($event)"></mat-paginator>
+    </div>
+  </div>
+</div>
+
+<!-- One entry in full: side panel on desktop, bottom sheet on phones -->
+<app-slide-panel [open]="!!selected" icon="receipt_long" [title]="selected ? kindLabel(selected) : ''"
+                 [subtitle]="selected ? ((selected.at | date:'d MMM y, HH:mm') + ' · ' + sourceLabel(selected)) : ''" (closed)="closePanel()">
+  <div class="sr-detail" *ngIf="selected as e">
+    <!-- Everything stored on this entry -->
+    <div class="sr-d-block">
+      <div class="sr-d-row"><span class="sr-d-l">When</span><span>{{ e.at | date:'EEE d MMM y, HH:mm:ss' }}</span></div>
+      <div class="sr-d-row"><span class="sr-d-l">Source</span><span>{{ sourceLabel(e) }}</span></div>
+      <div class="sr-d-row"><span class="sr-d-l">What</span><span>{{ kindLabel(e) }}<span class="mono sr-d-kind" *ngIf="e.kind"> ({{ e.kind }})</span></span></div>
+      <div class="sr-d-row" *ngIf="e.sourceEventId"><span class="sr-d-l">Event ID</span><span class="mono">{{ e.sourceEventId }}</span></div>
+      <div class="sr-d-row"><span class="sr-d-l">Run by</span><span>{{ e.by || (e.via === 'webhook' ? 'Sales system (automatic)' : '—') }}</span></div>
+      <div class="sr-d-row" *ngIf="e.note"><span class="sr-d-l">Note</span><span>{{ e.note }}</span></div>
+    </div>
+
+    <div class="sr-d-grid">
+      <div class="sr-d-n"><b>{{ e.counts.fetched || 0 }}</b><span>From the sales system</span></div>
+      <div class="sr-d-n"><b>{{ e.counts.created || 0 }}</b><span>New</span></div>
+      <div class="sr-d-n"><b>{{ e.counts.updated || 0 }}</b><span>Changed</span></div>
+      <div class="sr-d-n"><b>{{ e.counts.cancelled || 0 }}</b><span>Cancelled</span></div>
+      <div class="sr-d-n"><b>{{ e.counts.skipped || 0 }}</b><span>No change</span></div>
+      <div class="sr-d-n" [class.sr-d-bad]="e.counts.errors"><b>{{ e.counts.errors || 0 }}</b><span>Not stored</span></div>
+    </div>
+
+    <div class="sr-d-block" *ngIf="e.alert || e.via === 'webhook'">
+      <div class="sr-d-h">Alert</div>
+      <ng-container *ngIf="e.alert; else noAlert">
+        <div class="sr-d-row"><span class="sr-d-l">Result</span><span>{{ alertText(e) }}</span></div>
+        <ng-container *ngIf="!e.alert.held">
+          <div class="sr-d-row"><span class="sr-d-l">People</span><span>{{ e.alert.users }}</span></div>
+          <div class="sr-d-row"><span class="sr-d-l">Phones</span><span>{{ e.alert.delivered }} sent of {{ e.alert.devices }}<ng-container *ngIf="e.alert.devices - e.alert.delivered"> ({{ e.alert.devices - e.alert.delivered }} failed)</ng-container></span></div>
+          <p class="sr-d-hint">Sent to the top roles and the Box Office Team Lead on this event. Whether it was read is not known.</p>
+        </ng-container>
+        <p class="sr-d-hint" *ngIf="e.alert.held">An alert went out less than an hour before; this one is counted into the next alert.</p>
+      </ng-container>
+      <ng-template #noAlert><p class="sr-d-hint">No alert: the booking was stored.</p></ng-template>
+    </div>
+
+    <div class="sr-d-block" *ngIf="e.bookings?.created?.length">
+      <div class="sr-d-h">New bookings ({{ e.counts.created }})</div>
+      <div class="sr-chips"><span class="sr-chip mono" *ngFor="let r of e.bookings!.created; trackBy: trackRef">{{ r }}</span></div>
+      <p class="sr-d-hint" *ngIf="e.counts.created > e.bookings!.created.length">First {{ e.bookings!.created.length }} shown.</p>
+    </div>
+    <div class="sr-d-block" *ngIf="e.bookings?.updated?.length">
+      <div class="sr-d-h">Changed bookings ({{ e.counts.updated }})</div>
+      <div class="sr-chips"><span class="sr-chip mono" *ngFor="let r of e.bookings!.updated; trackBy: trackRef">{{ r }}</span></div>
+      <p class="sr-d-hint" *ngIf="e.counts.updated > e.bookings!.updated.length">First {{ e.bookings!.updated.length }} shown.</p>
+    </div>
+    <div class="sr-d-block" *ngIf="e.bookings?.cancelled?.length">
+      <div class="sr-d-h">Cancelled bookings ({{ e.counts.cancelled }})</div>
+      <div class="sr-chips"><span class="sr-chip mono" *ngFor="let r of e.bookings!.cancelled; trackBy: trackRef">{{ r }}</span></div>
+    </div>
+
+    <div class="sr-d-block sr-d-warn" *ngIf="e.unknownCodes.length">
+      <div class="sr-d-h">Pass types missing</div>
+      <div class="sr-chips"><span class="sr-chip mono" *ngFor="let c of e.unknownCodes; trackBy: trackRef">{{ c }}</span></div>
+      <p class="sr-d-hint">Bookings that need these were not stored. Add them in Admin › Events (or from the Sales system panel); they are stored on the next pull.</p>
+    </div>
+
+    <div class="sr-d-block sr-d-warn" *ngIf="e.problems.length">
+      <div class="sr-d-h">Not stored ({{ e.problems.length }})</div>
+      <div class="sr-d-prob" *ngFor="let p of e.problems">
+        <span class="mono">{{ p.reference || 'No Booking ID' }}</span>
+        <ul><li *ngFor="let m of p.messages">{{ m }}</li></ul>
+      </div>
+    </div>
+
+    <div class="sr-d-block" *ngIf="e.flagged.length">
+      <div class="sr-d-h">Bookings to check ({{ e.flagged.length }})</div>
+      <p class="sr-d-hint">A change could not be done on its own. Open the booking in Bookings to see what.</p>
+      <div class="sr-chips"><span class="sr-chip mono" *ngFor="let r of e.flagged; trackBy: trackRef">{{ r }}</span></div>
+    </div>
+  </div>
+</app-slide-panel>

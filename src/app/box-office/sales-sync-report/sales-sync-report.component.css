@@ -1,0 +1,72 @@
+/* Box Office › Sales Sync Report. Full width; the app shell pads the page. */
+.sr-page { padding: 0; color: var(--text-primary); }
+.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+.sr-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--text-primary); }
+.sr-source { flex: 0 0 220px; width: 220px; }
+.sr-clear { padding: 6px 12px; }
+
+/* Counts sit under their (left-aligned, sortable) headers */
+.sr-tbl .num { text-align: left; font-variant-numeric: tabular-nums; }
+.sr-tbl td { vertical-align: top; color: var(--text-primary); }
+.sr-row { cursor: pointer; }
+/* No sideways scroll: text wraps inside its cell */
+.sr-tbl td.sr-act, .sr-tbl td.sr-prob { white-space: normal; overflow-wrap: anywhere; }
+.sr-time { white-space: nowrap; }
+.sr-what { margin-left: 6px; color: var(--text-primary); }
+.sr-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.sr-prob { min-width: 150px; }
+.sr-reason { color: var(--color-danger); }
+.sr-reason-flag { color: var(--color-warning); }
+.sr-none { color: var(--text-muted); }
+.sr-al { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+/* "Result" (all counts in words) shows only where the count columns are hidden */
+.sr-tbl .sr-res { display: none; }
+.sr-src {
+  display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  border: 1px solid var(--border-default); background: var(--surface-input); color: var(--text-secondary); white-space: nowrap;
+}
+.sr-src-live { border-color: var(--color-primary); color: var(--color-primary); }
+.sr-bad { color: var(--color-danger); font-weight: 700; }
+.sr-empty { text-align: center; padding: 24px; color: var(--text-muted); }
+
+/* Detail panel */
+.sr-detail { display: grid; gap: 12px; color: var(--text-primary); }
+.sr-d-counts { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.sr-d-row { display: flex; gap: 10px; font-size: 13px; color: var(--text-primary); }
+.sr-d-l { min-width: 70px; color: var(--text-secondary); }
+.sr-d-hint { margin: 6px 0 0; font-size: 12px; color: var(--text-secondary); }
+.sr-d-row + .sr-d-row { margin-top: 4px; }
+.sr-d-row > span:last-child { min-width: 0; overflow-wrap: anywhere; color: var(--text-primary); }
+.sr-d-kind { font-size: 11px; color: var(--text-muted); }
+.sr-d-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sr-d-n {
+  padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border-default);
+  background: var(--surface-card); color: var(--text-primary);
+}
+.sr-d-n b { display: block; font-size: 18px; line-height: 1.1; color: var(--text-primary); }
+.sr-d-n span { font-size: 11px; color: var(--text-secondary); }
+.sr-d-bad { box-shadow: inset 3px 0 0 var(--color-danger); }
+.sr-d-bad b { color: var(--color-danger); }
+.sr-d-warn { border-left: 3px solid var(--color-danger); }
+.sr-d-block {
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-default);
+  background: var(--surface-card); color: var(--text-primary);
+}
+.sr-d-h { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-primary); }
+.sr-d-prob { padding-top: 6px; font-size: 12px; color: var(--text-primary); overflow-wrap: anywhere; }
+.sr-d-prob ul { margin: 2px 0 0; padding-left: 18px; color: var(--text-secondary); }
+.sr-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sr-chip {
+  font-size: 11px; padding: 3px 8px; border-radius: 20px;
+  border: 1px solid var(--border-default); background: var(--surface-input); color: var(--text-primary);
+}
+
+@media (max-width: 900px) {
+  .sr-tbl .sr-c { display: none; }
+  .sr-tbl .sr-res { display: table-cell; white-space: normal; font-size: 11px; color: var(--text-secondary); }
+}
+@media (max-width: 600px) {
+  .sr-source { flex: 1 1 100%; width: 100%; }
+  .sr-tbl .sr-al { display: none; }
+}

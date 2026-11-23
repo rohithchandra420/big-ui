@@ -38,6 +38,7 @@ export const NAV_SECTIONS: NavSection[] = [
     tabs: [
       { path: '/box-office/bookings', label: 'Bookings' },
       { path: '/box-office/registration', label: 'Registration', exact: true },
+      { path: '/box-office/sales-sync-report', label: 'Sales Sync Report' },
     ],
     details: [{ pattern: /^\/box-office\/registration\/[^/]+$/, parent: '/box-office/registration' }],
   },

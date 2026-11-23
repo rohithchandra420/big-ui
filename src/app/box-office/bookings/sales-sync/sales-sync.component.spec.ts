@@ -13,7 +13,7 @@ import { FormsModule } from '@angular/forms';
 
 const status = (o: Partial<SalesSyncStatus> = {}): SalesSyncStatus => ({
   on: true, syncEvent: { _id: 'evt1', name: 'Fest' }, pullReady: true, webhookReady: true, masked: false,
-  lastPullAt: null, lastWebhookAt: null, pending: 0, logs: [], ...o
+  lastPullAt: null, lastWebhookAt: null, pending: 0, waiting: [], missingPassTypes: [], canCreatePassTypes: false, logs: [], ...o
 });
 const report = (o: Partial<SalesSyncReport> = {}): SalesSyncReport => ({
   fetched: 3, created: 2, updated: 0, cancelled: 0, skipped: 1, errorCount: 0, errors: [],
@@ -161,6 +161,39 @@ describe('SalesSyncComponent', () => {
     expect(component.report?.created).toBe(1);
     expect(changed).toHaveBeenCalled();
     expect(el().textContent).toContain('refused the API key');
+  });
+
+  describe('Waiting to be stored', () => {
+    it('lists each waiting booking with its reason, even before any pull', () => {
+      openWith(status({
+        pending: 2,
+        waiting: [
+          { reference: 'BIG7-WAIT01', messages: ['Unknown pass type(s): glamp_dome'], unknownCodes: ['glamp_dome'], via: 'webhook', at: '2026-11-23T08:32:00Z' },
+          { reference: 'BIG7-WAIT02', messages: ['Invalid email'], unknownCodes: [], via: 'pull', at: null }
+        ]
+      }));
+      const text = el().textContent!;
+      expect(text).toContain('2 bookings waiting to be stored');
+      expect(text).toContain('BIG7-WAIT01');
+      expect(text).toContain('pass type glamp_dome not on this event');
+      expect(text).toContain('live update');
+      expect(text).toContain('Invalid email');
+    });
+
+    it('top roles get the Create box from the waiting list without pulling first', () => {
+      openWith(status({ pending: 1, canCreatePassTypes: true, missingPassTypes: [dome] }));
+      expect(component.drafts.length).toBe(1);
+      expect(el().textContent).toContain('Create 1 pass type & pull again');
+    });
+
+    it('shows the alert of a log entry', () => {
+      openWith(status({
+        logs: [{ via: 'webhook', kind: 'booking.paid', at: '2026-11-23T08:32:00Z', counts: { fetched: 1, created: 0, updated: 0, cancelled: 0, skipped: 0, errors: 1 },
+          problems: [{ reference: 'BIG7-WAIT01', messages: ['Unknown pass type(s): glamp_dome'] }], unknownCodes: ['glamp_dome'], flagged: [], note: null,
+          alert: { users: 3, devices: 4, delivered: 3, held: false } }]
+      }));
+      expect(el().textContent).toContain('Sent to 3 people (3 of 4 phones, 1 failed)');
+    });
   });
 
   describe('Check & repair', () => {

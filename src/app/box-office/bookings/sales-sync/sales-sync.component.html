@@ -29,15 +29,23 @@
           <span>Pull {{ s.pullReady ? 'set up' : 'not set up yet' }}</span>
           <span class="ss-when" *ngIf="s.lastPullAt">· last {{ s.lastPullAt | date:'d MMM, HH:mm' }}</span>
         </div>
-        <div class="ss-fact ss-fact-ln" *ngIf="s.pending">
-          <mat-icon class="ss-fact-ic">schedule</mat-icon>
-          <span class="ss-fact-tx">{{ s.pending }} booking{{ s.pending === 1 ? '' : 's' }} waiting to be tried again on the next pull</span>
-        </div>
         <!-- UAT-MASK: remove before Production -->
         <div class="ss-fact ss-fact-ln ss-mask" *ngIf="s.masked">
           <mat-icon class="ss-fact-ic">visibility_off</mat-icon>
           <span class="ss-fact-tx">Test system: phones and emails of incoming bookings are replaced with dummies</span>
         </div>
+      </div>
+
+      <!-- Waiting to be stored: always shown while not empty (user 2026-11-23) -->
+      <div class="xi-block xi-list xi-errs" *ngIf="s.pending">
+        <div class="xi-h"><mat-icon>schedule</mat-icon>{{ s.pending }} booking{{ s.pending === 1 ? '' : 's' }} waiting to be stored</div>
+        <p class="xi-hint">Tried again on the next pull. Missing pass types can be added below.</p>
+        <div class="ss-wait" *ngFor="let w of s.waiting; trackBy: trackWaiting">
+          <span class="mono">{{ w.reference }}</span>
+          <span class="ss-wait-r">· {{ waitingReason(w) }}</span>
+          <span class="ss-when">· {{ viaLabel(w.via) }}<ng-container *ngIf="w.at"> {{ w.at | date:'d MMM, HH:mm' }}</ng-container></span>
+        </div>
+        <p class="xi-hint" *ngIf="s.pending > s.waiting.length">and {{ s.pending - s.waiting.length }} more</p>
       </div>
 
       <div class="xi-wait" *ngIf="pulling">
@@ -164,7 +172,9 @@
 
       <!-- Latest webhook calls / pulls -->
       <div class="xi-block" *ngIf="s.logs.length">
-        <div class="xi-h"><mat-icon>history</mat-icon>Latest activity</div>
+        <div class="xi-h ss-act-h"><mat-icon>history</mat-icon><span class="ss-act-t">Latest activity</span>
+          <a class="ss-act-all" routerLink="/box-office/sales-sync-report" (click)="close()">Full report</a>
+        </div>
         <div class="ss-log" *ngFor="let l of s.logs; trackBy: trackLog">
           <mat-icon class="ss-log-ic">{{ l.via === 'pull' ? 'download' : 'bolt' }}</mat-icon>
           <div class="ss-log-tx">
@@ -173,6 +183,10 @@
             <div class="ss-log-s ss-log-bad" *ngFor="let p of l.problems">
               <span class="mono">{{ p.reference || '—' }}</span>: {{ p.messages.join('; ') }}
             </div>
+            <div class="ss-log-s ss-log-bad" *ngIf="l.unknownCodes.length && !l.problems.length">
+              Pass type{{ l.unknownCodes.length === 1 ? '' : 's' }} missing: <span class="mono">{{ l.unknownCodes.join(', ') }}</span>
+            </div>
+            <div class="ss-log-s" *ngIf="l.alert"><mat-icon class="ss-log-al">notifications</mat-icon>{{ alertText(l) }}</div>
           </div>
         </div>
       </div>
