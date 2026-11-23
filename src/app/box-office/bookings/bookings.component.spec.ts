@@ -676,4 +676,55 @@ describe('BookingsComponent', () => {
       expect(bulkButton()).toBeUndefined();
     });
   });
+
+  describe('Festival details (Early Check-In EC1)', () => {
+    const pass = (extra: any = {}) => ({ category: 'festival', item_quantity: 1, isAdmitted: false, isActive: true,
+      name: 'Tamsin Orrel', phone_no: '9000000041', email: 'tamsin@example.test', gender: 'female', ...extra }) as any;
+    let done: Ticket, half: Ticket, noFestival: Ticket;
+
+    beforeEach(() => {
+      done = new Ticket(21, 'Tamsin', 'Orrel', 'tamsin@example.test', '9000000041', 'TXN21', 'not_sent', 10, [pass()], 'd1');
+      half = new Ticket(22, 'Bram', 'Vetch', 'bram@example.test', '9000000042', 'TXN22', 'not_sent', 20,
+        [pass(), pass({ gender: null }), { category: 'tent', isActive: true, item_quantity: 1 } as any], 'd2');
+      noFestival = new Ticket(23, 'Cora', 'Lindqvist', 'cora@example.test', '9000000043', 'TXN23', 'not_sent', 5,
+        [{ category: 'addon', isActive: true, item_quantity: 1 } as any], 'd3');
+      component.bookings = [done, half, noFestival];
+    });
+
+    it('shows filled / total Festival Passes, "—" with none, green when complete, amber when not', () => {
+      expect(component.festivalDetailsText(done)).toBe('1 / 1');
+      expect(component.festivalDetailsText(half)).toBe('1 / 2');
+      expect(component.festivalDetailsText(noFestival)).toBe('—');
+      expect(component.festivalDetailsBadge(done)).toBe('bg');
+      expect(component.festivalDetailsBadge(half)).toBe('ba');
+    });
+
+    it('counts and filters the bookings with details missing from the tile', () => {
+      expect(component.detailsMissingCount).toBe(1);
+      component.toggleFilter('detailsMissing');
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['d2']);
+    });
+
+    it('the search bar finds "details missing"', () => {
+      component.searchTerm = 'details missing';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['d2']);
+      component.searchTerm = 'details';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['d2']);
+    });
+
+    it('sorts by the share filled', () => {
+      component.sort.toggle('details');
+      const ids = component.filteredBookings.map(b => b._id);
+      expect(ids.indexOf('d2')).toBeLessThan(ids.indexOf('d1'));
+    });
+
+    it('renders the column and the tile', () => {
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      const heads = Array.from(el.querySelectorAll('th')).map(t => t.textContent?.trim());
+      expect(heads).toContain('Festival details');
+      expect(el.textContent).toContain('Details missing');
+      expect(el.textContent).toContain('1 / 2');
+    });
+  });
 });

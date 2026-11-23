@@ -9,7 +9,8 @@ import { Ticket, TicketEmailStatus } from '../../models/ticket.model';
 import { BoxOfficeService } from '../box-office.service';
 import {
   isFestivalPass, isSpotRegistration, passSummary as buildPassSummary, bookingIdOf, paymentMethodLabel, bookingSourceLabel,
-  ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, TICKET_EMAIL_FILTER_OPTIONS
+  ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, TICKET_EMAIL_FILTER_OPTIONS,
+  festivalDetailsCount, festivalDetailsMissing
 } from '../box-office.utils';
 import { Shopcart } from '../../models/ticket.model';
 import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
@@ -21,9 +22,9 @@ import { EmailDialogsService } from '../email/email-dialogs.service';
 import { AttendeeListComponent } from '../attendee-list/attendee-list.component';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
 
-type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'payment' | 'paidAt' | 'source' | 'emailStatus' | 'admitted';
+type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'payment' | 'paidAt' | 'source' | 'emailStatus' | 'admitted' | 'details';
 
-type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | null;
+type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | 'detailsMissing' | null;
 
 @Component({
   selector: 'app-bookings',
@@ -267,6 +268,24 @@ export class BookingsComponent implements OnInit, OnDestroy {
     return this.bookings.filter(b => isSpotRegistration(b)).length;
   }
 
+  // ── Early Check-In EC1: Festival Pass details ──
+
+  /** "2 / 4", or "—" when the booking has no Festival Pass. */
+  festivalDetailsText(booking: Ticket): string {
+    const c = festivalDetailsCount(booking);
+    return c.total ? `${c.filled} / ${c.total}` : '—';
+  }
+
+  /** Green when every Festival Pass is filled, amber when not. */
+  festivalDetailsBadge(booking: Ticket): string {
+    return festivalDetailsMissing(booking) ? 'ba' : 'bg';
+  }
+
+  /** Bookings with at least one Festival Pass missing a detail. */
+  get detailsMissingCount(): number {
+    return this.bookings.filter(b => festivalDetailsMissing(b)).length;
+  }
+
   /** B-003: column sort; a new sort starts again on the first page. */
   sort = new TableSort<BookingSortKey>(null, 'asc', () => { this.pageIndex = 0; });
   readonly sortGetters: Record<BookingSortKey, SortGetter<Ticket>> = {
@@ -280,7 +299,12 @@ export class BookingsComponent implements OnInit, OnDestroy {
     paidAt: b => (b.paidAt ? new Date(b.paidAt).getTime() : null),
     source: b => this.source(b),
     emailStatus: b => this.emailStatusLabel(b),
-    admitted: b => this.admittedCountFor(b)
+    admitted: b => this.admittedCountFor(b),
+    // Share filled (0 = nothing filled, 1 = all); no Festival Pass sorts as empty.
+    details: b => {
+      const c = festivalDetailsCount(b);
+      return c.total ? c.filled / c.total : null;
+    }
   };
 
   get filteredBookings(): Ticket[] {
@@ -292,6 +316,8 @@ export class BookingsComponent implements OnInit, OnDestroy {
       result = result.filter(b => b.shopcart?.some(item => item.isAdmitted));
     } else if (this.activeFilter === 'spotRegistration') {
       result = result.filter(b => isSpotRegistration(b));
+    } else if (this.activeFilter === 'detailsMissing') {
+      result = result.filter(b => festivalDetailsMissing(b));
     }
 
     if (this.emailStatusFilter) {
@@ -311,7 +337,9 @@ export class BookingsComponent implements OnInit, OnDestroy {
         // I6: payment method, source and the Paid at date ("10 nov")
         this.paymentMethod(b).toLowerCase().includes(term) ||
         this.source(b).toLowerCase().includes(term) ||
-        this.paidAtText(b).includes(term)
+        this.paidAtText(b).includes(term) ||
+        // EC1: "details missing" (or "details") finds bookings with a Festival Pass to fill
+        (term.length >= 7 && 'details missing'.includes(term) && festivalDetailsMissing(b))
       );
     }
 

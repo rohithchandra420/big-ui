@@ -41,6 +41,13 @@
     <div class="stat-n">{{ spotRegistrationCount }}</div>
     <div class="stat-s">tap to view →</div>
   </div>
+
+  <!-- Early Check-In EC1: bookings with a Festival Pass still missing a detail -->
+  <div class="stat tap" [class.act]="activeFilter === 'detailsMissing'" (click)="toggleFilter('detailsMissing')">
+    <div class="stat-l">Details missing</div>
+    <div class="stat-n">{{ detailsMissingCount }}</div>
+    <div class="stat-s">tap to view →</div>
+  </div>
 </div>
 
 <div class="tbl-container">
@@ -94,6 +101,7 @@
           <th appSort="source" [sort]="sort">Source</th>
           <th appSort="emailStatus" [sort]="sort">Ticket Email</th>
           <th appSort="admitted" [sort]="sort">Admitted</th>
+          <th appSort="details" [sort]="sort" title="Festival Passes with every detail filled">Festival details</th>
         </tr>
       </thead>
       <tbody>
@@ -127,9 +135,13 @@
           <td>
             <span class="badge" [ngClass]="admittedCountFor(booking) > 0 ? 'bg' : 'bx'">{{ admittedCountFor(booking) }} / {{ booking.shopcart?.length || 0 }}</span>
           </td>
+          <td>
+            <span *ngIf="festivalDetailsText(booking) !== '—'; else noFestival" class="badge" [ngClass]="festivalDetailsBadge(booking)">{{ festivalDetailsText(booking) }}</span>
+            <ng-template #noFestival>—</ng-template>
+          </td>
         </tr>
         <tr *ngIf="!loading && pagedBookings.length === 0">
-          <td colspan="12" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
+          <td colspan="13" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
         </tr>
       </tbody>
     </table>
@@ -197,6 +209,14 @@
           <div class="pay-l">Source</div>
           <div class="pay-v">{{ source(activeBooking) }}</div>
           <div class="pay-sub" *ngIf="paymentMethod(activeBooking)">Payment method: {{ paymentMethod(activeBooking) }}</div>
+        </div>
+        <!-- Early Check-In EC1: Festival Passes with every detail filled -->
+        <div class="pay-box">
+          <div class="pay-l">Festival details</div>
+          <div class="pay-v">
+            <span *ngIf="festivalDetailsText(activeBooking) !== '—'; else noFestivalPanel" class="badge" [ngClass]="festivalDetailsBadge(activeBooking)">{{ festivalDetailsText(activeBooking) }}</span>
+            <ng-template #noFestivalPanel>—</ng-template>
+          </div>
         </div>
       </div>
 

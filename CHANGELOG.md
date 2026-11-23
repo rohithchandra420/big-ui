@@ -13,6 +13,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.76.0] - 2026-11-23
+
+### Added
+- Box Office › Bookings: new **Festival details** column (`2 / 4` = Festival Passes with name, phone, email and gender filled, out of the booking's Festival Passes; green when all are filled, amber when not, "—" with no Festival Pass). Sortable. The same count shows in the booking panel.
+- New **Details missing** tile: the number of bookings with a Festival Pass still to fill; tap it to list them. Searching "details missing" finds them too. First step of Early Check-In.
+
+---
+
 ## [1.75.0] - 2026-11-23
 
 ### Added
