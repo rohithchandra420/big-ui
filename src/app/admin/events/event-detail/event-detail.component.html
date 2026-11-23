@@ -37,6 +37,14 @@
         Staff: {{ staffCount }} {{ staffCount === 1 ? 'person' : 'people' }} (incl. Developers, Directors and Admins)
         <button type="button" class="btn-sm-outline" (click)="openStaff()">Manage on Users page</button>
       </p>
+      <p class="event-desc muted venue-line">
+        Sales system: {{ detail.salesSync ? 'new bookings come into this event' : 'off' }}
+        <button type="button" class="toggle-chip" [class.on]="detail.salesSync" [disabled]="savingSync"
+                [attr.aria-pressed]="!!detail.salesSync" (click)="toggleSalesSync()">
+          <mat-icon>{{ detail.salesSync ? 'sync' : 'sync_disabled' }}</mat-icon>
+          {{ detail.salesSync ? 'On' : 'Off' }}
+        </button>
+      </p>
       <p class="event-dates" *ngIf="detail.startDate || detail.endDate">
         {{ detail.startDate | date:'mediumDate' }} – {{ detail.endDate | date:'mediumDate' }}
       </p>

@@ -62,6 +62,7 @@ import { TicketEditFormComponent } from './box-office/ticket-edit-form/ticket-ed
 import { SpotRegistrationComponent } from './box-office/registration/spot-registration/spot-registration.component';
 import { BulkUploadComponent } from './box-office/bookings/bulk-upload/bulk-upload.component';
 import { ExternalImportComponent } from './box-office/bookings/external-import/external-import.component';
+import { SalesSyncComponent } from './box-office/bookings/sales-sync/sales-sync.component';
 import { MyDepartmentComponent } from './my-department/my-department.component';
 import { EventsComponent } from './admin/events/events.component';
 import { EventDetailComponent } from './admin/events/event-detail/event-detail.component';
@@ -171,6 +172,7 @@ LOAD_WASM().subscribe()
     SpotRegistrationComponent,
     BulkUploadComponent,
     ExternalImportComponent,
+    SalesSyncComponent,
     MyDepartmentComponent,
     EventsComponent,
     EventDetailComponent,

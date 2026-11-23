@@ -89,6 +89,11 @@ export class Ticket {
     public linkedReferences?: string[];
     public sourceUpdatedAt?: string | null;
     public source?: 'external' | null;
+    // Sales system sync (I3 / I4)
+    public bookingStatus?: 'paid' | 'cancelled' | null;
+    public cancelledAt?: string | null;
+    /** What an update / cancel from the sales system left for staff to check. */
+    public syncFlags?: { message: string; at: string }[];
 
 
    constructor(order_id: number, first_name: string, last_name: string, email: string, phone_no:string, transaction_id: string,

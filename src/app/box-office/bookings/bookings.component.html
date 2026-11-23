@@ -15,6 +15,7 @@
         <div class="bk-menu-lbl">Add bookings</div>
         <button mat-menu-item (click)="openBulkUpload()"><mat-icon>upload_file</mat-icon>Bulk Upload</button>
         <button mat-menu-item (click)="importOpen = true"><mat-icon>sync_alt</mat-icon>Import from sales system</button>
+        <button mat-menu-item (click)="syncOpen = true"><mat-icon>sync</mat-icon>Pull from sales system</button>
       </mat-menu>
     </ng-container>
   </div>
@@ -107,7 +108,11 @@
               <span class="cb-box"></span>
             </label>
           </td>
-          <td>{{ booking.first_name }} {{ booking.last_name }}</td>
+          <td>
+            {{ booking.first_name }} {{ booking.last_name }}
+            <span class="badge br bk-cx" *ngIf="booking.bookingStatus === 'cancelled'">Cancelled</span>
+            <mat-icon class="bk-flag" *ngIf="booking.syncFlags?.length" title="Something to check (see the booking)">flag</mat-icon>
+          </td>
           <td>{{ booking.email }}</td>
           <td class="mono">{{ bookingId(booking) }}</td>
           <td class="mono">{{ booking._id }}</td>
@@ -146,6 +151,7 @@
 </div>
 
 <app-external-import [open]="importOpen" (closed)="importOpen = false" (imported)="loadBookings()"></app-external-import>
+<app-sales-sync [open]="syncOpen" (closed)="syncOpen = false" (changed)="loadBookings()"></app-sales-sync>
 
 <div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
 
@@ -192,6 +198,17 @@
           <div class="pay-v">{{ source(activeBooking) }}</div>
           <div class="pay-sub" *ngIf="paymentMethod(activeBooking)">Payment method: {{ paymentMethod(activeBooking) }}</div>
         </div>
+      </div>
+
+      <!-- Sales system sync (I3 / I4): cancelled there, and what a change left to check -->
+      <div class="warn-banner bk-sync" *ngIf="activeBooking.bookingStatus === 'cancelled'" role="status">
+        <mat-icon>block</mat-icon>
+        Cancelled in the sales system{{ activeBooking.cancelledAt ? ' on ' + (activeBooking.cancelledAt | date:'d MMM, HH:mm') : '' }}.
+        Passes not in use were switched off.
+      </div>
+      <div class="bk-flags" *ngIf="activeBooking.syncFlags?.length">
+        <div class="bk-flags-h"><mat-icon>flag</mat-icon>To check (from the sales system)</div>
+        <ul><li *ngFor="let f of activeBooking.syncFlags">{{ f.message }} <span class="bk-flags-at">{{ f.at | date:'d MMM, HH:mm' }}</span></li></ul>
       </div>
 
       <!-- Bookings this one links to (a stay booking → its Festival Pass booking).

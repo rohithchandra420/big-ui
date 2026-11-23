@@ -125,6 +125,43 @@ export class EventDetailComponent implements OnInit {
     this.router.navigate(['/venue-map'], { queryParams: { draw: 'boundary' } });
   }
 
+  // ── Sales system switch (I3 / I4): one event at a time, top roles ──
+  savingSync = false;
+
+  /** Asks first; switching on here switches it off on the other event (the server does that). */
+  toggleSalesSync() {
+    if (!this.detail || this.savingSync) return;
+    const turnOn = !this.detail.salesSync;
+    const current = turnOn ? this.eventService.events.value.find(e => e.salesSync && e._id !== this.detail!._id) : undefined;
+    this.confirmationService.confirm(turnOn ? {
+      title: 'Take sales system bookings into this event?',
+      message: current
+        ? `New and changed bookings from the sales system will come into "${this.detail.name}" instead of "${current.name}".`
+        : `New and changed bookings from the sales system will come into "${this.detail.name}".`,
+      confirmText: 'Switch on'
+    } : {
+      title: 'Stop sales system bookings?',
+      message: `Bookings from the sales system will not be stored anywhere until another event is switched on. Bookings already here stay.`,
+      confirmText: 'Switch off',
+      danger: true
+    }).subscribe(ok => {
+      if (!ok || !this.detail) return;
+      this.savingSync = true;
+      this.eventService.updateEvent(this.detail._id, { salesSync: turnOn }).subscribe({
+        next: () => {
+          this.savingSync = false;
+          this.detail!.salesSync = turnOn;
+          this.notificationService.openSucessSnackBar(turnOn ? 'Sales system switched on for this event' : 'Sales system switched off');
+          this.eventService.loadEvents();
+        },
+        error: (err) => {
+          this.savingSync = false;
+          this.notificationService.openErrorSnackBar(err?.error?.message || 'Could not change the sales system switch');
+        }
+      });
+    });
+  }
+
   enterEditMode() {
     if (!this.detail) return;
     this.editForm.setValue({
