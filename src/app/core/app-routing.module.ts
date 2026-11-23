@@ -16,6 +16,7 @@ import { AuthPermissionGuard } from "./auth-permission-guard.service";
 import { ProfileComponent } from "../profile/profile.component";
 import { DepartmentsComponent } from "../admin/departments/departments.component";
 import { BookingsComponent } from "../box-office/bookings/bookings.component";
+import { SalesSyncReportComponent } from "../box-office/sales-sync-report/sales-sync-report.component";
 import { RegistrationComponent } from "../box-office/registration/registration.component";
 import { BookingFoundComponent } from "../box-office/registration/booking-found/booking-found.component";
 import { MyDepartmentComponent } from "../my-department/my-department.component";
@@ -144,6 +145,9 @@ const appRoutes: Routes = [
     { path: 'workshops/setup', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['workshop:manage'] }, component: WorkshopSetupComponent },
     { path: 'my-department', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN', 'TL', 'VOL'] }, component: MyDepartmentComponent },
     { path: 'box-office/bookings', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'helpdesk:manage'], departmentKeys: ['box-office', 'helpdesk'] }, component: BookingsComponent },
+    // Sales Sync Report — same people as the pull: top roles, the Box Office TL
+    // (automatic box-office:manage via the department key), box-office:manage.
+    { path: 'box-office/sales-sync-report', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:manage'] }, component: SalesSyncReportComponent },
     { path: 'box-office/registration', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'helpdesk:manage'], departmentKeys: ['box-office', 'helpdesk'] }, component: RegistrationComponent },
     { path: 'box-office/registration/:id', canActivate: [AuthGuard, AuthPermissionGuard], data: { roles: ['DEV', 'DIR', 'ADMIN'], permissions: ['box-office:read', 'helpdesk:manage'], departmentKeys: ['box-office', 'helpdesk'] }, component: BookingFoundComponent },
     // Old spelling, kept as a redirect for anyone with the URL bookmarked —

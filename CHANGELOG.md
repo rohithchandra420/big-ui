@@ -13,6 +13,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.75.0] - 2026-11-23
+
+### Added
+- Box Office › **Sales Sync Report** tab: every live update, pull, check and fetch in one table (time, source, what, new / changed / cancelled / no change / not stored, Booking IDs, alert, who ran it). Sort by any count, filter by source, "Only with problems" and dates; tap a row for every reason. Same people as the pull.
+- Sales system panel: **Waiting to be stored** box (each booking with its reason, always shown while not empty); missing pass types can be created from it without pulling first; log lines show the missing pass type and the alert; "Full report" link.
+
+---
+
 ## [1.74.0] - 2026-11-23
 
 ### Added

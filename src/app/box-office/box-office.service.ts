@@ -94,9 +94,20 @@ export interface SalesSyncFetch extends SalesSyncReport {
     flags: string[];
 }
 
+/** The phone alert a log entry caused (a live update not stored). Whether it was read is not known. */
+export interface SalesSyncAlert {
+    users: number;
+    devices: number;
+    delivered: number;
+    /** Held back by the one-per-hour limit (counted into the next alert). */
+    held: boolean;
+}
+
 /** One webhook call or pull in the sync log. */
 export interface SalesSyncLogEntry {
+    _id?: string;
     via: 'webhook' | 'pull';
+    /** Webhook: booking.paid / updated / cancelled. Otherwise pull / check / fetch. */
     kind: string | null;
     at: string;
     counts: { fetched: number; created: number; updated: number; cancelled: number; skipped: number; errors: number };
@@ -104,6 +115,41 @@ export interface SalesSyncLogEntry {
     unknownCodes: string[];
     flagged: string[];
     note: string | null;
+    alert?: SalesSyncAlert | null;
+    /** Who ran it (pull / check / fetch). */
+    by?: string | null;
+    /** Booking IDs it created / changed / cancelled (first 200 each). */
+    bookings?: { created: string[]; updated: string[]; cancelled: string[] };
+    /** Live update: the sales system's own event id. */
+    sourceEventId?: string | null;
+}
+
+/** A booking waiting to be stored, and why. */
+export interface SalesSyncWaiting {
+    reference: string;
+    messages: string[];
+    unknownCodes: string[];
+    via: 'webhook' | 'pull' | 'check' | 'fetch';
+    at: string | null;
+}
+
+/** GET /box-office/sales-sync/log — one page of the Sales Sync Report. */
+export interface SalesSyncLogPage {
+    total: number;
+    page: number;
+    limit: number;
+    entries: SalesSyncLogEntry[];
+}
+
+export interface SalesSyncLogQuery {
+    page: number;
+    limit: number;
+    source?: '' | 'webhook' | 'pull' | 'check' | 'fetch';
+    problems?: boolean;
+    from?: string;
+    to?: string;
+    sort?: 'at' | 'created' | 'updated' | 'cancelled' | 'skipped' | 'errors';
+    dir?: 'asc' | 'desc';
 }
 
 /** GET /box-office/sales-sync — the sync for one event. */
@@ -116,6 +162,11 @@ export interface SalesSyncStatus {
     lastPullAt: string | null;
     lastWebhookAt: string | null;
     pending: number;
+    /** "Waiting to be stored" (newest first, first 200). */
+    waiting: SalesSyncWaiting[];
+    /** Pass types the waiting bookings need, with how many bookings each. */
+    missingPassTypes: SalesSyncUnknownPassType[];
+    canCreatePassTypes: boolean;
     logs: SalesSyncLogEntry[];
 }
 
@@ -213,6 +264,15 @@ export class BoxOfficeService {
     }
     checkSalesSync(eventId: string) {
         return this.http.post<SalesSyncCheck>(this.url + "/box-office/sales-sync/check", { eventId });
+    }
+    getSalesSyncLog(eventId: string, q: SalesSyncLogQuery) {
+        let params = new HttpParams().set('eventId', eventId).set('page', q.page).set('limit', q.limit);
+        if (q.source) params = params.set('source', q.source);
+        if (q.problems) params = params.set('problems', '1');
+        if (q.from) params = params.set('from', q.from);
+        if (q.to) params = params.set('to', q.to);
+        if (q.sort) params = params.set('sort', q.sort).set('dir', q.dir || 'desc');
+        return this.http.get<SalesSyncLogPage>(this.url + "/box-office/sales-sync/log", { params });
     }
     fetchSalesBooking(eventId: string, reference: string) {
         return this.http.post<SalesSyncFetch>(this.url + "/box-office/sales-sync/fetch", { eventId, reference });
