@@ -25,6 +25,43 @@ export function isTentPass(item: Pick<Shopcart, 'category' | 'item_name'>): bool
     return !isFestivalPass(item);
 }
 
+// ── Early Check-In (EC1, see EARLY_CHECKIN_CONTEXT.md) ──
+
+/** The details every Festival Pass must have. The ONE list in the app: the
+ *  Bookings "Festival details" count uses it now, the Early Check-In form
+ *  (EC3) will too. Add a field here and both follow. */
+export const FESTIVAL_DETAIL_FIELDS = ['name', 'phone_no', 'email', 'gender'] as const;
+
+export type FestivalDetailField = typeof FESTIVAL_DETAIL_FIELDS[number];
+
+/** True when a pass has every field of FESTIVAL_DETAIL_FIELDS filled. */
+export function festivalDetailsFilled(item: Partial<Pick<Shopcart, FestivalDetailField>>): boolean {
+    return FESTIVAL_DETAIL_FIELDS.every(f => {
+        const v = item[f];
+        return v !== null && v !== undefined && String(v).trim() !== '';
+    });
+}
+
+export interface FestivalDetailsCount {
+    /** Active Festival Passes with every detail filled. */
+    filled: number;
+    /** Active Festival Passes in the booking. */
+    total: number;
+}
+
+/** "2 / 4": how many of a booking's active Festival Passes have every detail filled.
+ *  A switched-off pass (isActive false) is not counted. */
+export function festivalDetailsCount(ticket: Pick<Ticket, 'shopcart'> | null | undefined): FestivalDetailsCount {
+    const passes = (ticket?.shopcart || []).filter(i => i.isActive !== false && isFestivalPass(i));
+    return { filled: passes.filter(festivalDetailsFilled).length, total: passes.length };
+}
+
+/** The booking has at least one active Festival Pass with a detail missing. */
+export function festivalDetailsMissing(ticket: Pick<Ticket, 'shopcart'> | null | undefined): boolean {
+    const c = festivalDetailsCount(ticket);
+    return c.filled < c.total;
+}
+
 // Spot Registration has no dedicated "source" field on Ticket — instead the backend
 // (see boxOffice.js's /createTicket) auto-generates transaction_id as `SPOT-<timestamp>`
 // whenever a walk-in registration omits one. That prefix doubles as the source marker,

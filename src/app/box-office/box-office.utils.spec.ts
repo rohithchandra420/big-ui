@@ -1,4 +1,4 @@
-import { isFestivalPass, isSpotRegistration, passChips, passChipsTyped, passSummary, ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, lookupErrorMessage, bookingIdOf, paymentMethodLabel, hasExtraBed } from './box-office.utils';
+import { isFestivalPass, isSpotRegistration, passChips, passChipsTyped, passSummary, ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, lookupErrorMessage, bookingIdOf, paymentMethodLabel, hasExtraBed, FESTIVAL_DETAIL_FIELDS, festivalDetailsFilled, festivalDetailsCount, festivalDetailsMissing } from './box-office.utils';
 import { Shopcart, Ticket } from '../models/ticket.model';
 
 describe('box-office.utils', () => {
@@ -158,5 +158,36 @@ describe('Ticket Email status helpers (Email epic)', () => {
     it('falls back when there is nothing specific', () => {
       expect(lookupErrorMessage({ status: 418 }, fallback)).toBe(fallback);
     });
+  });
+});
+
+describe('Festival Pass details (Early Check-In EC1)', () => {
+  const full = { category: 'festival', isActive: true, name: 'Odile Ferrant', phone_no: '9000000031', email: 'odile@example.test', gender: 'female' } as any;
+
+  it('needs name, phone, email and gender', () => {
+    expect(FESTIVAL_DETAIL_FIELDS).toEqual(['name', 'phone_no', 'email', 'gender']);
+    expect(festivalDetailsFilled(full)).toBeTrue();
+    expect(festivalDetailsFilled({ ...full, gender: null })).toBeFalse();
+    expect(festivalDetailsFilled({ ...full, email: '  ' })).toBeFalse();
+    expect(festivalDetailsFilled({ ...full, phone_no: undefined })).toBeFalse();
+  });
+
+  it('counts active Festival Passes only (no Tent / add-on, no switched-off pass)', () => {
+    const ticket = { shopcart: [
+      full,
+      { ...full, name: '' },
+      { ...full, isActive: false, name: '' },
+      { category: 'tent', isActive: true } as any,
+      { category: 'addon', isActive: true } as any,
+    ] } as Ticket;
+    expect(festivalDetailsCount(ticket)).toEqual({ filled: 1, total: 2 });
+    expect(festivalDetailsMissing(ticket)).toBeTrue();
+  });
+
+  it('a booking with every pass filled, or with no Festival Pass, is not missing anything', () => {
+    expect(festivalDetailsMissing({ shopcart: [full] } as Ticket)).toBeFalse();
+    expect(festivalDetailsCount({ shopcart: [{ category: 'tent', isActive: true } as any] } as Ticket)).toEqual({ filled: 0, total: 0 });
+    expect(festivalDetailsMissing({ shopcart: [] } as any)).toBeFalse();
+    expect(festivalDetailsCount(null)).toEqual({ filled: 0, total: 0 });
   });
 });
