@@ -56,6 +56,8 @@ export class BookingsComponent implements OnInit, OnDestroy {
   editingTicket = false;
   /** External Booking Import panel (I2). */
   importOpen = false;
+  /** Sales system panel: status + Pull now (I4). */
+  syncOpen = false;
 
   /** Email epic — DEV/DIR/ADMIN or a Box Office TL (decided server-side). */
   canSendEmail$!: Observable<boolean>;

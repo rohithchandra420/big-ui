@@ -13,6 +13,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.74.0] - 2026-11-23
+
+### Added
+- Bookings › Import › **Pull from sales system**: a panel showing whether this event takes the sales system's bookings, whether live updates and the pull are set up, a **Pull now** button with a report (new, changed, cancelled, up to date, problems, pass types missing, bookings to check) and the latest activity.
+- Pass types the pulled bookings need but the event doesn't have: Directors and Admins create them right in the panel (pre-filled from the sales system, editable) and pull again; others see the list and are asked to contact an admin.
+- **Check & repair** in the same panel, closed until tapped: **Check all bookings** (sales system paid vs in BiG, missing ones stored and listed, bookings in BiG not paid there listed, or "Everything matches") and **Fetch one booking** by Booking ID.
+- Admin › Events: **Sales system** switch on the event details. Only one event can have it on; switching it on asks first and names the event that loses it.
+- Bookings: a **Cancelled** badge for bookings cancelled in the sales system, a flag on bookings with something to check, and in the booking panel the cancel note and the "To check" list.
+
+---
+
 ## [1.73.0] - 2026-11-22
 
 ### Added

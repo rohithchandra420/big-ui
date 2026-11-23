@@ -7,7 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 
 import { EventDetailComponent } from './event-detail.component';
 import { EventService } from '../../../core/event.service';
@@ -99,6 +99,45 @@ describe('EventDetailComponent', () => {
       component.openVenueMap();
       expect(eventServiceSpy.setActiveEvent).toHaveBeenCalledWith(mockDetail);
       expect(navSpy).toHaveBeenCalledWith(['/venue-map'], { queryParams: { draw: 'boundary' } });
+    });
+  });
+
+  describe('Sales system switch', () => {
+    beforeEach(() => {
+      (eventServiceSpy as any).events = new BehaviorSubject([{ _id: 'evt9', name: 'Old Fest', status: 'active', description: '', salesSync: true }]);
+      component.detail = { ...mockDetail, salesSync: false };
+      eventServiceSpy.updateEvent.and.returnValue(of({} as any));
+    });
+
+    it('asks first, naming the event that loses it, then switches it on', () => {
+      confirmationServiceSpy.confirm.and.returnValue(of(true));
+      component.toggleSalesSync();
+      expect(confirmationServiceSpy.confirm.calls.mostRecent().args[0].message).toContain('instead of "Old Fest"');
+      expect(eventServiceSpy.updateEvent).toHaveBeenCalledWith('evt1', { salesSync: true });
+      expect(component.detail!.salesSync).toBe(true);
+      expect(eventServiceSpy.loadEvents).toHaveBeenCalled();
+    });
+
+    it('does nothing when the question is cancelled', () => {
+      confirmationServiceSpy.confirm.and.returnValue(of(false));
+      component.toggleSalesSync();
+      expect(eventServiceSpy.updateEvent).not.toHaveBeenCalled();
+    });
+
+    it('switching off asks as a destructive action', () => {
+      component.detail = { ...mockDetail, salesSync: true };
+      confirmationServiceSpy.confirm.and.returnValue(of(true));
+      component.toggleSalesSync();
+      expect(confirmationServiceSpy.confirm.calls.mostRecent().args[0].danger).toBeTrue();
+      expect(eventServiceSpy.updateEvent).toHaveBeenCalledWith('evt1', { salesSync: false });
+    });
+
+    it('shows the server message when it fails', () => {
+      confirmationServiceSpy.confirm.and.returnValue(of(true));
+      eventServiceSpy.updateEvent.and.returnValue(throwError(() => ({ error: { message: 'Nope' } })));
+      component.toggleSalesSync();
+      expect(notificationSpy.openErrorSnackBar).toHaveBeenCalledWith('Nope');
+      expect(component.detail!.salesSync).toBe(false);
     });
   });
 
