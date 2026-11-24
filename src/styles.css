@@ -2541,7 +2541,25 @@ button.myd-stat:hover { border-color: var(--color-secondary); }
 .hy-nt-stay > div { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .hy-nt-stay small { color: var(--text-secondary); font-size: 12px; }
 .hy-nt-acts { flex-wrap: wrap; justify-content: flex-start; }
-.hy-nt-all { font-size: 13px; color: var(--text-secondary); padding: 2px 0; }
+.hy-nt-all { font-size: 13px; color: var(--text-secondary); padding: 2px 0; }
+/* B-084: "All their stays" in the stay panel: newest first, a dot line, the viewed night highlighted. */
+.hy-all-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; color: var(--text-primary); }
+.hy-all-hd span { font-size: 11.5px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--text-secondary); }
+.hy-all { list-style: none; margin: 0 0 4px; padding: 0; position: relative; color: var(--text-primary); }
+.hy-all::before { content: ''; position: absolute; left: 6px; top: 12px; bottom: 12px; width: 2px; background: var(--border-default); }
+.hy-all-i { position: relative; display: flex; gap: 12px; padding: 4px 0; }
+.hy-all-dot { position: relative; z-index: 1; flex-shrink: 0; width: 14px; height: 14px; margin-top: 12px; border-radius: 50%; border: 2px solid var(--border-default); background: var(--surface-card); }
+.hy-all-b { flex: 1; min-width: 0; padding: 8px 12px; border: 1px solid var(--border-default); border-radius: 10px; background: var(--surface-card); display: flex; flex-direction: column; gap: 3px; }
+.hy-all-t { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13.5px; color: var(--text-primary); }
+.hy-all-b small { font-size: 12px; color: var(--text-secondary); }
+.hy-all-w { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #f3f4f6; color: #4b5563; }
+.hy-all-i.w-now .hy-all-dot { border-color: var(--color-primary); background: var(--color-primary); }
+.hy-all-i.w-now .hy-all-b { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(30, 70, 56, .08); }
+.hy-all-i.w-now .hy-all-w { background: var(--color-primary); color: #fff; }
+.hy-all-i.w-next .hy-all-dot { border-color: #0284c7; }
+.hy-all-i.w-next .hy-all-w { background: #e0f2fe; color: #075985; }
+.hy-all-i.w-past .hy-all-b { background: #fafafa; }
+.hy-all-i.w-past .hy-all-b b { color: var(--text-secondary); }
 @media (max-width: 760px) {
   /* Name + status on top, then department, then the unit — each on its own line so nothing squeezes the name */
   .hy-nt-r { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n s" "d d" "u u"; row-gap: 3px; align-items: start; }
