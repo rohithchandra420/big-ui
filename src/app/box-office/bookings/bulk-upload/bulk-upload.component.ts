@@ -124,9 +124,10 @@ export class BulkUploadComponent implements OnInit {
   ngOnInit() {
     const activeEvent = this.eventService.currentActiveEvent;
     if (!activeEvent) return;
-    this.eventService.getEventDetail(activeEvent._id).subscribe({
-      next: (detail) => {
-        this.existingPassTypeNames = new Set(detail.passTypes.map(pt => pt.name));
+    // B-085: the Box Office route, so the Box Office Team Lead / manage grant get it too.
+    this.boxOfficeService.getPassTypes(activeEvent._id).subscribe({
+      next: (types) => {
+        this.existingPassTypeNames = new Set(types.map(pt => pt.name));
         this.recomputeUnknownPassNames();
       },
       error: () => this.notificationService.openErrorSnackBar('Error loading pass types for this event')
