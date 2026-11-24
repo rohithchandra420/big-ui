@@ -5,7 +5,6 @@ import { Ticket } from '../../../models/ticket.model';
 import { BoxOfficeService } from '../../box-office.service';
 import { NotificationService } from '../../../core/notification.service';
 import { EventService } from '../../../core/event.service';
-import { PassType } from '../../../models/event.model';
 import { EmailConfig } from '../../../models/email.model';
 import { EmailService } from '../../../core/email.service';
 import { EmailBatchTrackerService } from '../../../core/email-batch-tracker.service';
@@ -33,7 +32,8 @@ export class SpotRegistrationComponent implements OnInit {
   @Output() registered = new EventEmitter<Ticket>();
   @Output() cancelled = new EventEmitter<void>();
 
-  passTypeOptions: PassType[] = [];
+  /** The event's pass types (B-085: from the Box Office route, so every Box Office member sees them). */
+  passTypeOptions: { _id: string; name: string; category: string }[] = [];
   loadingPassTypes = false;
 
   form!: FormGroup;
@@ -82,9 +82,11 @@ export class SpotRegistrationComponent implements OnInit {
     const activeEvent = this.eventService.currentActiveEvent;
     if (!activeEvent) return;
     this.loadingPassTypes = true;
-    this.eventService.getEventDetail(activeEvent._id).subscribe({
-      next: (detail) => {
-        this.passTypeOptions = detail.passTypes;
+    // B-085: the Box Office route (not the top-roles-only event detail), so a
+    // Box Office Team Lead / volunteer gets the list too.
+    this.boxOfficeService.getPassTypes(activeEvent._id).subscribe({
+      next: (types) => {
+        this.passTypeOptions = types;
         this.loadingPassTypes = false;
       },
       error: () => {

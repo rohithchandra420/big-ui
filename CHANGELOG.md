@@ -13,6 +13,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.83.0] - 2026-11-24
+
+### Fixed
+- Spot Registration and Bulk Upload now load the event's pass types for every Box Office member who may use them (B-085). Before, only Developers, Directors and Admins got the list: a Box Office Team Lead or volunteer saw an empty pass type picker in Spot Registration, and Bulk Upload showed "Error loading pass types" and could not spot new pass names in the file.
+
 ## [1.82.0] - 2026-11-24
 
 ### Changed
