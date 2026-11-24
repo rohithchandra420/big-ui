@@ -281,6 +281,13 @@ export class BoxOfficeService {
     // ── Bookings / Registration — duplicated from TicketsService, hitting the /box-office
     //    router (same Ticket/ShopCart models underneath). Modify these independently as
     //    Box Office requirements diverge from Tickets. ──
+    /** B-083: every pass type of the event (id, name, kind) for the Bookings filter. */
+    getPassTypes(eventId: string) {
+        return this.http.get<{ _id: string; name: string; category: string }[]>(this.url + "/box-office/passTypes", {
+            params: new HttpParams().set("eventId", eventId)
+        });
+    }
+
     getAllTickets(eventId: string) {
         return this.http.get<[Ticket]>(this.url + "/box-office/getalltickets", {
             params: new HttpParams().set('eventId', eventId)

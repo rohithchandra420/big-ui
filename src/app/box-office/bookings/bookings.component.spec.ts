@@ -20,6 +20,7 @@ import { EmailBatchTrackerService } from '../../core/email-batch-tracker.service
 import { EmailDialogsService } from '../email/email-dialogs.service';
 import { AppSelectComponent } from '../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../shared/app-select/app-option.component';
+import { MultiSelectComponent } from '../../shared/multi-select/multi-select.component';
 
 const mockBatch: EmailBatch = { id: 'b1', type: 'ticket', total: 1, done: 0, sent: 0, failed: 0, skipped: 0, finished: false, startedAt: '', finishedAt: null };
 
@@ -48,7 +49,8 @@ describe('BookingsComponent', () => {
   let finished$: Subject<EmailBatch>;
 
   beforeEach(async () => {
-    boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['getAllTickets', 'getTicketById']);
+    boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['getAllTickets', 'getTicketById', 'getPassTypes']);
+    boxOfficeServiceSpy.getPassTypes.and.returnValue(of([]));
     boxOfficeServiceSpy.getAllTickets.and.returnValue(of(mockBookings as any));
     // Jumping to a linked booking re-reads it; by default the server sends nothing new.
     boxOfficeServiceSpy.getTicketById.and.returnValue(throwError(() => new Error('offline')));
@@ -69,7 +71,7 @@ describe('BookingsComponent', () => {
     await TestBed.configureTestingModule({
       // app-select/app-option declared for real: the Ticket Email filter binds
       // [(ngModel)] on <app-select>, which needs its value accessor.
-      declarations: [BookingsComponent, AppSelectComponent, AppOptionComponent],
+      declarations: [BookingsComponent, AppSelectComponent, AppOptionComponent, MultiSelectComponent],
       imports: [FormsModule, MatMenuModule, NoopAnimationsModule],
       providers: [
         { provide: BoxOfficeService, useValue: boxOfficeServiceSpy },
@@ -674,6 +676,92 @@ describe('BookingsComponent', () => {
       fixture.detectChanges();
       expect(component.canBulkUpload).toBeFalse();
       expect(bulkButton()).toBeUndefined();
+    });
+  });
+
+  describe('Selected only chip', () => {
+    it('shows just the ticked rows, and switches itself off once nothing is ticked', () => {
+      const all = component.filteredBookings.length;
+      expect(all).toBeGreaterThan(1);
+      const [first] = component.filteredBookings;
+      component.toggleSelectedOnly();
+      expect(component.selectedOnly).toBeFalse();            // nothing ticked yet
+      component.toggleRow(first._id!);
+      component.toggleSelectedOnly();
+      expect(component.selectedOnly).toBeTrue();
+      expect(component.filteredBookings.map(b => b._id)).toEqual([first._id]);
+      component.toggleRow(first._id!);                         // last tick removed
+      expect(component.selectedOnly).toBeFalse();
+      expect(component.filteredBookings.length).toBe(all);
+    });
+
+    it('still applies search on top', () => {
+      const [a, b] = component.filteredBookings;
+      component.toggleRow(a._id!);
+      component.toggleRow(b._id!);
+      component.toggleSelectedOnly();
+      component.searchTerm = String(b.email);
+      expect(component.filteredBookings.map(x => x._id)).toEqual([b._id]);
+    });
+
+    it('renders the chip, disabled until a row is ticked', () => {
+      fixture.detectChanges();
+      const input = () => (fixture.nativeElement as HTMLElement).querySelector('.bk-sel-chip input') as HTMLInputElement;
+      expect(input().disabled).toBeTrue();
+      component.toggleRow(component.filteredBookings[0]._id!);
+      fixture.detectChanges();
+      expect(input().disabled).toBeFalse();
+      expect((fixture.nativeElement as HTMLElement).querySelector('.bk-sel-chip')?.textContent).toContain('Selected only (1)');
+    });
+  });
+
+  describe('Pass type filter (B-083, with linked bookings)', () => {
+    const item = (passType: string, extra: any = {}) => ({ passType, category: 'festival_pass', isActive: true, item_quantity: 1, isAdmitted: false, ...extra }) as any;
+    let weekend: Ticket, tentOnly: Ticket, full: Ticket, plain: Ticket;
+
+    beforeEach(() => {
+      component.passTypes = [
+        { _id: 'pt-full', name: 'Full Festival Pass', category: 'festival_pass' },
+        { _id: 'pt-week', name: 'Weekend Pass', category: 'festival_pass' },
+        { _id: 'pt-tent', name: 'Shared Tent', category: 'stay_pass' },
+        { _id: 'pt-car', name: 'Car Pass', category: 'addon_pass' }
+      ];
+      weekend = new Ticket(41, 'Rhea', 'Moss', 'rhea@example.test', '9000000061', 'TXN41', 'not_sent', 10, [item('pt-week'), item('pt-week')], 'p1');
+      weekend.reference = 'BK-41';
+      tentOnly = new Ticket(42, 'Rhea', 'Moss', 'rhea@example.test', '9000000061', 'TXN42', 'not_sent', 10, [item('pt-tent', { category: 'stay_pass', beds: 2 })], 'p2');
+      tentOnly.reference = 'BK-42';
+      tentOnly.linkedReferences = ['BK-41'];
+      full = new Ticket(43, 'Tobin', 'Ash', 'tobin@example.test', '9000000062', 'TXN43', 'not_sent', 10, [item('pt-full', { isActive: false })], 'p3');
+      plain = new Ticket(44, 'Uma', 'Cole', 'uma@example.test', '9000000063', 'TXN44', 'not_sent', 10, [item('pt-full')], 'p4');
+      component.bookings = [weekend, tentOnly, full, plain];
+    });
+
+    it('lists every pass type of the event, grouped by kind, with how many bookings each shows', () => {
+      const opts = component.passTypeOptions;
+      expect(opts.map(o => o.label)).toEqual(['Full Festival Pass', 'Weekend Pass', 'Shared Tent', 'Car Pass']);
+      expect(opts.map(o => o.group)).toEqual(['Festival Passes', 'Festival Passes', 'Stay Passes', 'Add-ons']);
+      expect(opts.map(o => o.count)).toEqual([2, 2, 2, 0]);
+      expect(component.passTypeOptions).toBe(opts);   // same array until the data changes
+    });
+
+    it('shows a booking when it or a linked booking holds a ticked type', () => {
+      component.passTypeFilter = ['pt-week'];
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['p1', 'p2']);
+      component.passTypeFilter = ['pt-tent'];
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['p1', 'p2']);
+    });
+
+    it('several ticked types show bookings holding any of them; switched-off passes count', () => {
+      component.passTypeFilter = ['pt-full', 'pt-car'];
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['p3', 'p4']);
+      component.passTypeFilter = [];
+      expect(component.filteredBookings.length).toBe(4);
+    });
+
+    it('loads the event pass types once per event and renders the filter', () => {
+      expect(boxOfficeServiceSpy.getPassTypes).toHaveBeenCalledWith('evt1');
+      fixture.detectChanges();
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-multi-select')).toBeTruthy();
     });
   });
 

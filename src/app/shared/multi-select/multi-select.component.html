@@ -1,0 +1,35 @@
+<div class="app-select-trigger"
+     #trigger
+     tabindex="0"
+     [class.disabled]="disabled"
+     [class.open]="open"
+     [class.placeholder]="!value.length"
+     [class.ms-has]="value.length"
+     [attr.aria-expanded]="open"
+     [attr.aria-label]="ariaLabel || null"
+     role="combobox"
+     (click)="toggleOpen()">
+  <span class="app-select-label">{{ displayLabel }}</span>
+  <span class="ms-n" *ngIf="value.length">{{ value.length }}</span>
+  <mat-icon class="app-select-chevron">expand_more</mat-icon>
+</div>
+
+<!-- Opened on the CDK overlay layer, like <app-select>. Stays open while ticking.
+     Panel styles are global (.ms-panel in styles.css): the overlay sits outside this component. -->
+<ng-template #panelTpl>
+  <div class="ms-panel" role="listbox" aria-multiselectable="true">
+    <button type="button" class="ms-clear" [disabled]="!value.length" (click)="clear()">
+      <mat-icon>filter_alt_off</mat-icon>{{ placeholder }}
+    </button>
+    <ng-container *ngFor="let o of options; let i = index; trackBy: trackValue">
+      <div class="ms-group" *ngIf="startsGroup(i)">{{ o.group }}</div>
+      <div class="ms-opt" role="option" tabindex="0" [class.on]="isOn(o)" [attr.aria-selected]="isOn(o)"
+           (click)="toggleOption(o)" (keydown.enter)="toggleOption(o)" (keydown.space)="$event.preventDefault(); toggleOption(o)">
+        <span class="ms-box"><mat-icon *ngIf="isOn(o)">check</mat-icon></span>
+        <span class="ms-l">{{ o.label }}</span>
+        <span class="ms-c" *ngIf="o.count !== undefined">{{ o.count }}</span>
+      </div>
+    </ng-container>
+    <div class="ms-empty" *ngIf="!options.length">Nothing to pick yet</div>
+  </div>
+</ng-template>
