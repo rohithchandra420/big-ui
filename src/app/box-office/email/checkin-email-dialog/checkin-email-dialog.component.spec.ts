@@ -11,8 +11,8 @@ import { Ticket } from '../../../models/ticket.model';
 import { EmailConfig } from '../../../models/email.model';
 
 // Invented sample people only.
-const full = { category: 'festival', isActive: true, name: 'Halvard Penhallow', phone_no: '9000000061', email: 'halvard@example.test', gender: 'Male' } as any;
-const empty = { category: 'festival', isActive: true, name: '', phone_no: '', email: '', gender: null } as any;
+const full = { category: 'festival_pass', isActive: true, name: 'Halvard Penhallow', phone_no: '9000000061', email: 'halvard@example.test', gender: 'Male' } as any;
+const empty = { category: 'festival_pass', isActive: true, name: '', phone_no: '', email: '', gender: null } as any;
 
 const t = (id: string, passes: any[], extra: Partial<Ticket> = {}, email = `${id}@example.test`) =>
   Object.assign(new Ticket(1, 'Buyer', id, email, '9', 'TXN', 'not_sent', 1, passes, id), extra);

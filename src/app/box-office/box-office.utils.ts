@@ -1,4 +1,5 @@
 import { EarlyCheckinStatus, Shopcart, Ticket, TicketEmailStatus, TicketKind } from '../models/ticket.model';
+import { FESTIVAL, STAY, ADDON } from '../core/pass-categories';
 
 // Introducing Events (see INTRODUCING_EVENTS_CONTEXT.md) — replaces the old
 // hardcoded FESTIVAL_PASS_NAMES/ALL_ITEM_NAMES lists. Which passes exist and
@@ -13,15 +14,15 @@ import { EarlyCheckinStatus, Shopcart, Ticket, TicketEmailStatus, TicketKind } f
 // legacy path is ever retired.
 const LEGACY_FESTIVAL_PASS_NAMES = ['Festival Ticket', 'Weekend pass', 'Day Pass'];
 
-/** True for Festival Pass items (category 'festival'), false for Tent/addon items. */
+/** True for Festival Pass items (category FESTIVAL), false for Tent/addon items. */
 export function isFestivalPass(item: Pick<Shopcart, 'category' | 'item_name'>): boolean {
-    if (item.category) return item.category === 'festival';
+    if (item.category) return item.category === FESTIVAL;
     return LEGACY_FESTIVAL_PASS_NAMES.includes(item.item_name);
 }
 
 /** A Tent Pass (takes beds). An add-on never is; a legacy pass with no category is when it isn't a Festival Pass. */
 export function isTentPass(item: Pick<Shopcart, 'category' | 'item_name'>): boolean {
-    if (item.category) return item.category === 'tent';
+    if (item.category) return item.category === STAY;
     return !isFestivalPass(item);
 }
 
@@ -145,7 +146,7 @@ const EXTRA_BED = /extra[\s_-]*bed/i;
 
 /** The booking has an "Extra bed" add-on (no bed of its own: shown as a tag on its Tent Pass). */
 export function hasExtraBed(ticket: Pick<Ticket, 'shopcart'> | null | undefined): boolean {
-    return (ticket?.shopcart || []).some(i => i.category === 'addon' && i.isActive !== false
+    return (ticket?.shopcart || []).some(i => i.category === ADDON && i.isActive !== false
         && (EXTRA_BED.test(i.passTypeName || i.item_name || '') || EXTRA_BED.test(i.externalCode || '')));
 }
 
@@ -254,4 +255,68 @@ export function lookupErrorMessage(err: any, fallback: string): string {
   if (typeof body?.message === 'string' && body.message) return body.message;
   if (Array.isArray(body?.errors) && body.errors[0]?.msg) return body.errors[0].msg;
   return fallback;
+}
+
+// ── Beds vs people (2026-11-24) ──
+
+/** One group of linked bookings: the booking, every booking it links to and
+ *  every booking linking to it (followed through chains). The same group,
+ *  and so the same totals, belongs to every booking in it. */
+export interface BedGroup {
+    /** Active Festival Passes in the group. */
+    people: number;
+    /** Beds of the active Stay Passes in the group (an add-on adds none). */
+    beds: number;
+    /** Booking IDs of the bookings in the group, this one included. */
+    bookingIds: string[];
+    /** Linked references not found among the event's bookings (not in BiG yet). */
+    missingRefs: string[];
+}
+
+/** Group totals per booking _id. Links are matched by the sales system
+ *  reference (`linkedReferences` -> `reference`), both ways. Passes switched
+ *  off (isActive false) are left out. */
+export function bedGroups(bookings: Ticket[]): Map<string, BedGroup> {
+    const byRef = new Map<string, Ticket>();
+    bookings.forEach(b => { if (b.reference) byRef.set(b.reference, b); });
+    const parent = new Map<string, string>();
+    const find = (id: string): string => {
+        let r = id;
+        while (parent.get(r) !== r) r = parent.get(r)!;
+        let c = id;
+        while (parent.get(c) !== r) { const n = parent.get(c)!; parent.set(c, r); c = n; }
+        return r;
+    };
+    bookings.forEach(b => parent.set(b._id, b._id));
+    const missing = new Map<string, Set<string>>();
+    bookings.forEach(b => (b.linkedReferences || []).forEach(ref => {
+        const target = byRef.get(ref);
+        if (!target || target._id === b._id) {
+            if (!target) { if (!missing.has(b._id)) missing.set(b._id, new Set()); missing.get(b._id)!.add(ref); }
+            return;
+        }
+        const a = find(b._id), t = find(target._id);
+        if (a !== t) parent.set(a, t);
+    }));
+    const groups = new Map<string, BedGroup>();
+    bookings.forEach(b => {
+        const root = find(b._id);
+        let g = groups.get(root);
+        if (!g) { g = { people: 0, beds: 0, bookingIds: [], missingRefs: [] }; groups.set(root, g); }
+        for (const i of b.shopcart || []) {
+            if (!i || i.isActive === false) continue;
+            if (isFestivalPass(i)) g.people++;
+            else if (isTentPass(i)) g.beds += i.beds || 1;
+        }
+        g.bookingIds.push(bookingIdOf(b));
+        missing.get(b._id)?.forEach(ref => { if (!g!.missingRefs.includes(ref)) g!.missingRefs.push(ref); });
+    });
+    const out = new Map<string, BedGroup>();
+    bookings.forEach(b => out.set(b._id, groups.get(find(b._id))!));
+    return out;
+}
+
+/** People and beds differ (either way). A group with no passes at all never does. */
+export function bedsMismatch(g: BedGroup | null | undefined): boolean {
+    return !!g && g.people !== g.beds;
 }

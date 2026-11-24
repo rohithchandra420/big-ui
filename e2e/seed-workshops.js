@@ -104,7 +104,7 @@ async function seedWorkshops({ ev, P, mk, dir, tlBox, D }) {
     const [first, last] = name.split(" ");
     const email = `${first.toLowerCase()}@example.com`;
     const sc = await ShopCart.create({ item_name: "Festival Pass", item_quantity: 1, order_id: order, isAdmitted: true, name, email,
-      phone_no: "98000" + String(order).slice(-5), isActive: true, event: ev._id, passType: P["Festival Pass"]._id, category: "festival", passTypeName: "Festival Pass" });
+      phone_no: "98000" + String(order).slice(-5), isActive: true, event: ev._id, passType: P["Festival Pass"]._id, category: "festival_pass", passTypeName: "Festival Pass" });
     await Ticket.create({ order_id: order, transaction_id: "TXN" + order, first_name: first, last_name: last, email, phone_no: sc.phone_no,
       totalPrice: 4999, shopcart: [sc._id], event: ev._id, ticketEmail: { status: "sent", sentAt: new Date(Date.UTC(2026, 9, 12, 10, order % 60)), error: null } });
     const band = await Band.create({ event: ev._id, code: `BIG7:W${++tag}`, raw: `https://wallet.example/pay?eventid=BIG7&tagid=W${tag}`,
@@ -113,7 +113,7 @@ async function seedWorkshops({ ev, P, mk, dir, tlBox, D }) {
     order++;
   }
   const pass = {};
-  for (const sc of await ShopCart.find({ event: ev._id, category: "festival", isAdmitted: true, band: { $ne: null } })) pass[sc.name] = sc;
+  for (const sc of await ShopCart.find({ event: ev._id, category: "festival_pass", isAdmitted: true, band: { $ne: null } })) pass[sc.name] = sc;
   const names = Object.keys(pass).sort();
 
   // ── Lists and attendance

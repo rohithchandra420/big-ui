@@ -10,7 +10,7 @@ import { BoxOfficeService } from '../box-office.service';
 import {
   isFestivalPass, isSpotRegistration, passSummary as buildPassSummary, bookingIdOf, paymentMethodLabel, bookingSourceLabel,
   ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, TICKET_EMAIL_FILTER_OPTIONS,
-  festivalDetailsCount, festivalDetailsMissing,
+  festivalDetailsCount, festivalDetailsMissing, bedGroups, bedsMismatch, BedGroup,
   earlyCheckinStatus, earlyCheckinLabel, earlyCheckinBadge, EARLY_CHECKIN_FILTER_OPTIONS, EarlyCheckinView
 } from '../box-office.utils';
 import { Shopcart } from '../../models/ticket.model';
@@ -23,9 +23,9 @@ import { EmailDialogsService } from '../email/email-dialogs.service';
 import { AttendeeListComponent } from '../attendee-list/attendee-list.component';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
 
-type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'payment' | 'paidAt' | 'source' | 'emailStatus' | 'admitted' | 'details' | 'earlyCheckin';
+type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'payment' | 'paidAt' | 'source' | 'emailStatus' | 'admitted' | 'details' | 'earlyCheckin' | 'beds';
 
-type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | 'detailsMissing' | null;
+type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | 'detailsMissing' | 'bedsMismatch' | null;
 
 @Component({
   selector: 'app-bookings',
@@ -318,6 +318,62 @@ export class BookingsComponent implements OnInit, OnDestroy {
     return this.bookings.filter(b => festivalDetailsMissing(b)).length;
   }
 
+  // ── Beds vs people (2026-11-24): a booking and its linked bookings together ──
+
+  private groupsOf: Ticket[] | null = null;
+  private groupsCache = new Map<string, BedGroup>();
+
+  /** People + beds of the booking's group (it and every linked booking). Worked
+   *  out once per loaded list: a new list (load, refresh) is a new array. */
+  bedGroup(booking: Ticket): BedGroup | undefined {
+    if (this.groupsOf !== this.bookings) {
+      this.groupsCache = bedGroups(this.bookings);
+      this.groupsOf = this.bookings;
+    }
+    return this.groupsCache.get(booking._id);
+  }
+
+  bedsMismatch(booking: Ticket): boolean {
+    return bedsMismatch(this.bedGroup(booking));
+  }
+
+  /** "4 people · 3 beds", or "—" for a group with no pass at all. */
+  bedsText(booking: Ticket): string {
+    const g = this.bedGroup(booking);
+    if (!g || (!g.people && !g.beds)) return '—';
+    return `${g.people} ${g.people === 1 ? 'person' : 'people'} · ${g.beds} ${g.beds === 1 ? 'bed' : 'beds'}`;
+  }
+
+  /** Amber when they differ, green when they match. */
+  bedsBadge(booking: Ticket): string {
+    return this.bedsMismatch(booking) ? 'ba' : 'bg';
+  }
+
+  /** The group has more than this booking, or a link to a booking not in BiG yet. */
+  bedsLinked(booking: Ticket): boolean {
+    const g = this.bedGroup(booking);
+    return !!g && (g.bookingIds.length > 1 || g.missingRefs.length > 0);
+  }
+
+  /** Hover / panel text: what the totals are made of. */
+  bedsHint(booking: Ticket): string {
+    const g = this.bedGroup(booking);
+    if (!g) return '';
+    const parts: string[] = [];
+    const own = bookingIdOf(booking);
+    const others = g.bookingIds.filter(id => id !== own);
+    if (others.length) parts.push(`With linked ${others.length === 1 ? 'booking' : 'bookings'} ${others.join(', ')}`);
+    if (g.missingRefs.length) parts.push(`Linked booking ${g.missingRefs.join(', ')} not in BiG yet`);
+    if (g.people > g.beds) parts.push(`${g.people - g.beds} more ${g.people - g.beds === 1 ? 'person' : 'people'} than beds`);
+    else if (g.beds > g.people) parts.push(`${g.beds - g.people} more ${g.beds - g.people === 1 ? 'bed' : 'beds'} than people`);
+    return parts.join(' · ');
+  }
+
+  /** Bookings whose group's people and beds differ. */
+  get bedsMismatchCount(): number {
+    return this.bookings.filter(b => this.bedsMismatch(b)).length;
+  }
+
   /** B-003: column sort; a new sort starts again on the first page. */
   sort = new TableSort<BookingSortKey>(null, 'asc', () => { this.pageIndex = 0; });
   readonly sortGetters: Record<BookingSortKey, SortGetter<Ticket>> = {
@@ -333,6 +389,11 @@ export class BookingsComponent implements OnInit, OnDestroy {
     emailStatus: b => this.emailStatusLabel(b),
     admitted: b => this.admittedCountFor(b),
     earlyCheckin: b => this.checkinStatusLabel(b),
+    // People minus beds: beds short first (descending puts them on top), no passes = empty.
+    beds: b => {
+      const g = this.bedGroup(b);
+      return g && (g.people || g.beds) ? g.people - g.beds : null;
+    },
     // Share filled (0 = nothing filled, 1 = all); no Festival Pass sorts as empty.
     details: b => {
       const c = festivalDetailsCount(b);
@@ -351,6 +412,8 @@ export class BookingsComponent implements OnInit, OnDestroy {
       result = result.filter(b => isSpotRegistration(b));
     } else if (this.activeFilter === 'detailsMissing') {
       result = result.filter(b => festivalDetailsMissing(b));
+    } else if (this.activeFilter === 'bedsMismatch') {
+      result = result.filter(b => this.bedsMismatch(b));
     }
 
     if (this.emailStatusFilter) {
@@ -375,7 +438,9 @@ export class BookingsComponent implements OnInit, OnDestroy {
         this.source(b).toLowerCase().includes(term) ||
         this.paidAtText(b).includes(term) ||
         // EC1: "details missing" (or "details") finds bookings with a Festival Pass to fill
-        (term.length >= 7 && 'details missing'.includes(term) && festivalDetailsMissing(b))
+        (term.length >= 7 && 'details missing'.includes(term) && festivalDetailsMissing(b)) ||
+        // "beds" (or "beds don't match") finds bookings whose people and beds differ
+        (term.length >= 4 && "beds don't match".includes(term) && this.bedsMismatch(b))
       );
     }
 

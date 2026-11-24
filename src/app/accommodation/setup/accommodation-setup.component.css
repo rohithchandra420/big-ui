@@ -84,6 +84,9 @@
 }
 .summary-group-hdr.hdr-partial { color: #b45309; }
 .summary-group-hdr.hdr-full { color: #16a34a; }
+.summary-group-hdr.acs-hdr { color: var(--text-secondary); }
+/* Demand line (global .acs-total) sits right above the cards. */
+.acs-total + .summary-grid { margin-top: 12px; }
 
 .summary-group-row {
   display: grid;

@@ -13,6 +13,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.79.0] - 2026-11-24
+
+### Changed
+- "Tent Pass" is now called **Stay Pass** everywhere (Bookings, Booking Found, Admin › Events, Bulk Upload, the import panels, Accommodation, Dashboard). Pass kinds in the category pickers and on Admin › Events show as Festival Pass / Stay Pass / Add-on. Works with big-api 1.68.0 only (new stored values `festival_pass` / `stay_pass` / `addon_pass`).
+
+### Added
+- Accommodation › Setup: **beds needed vs set up**. A line above the cards shows, for every Stay Pass type together, how many beds are still to set up (or that there are enough), with the number of Stay Passes, beds needed and beds set up. Each type's card gets a "Needed from passes" row: Stay Passes, beds set up / needed, and how many beds are still to set up with about how many units that takes (at the size most of that type's units have, or the pass type's beds per pass when none exist yet). Responsive.
+- Bookings: **Beds** column, a **Beds don't match** tile and filter, and a Beds box in the booking panel. People (active Festival Passes) and beds (active Stay Pass beds; add-ons add none) are counted over the booking together with every booking it links to or that links to it, so all bookings of one group show the same totals; a link icon marks a group with linked bookings, and the hint names them (and any linked booking not in BiG yet). A booking is flagged when people and beds differ either way, a Festival-only booking with no linked stay included. Searching "beds" finds the same bookings. The column sorts beds-short first.
+
 ## [1.78.0] - 2026-11-24
 
 ### Added

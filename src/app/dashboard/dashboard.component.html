@@ -42,7 +42,7 @@
           <div class="s"><span class="up" *ngIf="r.today">+{{ money(r.today) }}</span>{{ r.today ? ' today' : 'Nothing booked today' }}</div>
         </div>
         <div class="d-tile"><div class="l">Bookings</div><div class="v">{{ num(d.tiles.bookings) }}</div><div class="s">{{ num(d.tiles.spot) }} spot registrations</div></div>
-        <div class="d-tile"><div class="l">Passes</div><div class="v">{{ num(d.tiles.passes) }}</div><div class="s">{{ num(d.tiles.festivalPasses) }} festival · {{ num(d.tiles.tentPasses) }} tent</div></div>
+        <div class="d-tile"><div class="l">Passes</div><div class="v">{{ num(d.tiles.passes) }}</div><div class="s">{{ num(d.tiles.festivalPasses) }} festival · {{ num(d.tiles.tentPasses) }} stay</div></div>
         <div class="d-tile"><div class="l">Admitted</div><div class="v">{{ pct(d.tiles.admitted, d.tiles.festivalPasses) }}%</div>
           <div class="s">{{ num(d.tiles.admitted) }} of {{ num(d.tiles.festivalPasses) }}</div><div class="bar"><i [style.width.%]="pct(d.tiles.admitted, d.tiles.festivalPasses)"></i></div></div>
         <div class="d-tile"><div class="l">Staff on event</div><div class="v">{{ num(d.tiles.staff) }}</div><div class="s">{{ num(d.tiles.staffMarkedToday) }} marked today</div></div>

@@ -15,7 +15,7 @@ const overview = (extra: Partial<DashboardOverview> = {}): DashboardOverview => 
   tiles: { bookings: 1284, spot: 38, passes: 2146, festivalPasses: 1912, tentPasses: 234, admitted: 1491, staff: 186, staffMarkedToday: 142,
     mealsServedToday: 412, mealsExpectedToday: 540, workshopVisitsToday: 327, sessionsToday: 9, sosOpen: 1, sosHandled: 5 },
   gate: { perHour: Array.from({ length: 24 }, (_, hour) => ({ hour, count: hour === 10 ? 4 : 0 })), admitted: 1491, notAdmitted: 421,
-    byType: [{ name: 'Festival Pass', category: 'festival', count: 1912, admitted: 1491 }] },
+    byType: [{ name: 'Festival Pass', category: 'festival_pass', count: 1912, admitted: 1491 }] },
   accommodation: { tents: [{ name: 'Solo Tent', beds: 10, used: 4 }], beds: { byType: [], inBed: 3, movedIn: 2, staffWithoutBed: 7 } },
   people: { byDept: [{ name: 'Operations', count: 4 }], heat: [{ date: '2026-11-12', morning: 90, afternoon: 60, night: 10 }] },
   meals: { plan: true, today: [], leftover: [], goalPct: 5 },
