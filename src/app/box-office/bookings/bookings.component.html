@@ -70,11 +70,21 @@
         <app-option value="">All Early Check-In statuses</app-option>
         <app-option *ngFor="let o of checkinStatusOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
       </app-select>
+      <!-- B-083: pass types (with linked bookings), several at once -->
+      <app-multi-select class="email-status-filter pass-type-filter" [options]="passTypeOptions" [(ngModel)]="passTypeFilter"
+                        (ngModelChange)="onSearchChange()" placeholder="All pass types" noun="pass types"
+                        [panelMinWidth]="240" ariaLabel="Filter by pass type"></app-multi-select>
     </div>
   </div>
 
   <div class="seg-bar">
     <span class="seg-txt">{{ segText }}</span>
+    <!-- Show just the ticked rows (2026-11-24) -->
+    <label class="toggle-chip bk-sel-chip" [class.on]="selectedOnly" [class.off]="!selectedIds.size"
+           [title]="selectedIds.size ? 'Show only the ticked bookings' : 'Tick bookings first'">
+      <input class="sr-only" type="checkbox" [checked]="selectedOnly" [disabled]="!selectedIds.size" (change)="toggleSelectedOnly()">
+      <mat-icon>{{ selectedOnly ? 'check' : 'checklist' }}</mat-icon>Selected only ({{ selectedIds.size }})
+    </label>
     <ng-container *ngIf="canSendEmail$ | async">
       <button class="btn-secondary" [matMenuTriggerFor]="emailMenu" [disabled]="selectedIds.size === 0"
               [title]="selectedIds.size === 0 ? 'Select bookings first' : 'Email the selected bookings'">

@@ -13,6 +13,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.81.0] - 2026-11-24
+
+### Added
+- Bookings: **pass type filter** (B-083). A dropdown with every pass type of the event, grouped under Festival Passes / Stay Passes / Add-ons, each with how many bookings it shows. Tick several at once: a booking shows when it, or a booking linked to it, holds any of the ticked pass types (switched-off passes count, like the Passes column). Combines with search, the tiles and the other filters. Responsive.
+- Bookings: **Selected only** chip next to the selection count. It shows just the ticked bookings (search, tiles and filters still apply), is greyed out until a booking is ticked, and switches itself off when the last tick is removed.
+- New shared multi-choice dropdown (`app-multi-select`): looks like the other dropdowns, rows are ticked on / off and the list stays open while picking, with a "clear" row.
+
 ## [1.80.0] - 2026-11-24
 
 ### Added
