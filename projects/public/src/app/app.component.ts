@@ -17,6 +17,8 @@ import { countdown, dayLabel, dayStart, timeLabel } from './core/festival-time';
 import { HomeViewComponent } from './views/home-view.component';
 import { ScheduleViewComponent } from './views/schedule-view.component';
 import { SessionSheetComponent } from './ui/session-bits';
+import { CheckinViewComponent } from './views/checkin-view.component';
+import { checkinTokenFromHash, isCheckinHash } from './core/checkin-api.service';
 
 // Public participant page shell (PUBLIC_HOME_CONTEXT.md, PH1; design:
 // mocks/mock-public-home-v2.html). Views switch by #hash — never by path,
@@ -41,7 +43,8 @@ export const REFRESH_MS = 30000;
   selector: 'pub-root',
   standalone: true,
   imports: [NgIf, NgFor, TPipe, HomeViewComponent, ScheduleViewComponent, SessionSheetComponent, NewsTickerComponent, NewsViewComponent,
-            MapViewComponent, FindWayComponent, EmergencyComponent, PlanViewComponent, AlertsCardComponent, HighlightsComponent],
+            MapViewComponent, FindWayComponent, EmergencyComponent, PlanViewComponent, AlertsCardComponent, HighlightsComponent,
+            CheckinViewComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
@@ -80,6 +83,14 @@ export class AppComponent implements OnInit, OnDestroy {
   private sub2?: Subscription;
   private timers: ReturnType<typeof setInterval>[] = [];
 
+  /**
+   * Early Check-In (EC3): opened from the email link `#check-in/<link>`. Only
+   * the form shows, nothing of the public page is loaded, and it works while
+   * the Public Page is switched off.
+   */
+  checkin = false;
+  checkinToken: string | null = null;
+
   /** PH5: the one-time alerts offer after the first star. */
   offerAlerts = false;
 
@@ -88,6 +99,11 @@ export class AppComponent implements OnInit, OnDestroy {
   get planCount(): number { return this.plan.count; }
 
   ngOnInit(): void {
+    if (isCheckinHash(location.hash)) {
+      this.checkin = true;
+      this.checkinToken = checkinTokenFromHash(location.hash);
+      return;
+    }
     this.view = this.viewFromHash();
     this.load();
     this.alerts.init();
@@ -179,6 +195,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   @HostListener('window:hashchange')
   onHash(): void {
+    if (this.checkin) return;
     this.view = this.viewFromHash();
     window.scrollTo({ top: 0 });
   }
