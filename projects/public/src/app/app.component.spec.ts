@@ -47,6 +47,18 @@ describe('AppComponent (public shell)', () => {
     history.replaceState(null, '', location.pathname);
   });
 
+  it('Early Check-In link: only the form, nothing of the public page is loaded (works while it is off)', () => {
+    history.replaceState(null, '', location.pathname + '#check-in/' + 'b'.repeat(43));
+    create();
+    expect(component.checkin).toBeTrue();
+    expect(component.checkinToken).toBe('b'.repeat(43));
+    expect(apiSpy.event).not.toHaveBeenCalled();
+    expect(apiSpy.sessions).not.toHaveBeenCalled();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('pub-checkin')).not.toBeNull();
+    expect(el.querySelector('nav.bottom')).toBeNull();
+  });
+
   it('during the festival: day number, event name and the days strip', () => {
     create();
     expect(text()).toContain('Day 2 is');

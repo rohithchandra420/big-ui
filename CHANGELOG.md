@@ -13,6 +13,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.78.0] - 2026-11-24
+
+### Added
+- Participant page: the **Early Check-In form**, opened from the link in the Early Check-In email. It shows only the form (no other part of the page) and works while the Public Page is switched off. One card per Festival Pass, filled in with what the booking already has and editable. Gender is picked from tiles. Admitted passes are shown with a lock and can't be changed. A progress bar shows how many passes are ready, each field says what is wrong, and "Check and send" shows a summary first ("you can send this only once"). After sending, a thank-you screen, and the link is taken out of the address bar. Clear screens for a link that has expired, was already used or does not work. Responsive, phone first.
+
 ## [1.77.0] - 2026-11-23
 
 ### Added
