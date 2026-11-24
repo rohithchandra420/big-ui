@@ -149,9 +149,9 @@
   border-radius: 20px;
   flex-shrink: 0;
 }
-.cat-festival { background: #dcfce7; color: #166534; }
-.cat-tent { background: #fef3c7; color: #92400e; }
-.cat-addon { background: #e0e7ff; color: #3730a3; }
+.cat-festival_pass { background: #dcfce7; color: #166534; }
+.cat-stay_pass { background: #fef3c7; color: #92400e; }
+.cat-addon_pass { background: #e0e7ff; color: #3730a3; }
 
 .code-chip {
   font-size: 10px;

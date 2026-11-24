@@ -61,7 +61,7 @@ describe('BookingsComponent', () => {
     };
 
     canSend = true;
-    emailDialogsSpy = jasmine.createSpyObj('EmailDialogsService', ['openTicketEmail', 'openCustomEmail']);
+    emailDialogsSpy = jasmine.createSpyObj('EmailDialogsService', ['openTicketEmail', 'openCustomEmail', 'openCheckinEmail']);
     emailDialogsSpy.openTicketEmail.and.returnValue(of(mockBatch));
     emailDialogsSpy.openCustomEmail.and.returnValue(of({ ...mockBatch, type: 'custom' } as EmailBatch));
     finished$ = new Subject<EmailBatch>();
@@ -77,7 +77,7 @@ describe('BookingsComponent', () => {
         { provide: Router, useValue: routerSpy },
         { provide: MatDialog, useValue: dialogSpy },
         { provide: EventService, useValue: eventServiceStub },
-        { provide: EmailService, useValue: { canSend: () => of(canSend), canSendTicket: () => of(canSend), canSendCustom: () => of(canSend) } },
+        { provide: EmailService, useValue: { canSend: () => of(canSend), canSendTicket: () => of(canSend), canSendCustom: () => of(canSend), canSendCheckin: () => of(canSend) } },
         { provide: EmailDialogsService, useValue: emailDialogsSpy },
         { provide: EmailBatchTrackerService, useValue: { finished$: finished$.asObservable() } },
       ],
@@ -674,6 +674,156 @@ describe('BookingsComponent', () => {
       fixture.detectChanges();
       expect(component.canBulkUpload).toBeFalse();
       expect(bulkButton()).toBeUndefined();
+    });
+  });
+
+  describe('Beds vs people (with linked bookings)', () => {
+    const fest = () => ({ category: 'festival_pass', isActive: true, item_quantity: 1, isAdmitted: false }) as any;
+    const stay = (beds: number) => ({ category: 'stay_pass', isActive: true, item_quantity: 1, isAdmitted: false, beds }) as any;
+    let group1: Ticket, room1: Ticket, short: Ticket, none: Ticket;
+
+    beforeEach(() => {
+      group1 = new Ticket(31, 'Odile', 'Prask', 'odile@example.test', '9000000051', 'TXN31', 'not_sent', 10, [fest(), fest()], 'g1');
+      group1.reference = 'BK-1';
+      room1 = new Ticket(32, 'Odile', 'Prask', 'odile@example.test', '9000000051', 'TXN32', 'not_sent', 10, [stay(2)], 'g2');
+      room1.reference = 'BK-2';
+      room1.linkedReferences = ['BK-1'];
+      short = new Ticket(33, 'Ferran', 'Quill', 'ferran@example.test', '9000000052', 'TXN33', 'not_sent', 10, [fest(), fest(), fest(), stay(2)], 'g3');
+      none = new Ticket(34, 'Ines', 'Varga', 'ines@example.test', '9000000053', 'TXN34', 'not_sent', 0, [], 'g4');
+      component.bookings = [group1, room1, short, none];
+    });
+
+    it('shows the group totals on every booking of the group, with the linked ones in the hint', () => {
+      expect(component.bedsText(group1)).toBe('2 people · 2 beds');
+      expect(component.bedsText(room1)).toBe('2 people · 2 beds');
+      expect(component.bedsLinked(room1)).toBe(true);
+      expect(component.bedsHint(group1)).toContain('With linked booking BK-2');
+      expect(component.bedsBadge(group1)).toBe('bg');
+      expect(component.bedsText(short)).toBe('3 people · 2 beds');
+      expect(component.bedsBadge(short)).toBe('ba');
+      expect(component.bedsHint(short)).toBe('1 more person than beds');
+      expect(component.bedsText(none)).toBe('—');
+    });
+
+    it('counts and filters the bookings whose beds don’t match from the tile', () => {
+      expect(component.bedsMismatchCount).toBe(1);
+      component.toggleFilter('bedsMismatch');
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['g3']);
+    });
+
+    it('the search bar finds "beds"', () => {
+      component.searchTerm = 'beds';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['g3']);
+    });
+
+    it('works the groups out again for a newly loaded list', () => {
+      expect(component.bedsMismatchCount).toBe(1);
+      component.bookings = [group1, short];   // room1 gone: group1 is now short of beds
+      expect(component.bedsMismatchCount).toBe(2);
+    });
+
+    it('renders the Beds column', () => {
+      fixture.detectChanges();
+      const header = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('th')).map(th => th.textContent?.trim());
+      expect(header).toContain('Beds');
+    });
+  });
+
+  describe('Festival details (Early Check-In EC1)', () => {
+    const pass = (extra: any = {}) => ({ category: 'festival_pass', item_quantity: 1, isAdmitted: false, isActive: true,
+      name: 'Tamsin Orrel', phone_no: '9000000041', email: 'tamsin@example.test', gender: 'female', ...extra }) as any;
+    let done: Ticket, half: Ticket, noFestival: Ticket;
+
+    beforeEach(() => {
+      done = new Ticket(21, 'Tamsin', 'Orrel', 'tamsin@example.test', '9000000041', 'TXN21', 'not_sent', 10, [pass()], 'd1');
+      half = new Ticket(22, 'Bram', 'Vetch', 'bram@example.test', '9000000042', 'TXN22', 'not_sent', 20,
+        [pass(), pass({ gender: null }), { category: 'stay_pass', isActive: true, item_quantity: 1 } as any], 'd2');
+      noFestival = new Ticket(23, 'Cora', 'Lindqvist', 'cora@example.test', '9000000043', 'TXN23', 'not_sent', 5,
+        [{ category: 'addon_pass', isActive: true, item_quantity: 1 } as any], 'd3');
+      component.bookings = [done, half, noFestival];
+    });
+
+    it('shows filled / total Festival Passes, "—" with none, green when complete, amber when not', () => {
+      expect(component.festivalDetailsText(done)).toBe('1 / 1');
+      expect(component.festivalDetailsText(half)).toBe('1 / 2');
+      expect(component.festivalDetailsText(noFestival)).toBe('—');
+      expect(component.festivalDetailsBadge(done)).toBe('bg');
+      expect(component.festivalDetailsBadge(half)).toBe('ba');
+    });
+
+    it('counts and filters the bookings with details missing from the tile', () => {
+      expect(component.detailsMissingCount).toBe(1);
+      component.toggleFilter('detailsMissing');
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['d2']);
+    });
+
+    it('the search bar finds "details missing"', () => {
+      component.searchTerm = 'details missing';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['d2']);
+      component.searchTerm = 'details';
+      expect(component.filteredBookings.map(b => b._id)).toEqual(['d2']);
+    });
+
+    it('sorts by the share filled', () => {
+      component.sort.toggle('details');
+      const ids = component.filteredBookings.map(b => b._id);
+      expect(ids.indexOf('d2')).toBeLessThan(ids.indexOf('d1'));
+    });
+
+    it('renders the column and the tile', () => {
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      const heads = Array.from(el.querySelectorAll('th')).map(t => t.textContent?.trim());
+      expect(heads).toContain('Festival details');
+      expect(el.textContent).toContain('Details missing');
+      expect(el.textContent).toContain('1 / 2');
+    });
+  });
+
+  describe('Early Check-In email (EC2)', () => {
+    const later = new Date(Date.now() + 5 * 86400000).toISOString();
+    const earlier = new Date(Date.now() - 86400000).toISOString();
+    let a: Ticket, b: Ticket, c: Ticket;
+
+    beforeEach(() => {
+      a = new Ticket(31, 'Ilsa', 'Thornbury', 'ilsa@example.test', '9000000051', 'TXN31', 'not_sent', 10, [], 'e1');
+      b = new Ticket(32, 'Mateo', 'Quillfeather', 'mateo@example.test', '9000000052', 'TXN32', 'not_sent', 10, [], 'e2');
+      b.earlyCheckin = { status: 'sent', expiresAt: later };
+      c = new Ticket(33, 'Rosalind', 'Ebbet', 'rosalind@example.test', '9000000053', 'TXN33', 'not_sent', 10, [], 'e3');
+      c.earlyCheckin = { status: 'sent', expiresAt: earlier };
+      component.bookings = [a, b, c];
+    });
+
+    it('labels the status and works out Expired', () => {
+      expect(component.checkinStatusLabel(a)).toBe('Not sent');
+      expect(component.checkinStatusLabel(b)).toBe('Sent');
+      expect(component.checkinStatusLabel(c)).toBe('Expired');
+    });
+
+    it('filters by the Early Check-In status', () => {
+      component.checkinStatusFilter = 'expired';
+      expect(component.filteredBookings.map(x => x._id)).toEqual(['e3']);
+      component.checkinStatusFilter = 'not_sent';
+      expect(component.filteredBookings.map(x => x._id)).toEqual(['e1']);
+    });
+
+    it('shows the failure reason on hover only for failed / no email', () => {
+      b.earlyCheckin = { status: 'failed', error: 'SMTP said no' };
+      expect(component.checkinStatusHint(b)).toBe('SMTP said no');
+      expect(component.checkinStatusHint(a)).toBe('');
+    });
+
+    it('opens the Early Check-In dialog for the selected bookings', () => {
+      emailDialogsSpy.openCheckinEmail.and.returnValue(of(undefined));
+      component.selectedIds = new Set(['e2', 'e3']);
+      component.sendCheckinEmails();
+      expect(emailDialogsSpy.openCheckinEmail).toHaveBeenCalledWith([b, c]);
+    });
+
+    it('renders the column', () => {
+      fixture.detectChanges();
+      const heads = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('th')).map(t => t.textContent?.trim());
+      expect(heads).toContain('Early Check-In');
     });
   });
 });

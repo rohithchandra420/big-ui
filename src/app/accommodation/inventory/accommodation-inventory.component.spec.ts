@@ -19,11 +19,11 @@ const mockEvent = { _id: 'event1', name: 'Test Event' } as EventItem;
 
 const mockTents: Tent[] = [
   {
-    _id: 't1', tent_no: 'SH1', capcity: 2, passType: { _id: 'pt1', name: 'Shared Tent', category: 'tent', code: 'SH' },
+    _id: 't1', tent_no: 'SH1', capcity: 2, passType: { _id: 'pt1', name: 'Shared Tent', category: 'stay_pass', code: 'SH' },
     occupants: [{ name: 'Ananya Rao' } as any, null]
   } as any,
   {
-    _id: 't2', tent_no: 'SO1', capcity: 1, passType: { _id: 'pt2', name: 'Solo Tent', category: 'tent', code: 'SO' },
+    _id: 't2', tent_no: 'SO1', capcity: 1, passType: { _id: 'pt2', name: 'Solo Tent', category: 'stay_pass', code: 'SO' },
     occupants: [null]
   } as any,
 ];

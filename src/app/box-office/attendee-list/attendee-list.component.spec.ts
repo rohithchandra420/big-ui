@@ -154,8 +154,8 @@ describe('AttendeeListComponent', () => {
 
   describe('add-ons take no bed (Extra bed, Car Pass…)', () => {
     const t = () => ({ ...mockTicket, _id: 'tk-addon', shopcart: [
-      { ...mockTicket.shopcart![1], _id: 'a1', category: 'addon', item_name: 'Extra bed', allocatedTentId: null },
-      { ...mockTicket.shopcart![1], _id: 'a2', category: 'tent', item_name: 'Shared Tent', allocatedTentId: null }
+      { ...mockTicket.shopcart![1], _id: 'a1', category: 'addon_pass', item_name: 'Extra bed', allocatedTentId: null },
+      { ...mockTicket.shopcart![1], _id: 'a2', category: 'stay_pass', item_name: 'Shared Tent', allocatedTentId: null }
     ] } as any as Ticket);
     const actionsOf = (name: string) => {
       const row = (Array.from(fixture.nativeElement.querySelectorAll('.att-pass')) as HTMLElement[])
@@ -171,9 +171,9 @@ describe('AttendeeListComponent', () => {
     });
 
     it('isTentPass(): tent yes; add-on and Festival Pass no; legacy non-festival without a category yes', () => {
-      expect(component.isTentPass({ category: 'tent' } as any)).toBeTrue();
-      expect(component.isTentPass({ category: 'addon' } as any)).toBeFalse();
-      expect(component.isTentPass({ category: 'festival' } as any)).toBeFalse();
+      expect(component.isTentPass({ category: 'stay_pass' } as any)).toBeTrue();
+      expect(component.isTentPass({ category: 'addon_pass' } as any)).toBeFalse();
+      expect(component.isTentPass({ category: 'festival_pass' } as any)).toBeFalse();
       expect(component.isTentPass({ item_name: 'Camping' } as any)).toBeTrue();
       expect(component.isTentPass({ item_name: 'Festival Ticket' } as any)).toBeFalse();
     });
@@ -188,9 +188,9 @@ describe('AttendeeListComponent', () => {
 
   describe('passKind(): the kind of pass before its name', () => {
     it('gives Festival Pass / Tent Pass / Add-on from the category', () => {
-      expect(component.passKind({ ...mockTicket.shopcart![0], category: 'festival' } as any)).toEqual(jasmine.objectContaining({ label: 'Festival Pass', icon: 'confirmation_number' }));
-      expect(component.passKind({ ...mockTicket.shopcart![1], category: 'tent' } as any)).toEqual(jasmine.objectContaining({ label: 'Tent Pass', icon: 'hotel' }));
-      expect(component.passKind({ ...mockTicket.shopcart![1], category: 'addon' } as any)).toEqual(jasmine.objectContaining({ label: 'Add-on', icon: 'add_circle' }));
+      expect(component.passKind({ ...mockTicket.shopcart![0], category: 'festival_pass' } as any)).toEqual(jasmine.objectContaining({ label: 'Festival Pass', icon: 'confirmation_number' }));
+      expect(component.passKind({ ...mockTicket.shopcart![1], category: 'stay_pass' } as any)).toEqual(jasmine.objectContaining({ label: 'Stay Pass', icon: 'hotel' }));
+      expect(component.passKind({ ...mockTicket.shopcart![1], category: 'addon_pass' } as any)).toEqual(jasmine.objectContaining({ label: 'Add-on', icon: 'add_circle' }));
     });
 
     it('returns the same object each time (stable for change detection)', () => {
@@ -200,9 +200,9 @@ describe('AttendeeListComponent', () => {
 
     it('shows only the type icon, then the pass name (never a type label); an Add-on no longer shows the tent icon', () => {
       const t = { ...mockTicket, _id: 'tk-kind', shopcart: [
-        { ...mockTicket.shopcart![0], _id: 'k1', category: 'festival', item_name: 'Weekend Ticket' },
-        { ...mockTicket.shopcart![1], _id: 'k2', category: 'addon', item_name: 'Car Parking', allocatedTentId: null },
-        { ...mockTicket.shopcart![1], _id: 'k3', category: 'tent', item_name: 'Shared Tent', allocatedTentId: null }
+        { ...mockTicket.shopcart![0], _id: 'k1', category: 'festival_pass', item_name: 'Weekend Ticket' },
+        { ...mockTicket.shopcart![1], _id: 'k2', category: 'addon_pass', item_name: 'Car Parking', allocatedTentId: null },
+        { ...mockTicket.shopcart![1], _id: 'k3', category: 'stay_pass', item_name: 'Shared Tent', allocatedTentId: null }
       ] } as any as Ticket;
       configureWith(t);
       const rows = Array.from(fixture.nativeElement.querySelectorAll('.att-pass')) as HTMLElement[];
@@ -216,8 +216,8 @@ describe('AttendeeListComponent', () => {
 
     it('uses passTypeName (Box Office flow) when item_name is empty', () => {
       const t = { ...mockTicket, _id: 'tk-ptn', shopcart: [
-        { ...mockTicket.shopcart![0], _id: 'n1', category: 'festival', item_name: undefined, passTypeName: 'Day Pass' },
-        { ...mockTicket.shopcart![1], _id: 'n2', category: 'tent', item_name: undefined, passTypeName: 'PYOT', allocatedTentId: null }
+        { ...mockTicket.shopcart![0], _id: 'n1', category: 'festival_pass', item_name: undefined, passTypeName: 'Day Pass' },
+        { ...mockTicket.shopcart![1], _id: 'n2', category: 'stay_pass', item_name: undefined, passTypeName: 'PYOT', allocatedTentId: null }
       ] } as any as Ticket;
       configureWith(t);
       const texts = (Array.from(fixture.nativeElement.querySelectorAll('.att-pass')) as HTMLElement[]).map(r => r.textContent!.replace(/\s+/g, ' ').trim());

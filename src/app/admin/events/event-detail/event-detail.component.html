@@ -28,6 +28,7 @@
       <p class="event-desc" *ngIf="detail.description">{{ detail.description }}</p>
       <p class="event-desc muted" *ngIf="!detail.description">No description</p>
       <p class="event-desc muted">Ticket email: {{ hasCustomEmailWording ? 'custom wording' : 'default wording' }}</p>
+      <p class="event-desc muted">Early Check-In email: {{ hasCustomCheckinWording ? 'custom wording' : 'default wording' }}</p>
       <p class="event-desc muted venue-line" *ngIf="hasBoundary !== null">
         Venue boundary: {{ hasBoundary ? 'drawn' : 'not drawn yet' }}
         <button type="button" class="btn-sm-outline" (click)="openVenueMap()">
@@ -36,6 +37,14 @@
       <p class="event-desc muted venue-line" *ngIf="staffCount !== null">
         Staff: {{ staffCount }} {{ staffCount === 1 ? 'person' : 'people' }} (incl. Developers, Directors and Admins)
         <button type="button" class="btn-sm-outline" (click)="openStaff()">Manage on Users page</button>
+      </p>
+      <p class="event-desc muted venue-line">
+        Sales system: {{ detail.salesSync ? 'new bookings come into this event' : 'off' }}
+        <button type="button" class="toggle-chip" [class.on]="detail.salesSync" [disabled]="savingSync"
+                [attr.aria-pressed]="!!detail.salesSync" (click)="toggleSalesSync()">
+          <mat-icon>{{ detail.salesSync ? 'sync' : 'sync_disabled' }}</mat-icon>
+          {{ detail.salesSync ? 'On' : 'Off' }}
+        </button>
       </p>
       <p class="event-dates" *ngIf="detail.startDate || detail.endDate">
         {{ detail.startDate | date:'mediumDate' }} – {{ detail.endDate | date:'mediumDate' }}
@@ -53,9 +62,9 @@
         <div class="pass-type-list" *ngIf="detail.passTypes.length > 0">
           <div class="pass-type-row" *ngFor="let pt of detail.passTypes">
             <span class="pt-name">{{ pt.name }}</span>
-            <span class="cat-chip" [class]="'cat-' + pt.category">{{ pt.category }}</span>
-            <span class="code-chip" *ngIf="pt.category === 'tent'" [class.code-chip-unset]="!pt.code">{{ pt.code || 'no code' }}</span>
-            <span class="code-chip" *ngIf="pt.category === 'tent'" title="Beds per pass: one Festival Pass per bed">{{ pt.beds || 1 }} {{ (pt.beds || 1) === 1 ? 'bed' : 'beds' }}</span>
+            <span class="cat-chip" [class]="'cat-' + pt.category">{{ categoryLabels[pt.category] || pt.category }}</span>
+            <span class="code-chip" *ngIf="pt.category === 'stay_pass'" [class.code-chip-unset]="!pt.code">{{ pt.code || 'no code' }}</span>
+            <span class="code-chip" *ngIf="pt.category === 'stay_pass'" title="Beds per pass: one Festival Pass per bed">{{ pt.beds || 1 }} {{ (pt.beds || 1) === 1 ? 'bed' : 'beds' }}</span>
             <span class="code-chip pt-ext-chip" *ngIf="pt.externalCode" title="Sales system code">{{ pt.externalCode }}</span>
             <div class="pt-actions">
               <button class="btn-sm-outline" (click)="startEditPassType(pt)">Edit</button>
@@ -77,7 +86,7 @@
           <div class="field">
             <label>Category *</label>
             <app-select formControlName="category" aria-label="Category">
-              <app-option *ngFor="let c of categories" [value]="c">{{ c }}</app-option>
+              <app-option *ngFor="let c of categories" [value]="c">{{ categoryLabels[c] }}</app-option>
             </app-select>
           </div>
           <div class="field">
@@ -85,7 +94,7 @@
             <input id="pt-ext" type="text" formControlName="externalCode" maxlength="40" class="pt-ext" placeholder="e.g. pass_3day" autocomplete="off">
             <p class="pt-hint">The item code in the sales system's file, so Import from sales system finds this pass type. No spaces. Optional.</p>
           </div>
-          <ng-container *ngIf="passTypePanelForm.value.category === 'tent'">
+          <ng-container *ngIf="passTypePanelForm.value.category === 'stay_pass'">
             <div class="field">
               <label for="pt-code">Code</label>
               <input id="pt-code" type="text" formControlName="code" maxlength="4" class="pt-code" placeholder="e.g. SO">
@@ -170,6 +179,25 @@
           <label>Intro paragraph</label>
           <textarea formControlName="emailIntro" rows="4" maxlength="2000" [placeholder]="defaultEmailIntro"></textarea>
           <span class="field-error" *ngIf="editForm.get('emailIntro')?.hasError('maxlength')">2000 characters at most</span>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-lbl">Early Check-In email</div>
+        <p class="field-hint" style="margin-top: 0;">
+          Wording of the email with the link to fill in Festival Pass details. Leave empty to use the default shown in grey.
+          The same {{ "{words}" }} work here. The button, the link and its end date are added for you.
+        </p>
+
+        <div class="field">
+          <label for="ecSubject">Subject</label>
+          <input id="ecSubject" type="text" formControlName="checkinSubject" maxlength="200" [placeholder]="defaultCheckinSubject">
+          <span class="field-error" *ngIf="editForm.get('checkinSubject')?.hasError('maxlength')">200 characters at most</span>
+        </div>
+
+        <div class="field">
+          <label for="ecIntro">Intro paragraph</label>
+          <textarea id="ecIntro" formControlName="checkinIntro" rows="4" maxlength="2000" [placeholder]="defaultCheckinIntro"></textarea>
+          <span class="field-error" *ngIf="editForm.get('checkinIntro')?.hasError('maxlength')">2000 characters at most</span>
         </div>
 
         <div class="form-actions">

@@ -7,7 +7,7 @@ import { environment } from 'src/environments/environment.development';
 import { AuthService } from './auth.service';
 import {
   CustomEmailContent, EmailBatch, EmailConfig, EmailLogEntry, EmailLogPage, EmailLogQuery,
-  EmailPreview, TicketEmailMode
+  EmailPreview, TicketEmailMode, CheckinEmailMode
 } from '../models/email.model';
 
 /**
@@ -15,6 +15,9 @@ import {
  * The server decides who may send (DEV/DIR/ADMIN or a Box Office TL); the UI
  * just reads `canSend` from the config to show or hide the email actions.
  */
+/** Which email a preview / test copy is for. */
+export type EmailKind = 'ticket' | 'custom' | 'checkin';
+
 @Injectable({ providedIn: 'root' })
 export class EmailService {
 
@@ -53,13 +56,19 @@ export class EmailService {
       .pipe(tap(() => this.clearConfig()));
   }
 
-  /** One test copy to the signed-in user's own address. */
-  sendTest(kind: 'ticket' | 'custom', ticketId: string, content?: CustomEmailContent): Observable<{ to: string }> {
+  /** Early Check-In (EC2): one-time link to fill in Festival Pass details, working `days` days. */
+  sendCheckinEmails(ticketIds: string[], days: number, mode: CheckinEmailMode, testRecipient?: string): Observable<EmailBatch> {
+    return this.http.post<EmailBatch>(`${this.url}/emails/checkin`, { ticketIds, days, mode, testRecipient })
+      .pipe(tap(() => this.clearConfig()));
+  }
+
+  /** One test copy to the signed-in user's own address. `extra`: custom content, or { days } for 'checkin'. */
+  sendTest(kind: EmailKind, ticketId: string, content?: CustomEmailContent | { days: number }): Observable<{ to: string }> {
     return this.http.post<{ to: string }>(`${this.url}/emails/test`, { kind, ticketId, ...(content || {}) })
       .pipe(tap(() => this.clearConfig()));
   }
 
-  preview(kind: 'ticket' | 'custom', ticketId: string, content?: CustomEmailContent): Observable<EmailPreview> {
+  preview(kind: EmailKind, ticketId: string, content?: CustomEmailContent | { days: number }): Observable<EmailPreview> {
     return this.http.post<EmailPreview>(`${this.url}/emails/preview`, { kind, ticketId, ...(content || {}) });
   }
 
@@ -94,6 +103,10 @@ export class EmailService {
 
   canSendCustom(): Observable<boolean> {
     return this.getConfig().pipe(map(c => !!c.canSendCustom));
+  }
+
+  canSendCheckin(): Observable<boolean> {
+    return this.getConfig().pipe(map(c => !!c.canSendCheckin));
   }
 
   canViewReport(): Observable<boolean> {

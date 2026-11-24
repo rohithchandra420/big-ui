@@ -1,0 +1,202 @@
+<app-slide-panel [open]="open" icon="sync" title="Sales system"
+                 [subtitle]="eventName" (closed)="close()">
+  <div class="xi">
+
+    <div class="xi-wait" *ngIf="loading && !status">
+      <mat-icon class="xi-spin">progress_activity</mat-icon> Loading…
+    </div>
+
+    <ng-container *ngIf="status as s">
+      <!-- Where the bookings go -->
+      <div class="ss-state" [class.ss-on]="s.on">
+        <mat-icon class="ss-state-ic">{{ s.on ? 'sync' : 'sync_disabled' }}</mat-icon>
+        <div class="ss-state-tx">
+          <div class="ss-state-t" *ngIf="s.on">New and changed bookings come into this event</div>
+          <div class="ss-state-t" *ngIf="!s.on">This event doesn't take sales system bookings</div>
+          <div class="ss-state-s" *ngIf="!s.on && s.syncEvent">They go into <strong>{{ s.syncEvent.name }}</strong>.</div>
+          <div class="ss-state-s" *ngIf="!s.on">A Director or Admin switches it on in Admin › Events.</div>
+        </div>
+      </div>
+
+      <div class="ss-facts">
+        <div class="ss-fact">
+          <span class="ss-dot" [class.ss-dot-on]="s.webhookReady"></span>
+          <span>Live updates {{ s.webhookReady ? 'set up' : 'not set up yet' }}</span>
+          <span class="ss-when" *ngIf="s.lastWebhookAt">· last {{ s.lastWebhookAt | date:'d MMM, HH:mm' }}</span>
+        </div>
+        <div class="ss-fact">
+          <span class="ss-dot" [class.ss-dot-on]="s.pullReady"></span>
+          <span>Pull {{ s.pullReady ? 'set up' : 'not set up yet' }}</span>
+          <span class="ss-when" *ngIf="s.lastPullAt">· last {{ s.lastPullAt | date:'d MMM, HH:mm' }}</span>
+        </div>
+        <!-- UAT-MASK: remove before Production -->
+        <div class="ss-fact ss-fact-ln ss-mask" *ngIf="s.masked">
+          <mat-icon class="ss-fact-ic">visibility_off</mat-icon>
+          <span class="ss-fact-tx">Test system: phones and emails of incoming bookings are replaced with dummies</span>
+        </div>
+      </div>
+
+      <!-- Waiting to be stored: always shown while not empty (user 2026-11-23) -->
+      <div class="xi-block xi-list xi-errs" *ngIf="s.pending">
+        <div class="xi-h"><mat-icon>schedule</mat-icon>{{ s.pending }} booking{{ s.pending === 1 ? '' : 's' }} waiting to be stored</div>
+        <p class="xi-hint">Tried again on the next pull. Missing pass types can be added below.</p>
+        <div class="ss-wait" *ngFor="let w of s.waiting; trackBy: trackWaiting">
+          <span class="mono">{{ w.reference }}</span>
+          <span class="ss-wait-r">· {{ waitingReason(w) }}</span>
+          <span class="ss-when">· {{ viaLabel(w.via) }}<ng-container *ngIf="w.at"> {{ w.at | date:'d MMM, HH:mm' }}</ng-container></span>
+        </div>
+        <p class="xi-hint" *ngIf="s.pending > s.waiting.length">and {{ s.pending - s.waiting.length }} more</p>
+      </div>
+
+      <div class="xi-wait" *ngIf="pulling">
+        <mat-icon class="xi-spin">progress_activity</mat-icon> Pulling from the sales system…
+      </div>
+
+      <div class="warn-banner ss-err" *ngIf="pullError" role="alert">{{ pullError }}</div>
+
+      <!-- What the pull did -->
+      <p class="xi-ok ss-none" *ngIf="report && !report.fetched && !report.errorCount">
+        <mat-icon>check_circle</mat-icon> Nothing new from the sales system.
+      </p>
+
+      <ng-container *ngIf="report as r">
+        <div class="xi-tiles" *ngIf="r.fetched || r.errorCount">
+          <div class="xi-tile xi-tile-go"><div class="xi-n">{{ r.created }}</div><div class="xi-l">New bookings</div></div>
+          <div class="xi-tile"><div class="xi-n">{{ r.updated }}</div><div class="xi-l">Changed</div></div>
+          <div class="xi-tile" [class.xi-tile-warn]="r.cancelled"><div class="xi-n">{{ r.cancelled }}</div><div class="xi-l">Cancelled</div></div>
+          <div class="xi-tile"><div class="xi-n">{{ r.skipped }}</div><div class="xi-l">No change</div></div>
+          <div class="xi-tile" [class.xi-tile-bad]="r.errorCount"><div class="xi-n">{{ r.errorCount }}</div><div class="xi-l">Not stored</div></div>
+        </div>
+        <p class="xi-meta" *ngIf="r.fetched">{{ r.fetched }} booking{{ r.fetched === 1 ? '' : 's' }} from the sales system</p>
+
+        <div class="xi-block xi-list" *ngIf="r.flagged.length">
+          <div class="xi-h"><mat-icon>flag</mat-icon>Bookings to check</div>
+          <p class="xi-hint">A change could not be done on its own (a pass in use, a stay upgraded). Open the booking to see what.</p>
+          <div class="xi-chips"><span class="xi-chip mono" *ngFor="let ref of r.flagged; trackBy: trackRef">{{ ref }}</span></div>
+        </div>
+
+        <div class="xi-block xi-list xi-errs" *ngIf="r.errors.length">
+          <div class="xi-h"><mat-icon>error</mat-icon>Not stored</div>
+          <div class="xi-err" *ngFor="let e of r.errors; trackBy: trackLog">
+            <div class="xi-err-hd"><span class="mono">{{ e.reference || 'No reference' }}</span></div>
+            <ul><li *ngFor="let m of e.messages">{{ m }}</li></ul>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Check & repair: closed until tapped (user 2026-11-23) -->
+      <div class="ss-rep">
+        <button type="button" class="ss-rep-hd" (click)="repairOpen = !repairOpen" [attr.aria-expanded]="repairOpen">
+          <mat-icon>build</mat-icon>
+          <span class="ss-rep-t">Check &amp; repair</span>
+          <mat-icon class="ss-rep-chev">{{ repairOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </button>
+        <div class="ss-rep-body" *ngIf="repairOpen">
+          <div class="ss-rep-row">
+            <div class="ss-rep-tx">
+              <div class="ss-rep-l">Check all bookings</div>
+              <div class="ss-rep-s">Compares every paid booking in the sales system with BiG and stores any that are missing.</div>
+            </div>
+            <button type="button" class="btn-ghost" [disabled]="!canPull" (click)="runCheck()">{{ checking ? 'Checking…' : 'Check' }}</button>
+          </div>
+
+          <div class="ss-cmp" *ngIf="check as c">
+            <div class="ss-cmp-row"><span>Sales system (paid)</span><strong>{{ c.salesPaid }}</strong></div>
+            <div class="ss-cmp-row"><span>In BiG (from the sales system)</span><strong>{{ c.inBig }}</strong></div>
+            <div class="ss-cmp-row" [class.ss-cmp-warn]="c.missing.length">
+              <span>Missing in BiG, now stored</span><strong>{{ c.created }}</strong>
+            </div>
+            <div class="xi-chips" *ngIf="c.missing.length"><span class="xi-chip mono" *ngFor="let ref of c.missing; trackBy: trackRef">{{ ref }}</span></div>
+            <div class="ss-cmp-row" *ngIf="c.updated"><span>Updated to the newer version</span><strong>{{ c.updated }}</strong></div>
+            <div class="ss-cmp-row" [class.ss-cmp-bad]="c.errorCount" *ngIf="c.errorCount"><span>Not stored (tried again on the next pull)</span><strong>{{ c.errorCount }}</strong></div>
+            <div class="ss-cmp-row" [class.ss-cmp-warn]="c.extraCount">
+              <span>In BiG but not paid in the sales system</span><strong>{{ c.extraCount }}</strong>
+            </div>
+            <div class="xi-chips" *ngIf="c.extraInBig.length"><span class="xi-chip mono" *ngFor="let ref of c.extraInBig; trackBy: trackRef">{{ ref }}</span></div>
+            <p class="xi-hint" *ngIf="c.extraCount">Fetch one of these below to see its status there (cancelled, or not theirs).</p>
+            <p class="xi-ok ss-none" *ngIf="!c.created && !c.extraCount && !c.errorCount"><mat-icon>check_circle</mat-icon> Everything matches.</p>
+          </div>
+
+          <div class="ss-rep-row ss-rep-fetch">
+            <div class="field ss-rep-in">
+              <label for="ss-ref">Fetch one booking</label>
+              <input id="ss-ref" type="text" maxlength="64" class="mono" placeholder="Booking ID, e.g. BIG7-A1B2C3"
+                     autocomplete="off" [(ngModel)]="fetchRef" (keydown.enter)="fetchOne()">
+            </div>
+            <button type="button" class="btn-ghost" [disabled]="!canFetch" (click)="fetchOne()">{{ fetching ? 'Fetching…' : 'Fetch' }}</button>
+          </div>
+          <div class="ss-fetched" *ngIf="fetched as f" [class.ss-cmp-bad]="f.result === 'error' || f.result === 'unknown'">
+            <span class="mono">{{ f.reference }}</span> {{ fetchText(f) }}.
+            <ul *ngIf="f.messages.length || f.flags.length"><li *ngFor="let m of f.messages">{{ m }}</li><li *ngFor="let m of f.flags">{{ m }}</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Missing pass types (from a pull, check or fetch): top roles create them here (pre-filled), others ask an admin -->
+        <div class="xi-block xi-miss" *ngIf="drafts.length">
+          <div class="xi-h"><mat-icon>confirmation_number</mat-icon>{{ drafts.length }} pass type{{ drafts.length === 1 ? '' : 's' }} not on this event yet</div>
+          <ng-container *ngIf="canCreatePassTypes; else askAdmin">
+            <p class="xi-hint">Check each one. They are created on this event, then the pull runs again and stores those bookings.</p>
+            <div class="xi-pt" *ngFor="let d of drafts; let i = index; trackBy: trackDraft">
+              <div class="xi-pt-code mono" *ngIf="d.externalCode">{{ d.externalCode }}</div>
+              <div class="xi-pt-fields">
+                <div class="field xi-pt-name">
+                  <label [for]="'ss-name-' + i">Name</label>
+                  <input [id]="'ss-name-' + i" type="text" maxlength="60" [(ngModel)]="d.name">
+                </div>
+                <div class="field xi-pt-cat">
+                  <label>Category</label>
+                  <app-select [(ngModel)]="d.category" [attr.aria-label]="'Category for ' + d.name">
+                    <app-option *ngFor="let o of categoryOptions; trackBy: trackCategory" [value]="o.value">{{ o.label }}</app-option>
+                  </app-select>
+                </div>
+                <div class="field xi-pt-beds" *ngIf="d.category === 'stay_pass'">
+                  <label [for]="'ss-beds-' + i">Beds per pass</label>
+                  <input [id]="'ss-beds-' + i" type="number" min="1" [max]="maxBeds" [ngModel]="d.beds" (ngModelChange)="setBeds(d, $event)">
+                </div>
+              </div>
+              <div class="xi-rows">{{ d.bookings }} booking{{ d.bookings === 1 ? '' : 's' }}</div>
+            </div>
+            <div class="ss-create">
+              <button type="button" class="btn-cta" [disabled]="!draftsValid || busy" (click)="createAndPull()">{{ createLabel }}</button>
+            </div>
+          </ng-container>
+          <ng-template #askAdmin>
+            <div class="xi-pt" *ngFor="let d of drafts; trackBy: trackDraft">
+              <div class="xi-pt-line"><strong>{{ d.name }}</strong><span class="mono" *ngIf="d.externalCode"> · {{ d.externalCode }}</span></div>
+              <div class="xi-rows">{{ d.bookings }} booking{{ d.bookings === 1 ? '' : 's' }}</div>
+            </div>
+            <p class="xi-hint xi-ask">Ask an admin to add these in Admin › Events (with the sales system code). Those bookings are stored on the next pull after that.</p>
+          </ng-template>
+        </div>
+
+      <!-- Latest webhook calls / pulls -->
+      <div class="xi-block" *ngIf="s.logs.length">
+        <div class="xi-h ss-act-h"><mat-icon>history</mat-icon><span class="ss-act-t">Latest activity</span>
+          <a class="ss-act-all" routerLink="/box-office/sales-sync-report" (click)="close()">Full report</a>
+        </div>
+        <div class="ss-log" *ngFor="let l of s.logs; trackBy: trackLog">
+          <mat-icon class="ss-log-ic">{{ l.via === 'pull' ? 'download' : 'bolt' }}</mat-icon>
+          <div class="ss-log-tx">
+            <div class="ss-log-t">{{ kindLabel(l) }} <span class="ss-when">{{ l.at | date:'d MMM, HH:mm' }}</span></div>
+            <div class="ss-log-s">{{ l.note || countsText(l.counts) }}</div>
+            <div class="ss-log-s ss-log-bad" *ngFor="let p of l.problems">
+              <span class="mono">{{ p.reference || '—' }}</span>: {{ p.messages.join('; ') }}
+            </div>
+            <div class="ss-log-s ss-log-bad" *ngIf="l.unknownCodes.length && !l.problems.length">
+              Pass type{{ l.unknownCodes.length === 1 ? '' : 's' }} missing: <span class="mono">{{ l.unknownCodes.join(', ') }}</span>
+            </div>
+            <div class="ss-log-s" *ngIf="l.alert"><mat-icon class="ss-log-al">notifications</mat-icon>{{ alertText(l) }}</div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="xi-acts">
+      <button type="button" class="btn-ghost" (click)="close()">Close</button>
+      <button type="button" class="btn-cta" [disabled]="!canPull" (click)="pull()">
+        {{ pulling ? 'Pulling…' : 'Pull now' }}
+      </button>
+    </div>
+  </div>
+</app-slide-panel>

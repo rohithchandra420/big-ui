@@ -9,7 +9,9 @@ import { Ticket, TicketEmailStatus } from '../../models/ticket.model';
 import { BoxOfficeService } from '../box-office.service';
 import {
   isFestivalPass, isSpotRegistration, passSummary as buildPassSummary, bookingIdOf, paymentMethodLabel, bookingSourceLabel,
-  ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, TICKET_EMAIL_FILTER_OPTIONS
+  ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, TICKET_EMAIL_FILTER_OPTIONS,
+  festivalDetailsCount, festivalDetailsMissing, bedGroups, bedsMismatch, BedGroup,
+  earlyCheckinStatus, earlyCheckinLabel, earlyCheckinBadge, EARLY_CHECKIN_FILTER_OPTIONS, EarlyCheckinView
 } from '../box-office.utils';
 import { Shopcart } from '../../models/ticket.model';
 import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
@@ -21,9 +23,9 @@ import { EmailDialogsService } from '../email/email-dialogs.service';
 import { AttendeeListComponent } from '../attendee-list/attendee-list.component';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
 
-type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'payment' | 'paidAt' | 'source' | 'emailStatus' | 'admitted';
+type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'payment' | 'paidAt' | 'source' | 'emailStatus' | 'admitted' | 'details' | 'earlyCheckin' | 'beds';
 
-type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | null;
+type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | 'detailsMissing' | 'bedsMismatch' | null;
 
 @Component({
   selector: 'app-bookings',
@@ -40,6 +42,9 @@ export class BookingsComponent implements OnInit, OnDestroy {
   /** Ticket Email status dropdown; '' = all. Combines with the stat cards and search. */
   emailStatusFilter: TicketEmailStatus | '' = '';
   readonly emailStatusOptions = TICKET_EMAIL_FILTER_OPTIONS;
+  /** Early Check-In status dropdown (EC2); '' = all. */
+  checkinStatusFilter: EarlyCheckinView | '' = '';
+  readonly checkinStatusOptions = EARLY_CHECKIN_FILTER_OPTIONS;
 
   selectedIds = new Set<string>();
 
@@ -56,11 +61,15 @@ export class BookingsComponent implements OnInit, OnDestroy {
   editingTicket = false;
   /** External Booking Import panel (I2). */
   importOpen = false;
+  /** Sales system panel: status + Pull now (I4). */
+  syncOpen = false;
 
   /** Email epic — DEV/DIR/ADMIN or a Box Office TL (decided server-side). */
   canSendEmail$!: Observable<boolean>;
   canSendTicket$!: Observable<boolean>;
   canSendCustom$!: Observable<boolean>;
+  /** Early Check-In (EC2): DEV/DIR/ADMIN or a Box Office TL. */
+  canSendCheckin$!: Observable<boolean>;
   private subs: Subscription[] = [];
 
   constructor(
@@ -92,6 +101,7 @@ export class BookingsComponent implements OnInit, OnDestroy {
     this.canSendEmail$ = this.emailService.canSend();
     this.canSendTicket$ = this.emailService.canSendTicket();
     this.canSendCustom$ = this.emailService.canSendCustom();
+    this.canSendCheckin$ = this.emailService.canSendCheckin();
     // A background email send finished — pick up the new Ticket Email statuses.
     this.subs.push(this.emailTracker.finished$.subscribe(() => this.loadBookings()));
   }
@@ -256,6 +266,31 @@ export class BookingsComponent implements OnInit, OnDestroy {
     this.emailDialogs.openCustomEmail(tickets).subscribe();
   }
 
+  sendCheckinEmails() {
+    const tickets = this.selectedBookings();
+    if (!tickets.length) return;
+    this.emailDialogs.openCheckinEmail(tickets).subscribe(batch => {
+      if (batch) this.loadBookings();
+    });
+  }
+
+  // ── Early Check-In EC2: email status ──
+
+  checkinStatusLabel(booking: Ticket): string {
+    return earlyCheckinLabel(earlyCheckinStatus(booking));
+  }
+
+  checkinStatusBadge(booking: Ticket): string {
+    return earlyCheckinBadge(earlyCheckinStatus(booking));
+  }
+
+  /** Why the last send failed or was skipped (hover + panel). */
+  checkinStatusHint(booking: Ticket): string {
+    const status = earlyCheckinStatus(booking);
+    if (status === 'failed' || status === 'no_email') return booking.earlyCheckin?.error || '';
+    return '';
+  }
+
   /** A single-booking send started from the detail panel. */
   onPanelEmailStarted() {
     this.loadBookings();
@@ -263,6 +298,80 @@ export class BookingsComponent implements OnInit, OnDestroy {
 
   get spotRegistrationCount(): number {
     return this.bookings.filter(b => isSpotRegistration(b)).length;
+  }
+
+  // ── Early Check-In EC1: Festival Pass details ──
+
+  /** "2 / 4", or "—" when the booking has no Festival Pass. */
+  festivalDetailsText(booking: Ticket): string {
+    const c = festivalDetailsCount(booking);
+    return c.total ? `${c.filled} / ${c.total}` : '—';
+  }
+
+  /** Green when every Festival Pass is filled, amber when not. */
+  festivalDetailsBadge(booking: Ticket): string {
+    return festivalDetailsMissing(booking) ? 'ba' : 'bg';
+  }
+
+  /** Bookings with at least one Festival Pass missing a detail. */
+  get detailsMissingCount(): number {
+    return this.bookings.filter(b => festivalDetailsMissing(b)).length;
+  }
+
+  // ── Beds vs people (2026-11-24): a booking and its linked bookings together ──
+
+  private groupsOf: Ticket[] | null = null;
+  private groupsCache = new Map<string, BedGroup>();
+
+  /** People + beds of the booking's group (it and every linked booking). Worked
+   *  out once per loaded list: a new list (load, refresh) is a new array. */
+  bedGroup(booking: Ticket): BedGroup | undefined {
+    if (this.groupsOf !== this.bookings) {
+      this.groupsCache = bedGroups(this.bookings);
+      this.groupsOf = this.bookings;
+    }
+    return this.groupsCache.get(booking._id);
+  }
+
+  bedsMismatch(booking: Ticket): boolean {
+    return bedsMismatch(this.bedGroup(booking));
+  }
+
+  /** "4 people · 3 beds", or "—" for a group with no pass at all. */
+  bedsText(booking: Ticket): string {
+    const g = this.bedGroup(booking);
+    if (!g || (!g.people && !g.beds)) return '—';
+    return `${g.people} ${g.people === 1 ? 'person' : 'people'} · ${g.beds} ${g.beds === 1 ? 'bed' : 'beds'}`;
+  }
+
+  /** Amber when they differ, green when they match. */
+  bedsBadge(booking: Ticket): string {
+    return this.bedsMismatch(booking) ? 'ba' : 'bg';
+  }
+
+  /** The group has more than this booking, or a link to a booking not in BiG yet. */
+  bedsLinked(booking: Ticket): boolean {
+    const g = this.bedGroup(booking);
+    return !!g && (g.bookingIds.length > 1 || g.missingRefs.length > 0);
+  }
+
+  /** Hover / panel text: what the totals are made of. */
+  bedsHint(booking: Ticket): string {
+    const g = this.bedGroup(booking);
+    if (!g) return '';
+    const parts: string[] = [];
+    const own = bookingIdOf(booking);
+    const others = g.bookingIds.filter(id => id !== own);
+    if (others.length) parts.push(`With linked ${others.length === 1 ? 'booking' : 'bookings'} ${others.join(', ')}`);
+    if (g.missingRefs.length) parts.push(`Linked booking ${g.missingRefs.join(', ')} not in BiG yet`);
+    if (g.people > g.beds) parts.push(`${g.people - g.beds} more ${g.people - g.beds === 1 ? 'person' : 'people'} than beds`);
+    else if (g.beds > g.people) parts.push(`${g.beds - g.people} more ${g.beds - g.people === 1 ? 'bed' : 'beds'} than people`);
+    return parts.join(' · ');
+  }
+
+  /** Bookings whose group's people and beds differ. */
+  get bedsMismatchCount(): number {
+    return this.bookings.filter(b => this.bedsMismatch(b)).length;
   }
 
   /** B-003: column sort; a new sort starts again on the first page. */
@@ -278,7 +387,18 @@ export class BookingsComponent implements OnInit, OnDestroy {
     paidAt: b => (b.paidAt ? new Date(b.paidAt).getTime() : null),
     source: b => this.source(b),
     emailStatus: b => this.emailStatusLabel(b),
-    admitted: b => this.admittedCountFor(b)
+    admitted: b => this.admittedCountFor(b),
+    earlyCheckin: b => this.checkinStatusLabel(b),
+    // People minus beds: beds short first (descending puts them on top), no passes = empty.
+    beds: b => {
+      const g = this.bedGroup(b);
+      return g && (g.people || g.beds) ? g.people - g.beds : null;
+    },
+    // Share filled (0 = nothing filled, 1 = all); no Festival Pass sorts as empty.
+    details: b => {
+      const c = festivalDetailsCount(b);
+      return c.total ? c.filled / c.total : null;
+    }
   };
 
   get filteredBookings(): Ticket[] {
@@ -290,10 +410,17 @@ export class BookingsComponent implements OnInit, OnDestroy {
       result = result.filter(b => b.shopcart?.some(item => item.isAdmitted));
     } else if (this.activeFilter === 'spotRegistration') {
       result = result.filter(b => isSpotRegistration(b));
+    } else if (this.activeFilter === 'detailsMissing') {
+      result = result.filter(b => festivalDetailsMissing(b));
+    } else if (this.activeFilter === 'bedsMismatch') {
+      result = result.filter(b => this.bedsMismatch(b));
     }
 
     if (this.emailStatusFilter) {
       result = result.filter(b => ticketEmailStatus(b) === this.emailStatusFilter);
+    }
+    if (this.checkinStatusFilter) {
+      result = result.filter(b => earlyCheckinStatus(b) === this.checkinStatusFilter);
     }
 
     const term = this.searchTerm.trim().toLowerCase();
@@ -309,7 +436,11 @@ export class BookingsComponent implements OnInit, OnDestroy {
         // I6: payment method, source and the Paid at date ("10 nov")
         this.paymentMethod(b).toLowerCase().includes(term) ||
         this.source(b).toLowerCase().includes(term) ||
-        this.paidAtText(b).includes(term)
+        this.paidAtText(b).includes(term) ||
+        // EC1: "details missing" (or "details") finds bookings with a Festival Pass to fill
+        (term.length >= 7 && 'details missing'.includes(term) && festivalDetailsMissing(b)) ||
+        // "beds" (or "beds don't match") finds bookings whose people and beds differ
+        (term.length >= 4 && "beds don't match".includes(term) && this.bedsMismatch(b))
       );
     }
 

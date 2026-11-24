@@ -66,7 +66,7 @@ async function seed() {
   await Event.create({ name: "BiG 6.0", description: "Previous edition.", startDate: new Date("2026-01-16"), endDate: new Date("2026-01-18"), status: "archived", createdBy: dir._id });
   await Event.create({ name: "BiG Night 2.0", description: "One-night winter edition (planning).", startDate: new Date("2027-06-12"), endDate: new Date("2027-06-12"), status: "draft", createdBy: dir._id });
   const P = {};
-  for (const [name, category, code] of [["Festival Pass", "festival"], ["Day Pass", "festival"], ["Two-Person Tent", "tent", "TW"], ["Family Tent", "tent", "FA"], ["Parking", "addon"]])
+  for (const [name, category, code] of [["Festival Pass", "festival_pass"], ["Day Pass", "festival_pass"], ["Two-Person Tent", "stay_pass", "TW"], ["Family Tent", "stay_pass", "FA"], ["Parking", "addon_pass"]])
     P[name] = await PassType.create({ event: ev._id, name, category, ...(code ? { code } : {}) });
 
   const tents = {};
@@ -103,8 +103,8 @@ async function seed() {
       ids.push(sc._id); made.push({ it, sc });
     }
     // pair festival passes that have a tent with this booking's tent passes
-    const tentPasses = made.filter(m => m.sc.category === "tent");
-    for (const m of made.filter(m => m.sc.category === "festival" && m.it[4])) {
+    const tentPasses = made.filter(m => m.sc.category === "stay_pass");
+    for (const m of made.filter(m => m.sc.category === "festival_pass" && m.it[4])) {
       const tp = tentPasses.shift(); if (!tp) break;
       const tent = tents[m.it[4]];
       const slot = tent.occupants.findIndex(o => o === null);
@@ -123,7 +123,7 @@ async function seed() {
   // was replaced, so her band details show a history.
   let tag = 1000;
   const bandAt = (h) => new Date(Date.UTC(2026, 10, 3, 4, h));
-  for (const sc of await ShopCart.find({ event: ev._id, category: "festival", isAdmitted: true }).sort({ order_id: 1, _id: 1 })) {
+  for (const sc of await ShopCart.find({ event: ev._id, category: "festival_pass", isAdmitted: true }).sort({ order_id: 1, _id: 1 })) {
     if (sc.name === "Karan Shah") continue;
     const code = `BIG7:W${++tag}`;
     const band = await Band.create({ event: ev._id, code, raw: `https://wallet.example/pay?eventid=BIG7&tagid=W${tag}`,

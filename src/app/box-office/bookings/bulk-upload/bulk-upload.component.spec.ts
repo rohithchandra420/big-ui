@@ -13,7 +13,7 @@ import { EventDetail, EventItem } from '../../../models/event.model';
 const mockActiveEvent = { _id: 'evt1', name: 'Test Event', description: '', status: 'active' } as EventItem;
 const mockEventDetail: EventDetail = {
   ...mockActiveEvent,
-  passTypes: [{ _id: 'pt1', event: 'evt1', name: 'Festival Ticket', category: 'festival' }],
+  passTypes: [{ _id: 'pt1', event: 'evt1', name: 'Festival Ticket', category: 'festival_pass' }],
   tents: []
 };
 
@@ -221,21 +221,21 @@ describe('BulkUploadComponent', () => {
       component.preview = { rowCount: 2, orderIds: [1], itemNames: ['Shared Tent', 'Car/Caravan Pass'] };
       (component as any).recomputeUnknownPassNames();
 
-      expect(component.newPassTypeCategories['Shared Tent']).toBe('tent');
-      expect(component.newPassTypeCategories['Car/Caravan Pass']).toBe('festival');
+      expect(component.newPassTypeCategories['Shared Tent']).toBe('stay_pass');
+      expect(component.newPassTypeCategories['Car/Caravan Pass']).toBe('festival_pass');
     });
 
     it('upload() creates each unknown pass type before uploading, using the chosen categories', () => {
       component.selectedFile = new File(['data'], 'orders.xlsx');
       component.preview = { rowCount: 1, orderIds: [1], itemNames: ['Shared Tent'] };
       (component as any).recomputeUnknownPassNames();
-      component.newPassTypeCategories['Shared Tent'] = 'tent';
-      eventServiceSpy.createPassType.and.returnValue(of({ _id: 'pt2', event: 'evt1', name: 'Shared Tent', category: 'tent' }));
+      component.newPassTypeCategories['Shared Tent'] = 'stay_pass';
+      eventServiceSpy.createPassType.and.returnValue(of({ _id: 'pt2', event: 'evt1', name: 'Shared Tent', category: 'stay_pass' }));
       boxOfficeServiceSpy.uploadBoxOfficeExcel.and.returnValue(of({ message: 'Tickets created successfully', ticketCount: 1 }));
 
       component.upload();
 
-      expect(eventServiceSpy.createPassType).toHaveBeenCalledWith('evt1', { name: 'Shared Tent', category: 'tent', beds: 1 });
+      expect(eventServiceSpy.createPassType).toHaveBeenCalledWith('evt1', { name: 'Shared Tent', category: 'stay_pass', beds: 1 });
       expect(boxOfficeServiceSpy.uploadBoxOfficeExcel).toHaveBeenCalled();
       expect(dialogRefSpy.close).toHaveBeenCalledWith(1);
     });
@@ -279,13 +279,13 @@ describe('BulkUploadComponent', () => {
     it('sends the chosen beds for a tent pass type, and none for festival', () => {
       setUnknown(['Twin Tent (2 guests)', 'Day Pass']);
       component.setBeds('Twin Tent (2 guests)', 3);
-      eventServiceSpy.createPassType.and.returnValue(of({ _id: 'px', event: 'evt1', name: 'x', category: 'tent' }));
+      eventServiceSpy.createPassType.and.returnValue(of({ _id: 'px', event: 'evt1', name: 'x', category: 'stay_pass' }));
       boxOfficeServiceSpy.uploadBoxOfficeExcel.and.returnValue(of({ message: 'ok', ticketCount: 1 }));
 
       component.upload();
 
-      expect(eventServiceSpy.createPassType).toHaveBeenCalledWith('evt1', { name: 'Twin Tent (2 guests)', category: 'tent', beds: 3 });
-      expect(eventServiceSpy.createPassType).toHaveBeenCalledWith('evt1', { name: 'Day Pass', category: 'festival' });
+      expect(eventServiceSpy.createPassType).toHaveBeenCalledWith('evt1', { name: 'Twin Tent (2 guests)', category: 'stay_pass', beds: 3 });
+      expect(eventServiceSpy.createPassType).toHaveBeenCalledWith('evt1', { name: 'Day Pass', category: 'festival_pass' });
     });
 
     it('setBeds() keeps the value a whole number 1–20', () => {

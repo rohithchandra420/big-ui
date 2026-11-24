@@ -7,6 +7,7 @@ import { EventDetail, EventStatus, PassType, PassTypeCategory } from '../../../m
 import { ConfirmationService } from '../../../shared/confirm-dialog/confirmation.service';
 import { LocationService } from '../../../venue-map/location.service';
 import { AdminService } from '../../admin.service';
+import { FESTIVAL, STAY, ADDON, PASS_CATEGORY_LABELS } from '../../../core/pass-categories';
 
 
 /** Beds per pass from the form: a whole number 1–20 (1 when empty). */
@@ -25,7 +26,8 @@ export class EventDetailComponent implements OnInit {
   saving = false;
 
   readonly statuses: EventStatus[] = ['draft', 'active', 'archived'];
-  readonly categories: PassTypeCategory[] = ['festival', 'tent', 'addon'];
+  readonly categories: PassTypeCategory[] = [FESTIVAL, STAY, ADDON];
+  readonly categoryLabels = PASS_CATEGORY_LABELS;
 
   editForm = new FormGroup({
     name: new FormControl('', Validators.required),
@@ -35,16 +37,19 @@ export class EventDetailComponent implements OnInit {
     status: new FormControl<EventStatus>('draft'),
     // Email epic — this edition's Ticket Email wording (empty = default).
     emailSubject: new FormControl('', Validators.maxLength(200)),
-    emailIntro: new FormControl('', Validators.maxLength(2000))
+    emailIntro: new FormControl('', Validators.maxLength(2000)),
+    // Early Check-In EC2 — the email with the one-time link (empty = default).
+    checkinSubject: new FormControl('', Validators.maxLength(200)),
+    checkinIntro: new FormControl('', Validators.maxLength(2000))
   });
 
   // New pass type form, shown in the pass type slide panel (ui 1.69.0; was
-  // inline). `code` and `beds` are only meaningful for category 'tent' (see
+  // inline). `code` and `beds` are only meaningful for category 'stay_pass' (see
   // ACCOMMODATION_CONTEXT.md decision #11) and only shown for it.
   addingPassType = false;
   passTypeForm = new FormGroup({
     name: new FormControl('', Validators.required),
-    category: new FormControl<PassTypeCategory>('festival', Validators.required),
+    category: new FormControl<PassTypeCategory>(FESTIVAL, Validators.required),
     code: new FormControl('', Validators.maxLength(4)),
     beds: new FormControl<number>(1, [Validators.min(1), Validators.max(20)]),
     // External Booking Import (I1): the sales system's item_code; any category.
@@ -57,7 +62,7 @@ export class EventDetailComponent implements OnInit {
   private editingPassType: PassType | null = null;
   editPassTypeForm = new FormGroup({
     name: new FormControl('', Validators.required),
-    category: new FormControl<PassTypeCategory>('festival', Validators.required),
+    category: new FormControl<PassTypeCategory>(FESTIVAL, Validators.required),
     code: new FormControl('', Validators.maxLength(4)),
     beds: new FormControl<number>(1, [Validators.min(1), Validators.max(20)]),
     // External Booking Import (I1): the sales system's item_code; any category.
@@ -125,6 +130,43 @@ export class EventDetailComponent implements OnInit {
     this.router.navigate(['/venue-map'], { queryParams: { draw: 'boundary' } });
   }
 
+  // ── Sales system switch (I3 / I4): one event at a time, top roles ──
+  savingSync = false;
+
+  /** Asks first; switching on here switches it off on the other event (the server does that). */
+  toggleSalesSync() {
+    if (!this.detail || this.savingSync) return;
+    const turnOn = !this.detail.salesSync;
+    const current = turnOn ? this.eventService.events.value.find(e => e.salesSync && e._id !== this.detail!._id) : undefined;
+    this.confirmationService.confirm(turnOn ? {
+      title: 'Take sales system bookings into this event?',
+      message: current
+        ? `New and changed bookings from the sales system will come into "${this.detail.name}" instead of "${current.name}".`
+        : `New and changed bookings from the sales system will come into "${this.detail.name}".`,
+      confirmText: 'Switch on'
+    } : {
+      title: 'Stop sales system bookings?',
+      message: `Bookings from the sales system will not be stored anywhere until another event is switched on. Bookings already here stay.`,
+      confirmText: 'Switch off',
+      danger: true
+    }).subscribe(ok => {
+      if (!ok || !this.detail) return;
+      this.savingSync = true;
+      this.eventService.updateEvent(this.detail._id, { salesSync: turnOn }).subscribe({
+        next: () => {
+          this.savingSync = false;
+          this.detail!.salesSync = turnOn;
+          this.notificationService.openSucessSnackBar(turnOn ? 'Sales system switched on for this event' : 'Sales system switched off');
+          this.eventService.loadEvents();
+        },
+        error: (err) => {
+          this.savingSync = false;
+          this.notificationService.openErrorSnackBar(err?.error?.message || 'Could not change the sales system switch');
+        }
+      });
+    });
+  }
+
   enterEditMode() {
     if (!this.detail) return;
     this.editForm.setValue({
@@ -134,7 +176,9 @@ export class EventDetailComponent implements OnInit {
       endDate: this.detail.endDate ? this.detail.endDate.substring(0, 10) : '',
       status: this.detail.status,
       emailSubject: this.detail.ticketEmail?.subject || '',
-      emailIntro: this.detail.ticketEmail?.intro || ''
+      emailIntro: this.detail.ticketEmail?.intro || '',
+      checkinSubject: this.detail.checkinEmail?.subject || '',
+      checkinIntro: this.detail.checkinEmail?.intro || ''
     });
     this.editMode = true;
   }
@@ -150,6 +194,21 @@ export class EventDetailComponent implements OnInit {
     const name = this.editForm.value.name || this.detail?.name || 'the festival';
     return `Here are your tickets to ${name}! We're thrilled to have you join us and to welcome you to the BiG community. `
       + 'If you have any questions, feel free to reach out. Enjoy the festival!';
+  }
+
+  get defaultCheckinSubject(): string {
+    const name = this.editForm.value.name || this.detail?.name || 'Bloom in Green';
+    return `${name}: fill in your festival details`;
+  }
+
+  get defaultCheckinIntro(): string {
+    const name = this.editForm.value.name || this.detail?.name || 'the festival';
+    return `Help us get you through the gate faster at ${name}! `
+      + 'Please fill in the details for everyone on your booking before you arrive.';
+  }
+
+  get hasCustomCheckinWording(): boolean {
+    return !!(this.detail?.checkinEmail?.subject || this.detail?.checkinEmail?.intro);
   }
 
   get hasCustomEmailWording(): boolean {
@@ -179,14 +238,15 @@ export class EventDetailComponent implements OnInit {
   private doSave() {
     if (!this.detail || this.saving) return;
     this.saving = true;
-    const { name, description, startDate, endDate, status, emailSubject, emailIntro } = this.editForm.value;
+    const { name, description, startDate, endDate, status, emailSubject, emailIntro, checkinSubject, checkinIntro } = this.editForm.value;
     this.eventService.updateEvent(this.detail._id, {
       name: name!.trim(),
       description: description || '',
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       status: status || undefined,
-      ticketEmail: { subject: (emailSubject || '').trim(), intro: (emailIntro || '').trim() }
+      ticketEmail: { subject: (emailSubject || '').trim(), intro: (emailIntro || '').trim() },
+      checkinEmail: { subject: (checkinSubject || '').trim(), intro: (checkinIntro || '').trim() }
     }).subscribe({
       next: () => {
         this.saving = false;
@@ -254,7 +314,7 @@ export class EventDetailComponent implements OnInit {
 
   startAddPassType() {
     this.cancelEditPassType();
-    this.passTypeForm.reset({ name: '', category: 'festival', code: '', beds: 1, externalCode: '' });
+    this.passTypeForm.reset({ name: '', category: FESTIVAL, code: '', beds: 1, externalCode: '' });
     this.addingPassType = true;
   }
 
@@ -266,7 +326,7 @@ export class EventDetailComponent implements OnInit {
     if (!this.detail || this.passTypeForm.invalid || this.savingPassType) return;
     this.savingPassType = true;
     const { name, category, code, beds, externalCode } = this.passTypeForm.value;
-    this.eventService.createPassType(this.detail._id, { name: name!.trim(), category: category!, code: code?.trim() || undefined, ...(externalCode?.trim() ? { externalCode: externalCode.trim() } : {}), ...(category === 'tent' ? { beds: bedsOf(beds) } : {}) }).subscribe({
+    this.eventService.createPassType(this.detail._id, { name: name!.trim(), category: category!, code: code?.trim() || undefined, ...(externalCode?.trim() ? { externalCode: externalCode.trim() } : {}), ...(category === STAY ? { beds: bedsOf(beds) } : {}) }).subscribe({
       next: () => {
         this.savingPassType = false;
         this.addingPassType = false;
@@ -296,7 +356,7 @@ export class EventDetailComponent implements OnInit {
     if (!this.detail || this.editPassTypeForm.invalid || this.savingPassType) return;
     this.savingPassType = true;
     const { name, category, code, beds, externalCode } = this.editPassTypeForm.value;
-    this.eventService.updatePassType(this.detail._id, pt._id, { name: name!.trim(), category: category!, code: code?.trim() || '', externalCode: externalCode?.trim() || '', ...(category === 'tent' ? { beds: bedsOf(beds) } : {}) }).subscribe({
+    this.eventService.updatePassType(this.detail._id, pt._id, { name: name!.trim(), category: category!, code: code?.trim() || '', externalCode: externalCode?.trim() || '', ...(category === STAY ? { beds: bedsOf(beds) } : {}) }).subscribe({
       next: () => {
         this.savingPassType = false;
         this.cancelEditPassType();

@@ -1,3 +1,7 @@
+<!-- Early Check-In form (EC3): nothing else of the page -->
+<pub-checkin *ngIf="checkin" [token]="checkinToken"></pub-checkin>
+
+<ng-container *ngIf="!checkin">
 <!-- Can't reach the server and nothing saved on this phone yet -->
 <div class="full" *ngIf="unreachable && !event && !off">
   <div class="logo big">BiG</div>
@@ -122,4 +126,5 @@
       <span class="ms">{{ v.icon }}</span>{{ v.label | t }}<span class="count" *ngIf="v.key === 'plan' && planCount">{{ planCount }}</span>
     </button>
   </nav>
+</ng-container>
 </ng-container>

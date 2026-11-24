@@ -9,6 +9,7 @@ import { EventService } from '../../../core/event.service';
 import { PassTypeCategory } from '../../../models/event.model';
 import { AuthService } from '../../../core/auth.service';
 import { TOP_ROLES } from '../../../core/reported-access';
+import { FESTIVAL, STAY, ADDON, PASS_CATEGORY_LABELS } from '../../../core/pass-categories';
 
 interface FilePreview {
   rowCount: number;
@@ -16,7 +17,7 @@ interface FilePreview {
   itemNames: string[];
 }
 
-const CATEGORIES: PassTypeCategory[] = ['festival', 'tent', 'addon'];
+const CATEGORIES: PassTypeCategory[] = [FESTIVAL, STAY, ADDON];
 
 /** Highest "Beds per pass" a pass type may have (same as the server). */
 export const MAX_BEDS = 20;
@@ -84,6 +85,7 @@ export class BulkUploadComponent implements OnInit {
   duplicateOrderIds: number[] = [];
 
   readonly categories = CATEGORIES;
+  readonly categoryLabels = PASS_CATEGORY_LABELS;
   private existingPassTypeNames: Set<string> | null = null;
   unknownPassNames: string[] = [];
   newPassTypeCategories: { [name: string]: PassTypeCategory } = {};
@@ -141,7 +143,7 @@ export class BulkUploadComponent implements OnInit {
     this.newPassTypeCategories = {};
     this.newPassTypeBeds = {};
     this.unknownPassNames.forEach(name => {
-      this.newPassTypeCategories[name] = /tent/i.test(name) ? 'tent' : 'festival';
+      this.newPassTypeCategories[name] = /tent/i.test(name) ? STAY : FESTIVAL;
       this.newPassTypeBeds[name] = bedsFromName(name);
     });
   }
@@ -257,7 +259,7 @@ export class BulkUploadComponent implements OnInit {
           this.eventService.createPassType(activeEvent._id, {
             name,
             category: this.newPassTypeCategories[name],
-            ...(this.newPassTypeCategories[name] === 'tent' ? { beds: this.newPassTypeBeds[name] || 1 } : {})
+            ...(this.newPassTypeCategories[name] === STAY ? { beds: this.newPassTypeBeds[name] || 1 } : {})
           })
         )
       ).pipe(

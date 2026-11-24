@@ -15,6 +15,9 @@ describe('venue-map utils', () => {
 
   it('guesses a type from a place name', () => {
     expect(guessType('Water Station 4')).toBe('water');
+    expect(guessType('Help Desk North')).toBe('helpdesk');
+    expect(guessType('Helpdesk 2')).toBe('helpdesk');
+    expect(guessType('Information Desk')).toBe('helpdesk');
     expect(guessType('Crew Mess')).toBe('other');            // the Mess Hall is an area now
     expect(guessType('Workshop Hall C')).toBe('other');     // workshops / medical are areas now
     expect(guessType('First Aid Point 2')).toBe('other');

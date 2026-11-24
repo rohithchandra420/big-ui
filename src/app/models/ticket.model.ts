@@ -1,5 +1,6 @@
 export type Gender = 'Male' | 'Female' | 'Prefer not to say';
-export type PassCategory = 'festival' | 'tent' | 'addon';
+export type { PassCategory } from '../core/pass-categories';
+import { PassCategory } from '../core/pass-categories';
 /** Payment method of an imported booking (External Booking Import). */
 export type TicketKind = 'online' | 'offline' | 'guest_list';
 
@@ -66,6 +67,18 @@ export interface TicketEmail {
     error?: string | null;
 }
 
+/** Early Check-In email (EC2, EARLY_CHECKIN_CONTEXT.md). "Expired" is not
+ *  stored: it is 'sent' with expiresAt passed (see earlyCheckinStatus()). */
+export type EarlyCheckinStatus = 'not_sent' | 'sending' | 'sent' | 'failed' | 'no_email' | 'submitted';
+
+export interface EarlyCheckin {
+    status: EarlyCheckinStatus;
+    sentAt?: string | null;
+    expiresAt?: string | null;
+    submittedAt?: string | null;
+    error?: string | null;
+}
+
 export class Ticket {
     public order_id: number;
     public first_name: string;
@@ -74,6 +87,7 @@ export class Ticket {
     public phone_no: string;
     public transaction_id: string;
     public ticketEmail: TicketEmail;
+    public earlyCheckin?: EarlyCheckin;
     public totalPrice: number;
     public shopcart?: Shopcart[];
     public _id?: string;
@@ -89,6 +103,11 @@ export class Ticket {
     public linkedReferences?: string[];
     public sourceUpdatedAt?: string | null;
     public source?: 'external' | null;
+    // Sales system sync (I3 / I4)
+    public bookingStatus?: 'paid' | 'cancelled' | null;
+    public cancelledAt?: string | null;
+    /** What an update / cancel from the sales system left for staff to check. */
+    public syncFlags?: { message: string; at: string }[];
 
 
    constructor(order_id: number, first_name: string, last_name: string, email: string, phone_no:string, transaction_id: string,

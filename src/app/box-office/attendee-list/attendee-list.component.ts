@@ -10,6 +10,7 @@ import { NotificationService } from '../../core/notification.service';
 import { AuthService } from '../../core/auth.service';
 import { hasExtraBed, isFestivalPass, isTentPass as isTentPassItem, passDisplayName } from '../box-office.utils';
 import { GateFeedbackService } from '../../core/gate-feedback.service';
+import { FESTIVAL, STAY, ADDON } from '../../core/pass-categories';
 import {
   BandPurpose, BandScanResult, BoxOfficeQrscannerPopupComponent, QrScannerData
 } from '../registration/qrscanner-popup/qrscanner-popup.component';
@@ -24,9 +25,9 @@ import {
 export interface PassKind { label: string; icon: string; cls: string; }
 
 const PASS_KINDS: { [category: string]: PassKind } = {
-  festival: { label: 'Festival Pass', icon: 'confirmation_number', cls: 'pk-festival' },
-  tent: { label: 'Tent Pass', icon: 'hotel', cls: 'pk-tent' },
-  addon: { label: 'Add-on', icon: 'add_circle', cls: 'pk-addon' },
+  [FESTIVAL]: { label: 'Festival Pass', icon: 'confirmation_number', cls: 'pk-festival' },
+  [STAY]: { label: 'Stay Pass', icon: 'hotel', cls: 'pk-tent' },
+  [ADDON]: { label: 'Add-on', icon: 'add_circle', cls: 'pk-addon' },
 };
 
 @Component({
@@ -174,8 +175,8 @@ export class AttendeeListComponent implements OnChanges {
   }
 
   passKind(item: Shopcart): PassKind {
-    const cat = item.category || (isFestivalPass(item) ? 'festival' : 'tent');
-    return PASS_KINDS[cat] || PASS_KINDS['tent'];
+    const cat = item.category || (isFestivalPass(item) ? FESTIVAL : STAY);
+    return PASS_KINDS[cat] || PASS_KINDS[STAY];
   }
 
   attendeeInitials(item: Shopcart): string {

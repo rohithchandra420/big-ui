@@ -1,0 +1,131 @@
+<div class="ci">
+  <!-- Header: always the same, whatever the state -->
+  <header class="ci-hero">
+    <div class="ci-wrap ci-top">
+      <div class="logo">BiG</div>
+      <div class="ci-brand"><b>{{ 'brand.name' | t }}</b><span>{{ 'ci.kicker' | t }}</span></div>
+    </div>
+    <div class="ci-wrap" *ngIf="page && phase !== 'problem'">
+      <h1>{{ 'ci.title' | t }} <span class="script">{{ 'ci.titleWord' | t }}</span></h1>
+      <div class="ci-tags">
+        <span><span class="ms">festival</span>{{ page.event.name }}</span>
+        <span *ngIf="datesLabel"><span class="ms">calendar_month</span>{{ datesLabel }}</span>
+        <span *ngIf="page.booking"><span class="ms">confirmation_number</span>{{ 'ci.booking' | t: { ref: page.booking } }}</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="ci-wrap ci-main">
+    <!-- Loading -->
+    <div class="ci-state" *ngIf="phase === 'loading'" aria-live="polite">
+      <span class="ms ci-spin">progress_activity</span>
+      <p>{{ 'ci.loading' | t }}</p>
+    </div>
+
+    <!-- Can't show the form -->
+    <div class="ci-state" *ngIf="phase === 'problem'" role="alert">
+      <span class="ms ci-big" [class.ok]="problem === 'used'">{{ problemView.icon }}</span>
+      <h2>{{ problemView.title | t }}</h2>
+      <p>{{ problemView.text | t }}</p>
+      <button *ngIf="problem === 'offline' || problem === 'busy' || problem === 'error'" class="ci-cta" type="button" (click)="load()">
+        <span class="ms">refresh</span>{{ 'ci.retry' | t }}
+      </button>
+    </div>
+
+    <!-- Sent -->
+    <div class="ci-state" *ngIf="phase === 'done'" role="status">
+      <span class="ms fill ci-big ok">check_circle</span>
+      <h2>{{ 'ci.done.title' | t }}</h2>
+      <p>{{ 'ci.done.text' | t: { n: doneCount } }}</p>
+      <p class="ci-soft">{{ 'ci.done.after' | t }}</p>
+    </div>
+
+    <!-- The form -->
+    <ng-container *ngIf="page && phase === 'form'">
+      <div class="ci-intro">
+        <p>{{ 'ci.intro' | t: { n: drafts.length } }}</p>
+        <div class="ci-once"><span class="ms">schedule</span>{{ 'ci.until' | t: { date: dateLabel(page.expiresAt) } }}</div>
+      </div>
+
+      <div class="ci-progress" *ngIf="openDrafts.length">
+        <div class="ci-bar"><i [style.width.%]="readyCount / openDrafts.length * 100"></i></div>
+        <span>{{ 'ci.progress' | t: { done: readyCount, total: openDrafts.length } }}</span>
+      </div>
+
+      <section class="ci-pass" *ngFor="let d of drafts; let i = index; trackBy: trackDraft" [id]="'ci-pass-' + d.id"
+               [class.locked]="d.locked" [class.ready]="!d.locked && ready(d)">
+        <div class="ci-pass-head">
+          <span class="ci-num">{{ i + 1 }}</span>
+          <div class="ci-pass-title"><b>{{ 'ci.pass' | t: { n: i + 1 } }}</b><span>{{ d.passType }}</span></div>
+          <span class="ci-chip lock" *ngIf="d.locked"><span class="ms">lock</span>{{ 'ci.locked' | t }}</span>
+          <span class="ci-chip ok" *ngIf="!d.locked && ready(d)"><span class="ms">check</span>{{ 'ci.ready' | t }}</span>
+        </div>
+
+        <!-- Admitted: shown, not editable -->
+        <dl class="ci-ro" *ngIf="d.locked">
+          <ng-container *ngFor="let f of fields; trackBy: trackStr">
+            <dt>{{ fieldLabel(f) }}</dt><dd>{{ value(d, f) || '—' }}</dd>
+          </ng-container>
+          <p class="ci-soft">{{ 'ci.lockedText' | t }}</p>
+        </dl>
+
+        <div class="ci-fields" *ngIf="!d.locked">
+          <ng-container *ngFor="let f of fields; trackBy: trackStr">
+            <!-- Gender: choice tiles -->
+            <div class="ci-field wide" *ngIf="f === 'gender'" role="radiogroup" [attr.aria-label]="fieldLabel(f)">
+              <span class="ci-label">{{ fieldLabel(f) }}</span>
+              <div class="ci-tiles">
+                <button type="button" *ngFor="let g of genders; trackBy: trackStr" class="ci-tile" role="radio"
+                        [class.on]="d.gender === g" [attr.aria-checked]="d.gender === g" (click)="pickGender(d, g)">
+                  <span class="ms" [class.fill]="d.gender === g">{{ genderIcon(g) }}</span>{{ genderWord(g) }}
+                </button>
+              </div>
+              <small class="ci-err" *ngIf="error(d, f) as e">{{ e | t }}</small>
+            </div>
+            <!-- Text fields -->
+            <div class="ci-field" *ngIf="f !== 'gender'" [class.bad]="!!error(d, f)">
+              <label class="ci-label" [attr.for]="'ci-' + d.id + '-' + f">{{ fieldLabel(f) }}</label>
+              <input [id]="'ci-' + d.id + '-' + f" [type]="inputType(f)" [value]="value(d, f)"
+                     [attr.autocomplete]="autocomplete(f, i === 0)" [attr.inputmode]="f === 'phone_no' ? 'tel' : null"
+                     [attr.maxlength]="f === 'name' ? page.nameMax : f === 'email' ? 254 : 20"
+                     [attr.aria-invalid]="!!error(d, f)"
+                     (input)="setValue(d, f, $any($event.target).value)" (blur)="touch(d, f)">
+              <small class="ci-err" *ngIf="error(d, f) as e">{{ e | t: { min: page.nameMin, max: page.nameMax } }}</small>
+            </div>
+          </ng-container>
+        </div>
+      </section>
+
+      <div class="ci-send-error" *ngIf="sendError" role="alert"><span class="ms">error</span>{{ sendError }}</div>
+
+      <div class="ci-actions">
+        <button class="ci-cta" type="button" (click)="review()" [disabled]="!openDrafts.length">
+          {{ 'ci.continue' | t }}<span class="ms">arrow_forward</span>
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- Confirm before the one-time send -->
+    <ng-container *ngIf="page && (phase === 'review' || phase === 'sending')">
+      <div class="ci-review">
+        <h2>{{ 'ci.review.title' | t }}</h2>
+        <div class="ci-sum" *ngFor="let d of openDrafts; trackBy: trackDraft">
+          <b>{{ d.name }}</b>
+          <span>{{ d.phone_no }} · {{ d.email }} · {{ d.gender ? genderWord(d.gender) : '' }}</span>
+        </div>
+        <div class="ci-warn"><span class="ms">info</span>{{ 'ci.review.once' | t }}</div>
+        <div class="ci-actions two">
+          <button class="ci-ghost" type="button" (click)="back()" [disabled]="phase === 'sending'">
+            <span class="ms">edit</span>{{ 'ci.review.back' | t }}
+          </button>
+          <button class="ci-cta" type="button" (click)="send()" [disabled]="phase === 'sending'">
+            <span class="ms" [class.ci-spin]="phase === 'sending'">{{ phase === 'sending' ? 'progress_activity' : 'send' }}</span>
+            {{ (phase === 'sending' ? 'ci.review.sending' : 'ci.review.send') | t }}
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <footer class="ci-foot">{{ 'ci.foot' | t }}</footer>
+  </main>
+</div>

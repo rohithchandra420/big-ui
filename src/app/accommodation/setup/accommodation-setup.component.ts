@@ -43,6 +43,37 @@ export interface TentTypeSummary {
   fullMaleUnits: number;
   fullFemaleUnits: number;
   fullMixedUnits: number;
+  // Demand (2026-11-24): from the Stay Passes in the system, so the team
+  // knows how many units to set up. bedsSetUp = totalCapacity.
+  passCount: number;
+  bedsNeeded: number;
+  /** Beds still to set up: bedsNeeded - totalCapacity, never below 0. */
+  bedsShort: number;
+  /** Beds per unit used for the units estimate: the size most of this type's units have, else the pass type's beds per pass. */
+  unitCapacity: number;
+  /** About how many more units of unitCapacity beds cover bedsShort. */
+  unitsToSetUp: number;
+}
+
+/** Demand totals across every Stay Pass type, for the line above the cards. */
+export interface DemandTotals { passCount: number; bedsNeeded: number; bedsSetUp: number; bedsShort: number; }
+
+/** The capacity most of these units have (the larger one on a tie); null when there are none. */
+export function commonCapacity(tents: Tent[]): number | null {
+  const counts = new Map<number, number>();
+  for (const t of tents) if (t.capcity > 0) counts.set(t.capcity, (counts.get(t.capcity) || 0) + 1);
+  let best: number | null = null, bestN = 0;
+  counts.forEach((n, cap) => { if (n > bestN || (n === bestN && best !== null && cap > best)) { best = cap; bestN = n; } });
+  return best;
+}
+
+export function demandTotals(summaries: TentTypeSummary[]): DemandTotals {
+  return summaries.reduce((t, s) => ({
+    passCount: t.passCount + s.passCount,
+    bedsNeeded: t.bedsNeeded + s.bedsNeeded,
+    bedsSetUp: t.bedsSetUp + s.totalCapacity,
+    bedsShort: t.bedsShort + s.bedsShort
+  }), { passCount: 0, bedsNeeded: 0, bedsSetUp: 0, bedsShort: 0 });
 }
 
 // Enhancement (2026-08-20, ACCOMMODATION_CONTEXT.md follow-up #2, restructured
@@ -60,6 +91,8 @@ export function summarizeTentTypes(tents: Tent[], passTypes: PassType[]): TentTy
       whollyVacantUnits: 0, fullUnits: 0,
       partiallyFilledMaleUnits: 0, partiallyFilledFemaleUnits: 0, partiallyFilledMixedUnits: 0,
       fullMaleUnits: 0, fullFemaleUnits: 0, fullMixedUnits: 0,
+      passCount: pt.passCount || 0, bedsNeeded: pt.bedsNeeded || 0,
+      bedsShort: 0, unitCapacity: 1, unitsToSetUp: 0,
     };
 
     for (const tent of ptTents) {
@@ -91,6 +124,9 @@ export function summarizeTentTypes(tents: Tent[], passTypes: PassType[]): TentTy
       }
     }
     summary.vacantSlots = summary.totalCapacity - summary.occupiedSlots;
+    summary.bedsShort = Math.max(0, summary.bedsNeeded - summary.totalCapacity);
+    summary.unitCapacity = commonCapacity(ptTents) || pt.beds || 1;
+    summary.unitsToSetUp = Math.ceil(summary.bedsShort / summary.unitCapacity);
     return summary;
   });
 }
@@ -109,6 +145,8 @@ export class AccommodationSetupComponent implements OnInit, OnDestroy {
   tentPassTypes: PassType[] = [];
   lastCreated: Tent[] | null = null;
   summaries: TentTypeSummary[] = [];
+  /** Demand across every Stay Pass type (the line above the cards). */
+  totals: DemandTotals | null = null;
 
   form = new FormGroup({
     passTypeId: new FormControl('', Validators.required),
@@ -152,6 +190,7 @@ export class AccommodationSetupComponent implements OnInit, OnDestroy {
         this.noActiveEvent = true;
         this.tentPassTypes = [];
         this.summaries = [];
+        this.totals = null;
       }
     });
   }
@@ -184,7 +223,10 @@ export class AccommodationSetupComponent implements OnInit, OnDestroy {
    *  (summary is a nice-to-have alongside the create form, not blocking). */
   refreshSummary(eventId: string) {
     this.accomodationService.getAllTents(eventId).subscribe({
-      next: (tents) => { this.summaries = summarizeTentTypes(tents, this.tentPassTypes); },
+      next: (tents) => {
+        this.summaries = summarizeTentTypes(tents, this.tentPassTypes);
+        this.totals = demandTotals(this.summaries);
+      },
       error: () => { /* summary is best-effort display only */ }
     });
   }

@@ -1,8 +1,10 @@
 // Email epic (see EMAIL_CONTEXT.md) — shapes returned by big-api's /emails routes.
 
-export type EmailType = 'ticket' | 'custom' | 'test' | 'medical_report';
+export type EmailType = 'ticket' | 'custom' | 'test' | 'medical_report' | 'early_checkin';
 export type EmailLogStatus = 'queued' | 'sending' | 'sent' | 'failed' | 'skipped';
 export type TicketEmailMode = 'unsent' | 'all';
+/** Early Check-In (EC2): only bookings with a detail missing, or every booking with a Festival Pass. */
+export type CheckinEmailMode = 'missing' | 'all';
 /** What Brevo reported after sending (webhook). Null = nothing heard yet. */
 export type EmailDeliveryStatus = 'deferred' | 'delivered' | 'spam' | 'bounced' | 'blocked' | 'invalid' | 'error';
 
@@ -29,6 +31,8 @@ export interface EmailConfig {
   canSendTicket?: boolean;
   /** DEV/DIR/ADMIN only. */
   canSendCustom?: boolean;
+  /** Early Check-In email (EC2): DEV/DIR/ADMIN or a Box Office TL (not Box Office Manage alone). */
+  canSendCheckin?: boolean;
   /** Admin > Email Report — DEV/DIR/ADMIN only. */
   canViewReport?: boolean;
   /** Test mode: every email goes only to a tester address typed when sending. */
@@ -43,7 +47,7 @@ export interface EmailConfig {
 /** Progress of a background send. */
 export interface EmailBatch {
   id: string;
-  type: 'ticket' | 'custom';
+  type: 'ticket' | 'custom' | 'checkin';
   total: number;
   done: number;
   sent: number;

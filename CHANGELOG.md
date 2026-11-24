@@ -13,6 +13,66 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.80.0] - 2026-11-24
+
+### Added
+- Venue Map: a **Helpdesk** pin type (support agent icon). The KML import picks it for places named "Help desk" / "Information desk".
+- Participant page map: Helpdesk pins, roads (thick grey) and fences (thin dashed), with their legend chips (B-082).
+
+### Changed
+- Participant page Home, "Find your way": the four shortcuts are now Water, First aid, Toilets and **Helpdesk** (Box Office left the shortcuts; its pin stays on the map).
+
+## [1.79.0] - 2026-11-24
+
+### Changed
+- "Tent Pass" is now called **Stay Pass** everywhere (Bookings, Booking Found, Admin › Events, Bulk Upload, the import panels, Accommodation, Dashboard). Pass kinds in the category pickers and on Admin › Events show as Festival Pass / Stay Pass / Add-on. Works with big-api 1.68.0 only (new stored values `festival_pass` / `stay_pass` / `addon_pass`).
+
+### Added
+- Accommodation › Setup: **beds needed vs set up**. A line above the cards shows, for every Stay Pass type together, how many beds are still to set up (or that there are enough), with the number of Stay Passes, beds needed and beds set up. Each type's card gets a "Needed from passes" row: Stay Passes, beds set up / needed, and how many beds are still to set up with about how many units that takes (at the size most of that type's units have, or the pass type's beds per pass when none exist yet). Responsive.
+- Bookings: **Beds** column, a **Beds don't match** tile and filter, and a Beds box in the booking panel. People (active Festival Passes) and beds (active Stay Pass beds; add-ons add none) are counted over the booking together with every booking it links to or that links to it, so all bookings of one group show the same totals; a link icon marks a group with linked bookings, and the hint names them (and any linked booking not in BiG yet). A booking is flagged when people and beds differ either way, a Festival-only booking with no linked stay included. Searching "beds" finds the same bookings. The column sorts beds-short first.
+
+## [1.78.0] - 2026-11-24
+
+### Added
+- Participant page: the **Early Check-In form**, opened from the link in the Early Check-In email. It shows only the form (no other part of the page) and works while the Public Page is switched off. One card per Festival Pass, filled in with what the booking already has and editable. Gender is picked from tiles. Admitted passes are shown with a lock and can't be changed. A progress bar shows how many passes are ready, each field says what is wrong, and "Check and send" shows a summary first ("you can send this only once"). After sending, a thank-you screen, and the link is taken out of the address bar. Clear screens for a link that has expired, was already used or does not work. Responsive, phone first.
+
+## [1.77.0] - 2026-11-23
+
+### Added
+- Box Office › Bookings: **Email ▾ › Send Early Check-In** emails the selected bookings a personal link to fill in their Festival Pass details. The dialog shows how many have details missing or all filled and which are skipped, lets you pick how many days the link works (7 / 14 / 30 or your own, up to 60; default 14) and whether to send only to bookings with details missing (default) or to all. Preview, "Send test to me" and test mode as for the Ticket Email. Shown to Developers, Directors, Admins and the Box Office Team Lead.
+- New **Early Check-In** column (Not sent, Sending, Sent, Submitted, Expired, Failed, No email; the reason on hover) with its own filter, sortable. The booking panel shows the status, when it was sent and until when the link works.
+- Admin › Events: subject and intro for the event's Early Check-In email.
+- Email Report and a booking's email history: new type "Early Check-In".
+
+---
+
+## [1.76.0] - 2026-11-23
+
+### Added
+- Box Office › Bookings: new **Festival details** column (`2 / 4` = Festival Passes with name, phone, email and gender filled, out of the booking's Festival Passes; green when all are filled, amber when not, "—" with no Festival Pass). Sortable. The same count shows in the booking panel.
+- New **Details missing** tile: the number of bookings with a Festival Pass still to fill; tap it to list them. Searching "details missing" finds them too. First step of Early Check-In.
+
+---
+
+## [1.75.0] - 2026-11-23
+
+### Added
+- Box Office › **Sales Sync Report** tab: every live update, pull, check and fetch in one table (time, source, what, new / changed / cancelled / no change / not stored, Booking IDs, alert, who ran it). Sort by any count, filter by source, "Only with problems" and dates; tap a row for every reason. Same people as the pull.
+- Sales system panel: **Waiting to be stored** box (each booking with its reason, always shown while not empty); missing pass types can be created from it without pulling first; log lines show the missing pass type and the alert; "Full report" link.
+
+---
+
+## [1.74.0] - 2026-11-23
+
+### Added
+- Bookings › Import › **Pull from sales system**: a panel showing whether this event takes the sales system's bookings, whether live updates and the pull are set up, a **Pull now** button with a report (new, changed, cancelled, up to date, problems, pass types missing, bookings to check) and the latest activity.
+- Pass types the pulled bookings need but the event doesn't have: Directors and Admins create them right in the panel (pre-filled from the sales system, editable) and pull again; others see the list and are asked to contact an admin.
+- **Check & repair** in the same panel, closed until tapped: **Check all bookings** (sales system paid vs in BiG, missing ones stored and listed, bookings in BiG not paid there listed, or "Everything matches") and **Fetch one booking** by Booking ID.
+- Admin › Events: **Sales system** switch on the event details. Only one event can have it on; switching it on asks first and names the event that loses it.
+- Bookings: a **Cancelled** badge for bookings cancelled in the sales system, a flag on bookings with something to check, and in the booking panel the cancel note and the "To check" list.
+
+---
+
 ## [1.73.0] - 2026-11-22
 
 ### Added

@@ -15,6 +15,7 @@
         <div class="bk-menu-lbl">Add bookings</div>
         <button mat-menu-item (click)="openBulkUpload()"><mat-icon>upload_file</mat-icon>Bulk Upload</button>
         <button mat-menu-item (click)="importOpen = true"><mat-icon>sync_alt</mat-icon>Import from sales system</button>
+        <button mat-menu-item (click)="syncOpen = true"><mat-icon>sync</mat-icon>Pull from sales system</button>
       </mat-menu>
     </ng-container>
   </div>
@@ -40,6 +41,20 @@
     <div class="stat-n">{{ spotRegistrationCount }}</div>
     <div class="stat-s">tap to view →</div>
   </div>
+
+  <!-- Early Check-In EC1: bookings with a Festival Pass still missing a detail -->
+  <div class="stat tap" [class.act]="activeFilter === 'detailsMissing'" (click)="toggleFilter('detailsMissing')">
+    <div class="stat-l">Details missing</div>
+    <div class="stat-n">{{ detailsMissingCount }}</div>
+    <div class="stat-s">tap to view →</div>
+  </div>
+
+  <!-- Beds vs people (2026-11-24): a booking and its linked bookings together -->
+  <div class="stat tap" [class.act]="activeFilter === 'bedsMismatch'" (click)="toggleFilter('bedsMismatch')">
+    <div class="stat-l">Beds don't match</div>
+    <div class="stat-n">{{ bedsMismatchCount }}</div>
+    <div class="stat-s">tap to view →</div>
+  </div>
 </div>
 
 <div class="tbl-container">
@@ -50,6 +65,10 @@
       <app-select class="email-status-filter" [(ngModel)]="emailStatusFilter" (ngModelChange)="onSearchChange()">
         <app-option value="">All Ticket Email statuses</app-option>
         <app-option *ngFor="let o of emailStatusOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
+      </app-select>
+      <app-select class="email-status-filter" [(ngModel)]="checkinStatusFilter" (ngModelChange)="onSearchChange()">
+        <app-option value="">All Early Check-In statuses</app-option>
+        <app-option *ngFor="let o of checkinStatusOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
       </app-select>
     </div>
   </div>
@@ -64,6 +83,7 @@
       <mat-menu #emailMenu="matMenu" xPosition="before">
         <button mat-menu-item *ngIf="canSendTicket$ | async" (click)="sendTicketEmails()">Send Ticket Email</button>
         <button mat-menu-item *ngIf="canSendCustom$ | async" (click)="sendCustomEmails()">Send Custom Email</button>
+        <button mat-menu-item *ngIf="canSendCheckin$ | async" (click)="sendCheckinEmails()">Send Early Check-In</button>
       </mat-menu>
     </ng-container>
   </div>
@@ -93,6 +113,9 @@
           <th appSort="source" [sort]="sort">Source</th>
           <th appSort="emailStatus" [sort]="sort">Ticket Email</th>
           <th appSort="admitted" [sort]="sort">Admitted</th>
+          <th appSort="details" [sort]="sort" title="Festival Passes with every detail filled">Festival details</th>
+          <th appSort="earlyCheckin" [sort]="sort">Early Check-In</th>
+          <th appSort="beds" [sort]="sort" title="Festival Passes (people) and Stay Pass beds, with linked bookings">Beds</th>
         </tr>
       </thead>
       <tbody>
@@ -107,7 +130,11 @@
               <span class="cb-box"></span>
             </label>
           </td>
-          <td>{{ booking.first_name }} {{ booking.last_name }}</td>
+          <td>
+            {{ booking.first_name }} {{ booking.last_name }}
+            <span class="badge br bk-cx" *ngIf="booking.bookingStatus === 'cancelled'">Cancelled</span>
+            <mat-icon class="bk-flag" *ngIf="booking.syncFlags?.length" title="Something to check (see the booking)">flag</mat-icon>
+          </td>
           <td>{{ booking.email }}</td>
           <td class="mono">{{ bookingId(booking) }}</td>
           <td class="mono">{{ booking._id }}</td>
@@ -122,9 +149,20 @@
           <td>
             <span class="badge" [ngClass]="admittedCountFor(booking) > 0 ? 'bg' : 'bx'">{{ admittedCountFor(booking) }} / {{ booking.shopcart?.length || 0 }}</span>
           </td>
+          <td>
+            <span *ngIf="festivalDetailsText(booking) !== '—'; else noFestival" class="badge" [ngClass]="festivalDetailsBadge(booking)">{{ festivalDetailsText(booking) }}</span>
+            <ng-template #noFestival>—</ng-template>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="checkinStatusBadge(booking)" [data-tooltip]="checkinStatusHint(booking)">{{ checkinStatusLabel(booking) }}</span>
+          </td>
+          <td class="nowrap">
+            <span *ngIf="bedsText(booking) !== '—'; else noBeds" class="badge bk-beds" [ngClass]="bedsBadge(booking)" [data-tooltip]="bedsHint(booking)"><mat-icon class="bk-bed-link" *ngIf="bedsLinked(booking)">link</mat-icon>{{ bedsText(booking) }}</span>
+            <ng-template #noBeds>—</ng-template>
+          </td>
         </tr>
         <tr *ngIf="!loading && pagedBookings.length === 0">
-          <td colspan="12" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
+          <td colspan="15" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
         </tr>
       </tbody>
     </table>
@@ -146,6 +184,7 @@
 </div>
 
 <app-external-import [open]="importOpen" (closed)="importOpen = false" (imported)="loadBookings()"></app-external-import>
+<app-sales-sync [open]="syncOpen" (closed)="syncOpen = false" (changed)="loadBookings()"></app-sales-sync>
 
 <div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
 
@@ -192,6 +231,45 @@
           <div class="pay-v">{{ source(activeBooking) }}</div>
           <div class="pay-sub" *ngIf="paymentMethod(activeBooking)">Payment method: {{ paymentMethod(activeBooking) }}</div>
         </div>
+        <!-- Early Check-In EC1: Festival Passes with every detail filled -->
+        <div class="pay-box">
+          <div class="pay-l">Festival details</div>
+          <div class="pay-v">
+            <span *ngIf="festivalDetailsText(activeBooking) !== '—'; else noFestivalPanel" class="badge" [ngClass]="festivalDetailsBadge(activeBooking)">{{ festivalDetailsText(activeBooking) }}</span>
+            <ng-template #noFestivalPanel>—</ng-template>
+          </div>
+        </div>
+        <!-- Beds vs people (2026-11-24): with the linked bookings -->
+        <div class="pay-box">
+          <div class="pay-l">Beds</div>
+          <div class="pay-v">
+            <span *ngIf="bedsText(activeBooking) !== '—'; else noBedsPanel" class="badge bk-beds" [ngClass]="bedsBadge(activeBooking)"><mat-icon class="bk-bed-link" *ngIf="bedsLinked(activeBooking)">link</mat-icon>{{ bedsText(activeBooking) }}</span>
+            <ng-template #noBedsPanel>—</ng-template>
+          </div>
+          <div class="pay-sub" *ngIf="bedsHint(activeBooking)">{{ bedsHint(activeBooking) }}</div>
+        </div>
+        <!-- Early Check-In EC2: the email with the one-time link -->
+        <div class="pay-box">
+          <div class="pay-l">Early Check-In</div>
+          <div class="pay-v">
+            <span class="badge" [ngClass]="checkinStatusBadge(activeBooking)">{{ checkinStatusLabel(activeBooking) }}</span>
+          </div>
+          <div class="pay-sub" *ngIf="activeBooking.earlyCheckin?.sentAt">Sent {{ activeBooking.earlyCheckin!.sentAt | date:'d MMM, HH:mm' }}</div>
+          <div class="pay-sub" *ngIf="activeBooking.earlyCheckin?.expiresAt && activeBooking.earlyCheckin?.status === 'sent'">Link works until {{ activeBooking.earlyCheckin!.expiresAt | date:'d MMM y' }}</div>
+          <div class="pay-sub" *ngIf="activeBooking.earlyCheckin?.submittedAt">Submitted {{ activeBooking.earlyCheckin!.submittedAt | date:'d MMM, HH:mm' }}</div>
+          <div class="pay-err" *ngIf="checkinStatusHint(activeBooking)">{{ checkinStatusHint(activeBooking) }}</div>
+        </div>
+      </div>
+
+      <!-- Sales system sync (I3 / I4): cancelled there, and what a change left to check -->
+      <div class="warn-banner bk-sync" *ngIf="activeBooking.bookingStatus === 'cancelled'" role="status">
+        <mat-icon>block</mat-icon>
+        Cancelled in the sales system{{ activeBooking.cancelledAt ? ' on ' + (activeBooking.cancelledAt | date:'d MMM, HH:mm') : '' }}.
+        Passes not in use were switched off.
+      </div>
+      <div class="bk-flags" *ngIf="activeBooking.syncFlags?.length">
+        <div class="bk-flags-h"><mat-icon>flag</mat-icon>To check (from the sales system)</div>
+        <ul><li *ngFor="let f of activeBooking.syncFlags">{{ f.message }} <span class="bk-flags-at">{{ f.at | date:'d MMM, HH:mm' }}</span></li></ul>
       </div>
 
       <!-- Bookings this one links to (a stay booking → its Festival Pass booking).

@@ -528,6 +528,49 @@ select:focus {
 .bk-menu .mat-mdc-menu-item .mat-icon { transition: transform 0.15s ease; }
 .bk-menu .mat-mdc-menu-item:hover:not([disabled]) .mat-icon { transform: translateX(2px) scale(1.08); }
 
+/* Bookings › Sales system panel › Check & repair: a closed row until tapped */
+.ss-rep { border: 1px solid var(--border-default); border-radius: 10px; background: var(--surface-card); color: var(--text-primary); }
+.ss-rep-hd {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px;
+  border: 0; background: transparent; color: var(--text-primary); font: inherit; cursor: pointer; text-align: left;
+}
+.ss-rep-hd mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--text-secondary); }
+.ss-rep-t { flex: 1 1 auto; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.ss-rep-body { display: grid; gap: 12px; padding: 0 12px 12px; border-top: 1px solid var(--border-subtle); padding-top: 12px; color: var(--text-primary); }
+.ss-rep-row { display: flex; align-items: flex-end; gap: 10px; color: var(--text-primary); }
+.ss-rep-tx { flex: 1 1 auto; min-width: 0; color: var(--text-primary); }
+.ss-rep-l { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.ss-rep-s { font-size: 12px; color: var(--text-secondary); }
+.ss-rep-in { flex: 1 1 auto; min-width: 0; margin: 0; }
+.ss-rep-in input { width: 100%; }
+.ss-cmp { display: grid; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--surface-input); color: var(--text-primary); }
+.ss-cmp-row { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--text-primary); }
+.ss-cmp-warn strong { color: var(--color-warning); }
+.ss-cmp-bad, .ss-cmp-bad strong { color: var(--color-danger); }
+.ss-fetched { font-size: 13px; color: var(--text-primary); overflow-wrap: anywhere; }
+.ss-fetched ul { margin: 4px 0 0; padding-left: 18px; font-size: 12px; color: var(--text-secondary); }
+@media (max-width: 480px) {
+  .ss-rep-row { flex-direction: column; align-items: stretch; }
+}
+
+/* Bookings: sales system sync marks (I3 / I4) — Cancelled badge, "to check" flag + list */
+.bk-cx { margin-left: 6px; vertical-align: middle; }
+/* Bookings Beds column (2026-11-24): the totals include linked bookings */
+.badge.bk-beds { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+/* Beats Angular Material's own .mat-icon size (24px), which loads after this file. */
+.badge.bk-beds .mat-icon.bk-bed-link { font-size: 13px; width: 13px; height: 13px; line-height: 1; flex-shrink: 0; color: inherit; overflow: hidden; }
+.bk-flag { font-size: 16px; width: 16px; height: 16px; vertical-align: middle; margin-left: 4px; color: var(--color-warning); }
+.bk-sync { display: flex; align-items: flex-start; gap: 6px; margin-top: 10px; font-size: 13px; color: var(--text-primary); }
+.bk-sync mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; color: var(--color-danger); }
+.bk-flags {
+  margin-top: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-default);
+  border-left: 3px solid var(--color-warning); background: var(--surface-card); color: var(--text-primary);
+}
+.bk-flags-h { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.bk-flags-h mat-icon { font-size: 16px; width: 16px; height: 16px; color: var(--color-warning); }
+.bk-flags ul { margin: 6px 0 0; padding-left: 18px; font-size: 12px; color: var(--text-secondary); overflow-wrap: anywhere; }
+.bk-flags-at { font-size: 11px; color: var(--text-muted); }
+
 .btn-danger {
   padding: 6px 16px;
   background: #dc2626;
@@ -2601,3 +2644,15 @@ app-date.dtp-sm .dtp-field, app-time.dtp-sm .dtp-field, app-date-time.dtp-sm .dt
 .ht-ctot b { font-size: 22px; line-height: 1; }
 .ht-chint { margin: 8px 0 0; font-size: 12.5px; }
 @media (max-width: 480px) { .ht-cgrid { grid-template-columns: 1fr 1fr; } .ht-ctot { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: baseline; padding: 0; } }
+
+/* Accommodation › Setup demand (2026-11-24): beds the Stay Passes need vs beds set up. */
+.acs-total { display: flex; align-items: center; gap: 12px; margin-top: 28px; padding: 12px 16px; border-radius: 12px; border: 1px solid #bbf7d0; background: #f0fdf4; color: #166534; }
+.acs-total.acs-short { border-color: #fde68a; background: #fffbeb; color: #92400e; }
+.acs-total > mat-icon { font-size: 26px; width: 26px; height: 26px; flex-shrink: 0; }
+.acs-total-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.acs-total-main { font-size: 15px; font-weight: 700; color: inherit; }
+.acs-total-sub { font-size: 12.5px; color: var(--text-secondary); }
+.acs-todo { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 8px; border-radius: 8px; background: #dcfce7; color: #166534; font-size: 12px; font-weight: 600; }
+.acs-todo.acs-todo-short { background: #fef3c7; color: #92400e; }
+.acs-todo mat-icon { font-size: 16px; width: 16px; height: 16px; flex-shrink: 0; }
+@media (max-width: 480px) { .acs-total { align-items: flex-start; } }

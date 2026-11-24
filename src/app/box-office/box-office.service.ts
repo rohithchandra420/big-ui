@@ -41,6 +41,135 @@ export interface ExternalImportResult {
     created?: number;
 }
 
+/** One sales system booking that could not be applied (reference + reasons). */
+export interface SalesSyncProblem {
+    reference: string | null;
+    messages: string[];
+}
+
+/** A pass type the sales system's bookings use that the event doesn't have yet. */
+export interface SalesSyncUnknownPassType {
+    externalCode: string | null;
+    name: string;
+    category: PassCategory;
+    beds: number | null;
+    /** How many bookings in this pull need it. */
+    bookings: number;
+}
+
+/** What one pull did (POST /box-office/sales-sync/pull). */
+export interface SalesSyncReport {
+    fetched: number;
+    created: number;
+    updated: number;
+    cancelled: number;
+    skipped: number;
+    /** Bookings not stored: bad data (listed in `errors`) + missing pass types. */
+    errorCount: number;
+    errors: SalesSyncProblem[];
+    unknownCodes: string[];
+    unknownPassTypes: SalesSyncUnknownPassType[];
+    flagged: string[];
+    pending?: number;
+    /** Top roles may create the missing pass types here. */
+    canCreatePassTypes?: boolean;
+}
+
+/** Check & repair › Check all bookings: the pull report + the count comparison. */
+export interface SalesSyncCheck extends SalesSyncReport {
+    salesPaid: number;
+    inBig: number;
+    /** Booking IDs that were missing in BiG and are now stored. */
+    missing: string[];
+    /** Booking IDs in BiG (from the sales system) that it doesn't list as paid. */
+    extraInBig: string[];
+    extraCount: number;
+}
+
+/** Check & repair › Fetch one booking. */
+export interface SalesSyncFetch extends SalesSyncReport {
+    result: 'created' | 'updated' | 'cancelled' | 'skipped' | 'error' | 'unknown';
+    reference: string;
+    messages: string[];
+    flags: string[];
+}
+
+/** The phone alert a log entry caused (a live update not stored). Whether it was read is not known. */
+export interface SalesSyncAlert {
+    users: number;
+    devices: number;
+    delivered: number;
+    /** Held back by the one-per-hour limit (counted into the next alert). */
+    held: boolean;
+}
+
+/** One webhook call or pull in the sync log. */
+export interface SalesSyncLogEntry {
+    _id?: string;
+    via: 'webhook' | 'pull';
+    /** Webhook: booking.paid / updated / cancelled. Otherwise pull / check / fetch. */
+    kind: string | null;
+    at: string;
+    counts: { fetched: number; created: number; updated: number; cancelled: number; skipped: number; errors: number };
+    problems: SalesSyncProblem[];
+    unknownCodes: string[];
+    flagged: string[];
+    note: string | null;
+    alert?: SalesSyncAlert | null;
+    /** Who ran it (pull / check / fetch). */
+    by?: string | null;
+    /** Booking IDs it created / changed / cancelled (first 200 each). */
+    bookings?: { created: string[]; updated: string[]; cancelled: string[] };
+    /** Live update: the sales system's own event id. */
+    sourceEventId?: string | null;
+}
+
+/** A booking waiting to be stored, and why. */
+export interface SalesSyncWaiting {
+    reference: string;
+    messages: string[];
+    unknownCodes: string[];
+    via: 'webhook' | 'pull' | 'check' | 'fetch';
+    at: string | null;
+}
+
+/** GET /box-office/sales-sync/log — one page of the Sales Sync Report. */
+export interface SalesSyncLogPage {
+    total: number;
+    page: number;
+    limit: number;
+    entries: SalesSyncLogEntry[];
+}
+
+export interface SalesSyncLogQuery {
+    page: number;
+    limit: number;
+    source?: '' | 'webhook' | 'pull' | 'check' | 'fetch';
+    problems?: boolean;
+    from?: string;
+    to?: string;
+    sort?: 'at' | 'created' | 'updated' | 'cancelled' | 'skipped' | 'errors';
+    dir?: 'asc' | 'desc';
+}
+
+/** GET /box-office/sales-sync — the sync for one event. */
+export interface SalesSyncStatus {
+    on: boolean;
+    syncEvent: { _id: string; name: string } | null;
+    pullReady: boolean;
+    webhookReady: boolean;
+    masked: boolean; // UAT-MASK: remove before Production
+    lastPullAt: string | null;
+    lastWebhookAt: string | null;
+    pending: number;
+    /** "Waiting to be stored" (newest first, first 200). */
+    waiting: SalesSyncWaiting[];
+    /** Pass types the waiting bookings need, with how many bookings each. */
+    missingPassTypes: SalesSyncUnknownPassType[];
+    canCreatePassTypes: boolean;
+    logs: SalesSyncLogEntry[];
+}
+
 /** Who a band (or a band conflict) belongs to. */
 export interface BandOwner {
     /** 'staff' = a staff member's band (Hospitality H5): no pass, no booking. */
@@ -124,6 +253,29 @@ export class BoxOfficeService {
     }
     runExternalImport(form: FormData) {
         return this.http.post<ExternalImportResult>(this.url + "/box-office/external-import", form);
+    }
+
+    // ── Sales system sync (I3 / I4): same people as Bulk Upload. ──
+    getSalesSync(eventId: string) {
+        return this.http.get<SalesSyncStatus>(this.url + "/box-office/sales-sync", { params: new HttpParams().set('eventId', eventId) });
+    }
+    pullSalesSync(eventId: string) {
+        return this.http.post<SalesSyncReport>(this.url + "/box-office/sales-sync/pull", { eventId });
+    }
+    checkSalesSync(eventId: string) {
+        return this.http.post<SalesSyncCheck>(this.url + "/box-office/sales-sync/check", { eventId });
+    }
+    getSalesSyncLog(eventId: string, q: SalesSyncLogQuery) {
+        let params = new HttpParams().set('eventId', eventId).set('page', q.page).set('limit', q.limit);
+        if (q.source) params = params.set('source', q.source);
+        if (q.problems) params = params.set('problems', '1');
+        if (q.from) params = params.set('from', q.from);
+        if (q.to) params = params.set('to', q.to);
+        if (q.sort) params = params.set('sort', q.sort).set('dir', q.dir || 'desc');
+        return this.http.get<SalesSyncLogPage>(this.url + "/box-office/sales-sync/log", { params });
+    }
+    fetchSalesBooking(eventId: string, reference: string) {
+        return this.http.post<SalesSyncFetch>(this.url + "/box-office/sales-sync/fetch", { eventId, reference });
     }
 
     // ── Bookings / Registration — duplicated from TicketsService, hitting the /box-office

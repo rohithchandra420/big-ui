@@ -62,7 +62,7 @@
                     <app-option *ngFor="let o of categoryOptions; trackBy: trackCategory" [value]="o.value">{{ o.label }}</app-option>
                   </app-select>
                 </div>
-                <div class="field xi-pt-beds" *ngIf="d.category === 'tent'">
+                <div class="field xi-pt-beds" *ngIf="d.category === 'stay_pass'">
                   <label [for]="'xi-beds-' + i">Beds per pass</label>
                   <input [id]="'xi-beds-' + i" type="number" min="1" [max]="maxBeds" [ngModel]="d.beds" (ngModelChange)="setBeds(d, $event)">
                 </div>

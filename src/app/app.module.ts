@@ -62,6 +62,8 @@ import { TicketEditFormComponent } from './box-office/ticket-edit-form/ticket-ed
 import { SpotRegistrationComponent } from './box-office/registration/spot-registration/spot-registration.component';
 import { BulkUploadComponent } from './box-office/bookings/bulk-upload/bulk-upload.component';
 import { ExternalImportComponent } from './box-office/bookings/external-import/external-import.component';
+import { SalesSyncComponent } from './box-office/bookings/sales-sync/sales-sync.component';
+import { SalesSyncReportComponent } from './box-office/sales-sync-report/sales-sync-report.component';
 import { MyDepartmentComponent } from './my-department/my-department.component';
 import { EventsComponent } from './admin/events/events.component';
 import { EventDetailComponent } from './admin/events/event-detail/event-detail.component';
@@ -79,6 +81,7 @@ import { BandAlertComponent } from './shared/band-alert/band-alert.component';
 import { BoxOfficeStatusComponent } from './box-office/box-office-status/box-office-status.component';
 import { RichTextEditorComponent } from './shared/rich-text-editor/rich-text-editor.component';
 import { TicketEmailDialogComponent } from './box-office/email/ticket-email-dialog/ticket-email-dialog.component';
+import { CheckinEmailDialogComponent } from './box-office/email/checkin-email-dialog/checkin-email-dialog.component';
 import { CustomEmailDialogComponent } from './box-office/email/custom-email-dialog/custom-email-dialog.component';
 import { EmailProgressComponent } from './box-office/email/email-progress/email-progress.component';
 import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
@@ -171,6 +174,8 @@ LOAD_WASM().subscribe()
     SpotRegistrationComponent,
     BulkUploadComponent,
     ExternalImportComponent,
+    SalesSyncComponent,
+    SalesSyncReportComponent,
     MyDepartmentComponent,
     EventsComponent,
     EventDetailComponent,
@@ -188,6 +193,7 @@ LOAD_WASM().subscribe()
     BoxOfficeStatusComponent,
     RichTextEditorComponent,
     TicketEmailDialogComponent,
+    CheckinEmailDialogComponent,
     CustomEmailDialogComponent,
     EmailProgressComponent,
     EmailActionsComponent,
