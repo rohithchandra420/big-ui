@@ -14,9 +14,11 @@ export const PIN_LOOK: Record<string, Look> = {
   entry:      { icon: 'login', colour: '#16a34a', word: 'map.entry' },
   box_office: { icon: 'confirmation_number', colour: '#7c3aed', word: 'map.boxOffice' },
   field:      { icon: 'camping', colour: '#386e5b', word: 'map.field' },
+  helpdesk:   { icon: 'support_agent', colour: '#0891b2', word: 'map.helpdesk' },
 };
 
-export const AREA_LOOK: Record<string, Look & { line?: boolean; dash?: string }> = {
+// weight = line thickness (default 4); roads drawn thick like the staff map (B-082).
+export const AREA_LOOK: Record<string, Look & { line?: boolean; dash?: string; weight?: number }> = {
   boundary:      { icon: 'fence', colour: '#15803d', word: 'map.boundary' },
   workshop_area: { icon: 'palette', colour: '#7c3aed', word: 'map.workshops' },
   camping:       { icon: 'camping', colour: '#386e5b', word: 'map.camping' },
@@ -28,6 +30,8 @@ export const AREA_LOOK: Record<string, Look & { line?: boolean; dash?: string }>
   path:          { icon: 'directions_walk', colour: '#c9a46b', word: 'map.path', line: true },
   entry:         { icon: 'login', colour: '#16a34a', word: 'map.entry', line: true },
   emergency:     { icon: 'emergency', colour: '#dc2626', word: 'map.emergencyRoute', line: true, dash: '10 6' },
+  road:          { icon: 'add_road', colour: '#374151', word: 'map.road', line: true, weight: 6 },
+  fence:         { icon: 'fence', colour: '#78716c', word: 'map.fence', line: true, dash: '2 5', weight: 2 },
 };
 
 /** The middle of a polygon (corners' average is enough at festival scale) or a line's halfway point. */
@@ -53,7 +57,8 @@ export const walkMinutes = (m: number) => Math.max(1, Math.round(m / 75));
 /** A place on the map the page can point to (pin or area). */
 export interface Place { id: string; name: string; at: [number, number]; }
 
-export type Shortcut = 'water' | 'firstAid' | 'toilets' | 'boxOffice';
+// Box Office left the shortcuts for the Helpdesk (user, 2026-11-24); its pin stays on the map.
+export type Shortcut = 'water' | 'firstAid' | 'toilets' | 'helpdesk';
 
 /** Every place of a shortcut kind. */
 export function placesFor(kind: Shortcut, pins: PublicMapPin[], areas: PublicMapArea[]): Place[] {
@@ -63,7 +68,7 @@ export function placesFor(kind: Shortcut, pins: PublicMapPin[], areas: PublicMap
     case 'water': return pin('water');
     case 'firstAid': return area('medical_camp');
     case 'toilets': return [...pin('toilets'), ...area('washroom')];
-    default: return pin('box_office');
+    default: return pin('helpdesk');
   }
 }
 

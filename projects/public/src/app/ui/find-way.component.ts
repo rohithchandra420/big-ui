@@ -12,12 +12,12 @@ const SHORTCUTS: { kind: Shortcut; icon: string; colour: string; word: WordKey }
   { kind: 'water', icon: 'water_drop', colour: '#0284c7', word: 'map.water' },
   { kind: 'firstAid', icon: 'local_hospital', colour: '#dc2626', word: 'map.firstAid' },
   { kind: 'toilets', icon: 'wc', colour: '#64748b', word: 'map.toilets' },
-  { kind: 'boxOffice', icon: 'confirmation_number', colour: '#7c3aed', word: 'map.boxOffice' },
+  { kind: 'helpdesk', icon: 'support_agent', colour: '#0891b2', word: 'map.helpdesk' },
 ];
 
 /**
  * Home (PH4a): "Find your way" — the nearest water, first aid, toilets and
- * Box Office (walking minutes once the phone shares its location), each opens
+ * Helpdesk (was Box Office until 2026-11-24) (walking minutes once the phone shares its location), each opens
  * the map there — and the staff's help tiles under "Need a hand?".
  * `part` (2026-11-20): Home shows the two in different places — "find" in
  * the side column, "help" at the end of the page.

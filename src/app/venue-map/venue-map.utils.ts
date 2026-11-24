@@ -1,6 +1,6 @@
 // Venue Map helpers with no Angular or Leaflet in them, so they're easy to test.
 
-export type LocationType = 'water' | 'toilets' | 'stage' | 'gate' | 'entry' | 'box_office' | 'field' | 'other';
+export type LocationType = 'water' | 'toilets' | 'stage' | 'gate' | 'entry' | 'box_office' | 'field' | 'helpdesk' | 'other';
 
 export interface LocationTypeInfo { value: LocationType; label: string; icon: string; color: string; }
 
@@ -18,6 +18,8 @@ export const LOCATION_TYPES: LocationTypeInfo[] = [
   { value: 'entry',    label: 'Entry point',       icon: 'login',            color: '#16a34a' },
   { value: 'box_office', label: 'Box Office',      icon: 'confirmation_number', color: '#7c3aed' },
   { value: 'field',    label: 'Tent field',        icon: 'camping',          color: '#386e5b' },
+  // Helpdesk (B-082, user 2026-11-24): where participants go for help; on the public map too.
+  { value: 'helpdesk', label: 'Helpdesk',          icon: 'support_agent',    color: '#0891b2' },
   { value: 'other',    label: 'Other',             icon: 'location_on',      color: '#475569' }
 ];
 
@@ -40,6 +42,7 @@ export function guessType(name: string): LocationType {
   if (/stage|amphi/.test(n)) return 'stage';
   if (/entry|entrance/.test(n)) return 'entry';
   if (/box office|ticket counter/.test(n)) return 'box_office';
+  if (/help ?desk|info(rmation)? (desk|point|counter)/.test(n)) return 'helpdesk';
   if (/gate/.test(n)) return 'gate';
   if (/tent|camp|field/.test(n)) return 'field';
   return 'other';
