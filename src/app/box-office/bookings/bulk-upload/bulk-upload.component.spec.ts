@@ -28,7 +28,8 @@ describe('BulkUploadComponent', () => {
   let eventServiceSpy: jasmine.SpyObj<EventService> & { activeEvent: BehaviorSubject<EventItem | null>, currentActiveEvent: EventItem | null };
 
   beforeEach(async () => {
-    boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['uploadBoxOfficeExcel']);
+    boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['uploadBoxOfficeExcel', 'getPassTypes']);
+    boxOfficeServiceSpy.getPassTypes.and.returnValue(of(mockEventDetail.passTypes as any));
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     dialogRefSpy = jasmine.createSpyObj('MatDialogRef', ['close']);
     activeEventSubject = new BehaviorSubject<EventItem | null>(mockActiveEvent);
@@ -206,8 +207,9 @@ describe('BulkUploadComponent', () => {
   });
 
   describe('unknown pass name detection', () => {
-    it('loads the active event\'s pass types on init', () => {
-      expect(eventServiceSpy.getEventDetail).toHaveBeenCalledWith('evt1');
+    it('loads the active event\'s pass types on init, from the Box Office route (B-085)', () => {
+      expect(boxOfficeServiceSpy.getPassTypes).toHaveBeenCalledWith('evt1');
+      expect(eventServiceSpy.getEventDetail).not.toHaveBeenCalled();
     });
 
     it('flags item names from the file that are not existing pass types', () => {

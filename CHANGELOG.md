@@ -13,6 +13,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.83.0] - 2026-11-24
+
+### Fixed
+- Spot Registration and Bulk Upload now load the event's pass types for every Box Office member who may use them (B-085). Before, only Developers, Directors and Admins got the list: a Box Office Team Lead or volunteer saw an empty pass type picker in Spot Registration, and Bulk Upload showed "Error loading pass types" and could not spot new pass names in the file.
+
+## [1.82.0] - 2026-11-24
+
+### Changed
+- Hospitality › Stay › Allocate, a person's stay panel: **All their stays** now lists the newest stay first, as cards on a small timeline (B-084). Each card shows the unit, first night → leaving morning with weekdays, the number of nights, Moved in / Moved out when known, and This night / Upcoming / Past against the night being viewed (This night highlighted). The heading counts their stays and nights. Responsive.
+
+## [1.81.0] - 2026-11-24
+
+### Added
+- Bookings: **pass type filter** (B-083). A dropdown with every pass type of the event, grouped under Festival Passes / Stay Passes / Add-ons, each with how many bookings it shows. Tick several at once: a booking shows when it, or a booking linked to it, holds any of the ticked pass types (switched-off passes count, like the Passes column). Combines with search, the tiles and the other filters. Responsive.
+- Bookings: **Selected only** chip next to the selection count. It shows just the ticked bookings (search, tiles and filters still apply), is greyed out until a booking is ticked, and switches itself off when the last tick is removed.
+- New shared multi-choice dropdown (`app-multi-select`): looks like the other dropdowns, rows are ticked on / off and the list stays open while picking, with a "clear" row.
+
 ## [1.80.0] - 2026-11-24
 
 ### Added

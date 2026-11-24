@@ -34,7 +34,8 @@ describe('SpotRegistrationComponent', () => {
   const batch: EmailBatch = { id: 'b1', type: 'ticket', total: 1, done: 0, sent: 0, failed: 0, skipped: 0, finished: false, startedAt: '', finishedAt: null };
 
   beforeEach(async () => {
-    boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['createBoxOfficeTicket']);
+    boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['createBoxOfficeTicket', 'getPassTypes']);
+    boxOfficeServiceSpy.getPassTypes.and.returnValue(of(mockEventDetail.passTypes as any));
     notificationSpy = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
     activeEventSubject = new BehaviorSubject<EventItem | null>(mockActiveEvent);
     eventServiceSpy = jasmine.createSpyObj('EventService', ['getEventDetail']) as any;
@@ -70,9 +71,10 @@ describe('SpotRegistrationComponent', () => {
     expect(component.shopcart.length).toBe(1);
   });
 
-  it('loads pass types for the active event on init', () => {
-    expect(eventServiceSpy.getEventDetail).toHaveBeenCalledWith('evt1');
-    expect(component.passTypeOptions).toEqual(mockEventDetail.passTypes);
+  it('loads pass types for the active event on init, from the Box Office route (B-085)', () => {
+    expect(boxOfficeServiceSpy.getPassTypes).toHaveBeenCalledWith('evt1');
+    expect(eventServiceSpy.getEventDetail).not.toHaveBeenCalled();      // top roles only
+    expect(component.passTypeOptions).toEqual(mockEventDetail.passTypes as any);
   });
 
   it('addItem() adds another row', () => {

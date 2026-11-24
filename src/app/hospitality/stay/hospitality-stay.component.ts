@@ -494,6 +494,35 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
   }
   closeStay() { this.stayKey = ''; this.stayRow = null; }
 
+  // ── B-084: the stay panel's "All their stays" — newest first, as cards ──
+
+  private allOf: { row: StayNightRow; night: string; data: StayOverview | null; list: StayHistoryItem[] } | null = null;
+
+  /** The person's stays, newest first (first night, then leaving day, both descending).
+   *  Moved in / out and beds come from the units already loaded, when the stay is in range.
+   *  The same array is returned until the row, the night or the data change. */
+  allStays(r: StayNightRow): StayHistoryItem[] {
+    const a = this.allOf;
+    if (a && a.row === r && a.night === this.statsNight && a.data === this.data) return a.list;
+    const known = new Map<string, StayItem>();
+    for (const u of this.data?.units || []) for (const s of u.stays) known.set(s._id, s);
+    const list = [...r.stays]
+      .sort((x, y) => y.from.localeCompare(x.from) || y.to.localeCompare(x.to))
+      .map(x => {
+        const k = known.get(x._id);
+        const when: StayHistoryItem['when'] = x.to <= this.statsNight ? 'past' : x.from <= this.statsNight ? 'now' : 'next';
+        return {
+          _id: x._id, unit: x.unit, from: x.from, to: x.to, nights: nightsBetween(x.from, x.to), when,
+          moved: k?.movedOutAt ? 'Moved out' : k?.movedInAt ? 'Moved in' : '', people: k?.people || 1
+        };
+      });
+    this.allOf = { row: r, night: this.statsNight, data: this.data, list };
+    return list;
+  }
+  /** Total nights across their stays. */
+  allNights(r: StayNightRow): number { return this.allStays(r).reduce((n, x) => n + x.nights, 0); }
+  readonly whenLabel: Record<StayHistoryItem['when'], string> = { now: 'This night', next: 'Upcoming', past: 'Past' };
+
   /** From the stay panel: another range for the same person (starts the morning this stay ends). */
   allocateAnother(r: StayNightRow) {
     const from = r.stay?.to || this.statsNight;
@@ -585,6 +614,10 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
   short(d: string): string {
     return d ? new Date(d + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
   }
+  /** "Mon 24 Nov". */
+  day(d: string): string {
+    return d ? new Date(d + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+  }
   dow(d: string): string { return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 2); }
   time(iso: string | null): string { return iso ? new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''; }
 
@@ -601,4 +634,19 @@ export class HospitalityStayComponent implements OnInit, OnDestroy {
       this.busy = false;
     }
   }
+}
+
+/** B-084: one card in the stay panel's "All their stays". */
+export interface StayHistoryItem {
+  _id: string; unit: string; from: string; to: string; nights: number;
+  /** Against the night being viewed: holds a bed that night, later, or before. */
+  when: 'now' | 'next' | 'past';
+  /** 'Moved in' / 'Moved out' / '' (not known or not yet). */
+  moved: string;
+  people: number;
+}
+
+/** Nights from the first night to the leaving morning ('YYYY-MM-DD'). */
+export function nightsBetween(from: string, to: string): number {
+  return Math.max(0, Math.round((Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 86400000));
 }

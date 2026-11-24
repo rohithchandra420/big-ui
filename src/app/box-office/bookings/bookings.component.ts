@@ -10,7 +10,7 @@ import { BoxOfficeService } from '../box-office.service';
 import {
   isFestivalPass, isSpotRegistration, passSummary as buildPassSummary, bookingIdOf, paymentMethodLabel, bookingSourceLabel,
   ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, TICKET_EMAIL_FILTER_OPTIONS,
-  festivalDetailsCount, festivalDetailsMissing, bedGroups, bedsMismatch, BedGroup,
+  festivalDetailsCount, festivalDetailsMissing, bedGroups, bedsMismatch, BedGroup, groupPassTypes,
   earlyCheckinStatus, earlyCheckinLabel, earlyCheckinBadge, EARLY_CHECKIN_FILTER_OPTIONS, EarlyCheckinView
 } from '../box-office.utils';
 import { Shopcart } from '../../models/ticket.model';
@@ -22,6 +22,15 @@ import { EmailBatchTrackerService } from '../../core/email-batch-tracker.service
 import { EmailDialogsService } from '../email/email-dialogs.service';
 import { AttendeeListComponent } from '../attendee-list/attendee-list.component';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
+import { MultiSelectOption } from '../../shared/multi-select/multi-select.component';
+import { FESTIVAL, STAY, ADDON } from '../../core/pass-categories';
+
+/** B-083: pass type filter groups, in this order. */
+const PASS_GROUPS: { category: string; label: string }[] = [
+  { category: FESTIVAL, label: 'Festival Passes' },
+  { category: STAY, label: 'Stay Passes' },
+  { category: ADDON, label: 'Add-ons' }
+];
 
 type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'payment' | 'paidAt' | 'source' | 'emailStatus' | 'admitted' | 'details' | 'earlyCheckin' | 'beds';
 
@@ -45,8 +54,14 @@ export class BookingsComponent implements OnInit, OnDestroy {
   /** Early Check-In status dropdown (EC2); '' = all. */
   checkinStatusFilter: EarlyCheckinView | '' = '';
   readonly checkinStatusOptions = EARLY_CHECKIN_FILTER_OPTIONS;
+  /** B-083: ticked pass type ids; [] = all. A booking shows when it or a linked booking holds any of them. */
+  passTypeFilter: string[] = [];
+  /** Every pass type of the event (GET /box-office/passTypes). */
+  passTypes: { _id: string; name: string; category: string }[] = [];
 
   selectedIds = new Set<string>();
+  /** "Selected only" chip (2026-11-24): show just the ticked rows. Off by itself once nothing is ticked. */
+  selectedOnly = false;
 
   pageIndex = 0;
   pageSize = 20;
@@ -117,6 +132,17 @@ export class BookingsComponent implements OnInit, OnDestroy {
       return;
     }
     this.loading = true;
+    // B-083: the event's pass types for the filter (a new event starts unfiltered).
+    if (this.passTypesEvent !== activeEvent._id) {
+      this.passTypesEvent = activeEvent._id;
+      this.selectedOnly = false;
+      this.passTypes = [];
+      this.passTypeFilter = [];
+      this.boxOfficeService.getPassTypes(activeEvent._id).subscribe({
+        next: (types) => { this.passTypes = types; },
+        error: () => { /* the filter just stays empty */ }
+      });
+    }
     this.boxOfficeService.getAllTickets(activeEvent._id).subscribe({
       next: (res) => {
         this.bookings = res;
@@ -369,6 +395,46 @@ export class BookingsComponent implements OnInit, OnDestroy {
     return parts.join(' · ');
   }
 
+  // ── B-083: pass type filter (with linked bookings) ──
+
+  private passTypesEvent: string | null = null;
+  private typesOf: Ticket[] | null = null;
+  private typesCache = new Map<string, Set<string>>();
+  private optionsKey: [Ticket[], unknown[]] | null = null;
+  private optionsCache: MultiSelectOption[] = [];
+
+  /** Pass type ids held by the booking and its linked bookings. */
+  groupTypes(booking: Ticket): Set<string> {
+    if (this.typesOf !== this.bookings) {
+      this.typesCache = groupPassTypes(this.bookings);
+      this.typesOf = this.bookings;
+    }
+    return this.typesCache.get(booking._id) || new Set();
+  }
+
+  matchesPassTypes(booking: Ticket): boolean {
+    if (!this.passTypeFilter.length) return true;
+    const held = this.groupTypes(booking);
+    return this.passTypeFilter.some(id => held.has(id));
+  }
+
+  /** Dropdown rows: grouped by kind, with how many bookings each would show.
+   *  The SAME array is returned until the bookings or pass types change
+   *  (stable identities for the option list). */
+  get passTypeOptions(): MultiSelectOption[] {
+    if (this.optionsKey && this.optionsKey[0] === this.bookings && this.optionsKey[1] === this.passTypes) return this.optionsCache;
+    const counts = new Map<string, number>();
+    for (const b of this.bookings) this.groupTypes(b).forEach(id => counts.set(id, (counts.get(id) || 0) + 1));
+    const out: MultiSelectOption[] = [];
+    for (const g of PASS_GROUPS) {
+      this.passTypes.filter(t => t.category === g.category).sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(t => out.push({ value: t._id, label: t.name, group: g.label, count: counts.get(t._id) || 0 }));
+    }
+    this.optionsKey = [this.bookings, this.passTypes];
+    this.optionsCache = out;
+    return out;
+  }
+
   /** Bookings whose group's people and beds differ. */
   get bedsMismatchCount(): number {
     return this.bookings.filter(b => this.bedsMismatch(b)).length;
@@ -422,6 +488,12 @@ export class BookingsComponent implements OnInit, OnDestroy {
     if (this.checkinStatusFilter) {
       result = result.filter(b => earlyCheckinStatus(b) === this.checkinStatusFilter);
     }
+    if (this.passTypeFilter.length) {
+      result = result.filter(b => this.matchesPassTypes(b));
+    }
+    if (this.selectedOnly && this.selectedIds.size) {
+      result = result.filter(b => this.selectedIds.has(b._id!));
+    }
 
     const term = this.searchTerm.trim().toLowerCase();
     if (term) {
@@ -463,6 +535,7 @@ export class BookingsComponent implements OnInit, OnDestroy {
   toggleSelectAllPaged() {
     if (this.allPagedSelected) {
       this.pagedBookings.forEach(b => this.selectedIds.delete(b._id!));
+      this.selectionChanged();
     } else {
       this.pagedBookings.forEach(b => this.selectedIds.add(b._id!));
     }
@@ -474,6 +547,21 @@ export class BookingsComponent implements OnInit, OnDestroy {
     } else {
       this.selectedIds.add(id);
     }
+    this.selectionChanged();
+  }
+
+  /** "Selected only" chip: on / off; starts again on the first page. */
+  toggleSelectedOnly() {
+    if (!this.selectedIds.size) { this.selectedOnly = false; return; }
+    this.selectedOnly = !this.selectedOnly;
+    this.pageIndex = 0;
+  }
+
+  /** The last tick went: show the whole list again. A page past the end goes back to the last one. */
+  private selectionChanged() {
+    if (!this.selectedIds.size) this.selectedOnly = false;
+    const pages = Math.max(1, Math.ceil(this.filteredBookings.length / this.pageSize));
+    if (this.pageIndex >= pages) this.pageIndex = pages - 1;
   }
 
   get segText(): string {

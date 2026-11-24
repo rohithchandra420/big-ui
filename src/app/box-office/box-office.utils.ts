@@ -277,6 +277,29 @@ export interface BedGroup {
  *  reference (`linkedReferences` -> `reference`), both ways. Passes switched
  *  off (isActive false) are left out. */
 export function bedGroups(bookings: Ticket[]): Map<string, BedGroup> {
+    const { rootOf, missing } = linkRoots(bookings);
+    const groups = new Map<string, BedGroup>();
+    bookings.forEach(b => {
+        const root = rootOf.get(b._id)!;
+        let g = groups.get(root);
+        if (!g) { g = { people: 0, beds: 0, bookingIds: [], missingRefs: [] }; groups.set(root, g); }
+        for (const i of b.shopcart || []) {
+            if (!i || i.isActive === false) continue;
+            if (isFestivalPass(i)) g.people++;
+            else if (isTentPass(i)) g.beds += i.beds || 1;
+        }
+        g.bookingIds.push(bookingIdOf(b));
+        missing.get(b._id)?.forEach(ref => { if (!g!.missingRefs.includes(ref)) g!.missingRefs.push(ref); });
+    });
+    const out = new Map<string, BedGroup>();
+    bookings.forEach(b => out.set(b._id, groups.get(rootOf.get(b._id)!)!));
+    return out;
+}
+
+/** Linked-booking groups: each booking _id -> its group's root _id, plus the
+ *  linked references not found among the bookings (per booking). Links match
+ *  `linkedReferences` -> `reference`, both ways, through chains. */
+export function linkRoots(bookings: Ticket[]): { rootOf: Map<string, string>; missing: Map<string, Set<string>> } {
     const byRef = new Map<string, Ticket>();
     bookings.forEach(b => { if (b.reference) byRef.set(b.reference, b); });
     const parent = new Map<string, string>();
@@ -298,21 +321,24 @@ export function bedGroups(bookings: Ticket[]): Map<string, BedGroup> {
         const a = find(b._id), t = find(target._id);
         if (a !== t) parent.set(a, t);
     }));
-    const groups = new Map<string, BedGroup>();
+    const rootOf = new Map<string, string>();
+    bookings.forEach(b => rootOf.set(b._id, find(b._id)));
+    return { rootOf, missing };
+}
+
+/** B-083: per booking _id, the pass type ids held by it AND its linked
+ *  bookings (switched-off passes included, like the Passes column). */
+export function groupPassTypes(bookings: Ticket[]): Map<string, Set<string>> {
+    const { rootOf } = linkRoots(bookings);
+    const byRoot = new Map<string, Set<string>>();
     bookings.forEach(b => {
-        const root = find(b._id);
-        let g = groups.get(root);
-        if (!g) { g = { people: 0, beds: 0, bookingIds: [], missingRefs: [] }; groups.set(root, g); }
-        for (const i of b.shopcart || []) {
-            if (!i || i.isActive === false) continue;
-            if (isFestivalPass(i)) g.people++;
-            else if (isTentPass(i)) g.beds += i.beds || 1;
-        }
-        g.bookingIds.push(bookingIdOf(b));
-        missing.get(b._id)?.forEach(ref => { if (!g!.missingRefs.includes(ref)) g!.missingRefs.push(ref); });
+        const root = rootOf.get(b._id)!;
+        if (!byRoot.has(root)) byRoot.set(root, new Set());
+        const set = byRoot.get(root)!;
+        for (const i of b.shopcart || []) if (i?.passType) set.add(String(i.passType));
     });
-    const out = new Map<string, BedGroup>();
-    bookings.forEach(b => out.set(b._id, groups.get(find(b._id))!));
+    const out = new Map<string, Set<string>>();
+    bookings.forEach(b => out.set(b._id, byRoot.get(rootOf.get(b._id)!)!));
     return out;
 }
 

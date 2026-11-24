@@ -1037,6 +1037,13 @@ th[aria-sort="ascending"] .th-sort .mat-icon, th[aria-sort="descending"] .th-sor
 .toggle-chip:focus-within { box-shadow: 0 0 0 3px rgba(30, 70, 56, 0.15); }
 .toggle-chip.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
 .toggle-chip.on mat-icon { color: #fff; }
+/* Bookings "Selected only" chip: compact, greyed while nothing is ticked. */
+.toggle-chip.bk-sel-chip { padding: 4px 11px 4px 8px; font-size: 12px; color: var(--text-primary); }
+.toggle-chip.bk-sel-chip.on { color: #fff; }
+.toggle-chip.bk-sel-chip.off { opacity: .5; cursor: not-allowed; }
+.toggle-chip.bk-sel-chip.off:hover { border-color: var(--border-default); }
+.toggle-chip.bk-sel-chip mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.seg-bar .bk-sel-chip { margin-right: auto; }   /* sits next to the count; Email stays on the right */
 
 /* ── Choice tile (single-select, coloured icon tile) ──────────────────
    <label class="choice-tile" [class.selected]="picked" style="--t-c:…">
@@ -2534,7 +2541,25 @@ button.myd-stat:hover { border-color: var(--color-secondary); }
 .hy-nt-stay > div { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .hy-nt-stay small { color: var(--text-secondary); font-size: 12px; }
 .hy-nt-acts { flex-wrap: wrap; justify-content: flex-start; }
-.hy-nt-all { font-size: 13px; color: var(--text-secondary); padding: 2px 0; }
+.hy-nt-all { font-size: 13px; color: var(--text-secondary); padding: 2px 0; }
+/* B-084: "All their stays" in the stay panel: newest first, a dot line, the viewed night highlighted. */
+.hy-all-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; color: var(--text-primary); }
+.hy-all-hd span { font-size: 11.5px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--text-secondary); }
+.hy-all { list-style: none; margin: 0 0 4px; padding: 0; position: relative; color: var(--text-primary); }
+.hy-all::before { content: ''; position: absolute; left: 6px; top: 12px; bottom: 12px; width: 2px; background: var(--border-default); }
+.hy-all-i { position: relative; display: flex; gap: 12px; padding: 4px 0; }
+.hy-all-dot { position: relative; z-index: 1; flex-shrink: 0; width: 14px; height: 14px; margin-top: 12px; border-radius: 50%; border: 2px solid var(--border-default); background: var(--surface-card); }
+.hy-all-b { flex: 1; min-width: 0; padding: 8px 12px; border: 1px solid var(--border-default); border-radius: 10px; background: var(--surface-card); display: flex; flex-direction: column; gap: 3px; }
+.hy-all-t { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13.5px; color: var(--text-primary); }
+.hy-all-b small { font-size: 12px; color: var(--text-secondary); }
+.hy-all-w { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #f3f4f6; color: #4b5563; }
+.hy-all-i.w-now .hy-all-dot { border-color: var(--color-primary); background: var(--color-primary); }
+.hy-all-i.w-now .hy-all-b { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(30, 70, 56, .08); }
+.hy-all-i.w-now .hy-all-w { background: var(--color-primary); color: #fff; }
+.hy-all-i.w-next .hy-all-dot { border-color: #0284c7; }
+.hy-all-i.w-next .hy-all-w { background: #e0f2fe; color: #075985; }
+.hy-all-i.w-past .hy-all-b { background: #fafafa; }
+.hy-all-i.w-past .hy-all-b b { color: var(--text-secondary); }
 @media (max-width: 760px) {
   /* Name + status on top, then department, then the unit — each on its own line so nothing squeezes the name */
   .hy-nt-r { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n s" "d d" "u u"; row-gap: 3px; align-items: start; }
@@ -2656,3 +2681,21 @@ app-date.dtp-sm .dtp-field, app-time.dtp-sm .dtp-field, app-date-time.dtp-sm .dt
 .acs-todo.acs-todo-short { background: #fef3c7; color: #92400e; }
 .acs-todo mat-icon { font-size: 16px; width: 16px; height: 16px; flex-shrink: 0; }
 @media (max-width: 480px) { .acs-total { align-items: flex-start; } }
+
+/* <app-multi-select> panel (B-083, 2026-11-24). On the CDK overlay, outside the component, so global. */
+.ms-panel { width: 100%; max-height: 300px; overflow-y: auto; padding: 4px; background: #fff; color: #1a1a1a; border: 1px solid #ddd; border-radius: 8px; box-shadow: var(--shadow-sm); box-sizing: border-box; }
+.ms-clear { display: flex; align-items: center; gap: 6px; width: 100%; padding: 7px 10px; margin-bottom: 2px; border: 0; border-bottom: 1px dashed #e5e7eb; background: none; border-radius: 6px 6px 0 0; font-size: 12px; font-weight: 600; color: var(--color-primary); cursor: pointer; text-align: left; }
+.ms-clear:disabled { color: #9ca3af; cursor: default; }
+.ms-clear:hover:not(:disabled) { background: #f3f4f6; }
+.ms-clear mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.ms-group { padding: 8px 10px 3px; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #6b7280; }
+.ms-opt { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; font-size: 12px; color: #1a1a1a; cursor: pointer; }
+.ms-opt:hover, .ms-opt:focus { background: #f3f4f6; outline: none; }
+.ms-box { flex-shrink: 0; width: 16px; height: 16px; border: 1.5px solid #c4c9cf; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; background: #fff; transition: background .12s, border-color .12s; }
+.ms-opt.on .ms-box { background: var(--color-primary); border-color: var(--color-primary); }
+.ms-box .mat-icon { font-size: 13px; width: 13px; height: 13px; line-height: 13px; color: #fff; }
+.ms-l { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: inherit; }
+.ms-opt.on .ms-l { font-weight: 600; }
+.ms-c { flex-shrink: 0; font-size: 11px; color: #6b7280; font-variant-numeric: tabular-nums; }
+.ms-empty { padding: 10px; font-size: 12px; color: #6b7280; }
+@media (max-width: 600px) { .ms-panel { max-height: 260px; } .ms-opt { padding: 9px 10px; } }

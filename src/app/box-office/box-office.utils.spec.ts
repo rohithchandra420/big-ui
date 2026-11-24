@@ -1,4 +1,4 @@
-import { isFestivalPass, isSpotRegistration, passChips, passChipsTyped, passSummary, ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, lookupErrorMessage, bookingIdOf, paymentMethodLabel, hasExtraBed, FESTIVAL_DETAIL_FIELDS, festivalDetailsFilled, festivalDetailsCount, festivalDetailsMissing, earlyCheckinStatus, earlyCheckinLabel, earlyCheckinBadge, EARLY_CHECKIN_FILTER_OPTIONS, bedGroups, bedsMismatch } from './box-office.utils';
+import { isFestivalPass, isSpotRegistration, passChips, passChipsTyped, passSummary, ticketEmailStatus, ticketEmailLabel, ticketEmailBadge, lookupErrorMessage, bookingIdOf, paymentMethodLabel, hasExtraBed, FESTIVAL_DETAIL_FIELDS, festivalDetailsFilled, festivalDetailsCount, festivalDetailsMissing, earlyCheckinStatus, earlyCheckinLabel, earlyCheckinBadge, EARLY_CHECKIN_FILTER_OPTIONS, bedGroups, bedsMismatch, groupPassTypes, linkRoots } from './box-office.utils';
 import { Shopcart, Ticket } from '../models/ticket.model';
 
 describe('box-office.utils', () => {
@@ -262,5 +262,31 @@ describe('Beds vs people with linked bookings (bedGroups)', () => {
 
   it('a Stay Pass with no beds set counts as one bed', () => {
     expect(bedGroups([bk('a', 'R1', [fest(), { category: 'stay_pass', isActive: true }])]).get('a')!.beds).toBe(1);
+  });
+});
+
+describe('Pass types with linked bookings (groupPassTypes, B-083)', () => {
+  const bk = (id: string, reference: string | undefined, types: string[], linkedReferences?: string[]) =>
+    ({ _id: id, reference, linkedReferences, shopcart: types.map(t => ({ passType: t, isActive: t !== 'off' })) } as any as Ticket);
+
+  it('a booking holds its own pass types and those of every booking linked to it, both ways', () => {
+    const a = bk('a', 'R1', ['week']);
+    const b = bk('b', 'R2', ['tent'], ['R1']);
+    const c = bk('c', 'R3', ['car']);
+    const m = groupPassTypes([a, b, c]);
+    expect([...m.get('a')!].sort()).toEqual(['tent', 'week']);
+    expect(m.get('b')).toBe(m.get('a')!);
+    expect([...m.get('c')!]).toEqual(['car']);
+  });
+
+  it('counts a switched-off pass, and skips a pass with no type', () => {
+    const x = { _id: 'x', shopcart: [{ passType: 'full', isActive: false }, { item_name: 'Legacy', isActive: true }] } as any as Ticket;
+    expect([...groupPassTypes([x]).get('x')!]).toEqual(['full']);
+  });
+
+  it('linkRoots lists references that are not among the bookings', () => {
+    const r = linkRoots([bk('a', 'R1', [], ['R9'])]);
+    expect([...r.missing.get('a')!]).toEqual(['R9']);
+    expect(r.rootOf.get('a')).toBe('a');
   });
 });

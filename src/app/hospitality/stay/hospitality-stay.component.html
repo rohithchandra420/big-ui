@@ -152,8 +152,18 @@
         </ng-container>
         <ng-template #noBed><p class="hx-muted">No bed on the night of {{ short(statsNight) }}.</p></ng-template>
         <ng-container *ngIf="r.stays.length > 1 || (!r.stay && r.stays.length)">
-          <p class="section-lbl">All their stays</p>
-          <div class="hy-nt-all" *ngFor="let x of r.stays; trackBy: trackId">{{ x.unit }} · {{ short(x.from) }} → {{ short(x.to) }} morning</div>
+          <!-- B-084: newest first, one card each -->
+          <p class="section-lbl hy-all-hd">All their stays <span>{{ r.stays.length }} stays · {{ allNights(r) }} night{{ allNights(r) === 1 ? '' : 's' }}</span></p>
+          <ol class="hy-all">
+            <li *ngFor="let x of allStays(r); trackBy: trackId" class="hy-all-i" [ngClass]="'w-' + x.when">
+              <span class="hy-all-dot" aria-hidden="true"></span>
+              <div class="hy-all-b">
+                <div class="hy-all-t"><b>{{ x.unit }}</b><span *ngIf="x.people > 1" class="hx-muted"> ×{{ x.people }}</span>
+                  <span class="hy-all-w">{{ whenLabel[x.when] }}</span></div>
+                <small>{{ day(x.from) }} → {{ day(x.to) }} morning · {{ x.nights }} night{{ x.nights === 1 ? '' : 's' }}<ng-container *ngIf="x.moved"> · {{ x.moved }}</ng-container></small>
+              </div>
+            </li>
+          </ol>
         </ng-container>
         <button type="button" class="pill-btn" [disabled]="busy" (click)="allocateAnother(r)"><mat-icon>date_range</mat-icon>{{ r.stay ? 'Allocate another range' : 'Allocate a bed' }}</button>
       </div>
