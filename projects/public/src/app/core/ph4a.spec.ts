@@ -16,11 +16,14 @@ const pins: PublicMapPin[] = [
   { id: 'w2', name: 'Tap by the Dome', type: 'water', lat: 20.990, lng: 79.360 },
   { id: 't1', name: 'Toilets A', type: 'toilets', lat: 20.985, lng: 79.355 },
   { id: 'bo', name: 'Box Office', type: 'box_office', lat: 20.981, lng: 79.351, open: true, note: 'Queue <10 min' },
+  { id: 'hd', name: 'Helpdesk', type: 'helpdesk', lat: 20.986, lng: 79.356 },
 ];
 const areas: PublicMapArea[] = [
   { id: 'm1', name: 'Medical camp', kind: 'medical_camp', points: [[20.982, 79.352], [20.983, 79.352], [20.983, 79.353]] },
   { id: 'r1', name: 'Exit route', kind: 'emergency', points: [[20.98, 79.35], [20.99, 79.36], [21.0, 79.37]] },
   { id: 'b', name: '<b>Ground</b>', kind: 'boundary', points: [[20.97, 79.34], [21.0, 79.34], [21.0, 79.37]] },
+  { id: 'rd', name: 'Service road', kind: 'road', points: [[20.98, 79.35], [20.985, 79.355]] },
+  { id: 'fc', name: 'East fence', kind: 'fence', points: [[20.98, 79.36], [20.99, 79.36]] },
 ];
 
 describe('public map helpers', () => {
@@ -44,6 +47,7 @@ describe('public map helpers', () => {
     expect(nearest(placesFor('water', pins, areas), [20.991, 79.361])!.place.id).toBe('w2');
     expect(nearest(placesFor('water', pins, areas), null)).toEqual({ place: jasmine.objectContaining({ id: 'w1' }), metres: null });
     expect(nearest([], null)).toBeNull();
+    expect(placesFor('helpdesk', pins, areas).map(p => p.id)).toEqual(['hd']);
   });
 
   it('call / SMS / WhatsApp links', () => {
@@ -68,9 +72,10 @@ describe('FindWayComponent', () => {
     fixture.detectChanges();
   });
 
-  it('shows the four shortcuts; a missing kind is disabled', () => {
-    expect(c.rows.map(r => r.placeId)).toEqual(['w1', 'm1', 't1', 'bo']);
-    c.pins = pins.filter(p => p.type !== 'box_office');
+  it('shows the four shortcuts (Helpdesk, not Box Office); a missing kind is disabled', () => {
+    expect(c.rows.map(r => r.placeId)).toEqual(['w1', 'm1', 't1', 'hd']);
+    expect(c.rows.map(r => r.kind)).not.toContain('boxOffice' as any);
+    c.pins = pins.filter(p => p.type !== 'helpdesk');
     c.ngOnChanges();
     expect(c.rows[3].placeId).toBeNull();
   });
@@ -169,9 +174,9 @@ describe('MapViewComponent', () => {
     for (let i = 0; i < 50 && !c.ready && !c.failed; i++) await new Promise(r => setTimeout(r, 100));
     expect(c.ready).toBeTrue();
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.querySelectorAll('.pub-pin').length).toBe(4);
+    expect(el.querySelectorAll('.pub-pin').length).toBe(5);
     expect(el.querySelector('.pub-pin b.t-good')).toBeTruthy();   // Box Office open dot
-    expect(c.legend.map(l => l.word)).toEqual(['map.water', 'map.toilets', 'map.boxOffice', 'map.firstAid', 'map.emergencyRoute']);
+    expect(c.legend.map(l => l.word)).toEqual(['map.water', 'map.toilets', 'map.boxOffice', 'map.helpdesk', 'map.firstAid', 'map.emergencyRoute', 'map.road', 'map.fence']);
     expect((c as any).popup('<b>x</b>', 'map.boundary', [1, 2], null)).toContain('&lt;b&gt;x&lt;/b&gt;');
     fixture.destroy();
   });

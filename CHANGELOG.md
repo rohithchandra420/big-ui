@@ -13,6 +13,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.80.0] - 2026-11-24
+
+### Added
+- Venue Map: a **Helpdesk** pin type (support agent icon). The KML import picks it for places named "Help desk" / "Information desk".
+- Participant page map: Helpdesk pins, roads (thick grey) and fences (thin dashed), with their legend chips (B-082).
+
+### Changed
+- Participant page Home, "Find your way": the four shortcuts are now Water, First aid, Toilets and **Helpdesk** (Box Office left the shortcuts; its pin stays on the map).
+
 ## [1.79.0] - 2026-11-24
 
 ### Changed

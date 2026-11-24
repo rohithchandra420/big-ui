@@ -150,7 +150,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
       const isGround = a.kind === 'boundary';
       const opts: Leaflet.PolylineOptions = isGround
         ? { color: look.colour, weight: 5, opacity: 1, interactive: false }
-        : { color: look.colour, weight: look.line ? 4 : 2, dashArray: look.dash, opacity: .9, interactive: !this.preview };
+        : { color: look.colour, weight: look.weight ?? (look.line ? 4 : 2), dashArray: look.dash, opacity: .9, interactive: !this.preview };
       const shape = look.line
         ? L.polyline(a.points, opts)
         : L.polygon(a.points, { ...opts, fillColor: look.colour, fillOpacity: isGround ? 0 : a.kind === 'nogo' ? 0.3 : 0.18 });
