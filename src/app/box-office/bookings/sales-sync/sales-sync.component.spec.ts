@@ -19,7 +19,7 @@ const report = (o: Partial<SalesSyncReport> = {}): SalesSyncReport => ({
   fetched: 3, created: 2, updated: 0, cancelled: 0, skipped: 1, errorCount: 0, errors: [],
   unknownCodes: [], unknownPassTypes: [], flagged: [], ...o
 });
-const dome = { externalCode: 'glamp_dome', name: 'Dome (2 guests)', category: 'tent' as const, beds: 2, bookings: 520 };
+const dome = { externalCode: 'glamp_dome', name: 'Dome (2 guests)', category: 'stay_pass' as const, beds: 2, bookings: 520 };
 
 describe('SalesSyncComponent', () => {
   let fixture: ComponentFixture<SalesSyncComponent>;
@@ -99,14 +99,14 @@ describe('SalesSyncComponent', () => {
     boxOffice.pullSalesSync.and.returnValue(of(report({ created: 0, fetched: 520, errorCount: 520, unknownCodes: ['glamp_dome'], unknownPassTypes: [dome], canCreatePassTypes: true })));
     component.pull();
     fixture.detectChanges();
-    expect(component.drafts).toEqual([jasmine.objectContaining({ externalCode: 'glamp_dome', name: 'Dome (2 guests)', category: 'tent', beds: 2, bookings: 520 })]);
+    expect(component.drafts).toEqual([jasmine.objectContaining({ externalCode: 'glamp_dome', name: 'Dome (2 guests)', category: 'stay_pass', beds: 2, bookings: 520 })]);
     expect(el().textContent).toContain('Create 1 pass type & pull again');
     expect(el().textContent).toContain('520 bookings');
 
     boxOffice.pullSalesSync.and.returnValue(of(report({ created: 520, fetched: 520, skipped: 0 })));
     component.drafts[0].name = 'Dome';
     component.createAndPull();
-    expect(events.createPassType).toHaveBeenCalledWith('evt1', { name: 'Dome', category: 'tent', externalCode: 'glamp_dome', beds: 2 });
+    expect(events.createPassType).toHaveBeenCalledWith('evt1', { name: 'Dome', category: 'stay_pass', externalCode: 'glamp_dome', beds: 2 });
     expect(boxOffice.pullSalesSync).toHaveBeenCalledTimes(2);
     expect(component.drafts).toEqual([]);
     expect(component.report?.created).toBe(520);

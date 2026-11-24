@@ -48,6 +48,13 @@
     <div class="stat-n">{{ detailsMissingCount }}</div>
     <div class="stat-s">tap to view →</div>
   </div>
+
+  <!-- Beds vs people (2026-11-24): a booking and its linked bookings together -->
+  <div class="stat tap" [class.act]="activeFilter === 'bedsMismatch'" (click)="toggleFilter('bedsMismatch')">
+    <div class="stat-l">Beds don't match</div>
+    <div class="stat-n">{{ bedsMismatchCount }}</div>
+    <div class="stat-s">tap to view →</div>
+  </div>
 </div>
 
 <div class="tbl-container">
@@ -108,6 +115,7 @@
           <th appSort="admitted" [sort]="sort">Admitted</th>
           <th appSort="details" [sort]="sort" title="Festival Passes with every detail filled">Festival details</th>
           <th appSort="earlyCheckin" [sort]="sort">Early Check-In</th>
+          <th appSort="beds" [sort]="sort" title="Festival Passes (people) and Stay Pass beds, with linked bookings">Beds</th>
         </tr>
       </thead>
       <tbody>
@@ -148,9 +156,13 @@
           <td>
             <span class="badge" [ngClass]="checkinStatusBadge(booking)" [data-tooltip]="checkinStatusHint(booking)">{{ checkinStatusLabel(booking) }}</span>
           </td>
+          <td class="nowrap">
+            <span *ngIf="bedsText(booking) !== '—'; else noBeds" class="badge bk-beds" [ngClass]="bedsBadge(booking)" [data-tooltip]="bedsHint(booking)"><mat-icon class="bk-bed-link" *ngIf="bedsLinked(booking)">link</mat-icon>{{ bedsText(booking) }}</span>
+            <ng-template #noBeds>—</ng-template>
+          </td>
         </tr>
         <tr *ngIf="!loading && pagedBookings.length === 0">
-          <td colspan="14" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
+          <td colspan="15" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
         </tr>
       </tbody>
     </table>
@@ -226,6 +238,15 @@
             <span *ngIf="festivalDetailsText(activeBooking) !== '—'; else noFestivalPanel" class="badge" [ngClass]="festivalDetailsBadge(activeBooking)">{{ festivalDetailsText(activeBooking) }}</span>
             <ng-template #noFestivalPanel>—</ng-template>
           </div>
+        </div>
+        <!-- Beds vs people (2026-11-24): with the linked bookings -->
+        <div class="pay-box">
+          <div class="pay-l">Beds</div>
+          <div class="pay-v">
+            <span *ngIf="bedsText(activeBooking) !== '—'; else noBedsPanel" class="badge bk-beds" [ngClass]="bedsBadge(activeBooking)"><mat-icon class="bk-bed-link" *ngIf="bedsLinked(activeBooking)">link</mat-icon>{{ bedsText(activeBooking) }}</span>
+            <ng-template #noBedsPanel>—</ng-template>
+          </div>
+          <div class="pay-sub" *ngIf="bedsHint(activeBooking)">{{ bedsHint(activeBooking) }}</div>
         </div>
         <!-- Early Check-In EC2: the email with the one-time link -->
         <div class="pay-box">

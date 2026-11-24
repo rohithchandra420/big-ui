@@ -45,10 +45,10 @@
           <div class="field bu-unknown-field">
             <label>Category</label>
             <app-select [(ngModel)]="newPassTypeCategories[name]" [ngModelOptions]="{standalone: true}" [attr.aria-label]="'Category for ' + name">
-              <app-option *ngFor="let c of categories" [value]="c">{{ c }}</app-option>
+              <app-option *ngFor="let c of categories" [value]="c">{{ categoryLabels[c] }}</app-option>
             </app-select>
           </div>
-          <div class="field bu-unknown-field bu-beds" *ngIf="newPassTypeCategories[name] === 'tent'">
+          <div class="field bu-unknown-field bu-beds" *ngIf="newPassTypeCategories[name] === 'stay_pass'">
             <label [for]="'bu-beds-' + i">Beds per pass</label>
             <input [id]="'bu-beds-' + i" type="number" min="1" [max]="maxBeds"
                    [ngModel]="newPassTypeBeds[name]" [ngModelOptions]="{standalone: true}"
@@ -56,7 +56,7 @@
           </div>
         </div>
       </div>
-      <p class="field-hint">Pick a category for each (and beds per pass for a tent pass: one Festival Pass per bed). Confirming creates these pass types on the active event, then uploads.</p>
+      <p class="field-hint">Pick a category for each (and beds per pass for a Stay Pass: one Festival Pass per bed). Confirming creates these pass types on the active event, then uploads.</p>
     </ng-container>
     <ng-template #askAdmin>
       <div class="bu-unknown-row" *ngFor="let name of unknownPassNames">

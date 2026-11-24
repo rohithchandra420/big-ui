@@ -1,5 +1,6 @@
 export type Gender = 'Male' | 'Female' | 'Prefer not to say';
-export type PassCategory = 'festival' | 'tent' | 'addon';
+export type { PassCategory } from '../core/pass-categories';
+import { PassCategory } from '../core/pass-categories';
 /** Payment method of an imported booking (External Booking Import). */
 export type TicketKind = 'online' | 'offline' | 'guest_list';
 

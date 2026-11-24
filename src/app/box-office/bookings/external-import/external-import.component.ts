@@ -9,6 +9,7 @@ import { EventService } from '../../../core/event.service';
 import { NotificationService } from '../../../core/notification.service';
 import { PassCategory } from '../../../models/ticket.model';
 import { MAX_BEDS } from '../bulk-upload/bulk-upload.component';
+import { FESTIVAL, STAY, ADDON } from '../../../core/pass-categories';
 
 /** A missing pass type, as the person will create it (editable). */
 interface PassTypeDraft {
@@ -24,9 +25,9 @@ interface CategoryOption { value: PassCategory; label: string; }
 
 /** Stored list (stable identities for app-option). */
 const CATEGORY_OPTIONS: CategoryOption[] = [
-  { value: 'festival', label: 'Festival Pass' },
-  { value: 'tent', label: 'Tent / stay' },
-  { value: 'addon', label: 'Add-on' }
+  { value: FESTIVAL, label: 'Festival Pass' },
+  { value: STAY, label: 'Stay Pass' },
+  { value: ADDON, label: 'Add-on' }
 ];
 
 type Step = 'pick' | 'checking' | 'preview' | 'importing' | 'done';
@@ -94,7 +95,7 @@ export class ExternalImportComponent implements OnChanges {
   }
 
   get draftsValid(): boolean {
-    return this.drafts.every(d => d.name.trim() && (d.category !== 'tent' || (d.beds >= 1 && d.beds <= MAX_BEDS)));
+    return this.drafts.every(d => d.name.trim() && (d.category !== STAY || (d.beds >= 1 && d.beds <= MAX_BEDS)));
   }
 
   get canImport(): boolean {
@@ -208,7 +209,7 @@ export class ExternalImportComponent implements OnChanges {
           name: d.name.trim(),
           category: d.category,
           ...(d.externalCode ? { externalCode: d.externalCode } : {}),
-          ...(d.category === 'tent' ? { beds: d.beds } : {})
+          ...(d.category === STAY ? { beds: d.beds } : {})
         }))).pipe(map(() => true))
       : of(true);
     this.creatingPassTypes = this.drafts.length > 0;

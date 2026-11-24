@@ -18,7 +18,7 @@ import { EmailBatch, EmailConfig } from '../../../models/email.model';
 const mockActiveEvent = { _id: 'evt1', name: 'Test Event', description: '', status: 'active' } as EventItem;
 const mockEventDetail: EventDetail = {
   ...mockActiveEvent,
-  passTypes: [{ _id: 'pt1', event: 'evt1', name: 'Festival Ticket', category: 'festival' }],
+  passTypes: [{ _id: 'pt1', event: 'evt1', name: 'Festival Ticket', category: 'festival_pass' }],
   tents: []
 };
 

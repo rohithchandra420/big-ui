@@ -62,9 +62,9 @@
         <div class="pass-type-list" *ngIf="detail.passTypes.length > 0">
           <div class="pass-type-row" *ngFor="let pt of detail.passTypes">
             <span class="pt-name">{{ pt.name }}</span>
-            <span class="cat-chip" [class]="'cat-' + pt.category">{{ pt.category }}</span>
-            <span class="code-chip" *ngIf="pt.category === 'tent'" [class.code-chip-unset]="!pt.code">{{ pt.code || 'no code' }}</span>
-            <span class="code-chip" *ngIf="pt.category === 'tent'" title="Beds per pass: one Festival Pass per bed">{{ pt.beds || 1 }} {{ (pt.beds || 1) === 1 ? 'bed' : 'beds' }}</span>
+            <span class="cat-chip" [class]="'cat-' + pt.category">{{ categoryLabels[pt.category] || pt.category }}</span>
+            <span class="code-chip" *ngIf="pt.category === 'stay_pass'" [class.code-chip-unset]="!pt.code">{{ pt.code || 'no code' }}</span>
+            <span class="code-chip" *ngIf="pt.category === 'stay_pass'" title="Beds per pass: one Festival Pass per bed">{{ pt.beds || 1 }} {{ (pt.beds || 1) === 1 ? 'bed' : 'beds' }}</span>
             <span class="code-chip pt-ext-chip" *ngIf="pt.externalCode" title="Sales system code">{{ pt.externalCode }}</span>
             <div class="pt-actions">
               <button class="btn-sm-outline" (click)="startEditPassType(pt)">Edit</button>
@@ -86,7 +86,7 @@
           <div class="field">
             <label>Category *</label>
             <app-select formControlName="category" aria-label="Category">
-              <app-option *ngFor="let c of categories" [value]="c">{{ c }}</app-option>
+              <app-option *ngFor="let c of categories" [value]="c">{{ categoryLabels[c] }}</app-option>
             </app-select>
           </div>
           <div class="field">
@@ -94,7 +94,7 @@
             <input id="pt-ext" type="text" formControlName="externalCode" maxlength="40" class="pt-ext" placeholder="e.g. pass_3day" autocomplete="off">
             <p class="pt-hint">The item code in the sales system's file, so Import from sales system finds this pass type. No spaces. Optional.</p>
           </div>
-          <ng-container *ngIf="passTypePanelForm.value.category === 'tent'">
+          <ng-container *ngIf="passTypePanelForm.value.category === 'stay_pass'">
             <div class="field">
               <label for="pt-code">Code</label>
               <input id="pt-code" type="text" formControlName="code" maxlength="4" class="pt-code" placeholder="e.g. SO">

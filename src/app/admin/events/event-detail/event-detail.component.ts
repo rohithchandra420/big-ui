@@ -7,6 +7,7 @@ import { EventDetail, EventStatus, PassType, PassTypeCategory } from '../../../m
 import { ConfirmationService } from '../../../shared/confirm-dialog/confirmation.service';
 import { LocationService } from '../../../venue-map/location.service';
 import { AdminService } from '../../admin.service';
+import { FESTIVAL, STAY, ADDON, PASS_CATEGORY_LABELS } from '../../../core/pass-categories';
 
 
 /** Beds per pass from the form: a whole number 1–20 (1 when empty). */
@@ -25,7 +26,8 @@ export class EventDetailComponent implements OnInit {
   saving = false;
 
   readonly statuses: EventStatus[] = ['draft', 'active', 'archived'];
-  readonly categories: PassTypeCategory[] = ['festival', 'tent', 'addon'];
+  readonly categories: PassTypeCategory[] = [FESTIVAL, STAY, ADDON];
+  readonly categoryLabels = PASS_CATEGORY_LABELS;
 
   editForm = new FormGroup({
     name: new FormControl('', Validators.required),
@@ -42,12 +44,12 @@ export class EventDetailComponent implements OnInit {
   });
 
   // New pass type form, shown in the pass type slide panel (ui 1.69.0; was
-  // inline). `code` and `beds` are only meaningful for category 'tent' (see
+  // inline). `code` and `beds` are only meaningful for category 'stay_pass' (see
   // ACCOMMODATION_CONTEXT.md decision #11) and only shown for it.
   addingPassType = false;
   passTypeForm = new FormGroup({
     name: new FormControl('', Validators.required),
-    category: new FormControl<PassTypeCategory>('festival', Validators.required),
+    category: new FormControl<PassTypeCategory>(FESTIVAL, Validators.required),
     code: new FormControl('', Validators.maxLength(4)),
     beds: new FormControl<number>(1, [Validators.min(1), Validators.max(20)]),
     // External Booking Import (I1): the sales system's item_code; any category.
@@ -60,7 +62,7 @@ export class EventDetailComponent implements OnInit {
   private editingPassType: PassType | null = null;
   editPassTypeForm = new FormGroup({
     name: new FormControl('', Validators.required),
-    category: new FormControl<PassTypeCategory>('festival', Validators.required),
+    category: new FormControl<PassTypeCategory>(FESTIVAL, Validators.required),
     code: new FormControl('', Validators.maxLength(4)),
     beds: new FormControl<number>(1, [Validators.min(1), Validators.max(20)]),
     // External Booking Import (I1): the sales system's item_code; any category.
@@ -312,7 +314,7 @@ export class EventDetailComponent implements OnInit {
 
   startAddPassType() {
     this.cancelEditPassType();
-    this.passTypeForm.reset({ name: '', category: 'festival', code: '', beds: 1, externalCode: '' });
+    this.passTypeForm.reset({ name: '', category: FESTIVAL, code: '', beds: 1, externalCode: '' });
     this.addingPassType = true;
   }
 
@@ -324,7 +326,7 @@ export class EventDetailComponent implements OnInit {
     if (!this.detail || this.passTypeForm.invalid || this.savingPassType) return;
     this.savingPassType = true;
     const { name, category, code, beds, externalCode } = this.passTypeForm.value;
-    this.eventService.createPassType(this.detail._id, { name: name!.trim(), category: category!, code: code?.trim() || undefined, ...(externalCode?.trim() ? { externalCode: externalCode.trim() } : {}), ...(category === 'tent' ? { beds: bedsOf(beds) } : {}) }).subscribe({
+    this.eventService.createPassType(this.detail._id, { name: name!.trim(), category: category!, code: code?.trim() || undefined, ...(externalCode?.trim() ? { externalCode: externalCode.trim() } : {}), ...(category === STAY ? { beds: bedsOf(beds) } : {}) }).subscribe({
       next: () => {
         this.savingPassType = false;
         this.addingPassType = false;
@@ -354,7 +356,7 @@ export class EventDetailComponent implements OnInit {
     if (!this.detail || this.editPassTypeForm.invalid || this.savingPassType) return;
     this.savingPassType = true;
     const { name, category, code, beds, externalCode } = this.editPassTypeForm.value;
-    this.eventService.updatePassType(this.detail._id, pt._id, { name: name!.trim(), category: category!, code: code?.trim() || '', externalCode: externalCode?.trim() || '', ...(category === 'tent' ? { beds: bedsOf(beds) } : {}) }).subscribe({
+    this.eventService.updatePassType(this.detail._id, pt._id, { name: name!.trim(), category: category!, code: code?.trim() || '', externalCode: externalCode?.trim() || '', ...(category === STAY ? { beds: bedsOf(beds) } : {}) }).subscribe({
       next: () => {
         this.savingPassType = false;
         this.cancelEditPassType();

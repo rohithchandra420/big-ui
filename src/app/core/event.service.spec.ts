@@ -160,17 +160,17 @@ describe('EventService', () => {
     });
 
     it('createPassType() posts to /api/admin/events/:id/pass-types', () => {
-        service.createPassType('evt1', { name: 'Solo Tent', category: 'tent' }).subscribe();
+        service.createPassType('evt1', { name: 'Solo Tent', category: 'stay_pass' }).subscribe();
         const req = httpMock.expectOne('/api/admin/events/evt1/pass-types');
         expect(req.request.method).toBe('POST');
-        req.flush({ _id: 'pt1', event: 'evt1', name: 'Solo Tent', category: 'tent' });
+        req.flush({ _id: 'pt1', event: 'evt1', name: 'Solo Tent', category: 'stay_pass' });
     });
 
     it('updatePassType() patches /api/admin/events/:id/pass-types/:passTypeId', () => {
         service.updatePassType('evt1', 'pt1', { name: 'Renamed' }).subscribe();
         const req = httpMock.expectOne('/api/admin/events/evt1/pass-types/pt1');
         expect(req.request.method).toBe('PATCH');
-        req.flush({ _id: 'pt1', event: 'evt1', name: 'Renamed', category: 'tent' });
+        req.flush({ _id: 'pt1', event: 'evt1', name: 'Renamed', category: 'stay_pass' });
     });
 
     it('deletePassType() sends DELETE to /api/admin/events/:id/pass-types/:passTypeId', () => {

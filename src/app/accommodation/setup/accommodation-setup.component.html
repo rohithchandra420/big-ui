@@ -16,13 +16,13 @@
   <form class="setup-form" *ngIf="!noActiveEvent && canWrite" [formGroup]="form" (ngSubmit)="submit()">
 
     <div class="field">
-      <label>Tent Pass Type *</label>
+      <label>Stay Pass Type *</label>
       <app-select formControlName="passTypeId" (valueChange)="onPassTypeChange()">
-        <app-option value="" [disabled]="true">Select a tent pass type…</app-option>
+        <app-option value="" [disabled]="true">Select a stay pass type…</app-option>
         <app-option *ngFor="let pt of tentPassTypes" [value]="pt._id">{{ pt.name }}{{ pt.code ? ' (' + pt.code + ')' : '' }}</app-option>
       </app-select>
       <p class="field-hint" *ngIf="!loading && tentPassTypes.length === 0">
-        No tent-category pass types exist for this event yet — create one under Admin &gt; Events first.
+        No Stay Pass types exist for this event yet — create one under Admin &gt; Events first.
       </p>
     </div>
 
@@ -75,9 +75,40 @@
        plain counts. Row 3 "Partially Filled" and Row 4 "Filled" each carry
        the same Male/Female/Mixed breakdown, so the two occupancy states read
        the same way side by side. -->
+  <!-- Demand (2026-11-24): beds the Stay Passes in the system need vs beds set
+       up, across every Stay Pass type. Switched-off (cancelled) passes are left out. -->
+  <div class="acs-total" *ngIf="!noActiveEvent && summaries.length > 0 && totals as t" [class.acs-short]="t.bedsShort > 0">
+    <mat-icon class="ms-fill">{{ t.bedsShort > 0 ? 'construction' : 'task_alt' }}</mat-icon>
+    <div class="acs-total-text">
+      <span class="acs-total-main" *ngIf="t.bedsShort > 0">{{ t.bedsShort }} {{ t.bedsShort === 1 ? 'bed' : 'beds' }} still to set up</span>
+      <span class="acs-total-main" *ngIf="t.bedsShort === 0">Enough beds set up for every Stay Pass</span>
+      <span class="acs-total-sub">{{ t.passCount }} Stay {{ t.passCount === 1 ? 'Pass' : 'Passes' }} · {{ t.bedsNeeded }} {{ t.bedsNeeded === 1 ? 'bed' : 'beds' }} needed · {{ t.bedsSetUp }} set up</span>
+    </div>
+  </div>
+
   <div class="summary-grid" *ngIf="!noActiveEvent && summaries.length > 0">
     <div class="summary-card" *ngFor="let s of summaries">
       <div class="summary-card-title">{{ s.name }}<span class="summary-card-code" *ngIf="s.code">{{ s.code }}</span></div>
+
+      <!-- Demand from the passes in the system -->
+      <div class="summary-group">
+        <div class="summary-group-hdr acs-hdr">Needed from passes</div>
+        <div class="summary-group-pair">
+          <div class="summary-stat st-neutral">
+            <mat-icon>confirmation_number</mat-icon>
+            <div><span class="summary-n">{{ s.passCount }}</span><span class="summary-l">Stay Passes</span></div>
+          </div>
+          <div class="summary-stat st-neutral">
+            <mat-icon>bed</mat-icon>
+            <div><span class="summary-n">{{ s.totalCapacity }}/{{ s.bedsNeeded }}</span><span class="summary-l">Beds set up/needed</span></div>
+          </div>
+        </div>
+        <div class="acs-todo" [class.acs-todo-short]="s.bedsShort > 0">
+          <mat-icon class="ms-fill">{{ s.bedsShort > 0 ? 'construction' : 'check_circle' }}</mat-icon>
+          <span *ngIf="s.bedsShort > 0">{{ s.bedsShort }} {{ s.bedsShort === 1 ? 'bed' : 'beds' }} to set up · about {{ s.unitsToSetUp }} {{ s.unitsToSetUp === 1 ? 'unit' : 'units' }} of {{ s.unitCapacity }}</span>
+          <span *ngIf="s.bedsShort === 0">Enough beds set up</span>
+        </div>
+      </div>
 
       <div class="summary-group summary-group-pair">
         <div class="summary-stat st-neutral">

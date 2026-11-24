@@ -99,7 +99,7 @@ describe('ExternalImportComponent', () => {
   it('blocks the import when pass types are missing and the person may not create them', () => {
     boxOffice.previewExternalImport.and.returnValue(of(result({
       canCreatePassTypes: false,
-      unknownPassTypes: [{ externalCode: 'cabin_3', name: 'Cabin (3 guests)', category: 'tent', beds: 3, rows: [2] }]
+      unknownPassTypes: [{ externalCode: 'cabin_3', name: 'Cabin (3 guests)', category: 'stay_pass', beds: 3, rows: [2] }]
     })));
     component.pick(csv());
     fixture.detectChanges();
@@ -111,7 +111,7 @@ describe('ExternalImportComponent', () => {
   it('lets a top role create the missing pass types (pre-filled, editable), then imports', () => {
     boxOffice.previewExternalImport.and.returnValue(of(result({
       toCreate: 0, canCreatePassTypes: true,
-      unknownPassTypes: [{ externalCode: 'cabin_3', name: 'Cabin (3 guests)', category: 'tent', beds: 3, rows: [2] }]
+      unknownPassTypes: [{ externalCode: 'cabin_3', name: 'Cabin (3 guests)', category: 'stay_pass', beds: 3, rows: [2] }]
     })));
     boxOffice.runExternalImport.and.returnValue(of(result({ created: 1 })));
     component.pick(csv());
@@ -121,7 +121,7 @@ describe('ExternalImportComponent', () => {
     component.drafts[0].name = 'Cabin for three';
     component.runImport();
 
-    expect(events.createPassType).toHaveBeenCalledWith('evt1', { name: 'Cabin for three', category: 'tent', externalCode: 'cabin_3', beds: 3 });
+    expect(events.createPassType).toHaveBeenCalledWith('evt1', { name: 'Cabin for three', category: 'stay_pass', externalCode: 'cabin_3', beds: 3 });
     expect(boxOffice.runExternalImport).toHaveBeenCalled();
     expect(component.step).toBe('done');
   });
@@ -129,7 +129,7 @@ describe('ExternalImportComponent', () => {
   it('shows the fresh preview when the import finds a pass type still missing (409)', () => {
     boxOffice.previewExternalImport.and.returnValue(of(result()));
     boxOffice.runExternalImport.and.returnValue(throwError(() => ({
-      status: 409, error: result({ canCreatePassTypes: false, unknownPassTypes: [{ externalCode: 'x', name: 'X', category: 'addon', beds: null, rows: [3] }] })
+      status: 409, error: result({ canCreatePassTypes: false, unknownPassTypes: [{ externalCode: 'x', name: 'X', category: 'addon_pass', beds: null, rows: [3] }] })
     })));
     component.pick(csv());
     component.runImport();

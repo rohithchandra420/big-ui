@@ -3,7 +3,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 
-import { AccommodationSetupComponent, suggestPassTypeCode, summarizeTentTypes } from './accommodation-setup.component';
+import { AccommodationSetupComponent, suggestPassTypeCode, summarizeTentTypes, commonCapacity, demandTotals } from './accommodation-setup.component';
 import { AccomodationService } from '../../accomodation/accomodation.service';
 import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
@@ -32,8 +32,8 @@ describe('suggestPassTypeCode()', () => {
 });
 
 describe('summarizeTentTypes()', () => {
-  const soloType: PassType = { _id: 'pt-solo', event: 'event1', name: 'Solo Tent', category: 'tent', code: 'SO' };
-  const sharedType: PassType = { _id: 'pt-shared', event: 'event1', name: 'Shared Tent', category: 'tent', code: 'SH' };
+  const soloType: PassType = { _id: 'pt-solo', event: 'event1', name: 'Solo Tent', category: 'stay_pass', code: 'SO' };
+  const sharedType: PassType = { _id: 'pt-shared', event: 'event1', name: 'Shared Tent', category: 'stay_pass', code: 'SH' };
 
   const tent = (overrides: Partial<Tent> & { passTypeId: string }): Tent => ({
     _id: 'x', tent_no: 'X1', capcity: 2, occupants: [null, null],
@@ -48,7 +48,51 @@ describe('summarizeTentTypes()', () => {
       whollyVacantUnits: 0, fullUnits: 0,
       partiallyFilledMaleUnits: 0, partiallyFilledFemaleUnits: 0, partiallyFilledMixedUnits: 0,
       fullMaleUnits: 0, fullFemaleUnits: 0, fullMixedUnits: 0,
+      passCount: 0, bedsNeeded: 0, bedsShort: 0, unitCapacity: 1, unitsToSetUp: 0,
     }]);
+  });
+
+  describe('demand from Stay Passes', () => {
+    it('shows beds still to set up and about how many units, at the size most units have', () => {
+      const pt: PassType = { ...soloType, passCount: 10, bedsNeeded: 14 };
+      const tents = [
+        tent({ passTypeId: 'pt-solo', capcity: 2, occupants: [null, null] }),
+        tent({ passTypeId: 'pt-solo', capcity: 2, occupants: [null, null] }),
+        tent({ passTypeId: 'pt-solo', capcity: 4, occupants: [null, null, null, null] }),
+      ];
+      const [r] = summarizeTentTypes(tents, [pt]);
+      expect(r.passCount).toBe(10);
+      expect(r.bedsNeeded).toBe(14);
+      expect(r.totalCapacity).toBe(8);
+      expect(r.bedsShort).toBe(6);
+      expect(r.unitCapacity).toBe(2);
+      expect(r.unitsToSetUp).toBe(3);
+    });
+
+    it('uses the pass type beds per pass when no units exist yet, rounding units up', () => {
+      const [r] = summarizeTentTypes([], [{ ...soloType, beds: 3, passCount: 3, bedsNeeded: 7 }]);
+      expect(r.bedsShort).toBe(7);
+      expect(r.unitCapacity).toBe(3);
+      expect(r.unitsToSetUp).toBe(3);
+    });
+
+    it('never goes below zero when more beds are set up than needed', () => {
+      const [r] = summarizeTentTypes([tent({ passTypeId: 'pt-solo', capcity: 4, occupants: [null, null, null, null] })], [{ ...soloType, passCount: 1, bedsNeeded: 2 }]);
+      expect(r.bedsShort).toBe(0);
+      expect(r.unitsToSetUp).toBe(0);
+    });
+
+    it('commonCapacity() picks the most common size, the larger one on a tie, null for none', () => {
+      const t = (c: number) => ({ capcity: c } as Tent);
+      expect(commonCapacity([t(2), t(4), t(2)])).toBe(2);
+      expect(commonCapacity([t(2), t(4)])).toBe(4);
+      expect(commonCapacity([])).toBeNull();
+    });
+
+    it('demandTotals() adds up every type', () => {
+      const rows = summarizeTentTypes([], [{ ...soloType, passCount: 2, bedsNeeded: 4 }, { ...sharedType, passCount: 1, bedsNeeded: 3 }]);
+      expect(demandTotals(rows)).toEqual({ passCount: 3, bedsNeeded: 7, bedsSetUp: 0, bedsShort: 7 });
+    });
   });
 
   it('counts wholly-vacant and full units correctly, including the full unit\'s gender bucket', () => {
@@ -121,7 +165,7 @@ describe('summarizeTentTypes()', () => {
   it('resolves passType whether it\'s a raw id string or a populated object', () => {
     const tents = [
       tent({ passTypeId: 'pt-solo' }),
-      { ...tent({ passTypeId: 'unused' }), passType: { _id: 'pt-solo', name: 'Solo Tent', category: 'tent' } } as any,
+      { ...tent({ passTypeId: 'unused' }), passType: { _id: 'pt-solo', name: 'Solo Tent', category: 'stay_pass' } } as any,
     ];
     const [result] = summarizeTentTypes(tents, [soloType]);
     expect(result.totalUnits).toBe(2);
@@ -148,9 +192,9 @@ describe('AccommodationSetupComponent', () => {
     // passType.code locally on a successful save (real app behaviour, for an
     // immediate UI reflection), so a shared/reused fixture object here would
     // leak mutations from one test into the next.
-    codedPassType = { _id: 'pt1', event: 'event1', name: 'Shared Tent', category: 'tent', code: 'SH' };
-    codelessPassType = { _id: 'pt2', event: 'event1', name: 'Solo Tent', category: 'tent' };
-    festivalPassType = { _id: 'pt3', event: 'event1', name: 'Festival Ticket', category: 'festival' };
+    codedPassType = { _id: 'pt1', event: 'event1', name: 'Shared Tent', category: 'stay_pass', code: 'SH' };
+    codelessPassType = { _id: 'pt2', event: 'event1', name: 'Solo Tent', category: 'stay_pass' };
+    festivalPassType = { _id: 'pt3', event: 'event1', name: 'Festival Ticket', category: 'festival_pass' };
     mockDetail = {
       _id: 'event1', name: 'Test Event', description: '', status: 'active',
       passTypes: [codedPassType, codelessPassType, festivalPassType],
@@ -188,7 +232,7 @@ describe('AccommodationSetupComponent', () => {
     fixture.detectChanges();
   });
 
-  it('loads only tent-category pass types for the active event', () => {
+  it('loads only Stay Pass types for the active event', () => {
     expect(accomodationServiceSpy.getTentPassTypes).toHaveBeenCalledWith('event1');
     expect(eventServiceStub.getEventDetail).not.toHaveBeenCalled();   // that one is DEV/DIR/ADMIN only
     expect(component.tentPassTypes).toEqual([codedPassType, codelessPassType]);
@@ -342,6 +386,29 @@ describe('AccommodationSetupComponent', () => {
       component.summaries = [{ passTypeId: 'pt1' } as any];
       activeEventSubject.next(null);
       expect(component.summaries).toEqual([]);
+      expect(component.totals).toBeNull();
+    });
+
+    it('shows the demand line and the beds each card to set up', () => {
+      accomodationServiceSpy.getTentPassTypes.and.returnValue(of([{ ...codedPassType, passCount: 3, bedsNeeded: 5 }]));
+      accomodationServiceSpy.getAllTents.and.returnValue(of([{ _id: 't1', tent_no: 'SH1', capcity: 2, passType: 'pt1', occupants: [null, null] } as any]));
+      component.loadTentPassTypes('event1');
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      expect(component.totals).toEqual({ passCount: 3, bedsNeeded: 5, bedsSetUp: 2, bedsShort: 3 });
+      expect(el.querySelector('.acs-total')?.classList).toContain('acs-short');
+      expect(el.querySelector('.acs-total-main')?.textContent).toContain('3 beds still to set up');
+      expect(el.querySelector('.acs-todo')?.textContent).toContain('about 2 units of 2');
+    });
+
+    it('says enough when every Stay Pass has a bed set up', () => {
+      accomodationServiceSpy.getTentPassTypes.and.returnValue(of([{ ...codedPassType, passCount: 1, bedsNeeded: 2 }]));
+      accomodationServiceSpy.getAllTents.and.returnValue(of([{ _id: 't1', tent_no: 'SH1', capcity: 2, passType: 'pt1', occupants: [null, null] } as any]));
+      component.loadTentPassTypes('event1');
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.querySelector('.acs-total')?.classList).not.toContain('acs-short');
+      expect(el.querySelector('.acs-todo')?.textContent).toContain('Enough beds set up');
     });
   });
 });
