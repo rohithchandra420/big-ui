@@ -3,7 +3,7 @@ import { DateTimeComponent } from '../../shared/date-time/date-time.component';
 import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { BehaviorSubject, of } from 'rxjs';
-import { HospitalityStayComponent } from './hospitality-stay.component';
+import { HospitalityStayComponent, nightsBetween } from './hospitality-stay.component';
 import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
@@ -376,6 +376,40 @@ describe('HospitalityStayComponent', () => {
       expect(component.stayRow).toBeNull();
       expect([component.from, component.to]).toEqual(['2026-10-23', '2026-10-24']);
     }));
+
+    it('B-084: "All their stays" lists newest first as cards, the viewed night highlighted, moved status when known', fakeAsync(() => {
+      start();
+      const row = component.nightRows[0];
+      row.stays = [
+        { _id: 's0', unit: 'Dome 1', from: '2026-10-18', to: '2026-10-20' },
+        { _id: 's1', unit: 'A-02', from: '2026-10-21', to: '2026-10-23' },
+        { _id: 's2', unit: 'Cottage 1', from: '2026-10-24', to: '2026-10-25' }
+      ];
+      component.data!.units[1].stays[0].movedInAt = '2026-10-21T10:00:00Z';
+      component.openRow(row);
+      const list = component.allStays(row);
+      expect(list.map(x => x.unit)).toEqual(['Cottage 1', 'A-02', 'Dome 1']);
+      expect(list.map(x => x.when)).toEqual(['next', 'now', 'past']);
+      expect(list.map(x => x.nights)).toEqual([1, 2, 2]);
+      expect(list[1].moved).toBe('Moved in');
+      expect(list[0].moved).toBe('');
+      expect(component.allNights(row)).toBe(5);
+      expect(component.allStays(row)).toBe(list);                       // same array until something changes
+      fixture.detectChanges();
+      const cards = Array.from(fixture.nativeElement.querySelectorAll('.hy-all-i')) as HTMLElement[];
+      expect(cards.length).toBe(3);
+      expect(cards[1].classList).toContain('w-now');
+      expect(cards[1].textContent).toContain('This night');
+      expect(cards[0].textContent).toContain('Upcoming');
+      expect(cards[2].textContent).toContain('Past');
+      expect((fixture.nativeElement.querySelector('.hy-all-hd') as HTMLElement).textContent).toContain('3 stays · 5 nights');
+    }));
+
+    it('B-084: nightsBetween counts nights from the first night to the leaving morning', () => {
+      expect(nightsBetween('2026-10-21', '2026-10-23')).toBe(2);
+      expect(nightsBetween('2026-10-31', '2026-11-01')).toBe(1);
+      expect(nightsBetween('2026-10-21', '2026-10-21')).toBe(0);
+    });
 
     it('B-021: the stay panel follows a reload; a moved-in stay offers Moved out and Undo', fakeAsync(() => {
       start();

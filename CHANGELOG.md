@@ -13,6 +13,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.82.0] - 2026-11-24
+
+### Changed
+- Hospitality › Stay › Allocate, a person's stay panel: **All their stays** now lists the newest stay first, as cards on a small timeline (B-084). Each card shows the unit, first night → leaving morning with weekdays, the number of nights, Moved in / Moved out when known, and This night / Upcoming / Past against the night being viewed (This night highlighted). The heading counts their stays and nights. Responsive.
+
 ## [1.81.0] - 2026-11-24
 
 ### Added
