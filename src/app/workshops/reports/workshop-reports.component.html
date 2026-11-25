@@ -79,7 +79,8 @@
 </ng-container>
 
 <!-- ── Side panel: the people ────────────────────────────────── -->
-<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
+<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"
+     [appBackCloses]="panelOpen" (backClose)="closePanel()"></div>
 
 <div class="panel" [class.open]="panelOpen" role="dialog" aria-label="People" [attr.aria-hidden]="!panelOpen">
   <ng-container *ngIf="panelOpen">

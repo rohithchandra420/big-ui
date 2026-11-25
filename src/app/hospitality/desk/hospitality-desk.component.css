@@ -1,7 +1,7 @@
 /* Layout and look follow the Serving desk tab of mocks/mock-hospitality.html. Card shell: .hx-card in styles.css. */
 .hd-page { padding: 0; }   /* the app shell pads every page (like Bookings) */
 .grow { flex: 1; }
-.hd-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.hd-grid { display: grid; grid-template-columns: minmax(0, 1fr) clamp(240px, 28%, 340px); gap: 16px; align-items: start; }
 .hd-main { min-width: 0; }
 
 .hd-now { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--color-primary); color: #fff; margin-bottom: 14px; flex-wrap: wrap; }

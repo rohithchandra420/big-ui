@@ -1941,13 +1941,29 @@ th[aria-sort="ascending"] .th-sort .mat-icon, th[aria-sort="descending"] .th-sor
 .hx-st.no { background: #fee2e2; color: #991b1b; }
 .hx-eg { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-primary); padding: 12px 4px 4px; }
 .hx-enone { padding: 10px 4px; }
+/* B-088: a narrow list (e.g. a tablet, beside the Just served card) switches
+   to two-line rows by its OWN width, so names stay readable:
+   row 1 = name · food icon · status, row 2 = department · why.
+   Placed before the phone rules below, which still win on phones. */
+.hx-etable { container-type: inline-size; }
+@container (max-width: 640px) {
+  .hx-er.hx-eh { display: none; }
+  .hx-er { grid-template-columns: minmax(0, max-content) minmax(0, 1fr) auto auto; grid-template-areas: "n n f s" "d w w w"; row-gap: 2px; column-gap: 8px; }
+  .hx-en { grid-area: n; } .hx-ef { grid-area: f; } .hx-es { grid-area: s; }
+  .hx-ed { grid-area: d; padding-left: 36px; }
+  .hx-ew { grid-area: w; text-align: right; } /* spans the 1fr column, so it never widens the columns above */
+  .hx-eft { display: none; }
+  .hx-efs { display: inline; }
+}
 @media (max-width: 700px) {
   .hx-eh { display: none; }
-  /* Phones: name · food icon · status, department below (food text hidden, icon kept) */
-  .hx-er { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "n f s" "d d d"; row-gap: 2px; column-gap: 8px; }
+  /* Phones: name · food icon · status, then department, then why on its own
+     line (B-089: the serving team works from phones). Food text hidden, icon kept. */
+  .hx-er { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "n f s" "d d d" "w w w"; row-gap: 2px; column-gap: 8px; }
   .hx-en { grid-area: n; } .hx-es { grid-area: s; } .hx-ef { grid-area: f; }
-  .hx-ed { grid-area: d; padding-left: 36px; white-space: normal; }
-  .hx-ew, .hx-eft { display: none; }
+  .hx-er > .hx-ed { grid-area: d; padding-left: 36px; white-space: normal; }
+  .hx-er > .hx-ew { grid-area: w; padding-left: 36px; white-space: normal; text-align: left; } /* beats .hx-er > span (nowrap) */
+  .hx-eft { display: none; }
   .hx-efs { display: inline; }
 }
 .hx-egav { width: 28px; height: 28px; border-radius: 50%; background: #f3effe; color: #7c3aed; display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
@@ -2541,7 +2557,7 @@ button.myd-stat:hover { border-color: var(--color-secondary); }
 .hy-nt-stay > div { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .hy-nt-stay small { color: var(--text-secondary); font-size: 12px; }
 .hy-nt-acts { flex-wrap: wrap; justify-content: flex-start; }
-.hy-nt-all { font-size: 13px; color: var(--text-secondary); padding: 2px 0; }
+.hy-nt-all { font-size: 13px; color: var(--text-secondary); padding: 2px 0; }
 /* B-084: "All their stays" in the stay panel: newest first, a dot line, the viewed night highlighted. */
 .hy-all-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; color: var(--text-primary); }
 .hy-all-hd span { font-size: 11.5px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--text-secondary); }

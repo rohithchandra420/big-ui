@@ -109,7 +109,8 @@
 </ng-container>
 
 <!-- ── Side panel: view / edit / add ─────────────────────────── -->
-<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
+<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"
+     [appBackCloses]="panelOpen" (backClose)="closePanel()"></div>
 
 <div class="panel" [class.open]="panelOpen" role="dialog" aria-label="Workshop setup" [attr.aria-hidden]="!panelOpen">
   <app-workshop-setup-panel *ngIf="panelOpen && event" [kind]="panelKind" [item]="panelItem" [setup]="setup"
