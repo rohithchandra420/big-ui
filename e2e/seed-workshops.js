@@ -35,7 +35,9 @@ async function seedWorkshops({ ev, P, mk, dir, tlBox, D }) {
   await mk("Leela Raman", "leela@example.com", "VOL", "Workshop", "2026-10-03");
 
   // ── the event runs yesterday → tomorrow
-  await ev.updateOne({ startDate: dayAt(-1), endDate: dayAt(1) });
+  // Event dates are stored as midnight UTC of the calendar day (as Admin › Events saves them).
+  const utcDay = (d) => new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  await ev.updateOne({ startDate: utcDay(dayAt(-1)), endDate: utcDay(dayAt(1)) });
 
   // ── Venue Map: an invented open field
   const C = [20.9800, 79.3500];
@@ -49,6 +51,7 @@ async function seedWorkshops({ ev, P, mk, dir, tlBox, D }) {
   await Area.create({ event: ev._id, name: "First aid camp", kind: "medical_camp", points: square(at(-0.0004, 0.0026), 0.0003), department: D["Operations"], createdBy: dir._id });
   await Area.create({ event: ev._id, name: "Main parking", kind: "parking", points: square(at(-0.0029, 0.0018), 0.0007), department: D["Logistics"], createdBy: dir._id });
   await Area.create({ event: ev._id, name: "Service road", kind: "road", points: [at(-0.0039, 0.0008), at(-0.0010, 0.0008), at(0.0010, 0.0011)], department: D["Logistics"], createdBy: dir._id });
+  await Area.create({ event: ev._id, name: "Perimeter fence", kind: "fence", points: [at(-0.0040, -0.0040), at(-0.0040, 0.0040), at(0.0040, 0.0040)], department: D["Logistics"], createdBy: dir._id });
   await Area.create({ event: ev._id, name: "Garden path", kind: "path", points: [at(0.0016, -0.0016), at(0.0004, -0.0004), at(0.0014, 0.0015)], department: D["Operations"], createdBy: dir._id });
   const pin = (name, type, [lat, lng], dept, notes = "") => Location.create({ event: ev._id, name, type, lat, lng, department: D[dept], notes, createdBy: dir._id });
   await pin("Main Stage", "stage", at(0.0002, 0.0000), "Operations", "Sound check 4 pm daily.");
@@ -57,7 +60,7 @@ async function seedWorkshops({ ev, P, mk, dir, tlBox, D }) {
   await pin("Toilets — North", "toilets", at(0.0024, 0.0014), "Logistics");
   await pin("Gate A", "gate", at(-0.0038, 0.0008), "Box Office");
   await pin("Artists' entry", "entry", at(-0.0036, -0.0020), "Operations");
-  await pin("Info tent", "other", at(-0.0008, -0.0004), "Box Office", "Lost & found, maps, charging.");
+  await pin("Helpdesk", "helpdesk", at(-0.0008, -0.0004), "Box Office", "Lost & found, maps, charging.");
 
   // ── Workshops: categories, venues, workshops
   const cat = {};
