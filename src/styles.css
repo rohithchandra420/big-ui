@@ -1918,16 +1918,20 @@ th[aria-sort="ascending"] .th-sort .mat-icon, th[aria-sort="descending"] .th-sor
 .hx-er.pick:hover { background: #f6f8f6; }
 .hx-er.pick:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-secondary); }
 /* Compact list (Today › Who's counted side panel, B-002): at any screen width,
-   row 1 = name · food icon · status, row 2 = department · why */
+   row 1 = name · food icon · status, row 2 = department, row 3 = why.
+   ui 1.83.2: why gets its own full-width row — sharing row 2 with the
+   department, a long "Expected to join … late" widened the auto columns and
+   squeezed the name / department column to nothing. The `> span` selectors
+   outrank the phone + narrow-list rules further down (no avatar here, no indent). */
 .hx-efs { display: none; }                       /* short guest plates "2V · 1NV": phones + compact only */
 .hx-ecompact .hx-efs { display: inline; }
 .hx-ecompact .hx-eh { display: none; }
-.hx-ecompact .hx-er { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "n f s" "d w w"; row-gap: 2px; column-gap: 8px; }
-.hx-ecompact .hx-en { grid-area: n; }
-.hx-ecompact .hx-ef { grid-area: f; display: flex; }
-.hx-ecompact .hx-es { grid-area: s; }
-.hx-ecompact .hx-ed { grid-area: d; padding-left: 0; }
-.hx-ecompact .hx-ew { grid-area: w; display: block; text-align: right; }
+.hx-ecompact .hx-er { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "n f s" "d d d" "w w w"; row-gap: 2px; column-gap: 8px; }
+.hx-ecompact .hx-er > .hx-en { grid-area: n; }
+.hx-ecompact .hx-er > .hx-ef { grid-area: f; display: flex; }
+.hx-ecompact .hx-er > .hx-es { grid-area: s; }
+.hx-ecompact .hx-er > .hx-ed { grid-area: d; padding-left: 0; white-space: normal; }
+.hx-ecompact .hx-er > .hx-ew { grid-area: w; display: block; padding-left: 0; white-space: normal; text-align: left; }
 .hx-eh { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); border-bottom-color: var(--border-default); }
 .hx-en { display: flex; align-items: center; gap: 8px; }
 .hx-en b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
