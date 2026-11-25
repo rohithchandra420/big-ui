@@ -30,6 +30,13 @@ async function seedHospitality({ ev, mk, dir, D }) {
     { $set: { gender: "Male", foodPreference: "non-veg" } });
   // Dates of joining before the mess opens, so everyone counts from day one
   await User.updateMany({ dateOfJoining: { $gt: addDays(today, -3) } }, { $set: { dateOfJoining: addDays(today, -10) } });
+  // Joining Time (api 1.56.0): everyone reported on joining, except two, so the
+  // "Expected · not reported" badge still shows on Stay and the Serving desk
+  const joined = await User.find({ dateOfJoining: { $exists: true } }).select("_id dateOfJoining name");
+  for (const u of joined) {
+    if (["Sam Patel", "Leela Raman"].includes(u.name)) continue;
+    await User.updateOne({ _id: u._id }, { $set: { reportedAt: u.dateOfJoining } });
+  }
 
   // Staff list (since 1.43): every active TL / VOL works BiG 7.0 — except Meera,
   // who shows "Not on" on the Users page and is refused at the Serving desk.
