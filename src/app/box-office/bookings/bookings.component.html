@@ -117,7 +117,6 @@
           <th appSort="order" [sort]="sort">Booking ID</th>
           <th appSort="ticket" [sort]="sort">Ticket ID</th>
           <th appSort="passes" [sort]="sort">Passes</th>
-          <th appSort="amount" [sort]="sort">Amount</th>
           <th appSort="payment" [sort]="sort">Payment method</th>
           <th appSort="paidAt" [sort]="sort">Paid at</th>
           <th appSort="source" [sort]="sort">Source</th>
@@ -149,7 +148,6 @@
           <td class="mono">{{ bookingId(booking) }}</td>
           <td class="mono">{{ booking._id }}</td>
           <td>{{ passSummary(booking) }}</td>
-          <td>₹{{ booking.totalPrice }}</td>
           <td>{{ paymentMethod(booking) || '—' }}</td>
           <td class="nowrap">{{ booking.paidAt ? (booking.paidAt | date:'d MMM y, HH:mm') : '—' }}</td>
           <td>{{ source(booking) }}</td>
@@ -172,7 +170,7 @@
           </td>
         </tr>
         <tr *ngIf="!loading && pagedBookings.length === 0">
-          <td colspan="15" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
+          <td colspan="14" style="text-align:center; color:var(--text-muted); padding:24px;">No bookings found.</td>
         </tr>
       </tbody>
     </table>
@@ -196,7 +194,8 @@
 <app-external-import [open]="importOpen" (closed)="importOpen = false" (imported)="loadBookings()"></app-external-import>
 <app-sales-sync [open]="syncOpen" (closed)="syncOpen = false" (changed)="loadBookings()"></app-sales-sync>
 
-<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
+<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"
+     [appBackCloses]="panelOpen" (backClose)="closePanel()"></div>
 
 <div class="panel" [class.open]="panelOpen" *ngIf="activeBooking">
   <div class="panel-hd">

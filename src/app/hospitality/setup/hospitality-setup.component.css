@@ -1,6 +1,6 @@
 /* Layout and look follow mocks/mock-hospitality.html (approved). Card shell: .hx-card in styles.css. */
 .hs-page { padding: 0; }   /* the app shell pads every page (like Bookings) */
-.hs-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.hs-grid { display: grid; grid-template-columns: minmax(0, 1fr) clamp(240px, 28%, 340px); gap: 16px; align-items: start; }
 .hs-col { display: grid; gap: 16px; min-width: 0; }
 .grow { flex: 1; }
 .hs-note { margin: 8px 0 0; }

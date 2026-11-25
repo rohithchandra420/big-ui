@@ -8,8 +8,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Development
+- New end-to-end test `e2e/back-closes-panel.spec.ts`: Back closes the Bookings side panel and a Hospitality › Stay slide panel, on desktop and phone.
+- New end-to-end test `e2e/hospitality-layout.spec.ts`: side column share on Serving Desk and Setup at 1440, 1024, 960 and 901 px, and no cut-off names in the Expected list. On a phone it checks the reason line is shown in full.
 - Product Guide screenshots: sample Workshops data for the isolated e2e stack (`e2e/seed-workshops.js`: Workshop department and team, venue map with areas, venues, workshops and sessions placed around the current time, pre-registration lists and wrist bands). The sample event now runs yesterday to tomorrow.
 - 11 new screens in `e2e/screens.spec.ts`: Venue Map, a Workshop area, a booking's band history, the Workshop Planner, a session's panel, Setup, the session lists and door, Reports and its panel, and the Departments panel.
+
+---
+
+## [1.83.1] - 2026-11-25
+
+### Fixed
+- Phone Back button closes an open side panel instead of leaving the page (B-086). This covers every slide panel in the staff app and the side panels of Bookings, Admin › Users, Departments and Email Report, Medical patient, and Workshops Planner, Reports and Setup. With two panels open, Back closes the top one first. Closing a panel with ✕, Esc or a tap outside leaves Back working as before. A department opened from a direct link still goes back to where you came from.
+- Hospitality › Serving Desk and Setup keep the desktop layout on a tablet (B-087): the side column (Just served, Mess Hall on the map) stays about a quarter to a third of the width instead of half.
+- Serving Desk: names in the Expected list are readable on a tablet (B-088). When the list is narrow, each person takes two lines: name, food and status on the first, department and reason on the second.
+- Serving Desk on a phone: the Expected list now shows why each person is expected (B-089), in full on its own line under the department. Before, phones showed only name, food, status and department. The Today page's list shows it on phones too.
+
+### Changed
+- Box Office › Bookings: the Amount column is removed from the table (user request). The amount still shows in the booking's side panel and in the export.
 
 ---
 

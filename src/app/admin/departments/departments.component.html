@@ -69,7 +69,8 @@
 </div>
 
 <!-- ── Side panel: view / edit / create a department ─────────── -->
-<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
+<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"
+     [appBackCloses]="panelOpen && !deepLink" (backClose)="closePanel()"></div>
 
 <div class="panel" [class.open]="panelOpen" role="dialog" aria-label="Department" [attr.aria-hidden]="!panelOpen">
   <app-department-detail *ngIf="panelOpen" [deptId]="panelDeptId"

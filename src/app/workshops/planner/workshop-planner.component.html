@@ -71,7 +71,8 @@
 </div>
 
 <!-- ── Side panel: a session (view / edit / new) ─────────────── -->
-<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
+<div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"
+     [appBackCloses]="panelOpen" (backClose)="closePanel()"></div>
 
 <div class="panel" [class.open]="panelOpen" role="dialog" aria-label="Session" [attr.aria-hidden]="!panelOpen">
   <app-session-panel *ngIf="panelOpen && schedule" [session]="panelSession" [prefill]="panelPrefill"
