@@ -15,7 +15,7 @@
 
   <ng-container *ngIf="event && data as d">
     <!-- Stat cards (tap to filter) -->
-    <div class="vl-stats vd-stats">
+    <div class="vl-stats vd-stats pc-swipe">
       <button type="button" class="vl-stat" [class.on]="filter === 'held'" (click)="setFilter('held')">
         <mat-icon>savings</mat-icon>
         <span><b>{{ d.totals.held }}</b><small>Collected<ng-container *ngIf="seeAmounts"> · {{ money(d.totals.heldAmount) }} held</ng-container></small></span>
@@ -30,9 +30,9 @@
     </div>
 
     <div class="vl-tools">
-      <div class="search-field vl-search">
+      <div class="search-field vl-search" *ngIf="!isPhone">
         <mat-icon>search</mat-icon>
-        <input type="text" [(ngModel)]="search" (ngModelChange)="apply()" placeholder="Search name or phone" aria-label="Search volunteer" />
+        <input type="text" [(ngModel)]="search" (ngModelChange)="refilter()" placeholder="Search name or phone" aria-label="Search volunteer" />
       </div>
       <span class="vl-std" *ngIf="seeAmounts">
         Standard deposit: <b>{{ d.defaultAmount ? money(d.defaultAmount) : 'not set' }}</b>
@@ -42,7 +42,60 @@
 
     <p class="vl-muted" *ngIf="!d.rows.length">No volunteers on this event's staff list yet.</p>
 
-    <div class="vl-tbl-wrap" *ngIf="d.rows.length">
+    <!-- Phone cards (2026-11-25): phones only. One pinned toolbar holds search and Sort & filter. -->
+    <app-list-toolbar *ngIf="isPhone && d.rows.length" page="deposits" noun="volunteers"
+                      [search]="search" (searchChange)="search = $event; refilter()"
+                      searchPlaceholder="Name or phone"
+                      [sort]="sort" [sortOptions]="seeAmounts ? sortOptionsAll : sortOptionsBasic"
+                      [chips]="appliedChips" (chipRemoved)="removeChip($event)" (clearAll)="clearChips()"
+                      [resultCount]="rows.length">
+      <div ltFilters>
+        <div class="field">
+          <label>Status</label>
+          <div class="ls-seg" role="group" aria-label="Status">
+            <button type="button" [class.on]="filter === 'all'" (click)="filter = 'all'; refilter()">All</button>
+            <button type="button" [class.on]="filter === 'held'" (click)="setFilter('held')">Collected</button>
+            <button type="button" [class.on]="filter === 'none'" (click)="setFilter('none')">Not yet</button>
+            <button type="button" [class.on]="filter === 'refunded'" (click)="setFilter('refunded')">Refunded</button>
+          </div>
+        </div>
+      </div>
+    </app-list-toolbar>
+
+    <!-- Phone cards: same rows and panel as the table; only one of the two renders -->
+    <ng-container *ngIf="cardsView && d.rows.length">
+      <div class="pc-list">
+        <div class="pc-card" *ngFor="let r of cardRows; trackBy: trackRow"
+             [ngClass]="r.status === 'held' ? 's-ok' : r.status === 'none' ? 's-bad' : 's-info'"
+             [class.muted]="!!r.flag"
+             [class.current]="mode !== 'closed' && selected?._id === r._id"
+             role="button" tabindex="0" (click)="open(r)" (keydown.enter)="open(r)">
+          <div class="pc-head">
+            <app-user-avatar [userId]="r._id" [name]="r.name" [version]="r.avatarVersion" [size]="32" [muted]="!!r.flag"></app-user-avatar>
+            <div class="pc-title">
+              <b>{{ r.name }}<span class="vl-pill flag" *ngIf="r.flag">{{ r.flag === 'left' ? 'Left the event' : 'Deactivated' }}</span></b>
+              <span>{{ r.department || (r.flag ? '—' : 'Unassigned') }}</span>
+            </div>
+            <div class="pc-id">
+              <span class="badge" [ngClass]="statusTone(r)">{{ statusLabel[r.status] }}</span>
+              <mat-icon class="pc-go" aria-hidden="true">chevron_right</mat-icon>
+            </div>
+          </div>
+          <dl class="pc-grid" *ngIf="seeAmounts">
+            <div><dt>Amount</dt><dd>{{ money(r.amount) || '—' }}</dd></div>
+            <div><dt>Paid by</dt><dd>{{ r.mode ? modeLabel[r.mode] : '—' }}</dd></div>
+            <div class="pc-full"><dt>Collected</dt><dd>
+              <ng-container *ngIf="r.collectedAt; else dashCard">{{ r.collectedAt | date: 'd MMM' }} · {{ r.collectedBy }}</ng-container>
+              <ng-template #dashCard>—</ng-template>
+            </dd></div>
+          </dl>
+        </div>
+        <div class="pc-empty" *ngIf="!rows.length">No volunteers match.</div>
+      </div>
+      <app-show-more [shown]="cardRows.length" [total]="rows.length" (more)="showMoreCards()"></app-show-more>
+    </ng-container>
+
+    <div class="vl-tbl-wrap" *ngIf="d.rows.length && !cardsView">
       <table class="tbl vl-tbl">
         <thead>
           <tr>

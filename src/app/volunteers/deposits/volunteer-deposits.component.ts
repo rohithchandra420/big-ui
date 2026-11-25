@@ -8,6 +8,9 @@ import { VolunteersService } from '../volunteers.service';
 import { DepositList, DepositMode, DepositRow, DepositStatus } from '../volunteers.model';
 import { DEPOSIT_LABEL, MODE_LABEL, money } from '../volunteers.utils';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
+import { ViewModeService } from '../../core/view-mode.service';
+import { AppliedChip, SortOption } from '../../shared/list-toolbar/list-toolbar.component';
+import { CARD_STEP } from '../../shared/show-more/show-more.component';
 
 type DepositSortKey = 'name' | 'dept' | 'status' | 'amount' | 'mode' | 'collected';
 
@@ -53,7 +56,8 @@ export class VolunteerDepositsComponent implements OnInit, OnDestroy {
     private events: EventService,
     private volunteers: VolunteersService,
     private notify: NotificationService,
-    private confirm: ConfirmationService
+    private confirm: ConfirmationService,
+    private viewMode: ViewModeService
   ) {}
 
   ngOnInit() {
@@ -96,7 +100,7 @@ export class VolunteerDepositsComponent implements OnInit, OnDestroy {
   }
 
   /** B-003: column sort (none = the default order above). */
-  sort = new TableSort<DepositSortKey>(null, 'asc', () => this.apply());
+  sort = new TableSort<DepositSortKey>(null, 'asc', () => this.refilter());
   readonly sortGetters: Record<DepositSortKey, SortGetter<DepositRow>> = {
     name: r => r.name,
     dept: r => r.department || (r.flag ? '' : 'Unassigned'),
@@ -108,7 +112,76 @@ export class VolunteerDepositsComponent implements OnInit, OnDestroy {
 
   setFilter(f: Filter) {
     this.filter = this.filter === f ? 'all' : f;
+    this.refilter();
+  }
+
+  // ── Phone cards (2026-11-25) ──
+
+  /** Phone cards: how many cards show (grows by "Show more"; back to one step on a new filter / sort). */
+  cardLimit = CARD_STEP;
+
+  /** A phone with Deposits set to Cards (one view renders, never both). */
+  get cardsView(): boolean {
+    return this.viewMode.cards('deposits');
+  }
+
+  /** Phone (either view): the phone toolbar replaces the search box. */
+  get isPhone(): boolean {
+    return this.viewMode.isPhone;
+  }
+
+  /** The first cards (same row objects as the table). */
+  get cardRows(): DepositRow[] {
+    return this.rows.slice(0, this.cardLimit);
+  }
+
+  showMoreCards() {
+    this.cardLimit += CARD_STEP;
+  }
+
+  /** A filter / sort / search changed: back to the first cards, chips follow. */
+  refilter() {
+    this.cardLimit = CARD_STEP;
     this.apply();
+    this.rebuildChips();
+  }
+
+  /** Phone toolbar sort picker: the table's columns (stored lists; amounts only for those who see them). */
+  readonly sortOptionsAll: SortOption[] = [
+    { key: 'name', label: 'Volunteer' }, { key: 'dept', label: 'Department' }, { key: 'status', label: 'Status' },
+    { key: 'amount', label: 'Amount' }, { key: 'mode', label: 'Paid by' }, { key: 'collected', label: 'Collected' }
+  ];
+  readonly sortOptionsBasic: SortOption[] = this.sortOptionsAll.slice(0, 3);
+
+  /** Phone toolbar: applied filters + sort as removable chips (stored; rebuilt on every change). */
+  appliedChips: AppliedChip[] = [];
+
+  private rebuildChips() {
+    const chips: AppliedChip[] = [];
+    if (this.filter !== 'all') chips.push({ id: 'status', label: this.statusLabel[this.filter] });
+    if (this.sort.key) {
+      const o = this.sortOptionsAll.find(x => x.key === this.sort.key);
+      chips.push({ id: 'sort', label: `Sort: ${o?.label ?? this.sort.key}`, icon: this.sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward' });
+    }
+    this.appliedChips = chips;
+  }
+
+  /** Phone toolbar: × on a chip. */
+  removeChip(id: string) {
+    if (id === 'sort') { this.sort.set(null, 'asc'); return; }
+    this.filter = 'all';
+    this.refilter();
+  }
+
+  /** Phone toolbar: Clear all (status and sort; the search box stays). */
+  clearChips() {
+    this.filter = 'all';
+    this.sort.set(null, 'asc');
+  }
+
+  /** Phone cards: status cell colour. */
+  statusTone(r: DepositRow): string {
+    return r.status === 'held' ? 'bg' : r.status === 'refunded' ? 'bb' : 'br';
   }
 
   trackRow = (_: number, r: DepositRow) => r._id;

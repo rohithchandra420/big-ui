@@ -1918,16 +1918,20 @@ th[aria-sort="ascending"] .th-sort .mat-icon, th[aria-sort="descending"] .th-sor
 .hx-er.pick:hover { background: #f6f8f6; }
 .hx-er.pick:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-secondary); }
 /* Compact list (Today › Who's counted side panel, B-002): at any screen width,
-   row 1 = name · food icon · status, row 2 = department · why */
+   row 1 = name · food icon · status, row 2 = department, row 3 = why.
+   ui 1.83.2: why gets its own full-width row — sharing row 2 with the
+   department, a long "Expected to join … late" widened the auto columns and
+   squeezed the name / department column to nothing. The `> span` selectors
+   outrank the phone + narrow-list rules further down (no avatar here, no indent). */
 .hx-efs { display: none; }                       /* short guest plates "2V · 1NV": phones + compact only */
 .hx-ecompact .hx-efs { display: inline; }
 .hx-ecompact .hx-eh { display: none; }
-.hx-ecompact .hx-er { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "n f s" "d w w"; row-gap: 2px; column-gap: 8px; }
-.hx-ecompact .hx-en { grid-area: n; }
-.hx-ecompact .hx-ef { grid-area: f; display: flex; }
-.hx-ecompact .hx-es { grid-area: s; }
-.hx-ecompact .hx-ed { grid-area: d; padding-left: 0; }
-.hx-ecompact .hx-ew { grid-area: w; display: block; text-align: right; }
+.hx-ecompact .hx-er { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "n f s" "d d d" "w w w"; row-gap: 2px; column-gap: 8px; }
+.hx-ecompact .hx-er > .hx-en { grid-area: n; }
+.hx-ecompact .hx-er > .hx-ef { grid-area: f; display: flex; }
+.hx-ecompact .hx-er > .hx-es { grid-area: s; }
+.hx-ecompact .hx-er > .hx-ed { grid-area: d; padding-left: 0; white-space: normal; }
+.hx-ecompact .hx-er > .hx-ew { grid-area: w; display: block; padding-left: 0; white-space: normal; text-align: left; }
 .hx-eh { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); border-bottom-color: var(--border-default); }
 .hx-en { display: flex; align-items: center; gap: 8px; }
 .hx-en b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2715,3 +2719,132 @@ app-date.dtp-sm .dtp-field, app-time.dtp-sm .dtp-field, app-date-time.dtp-sm .dt
 .ms-c { flex-shrink: 0; font-size: 11px; color: #6b7280; font-variant-numeric: tabular-nums; }
 .ms-empty { padding: 10px; font-size: 12px; color: #6b7280; }
 @media (max-width: 600px) { .ms-panel { max-height: 260px; } .ms-opt { padding: 9px 10px; } }
+
+/* ── Phone cards (2026-11-25, mock v2): card lists instead of tables on phones (< 768 px).
+   app-list-toolbar (.lt-*, pinned under the page header via --ph-bottom, set by
+   SectionHeaderComponent), its Sort & filter sheet (.ls-*), the cards (.pc-*) and
+   app-show-more. Pages render EITHER the cards OR the table (ViewModeService). ── */
+
+/* The toolbar's host must not box it in, or it can't pin (sticky needs the list box as parent) */
+app-list-toolbar { display: contents; }
+
+/* Phone: the list box loses its frame and its overflow clip (a clip stops the toolbar pinning) */
+.tbl-container.pc-mode { overflow: visible; border: 0; border-radius: 0; background: transparent; }
+
+/* Stat tiles: one swipeable row on phones (tap still filters) */
+@media (max-width: 767.98px) {
+  .stat-row.pc-stats { display: flex; gap: 8px; overflow-x: auto; margin: 0 -2px 10px; padding: 2px; scrollbar-width: none; }
+  .stat-row.pc-stats::-webkit-scrollbar { display: none; }
+  .stat-row.pc-stats .stat { flex: 0 0 auto; min-width: 112px; padding: 8px 12px; }
+  .stat-row.pc-stats .stat-n { font-size: 17px; }
+  .stat-row.pc-stats .stat-s { display: none; }
+}
+
+/* Toolbar */
+.lt-bar { position: sticky; top: var(--ph-bottom, 52px); z-index: 4; margin: 0 -2px 8px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); color: var(--text-primary); }
+.lt-row { display: flex; align-items: center; gap: 6px; padding: 8px; }
+.lt-search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; height: 40px; margin: 0; padding: 0 10px; border: 1px solid var(--border-default); border-radius: 10px; background: var(--surface-input); color: var(--text-muted); }
+.lt-search .mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+.lt-search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; font-size: 14px; color: var(--text-primary); }
+.lt-open { position: relative; flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; height: 40px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: 10px; background: var(--surface-card); color: var(--color-primary); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.lt-open.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.lt-open .mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.lt-cnt { position: absolute; top: -7px; right: -7px; min-width: 18px; height: 18px; padding: 0 4px; border: 2px solid var(--surface-card); border-radius: 9px; background: var(--color-warning); color: #fff; font-size: 10.5px; line-height: 14px; text-align: center; }
+.lt-chips { display: flex; gap: 6px; overflow-x: auto; padding: 0 8px 8px; scrollbar-width: none; }
+.lt-chips::-webkit-scrollbar { display: none; }
+.lt-chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 2px; padding: 4px 6px 4px 10px; border: 1px solid #c9dcd3; border-radius: 999px; background: #eaf2ee; color: var(--color-primary); font-size: 12px; white-space: nowrap; }
+.lt-chip .mat-icon { font-size: 15px; width: 15px; height: 15px; }
+.lt-chip .lt-chip-ic { margin-right: 2px; }
+.lt-chip.lt-clear { padding-right: 10px; border-color: var(--border-default); background: var(--surface-card); color: var(--text-secondary); }
+.lt-sel { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 8px 6px 12px; border-top: 1px dashed var(--border-default); border-radius: 0 0 12px 12px; font-size: 12.5px; color: var(--text-primary); }
+.lt-sel.has { background: #eaf2ee; }
+.lt-grow { flex: 1; min-width: 0; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lt-sel.has .lt-grow { color: var(--color-primary); font-weight: 600; }
+.lt-sel .lt-act { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; height: 32px; margin: 0; padding: 0 10px; font-size: 12px; line-height: 1; }
+.lt-sel .lt-act .mat-icon { font-size: 16px; width: 16px; height: 16px; line-height: 16px; }
+.lt-sel .toggle-chip.lt-act { margin: 0; }
+.lt-sel .toggle-chip.lt-act.off { opacity: 0.45; }
+/* Bigger tick targets on phones */
+.lt-sel .cb-wrap, .pc-card .cb-wrap { padding: 4px; margin: -4px; }
+.lt-sel .cb-wrap input[type="checkbox"], .pc-card .cb-wrap input[type="checkbox"] { width: 28px; height: 28px; left: 0; top: 0; }
+.lt-sel .cb-box, .pc-card .cb-box { width: 20px; height: 20px; }
+
+/* Sort & filter sheet (inside app-slide-panel) */
+.ls-body { display: flex; flex-direction: column; gap: 12px; color: var(--text-primary); }
+.ls-body .field { margin: 0; }
+.ls-body [ltFilters] { display: flex; flex-direction: column; gap: 12px; }
+.ls-clear { align-self: flex-end; border: 0; background: none; padding: 0; color: var(--color-danger); font-size: 13px; font-weight: 600; }
+.ls-seg { display: flex; border: 1px solid var(--border-default); border-radius: 10px; overflow: hidden; }
+.ls-seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 40px; border: 0; background: var(--surface-card); color: var(--text-secondary); font-size: 13px; }
+.ls-seg button + button { border-left: 1px solid var(--border-default); }
+.ls-seg button.on { background: var(--color-primary); color: #fff; }
+.ls-seg button:disabled { color: var(--text-faint); }
+.ls-seg .mat-icon { font-size: 17px; width: 17px; height: 17px; }
+.ls-show { height: 46px; margin-top: 4px; font-size: 14px; }
+
+/* Cards */
+.pc-list { color: var(--text-primary); }
+.pc-card { position: relative; background: var(--surface-card); border: 1px solid var(--border-default); border-left: 4px solid var(--border-default); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; color: var(--text-primary); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.pc-card:active { background: #fafbfa; }
+.pc-card.s-ok { border-left-color: var(--color-success); }
+.pc-card.s-warn { border-left-color: var(--color-warning); }
+.pc-card.s-bad { border-left-color: var(--color-danger); }
+.pc-card.s-info { border-left-color: var(--color-info); }
+/* Selected = border + shadow (a clicked element loses outline to Bootstrap) */
+.pc-card.picked, .pc-card.current { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(30, 70, 56, 0.22); }
+.pc-card.muted { opacity: 0.62; }
+.pc-head { display: flex; align-items: flex-start; gap: 10px; }
+.pc-head > .cb-wrap { margin-top: -2px; }
+.pc-title { flex: 1; min-width: 0; color: var(--text-primary); }
+.pc-title > b { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 14.5px; color: var(--text-primary); overflow-wrap: anywhere; }
+.pc-title > span { display: block; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-title > .pc-phone { color: var(--text-secondary); }
+.pc-title .mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.pc-id { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; color: var(--text-muted); }
+.pc-id .mono { font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: var(--text-secondary); }
+.pc-go.mat-icon { color: var(--text-faint); }
+/* Labelled statuses: four equal cells */
+.pc-stl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-top: 9px; }
+.pc-sv { min-width: 0; padding: 4px 6px; border-radius: 8px; background: #f3f4f6; color: #374151; }
+.pc-sv i { display: block; font-style: normal; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-sv b { display: block; font-size: 12px; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-sv.bg { background: #dcfce7; color: #166534; }
+.pc-sv.ba { background: #fef3c7; color: #92400e; }
+.pc-sv.bb { background: #dbeafe; color: #1e40af; }
+.pc-sv.br { background: #fee2e2; color: #991b1b; }
+.pc-sv.bx { background: #f3f4f6; color: #374151; }
+/* One line of facts with icons */
+.pc-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 12px; color: var(--text-secondary); }
+.pc-meta > span { display: inline-flex; align-items: center; gap: 3px; min-width: 0; color: var(--text-secondary); }
+.pc-meta .mat-icon { font-size: 15px; width: 15px; height: 15px; flex-shrink: 0; color: var(--text-faint); }
+.pc-meta > span.pc-warn, .pc-meta > span.pc-warn .mat-icon { color: #92400e; }
+.pc-subj { margin-top: 6px; font-size: 13px; font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
+.pc-title > .pc-test { color: var(--color-info); }
+.pc-stl.pc-stl-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ls-range { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pc-title .pc-sub-name { font-weight: 500; color: var(--text-secondary); }
+.iv-card .iv-occ { margin-top: 8px; }
+.iv-card .iv-edit { display: flex; flex-direction: column; gap: 8px; color: var(--text-primary); }
+.iv-card .iv-edit .field { margin: 0; }
+/* Volunteers stat tiles: one swipeable row on phones (beats the page's own 2-column grid) */
+@media (max-width: 767.98px) {
+  .vl-page .vl-stats.pc-swipe { display: flex; overflow-x: auto; scrollbar-width: none; padding: 2px; margin: -2px -2px 12px; }
+  .vl-page .vl-stats.pc-swipe::-webkit-scrollbar { display: none; }
+  .vl-page .vl-stats.pc-swipe .vl-stat { flex: 0 0 auto; min-width: 140px; }
+}
+/* Label / value grid (pages with more fields) */
+.pc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 8px 0 0; padding-top: 8px; border-top: 1px dashed var(--border-default); }
+.pc-grid > div { min-width: 0; }
+.pc-grid dt { font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.pc-grid dd { margin: 1px 0 0; font-size: 12.5px; color: var(--text-primary); overflow-wrap: anywhere; }
+.pc-grid .pc-full { grid-column: 1 / -1; }
+.pc-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.pc-empty { padding: 24px 8px; text-align: center; font-size: 13px; color: var(--text-muted); }
+
+.pc-more { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 4px 0 12px; text-align: center; font-size: 12px; color: var(--text-muted); }
+.pc-more button { padding: 10px; border: 1px solid var(--color-primary); border-radius: 10px; background: var(--surface-card); color: var(--color-primary); font-size: 13.5px; font-weight: 600; }
+.pc-more button:disabled { opacity: 0.6; }
+.pc-more-spin { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 0 4px; font-size: 13px; font-weight: 500; color: var(--color-primary); }
+.pc-more-spin .mat-icon { font-size: 22px; width: 22px; height: 22px; color: var(--color-primary); animation: pc-spin 0.9s linear infinite; }
+@keyframes pc-spin { to { transform: rotate(360deg); } }
+.pc-sentinel { height: 1px; }
