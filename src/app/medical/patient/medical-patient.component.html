@@ -51,7 +51,8 @@
     </section>
 
     <!-- Side panel: Edit details / Email report / Audit log (slides in, the page stays put) -->
-    <div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"></div>
+    <div class="panel-overlay" [class.open]="panelOpen" (click)="closePanel()"
+         [appBackCloses]="panelOpen" (backClose)="closePanel()"></div>
     <div class="panel md-panel" [class.open]="panelOpen" role="dialog" aria-modal="true" [attr.aria-hidden]="!panelOpen">
 
       <!-- Edit details -->

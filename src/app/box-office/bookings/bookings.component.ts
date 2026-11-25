@@ -32,7 +32,7 @@ const PASS_GROUPS: { category: string; label: string }[] = [
   { category: ADDON, label: 'Add-ons' }
 ];
 
-type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'amount' | 'payment' | 'paidAt' | 'source' | 'emailStatus' | 'admitted' | 'details' | 'earlyCheckin' | 'beds';
+type BookingSortKey = 'name' | 'email' | 'order' | 'ticket' | 'passes' | 'payment' | 'paidAt' | 'source' | 'emailStatus' | 'admitted' | 'details' | 'earlyCheckin' | 'beds';
 
 type BookingsStatFilter = 'emailSent' | 'admitted' | 'spotRegistration' | 'detailsMissing' | 'bedsMismatch' | null;
 
@@ -448,7 +448,6 @@ export class BookingsComponent implements OnInit, OnDestroy {
     order: b => b.reference || b.order_id,
     ticket: b => b._id,
     passes: b => this.passSummary(b),
-    amount: b => Number(b.totalPrice),
     payment: b => this.paymentMethod(b),
     paidAt: b => (b.paidAt ? new Date(b.paidAt).getTime() : null),
     source: b => this.source(b),

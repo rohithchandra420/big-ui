@@ -30,6 +30,13 @@ async function seedHospitality({ ev, mk, dir, D }) {
     { $set: { gender: "Male", foodPreference: "non-veg" } });
   // Dates of joining before the mess opens, so everyone counts from day one
   await User.updateMany({ dateOfJoining: { $gt: addDays(today, -3) } }, { $set: { dateOfJoining: addDays(today, -10) } });
+  // Joining Time (api 1.56.0): everyone reported on joining, except two, so the
+  // "Expected · not reported" badge still shows on Stay and the Serving desk
+  const joined = await User.find({ dateOfJoining: { $exists: true } }).select("_id dateOfJoining name");
+  for (const u of joined) {
+    if (["Sam Patel", "Leela Raman"].includes(u.name)) continue;
+    await User.updateOne({ _id: u._id }, { $set: { reportedAt: u.dateOfJoining } });
+  }
 
   // Staff list (since 1.43): every active TL / VOL works BiG 7.0 — except Meera,
   // who shows "Not on" on the Users page and is refused at the Serving desk.
@@ -75,12 +82,18 @@ async function seedHospitality({ ev, mk, dir, D }) {
   // Stay: a dorm with two units, a few staff booked tonight
   const dorm = await StayType.create({ event: ev._id, name: "Volunteer dorm", nameLower: "volunteer dorm", icon: "bunk_bed" });
   const unitA = await StayUnit.create({ event: ev._id, type: dorm._id, name: "D-01", nameLower: "d-01", beds: 6,
-    available: [{ from: addDays(today, -1), to: addDays(today, 4) }] });
-  await StayUnit.create({ event: ev._id, type: dorm._id, name: "D-02", nameLower: "d-02", beds: 6,
-    available: [{ from: addDays(today, -1), to: addDays(today, 4) }] });
+    available: [{ from: addDays(today, -10), to: addDays(today, 4) }] });
+  const unitB = await StayUnit.create({ event: ev._id, type: dorm._id, name: "D-02", nameLower: "d-02", beds: 6,
+    available: [{ from: addDays(today, -10), to: addDays(today, 4) }] });
   for (const u of people.filter(p => ["Sana Qureshi", "Lina Joseph", "Kavya Menon"].includes(p.name)))
     await Stay.create({ event: ev._id, unit: unitA._id, user: u._id, gender: "Female", from: addDays(today, -1), to: addDays(today, 3),
       movedInAt: addDays(today, -1), movedInBy: tlHosp._id, createdBy: tlHosp._id });
+
+  // Sana's two earlier stays, before tonight's (the "All their stays" panel)
+  const sana = people.find(p => p.name === "Sana Qureshi");
+  for (const [unit, from, to] of [[unitB, -9, -6], [unitA, -5, -2]])
+    await Stay.create({ event: ev._id, unit: unit._id, user: sana._id, gender: "Female", from: addDays(today, from), to: addDays(today, to),
+      movedInAt: addDays(today, from), movedInBy: tlHosp._id, movedOutAt: addDays(today, to), movedOutBy: tlHosp._id, createdBy: tlHosp._id });
 
   // SOS: switched on, alerts to Hospitality, one open SOS near the venue
   await PublicSettings.create({ key: "main", enabled: true, event: ev._id, sosEnabled: true, sosDepartments: [D["Hospitality"]],

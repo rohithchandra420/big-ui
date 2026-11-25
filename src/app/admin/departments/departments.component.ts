@@ -69,6 +69,11 @@ export class DepartmentsComponent implements OnInit, OnDestroy {
     this.panelOpen = true;
   }
 
+  /** Opened from a deep link (/admin/departments/:id): Back leaves the page, as before (B-086). */
+  get deepLink(): boolean {
+    return !!this.route.snapshot.paramMap.get('id');
+  }
+
   closePanel() {
     this.panelOpen = false;
     // Leave a deep link (/admin/departments/:id) once the panel closes.

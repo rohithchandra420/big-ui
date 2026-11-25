@@ -88,6 +88,7 @@ import { EmailProgressComponent } from './box-office/email/email-progress/email-
 import { PwaStatusComponent } from './shared/pwa-status/pwa-status.component';
 import { SectionHeaderComponent } from './shared/section-header/section-header.component';
 import { SlidePanelComponent } from './shared/slide-panel/slide-panel.component';
+import { BackClosesDirective } from './shared/slide-panel/back-closes.directive';
 import { SortThComponent } from './shared/table-sort/sort-th.component';
 import { ReportedComponent } from './shared/reported/reported.component';
 import { DateTimeComponent } from './shared/date-time/date-time.component';
@@ -203,6 +204,7 @@ LOAD_WASM().subscribe()
     PwaStatusComponent,
     SectionHeaderComponent,
     SlidePanelComponent,
+    BackClosesDirective,
     SortThComponent,
     ReportedComponent,
     DateTimeComponent,

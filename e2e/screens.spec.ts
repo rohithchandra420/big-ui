@@ -59,6 +59,31 @@ function bulkAddSample(): Buffer {
   return XLSX.write(book, { type: 'buffer', bookType: 'xlsx' });
 }
 
+/**
+ * A small "Import from sales system" file (invented bookings) for the external-import
+ * screenshot: new bookings, one already in BiG, one changed since, a missing pass type
+ * and an error row. Checked only — never imported.
+ */
+function salesImportSample(): Buffer {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const XLSX = require('xlsx');
+  const H = ['reference', 'kind', 'name', 'phone', 'email', 'paid_at_ist', 'updated_at_ist', 'booking_total_incl_gst', 'razorpay_order_id',
+    'line_id', 'item_code', 'item_type', 'item_name', 'quantity', 'item_guests', 'unit_price_ex_gst', 'line_total_ex_gst', 'linked_to_reference'];
+  const rows = [H,
+    ['BLM-24070', 'online', 'Sneha Kulkarni', '9800000701', 'sneha@example.com', '2026-11-02 19:10', '2026-11-02 19:10', '15319', 'order_SAMPLE24070', 'L1', 'fest-3day', 'pass', 'Festival Pass', '2', '', '4999', '9998', ''],
+    ['BLM-24070', 'online', 'Sneha Kulkarni', '9800000701', 'sneha@example.com', '2026-11-02 19:10', '2026-11-02 19:10', '15319', 'order_SAMPLE24070', 'L2', 'tent-2p', 'stay', 'Two-Person Tent', '1', '2', '3499', '3499', ''],
+    ['BLM-24071', 'offline', 'Amit Bhosale', '9800000702', 'amit@example.com', '2026-11-03 12:00', '2026-11-03 12:00', '2359', 'BLM-24071', 'L3', 'fest-1day', 'pass', 'Day Pass', '1', '', '1999', '1999', ''],
+    ['BLM-24031', 'online', 'Ritu Chawla', '9800000501', 'ritu@example.com', '2026-10-20 18:42', '2026-11-04 09:15', '11798', 'order_SAMPLE24031', 'L4', 'fest-3day', 'pass', 'Festival Pass', '2', '', '4999', '9998', ''],
+    ['BLM-24040', 'offline', 'Joel Fernandes', '9800000502', 'joel@example.com', '2026-10-22 11:05', '2026-10-22 11:05', '6488', 'order_SAMPLE24040', 'L5', 'fest-3day', 'pass', 'Festival Pass', '1', '', '4999', '4999', ''],
+    ['BLM-24072', 'online', 'Rhea Kamat', '9800000703', 'rhea.k@example.com', '2026-11-04 08:30', '2026-11-04 08:30', '8259', 'order_SAMPLE24072', 'L6', 'fest-3day', 'pass', 'Festival Pass', '1', '', '4999', '4999', ''],
+    ['BLM-24072', 'online', 'Rhea Kamat', '9800000703', 'rhea.k@example.com', '2026-11-04 08:30', '2026-11-04 08:30', '8259', 'order_SAMPLE24072', 'L7', 'vip-lounge', 'addon', 'VIP Lounge', '1', '', '1999', '1999', ''],
+    ['BLM-24073', 'online', 'Manav Shetty', '9800000704', 'not-an-email', '2026-11-04 10:00', '2026-11-04 10:00', '5899', 'order_SAMPLE24073', 'L8', 'fest-3day', 'pass', 'Festival Pass', '1', '', '4999', '4999', ''],
+  ];
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(rows), 'Bookings');
+  return XLSX.write(book, { type: 'buffer', bookType: 'xlsx' });
+}
+
 const settle = async (page: Page, ms = 800) => { await page.waitForLoadState('networkidle'); await page.waitForTimeout(ms); };
 const clickFirstRow = async (page: Page) => { await page.locator('table tbody tr').first().locator('td').nth(1).click(); await settle(page, 1200); };
 
@@ -97,7 +122,7 @@ async function announcementForm(page: Page) {
 
 test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
   mkdirSync(OUT, { recursive: true });
-  const { eventId, tickets, workshops } = seedIds();
+  const { eventId, tickets, workshops, checkinToken } = seedIds() as any;
   const ticketId = tickets['Vikram'];   // complete, not yet admitted: shows Admit + Link Band
 
   type Screen = [string, string, ((p: Page) => Promise<void>)?, string?];   // name, route, prepare, clipAbove
@@ -107,6 +132,34 @@ test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
     ['my-department', '/my-department'],
     ['bookings', '/box-office/bookings'],
     ['booking-panel', '/box-office/bookings', clickFirstRow],
+    // A sales-system booking: Booking ID, payment, linked Stay booking, Festival details missing, Early Check-In sent.
+    ['booking-panel-sales', '/box-office/bookings', async p => {
+      await p.locator('table tbody tr', { hasText: 'BLM-24031' }).first().locator('td').nth(1).click(); await settle(p, 1200);
+    }],
+    // ── Release 2026-11-24: pass type filter, Early Check-In, sales system, Music, Stay history ──
+    ['bookings-pass-filter', '/box-office/bookings', async p => {
+      await p.locator('.pass-type-filter .app-select-trigger').click(); await p.waitForTimeout(500);
+      for (const t of ['Festival Pass', 'Two-Person Tent']) await p.locator('.ms-opt', { hasText: t }).first().click();
+      await p.waitForTimeout(800);
+    }],
+    ['early-checkin-dialog', '/box-office/bookings', p => emailDialog(p, 'Send Early Check-In')],
+    ['external-import', '/box-office/bookings', async p => {
+      await p.locator('button.bk-add').click(); await p.waitForTimeout(400);
+      await p.locator('.mat-mdc-menu-item', { hasText: 'Import from sales system' }).click(); await p.waitForTimeout(800);
+      await p.locator('.xi input[type=file]').setInputFiles({
+        name: 'sales-bookings.xlsx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        buffer: salesImportSample(),
+      });
+      await settle(p, 2500);
+    }],
+    ['sales-sync-report', '/box-office/sales-sync-report', p => settle(p, 1500)],
+    ['hospitality-stay-panel', '/hospitality/stay', async p => {
+      await settle(p, 1200);
+      await p.locator('.hy-nt-r[role=button]', { hasText: 'Sana Qureshi' }).first().click(); await settle(p, 1200);
+    }],
+    ['music-planner', '/music', p => settle(p, 1500)],
+    ['music-setup', '/music/setup', p => settle(p, 1200)],
     ['registration', '/box-office/registration'],
     ['booking-found', '/box-office/registration/' + ticketId],
     ['accommodation-setup', '/accommodation/setup'],
@@ -209,9 +262,14 @@ test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
 
     for (const [name, route, after, clipAbove] of SCREENS) {
       if (ONLY && !ONLY.includes(name)) continue;
-      await page.goto(route); await settle(page, 1200);
-      if (after) await after(page);
-      await shot(page, `${name}-${size}`, clipAbove);
+      try {
+        await page.goto(route); await settle(page, 1200);
+        if (after) await after(page);
+        await shot(page, `${name}-${size}`, clipAbove);
+      } catch (e) {
+        console.log('SKIPPED', name, String(e).split('\n')[0]);   // one screen failing doesn't stop the run
+        await page.keyboard.press('Escape').catch(() => {});
+      }
     }
     await context.close();
 
@@ -242,6 +300,10 @@ test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
     if (process.env.PUBLIC_SHOTS) {
       const PUBLIC: [string, (p: Page) => Promise<void>][] = [
         ['public-home', async p => { await settle(p, 2000); }],
+        ['public-map', async p => { await p.goto('/#map'); await settle(p, 3500); }],
+        // The participant Early Check-In form, opened from the sample link (seed-sales.js); nothing is sent.
+        // Reloaded: the page reads the link only when it loads.
+        ['early-checkin-form', async p => { await p.goto('/#check-in/' + checkinToken); await p.reload(); await settle(p, 2500); }],
         ['public-emergency', async p => {
           await settle(p, 2000);
           await p.locator('button', { hasText: /emergency/i }).first().click(); await p.waitForTimeout(900);
@@ -251,8 +313,10 @@ test('Product Guide screenshots', async ({ browser }: { browser: Browser }) => {
       const ppage = await pctx.newPage();
       for (const [name, prepare] of PUBLIC) {
         if (ONLY && !ONLY.includes(name)) continue;
-        await ppage.goto('/'); await prepare(ppage);
-        await shot(ppage, `${name}-${size}`);
+        try {
+          await ppage.goto('/'); await prepare(ppage);
+          await shot(ppage, `${name}-${size}`);
+        } catch (e) { console.log('SKIPPED', name, String(e).split('\n')[0]); }
       }
       await pctx.close();
     }

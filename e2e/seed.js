@@ -24,6 +24,8 @@ const seedRoles = require(API + "/src/seeds/roles.seed");
 const seedDepartments = require(API + "/src/seeds/departments.seed");
 const { seedWorkshops } = require("./seed-workshops");
 const { seedHospitality } = require("./seed-hospitality");
+const { seedSalesBookings } = require("./seed-sales");
+const { seedMusic } = require("./seed-music");
 
 const PW = "Demo@12345";
 const day = (iso) => { const d = new Date(iso); d.setUTCHours(0, 0, 0, 0); return d; };
@@ -66,8 +68,9 @@ async function seed() {
   await Event.create({ name: "BiG 6.0", description: "Previous edition.", startDate: new Date("2026-01-16"), endDate: new Date("2026-01-18"), status: "archived", createdBy: dir._id });
   await Event.create({ name: "BiG Night 2.0", description: "One-night winter edition (planning).", startDate: new Date("2027-06-12"), endDate: new Date("2027-06-12"), status: "draft", createdBy: dir._id });
   const P = {};
-  for (const [name, category, code] of [["Festival Pass", "festival_pass"], ["Day Pass", "festival_pass"], ["Two-Person Tent", "stay_pass", "TW"], ["Family Tent", "stay_pass", "FA"], ["Parking", "addon_pass"]])
-    P[name] = await PassType.create({ event: ev._id, name, category, ...(code ? { code } : {}) });
+  // externalCode = the sales system's item code (Import from sales system matches on it)
+  for (const [name, category, code, externalCode] of [["Festival Pass", "festival_pass", null, "fest-3day"], ["Day Pass", "festival_pass", null, "fest-1day"], ["Two-Person Tent", "stay_pass", "TW", "tent-2p"], ["Family Tent", "stay_pass", "FA", "tent-family"], ["Parking", "addon_pass", null, "parking"]])
+    P[name] = await PassType.create({ event: ev._id, name, category, externalCode, ...(code ? { code } : {}) });
 
   const tents = {};
   for (let i = 1; i <= 6; i++) tents["TW" + i] = await Tent.create({ event: ev._id, passType: P["Two-Person Tent"]._id, tent_no: "TW" + i, capcity: 2, occupants: [null, null] });
@@ -116,6 +119,7 @@ async function seed() {
     T[first] = await Ticket.create({ order_id: oid, transaction_id: spot ? "SPOT-" + (1767000000000 + oid) : "TXN" + oid, first_name: first, last_name: last,
       email, phone_no: phone, totalPrice: total, shopcart: ids, event: ev._id,
       ticketEmail: { status, sentAt: ["sent", "bounced"].includes(status) ? sentAt(oid % 60) : null, error: ERR[status] || null } });
+    await ShopCart.updateMany({ _id: { $in: ids } }, { bookingId: String(oid) });   // Booking ID on every pass, as the app does
   }
 
   // Wrist bands (W1): every admitted Festival Pass has one, except Karan Shah's —
@@ -170,6 +174,10 @@ async function seed() {
   // Back-date "created" to the send time, so the report reads like a real history
   for (const l of await EmailLog.find())
     await EmailLog.collection.updateOne({ _id: l._id }, { $set: { createdAt: l.sentAt || at(10, 2), updatedAt: l.sentAt || at(10, 2) } });
+
+  // ── Bookings from the sales system (invented): Booking IDs, payment, a linked
+  // Festival + Stay pair (beds don't match), a cancelled booking and Early Check-In states.
+  const { extIds, checkinToken } = await seedSalesBookings({ ev, P, T, tlBox, dir });
 
   // Attendance: Operations volunteers, last 7 days to 2026-10-10
   const slots = ["morning", "afternoon", "night"];
@@ -232,10 +240,14 @@ async function seed() {
   // Staff list, Hospitality (mess, meals, guest, stay) and SOS — for the dry-run screens.
   const hospitality = await seedHospitality({ ev, mk, dir, D });
 
+  // Music: stages, acts and slots.
+  const music = await seedMusic({ ev, dir });
+
   const summary = `${await User.countDocuments()} users, ${await Ticket.countDocuments()} bookings, ${await ShopCart.countDocuments()} passes, ${await Tent.countDocuments()} tents`;
   await mongoose.disconnect();
   // Ids the tests and screenshots need (e.g. to pick the active event, open a booking).
-  const ids = { eventId: String(ev._id), tickets: Object.fromEntries(Object.entries(T).map(([k, t]) => [k, String(t._id)])), workshops, hospitality };
+  const ids = { eventId: String(ev._id), tickets: { ...Object.fromEntries(Object.entries(T).map(([k, t]) => [k, String(t._id)])), ...extIds },
+    workshops, hospitality, music, checkinToken };
   require("fs").mkdirSync(path.join(__dirname, ".data"), { recursive: true });
   require("fs").writeFileSync(path.join(__dirname, ".data", "ids.json"), JSON.stringify(ids, null, 2));
   return summary;
