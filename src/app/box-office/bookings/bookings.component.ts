@@ -24,6 +24,9 @@ import { AttendeeListComponent } from '../attendee-list/attendee-list.component'
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
 import { MultiSelectOption } from '../../shared/multi-select/multi-select.component';
 import { FESTIVAL, STAY, ADDON } from '../../core/pass-categories';
+import { ViewModeService } from '../../core/view-mode.service';
+import { AppliedChip, SortOption } from '../../shared/list-toolbar/list-toolbar.component';
+import { CARD_STEP } from '../../shared/show-more/show-more.component';
 
 /** B-083: pass type filter groups, in this order. */
 const PASS_GROUPS: { category: string; label: string }[] = [
@@ -66,6 +69,9 @@ export class BookingsComponent implements OnInit, OnDestroy {
   pageIndex = 0;
   pageSize = 20;
   readonly pageSizeOptions = [20, 50, 100];
+  /** Phone cards: how many cards show (grows by "Show more"; back to one step on a new filter / sort). */
+  cardLimit = CARD_STEP;
+  readonly cardStep = CARD_STEP;
 
   activeBooking: Ticket | null = null;
   panelOpen = false;
@@ -95,8 +101,68 @@ export class BookingsComponent implements OnInit, OnDestroy {
     private emailService: EmailService,
     private emailDialogs: EmailDialogsService,
     private emailTracker: EmailBatchTrackerService,
-    private auth: AuthService
+    private auth: AuthService,
+    private viewMode: ViewModeService
   ) { }
+
+  /** Phone cards: a phone with Bookings set to Cards (one view renders, never both). */
+  get cardsView(): boolean {
+    return this.viewMode.cards('bookings');
+  }
+
+  /** Phone (either view): the phone toolbar replaces the filter bar and the selection bar. */
+  get isPhone(): boolean {
+    return this.viewMode.isPhone;
+  }
+
+  /** Phone toolbar: applied filters + sort as removable chips (stored; rebuilt on every change). */
+  appliedChips: AppliedChip[] = [];
+
+  private static readonly STAT_LABELS: Record<Exclude<BookingsStatFilter, null>, string> = {
+    emailSent: 'Ticket Emails Sent', admitted: 'Admitted', spotRegistration: 'Spot Registrations',
+    detailsMissing: 'Details missing', bedsMismatch: "Beds don't match"
+  };
+
+  private rebuildChips() {
+    const chips: AppliedChip[] = [];
+    if (this.activeFilter) chips.push({ id: 'stat', label: BookingsComponent.STAT_LABELS[this.activeFilter] });
+    if (this.emailStatusFilter) {
+      const o = this.emailStatusOptions.find(x => x.value === this.emailStatusFilter);
+      chips.push({ id: 'email', label: `Ticket email: ${o?.label ?? this.emailStatusFilter}` });
+    }
+    if (this.checkinStatusFilter) {
+      const o = this.checkinStatusOptions.find(x => x.value === this.checkinStatusFilter);
+      chips.push({ id: 'checkin', label: `Check-In: ${o?.label ?? this.checkinStatusFilter}` });
+    }
+    if (this.passTypeFilter.length) {
+      const one = this.passTypeFilter.length === 1 ? this.passTypes.find(t => t._id === this.passTypeFilter[0]) : null;
+      chips.push({ id: 'pass', label: one ? one.name : `${this.passTypeFilter.length} pass types` });
+    }
+    if (this.sort.key) {
+      const o = this.sortOptions.find(x => x.key === this.sort.key);
+      chips.push({ id: 'sort', label: `Sort: ${o?.label ?? this.sort.key}`, icon: this.sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward' });
+    }
+    this.appliedChips = chips;
+  }
+
+  /** Phone toolbar: × on a chip. */
+  removeChip(id: string) {
+    if (id === 'stat') this.activeFilter = null;
+    else if (id === 'email') this.emailStatusFilter = '';
+    else if (id === 'checkin') this.checkinStatusFilter = '';
+    else if (id === 'pass') this.passTypeFilter = [];
+    else if (id === 'sort') { this.sort.set(null, 'asc'); return; }
+    this.firstPage();
+  }
+
+  /** Phone toolbar: Clear all (filters and sort; the search box stays). */
+  clearChips() {
+    this.activeFilter = null;
+    this.emailStatusFilter = '';
+    this.checkinStatusFilter = '';
+    this.passTypeFilter = [];
+    this.sort.set(null, 'asc');
+  }
 
   /** View-only people (Helpdesk, a "box-office:read" grant alone): no Export, Bulk Upload or Edit. */
   get readOnly(): boolean {
@@ -255,6 +321,17 @@ export class BookingsComponent implements OnInit, OnDestroy {
   }
 
   // ── Ticket Email status (Email epic) ──────────────────
+
+  trackBooking(_: number, b: Ticket): string | undefined {
+    return b._id;
+  }
+
+  /** Phone cards: left-edge colour. Cancelled = bad; something to check = warn; someone admitted = ok. */
+  cardTone(b: Ticket): 'bad' | 'warn' | 'ok' | 'none' {
+    if (b.bookingStatus === 'cancelled') return 'bad';
+    if (b.syncFlags?.length || this.bedsMismatch(b) || festivalDetailsMissing(b)) return 'warn';
+    return this.admittedCountFor(b) > 0 ? 'ok' : 'none';
+  }
 
   trackOption(_: number, o: { value: string }): string {
     return o.value;
@@ -441,7 +518,15 @@ export class BookingsComponent implements OnInit, OnDestroy {
   }
 
   /** B-003: column sort; a new sort starts again on the first page. */
-  sort = new TableSort<BookingSortKey>(null, 'asc', () => { this.pageIndex = 0; });
+  sort = new TableSort<BookingSortKey>(null, 'asc', () => this.firstPage());
+  /** Phone cards sort bar: the table's columns, in the table's order (stored list). */
+  readonly sortOptions: SortOption[] = [
+    { key: 'name', label: 'Name' }, { key: 'email', label: 'Email' }, { key: 'order', label: 'Booking ID' },
+    { key: 'ticket', label: 'Ticket ID' }, { key: 'passes', label: 'Passes' }, { key: 'payment', label: 'Payment method' },
+    { key: 'paidAt', label: 'Paid at' }, { key: 'source', label: 'Source' }, { key: 'emailStatus', label: 'Ticket Email' },
+    { key: 'admitted', label: 'Admitted' }, { key: 'details', label: 'Festival details' },
+    { key: 'earlyCheckin', label: 'Early Check-In' }, { key: 'beds', label: 'Beds' }
+  ];
   readonly sortGetters: Record<BookingSortKey, SortGetter<Ticket>> = {
     name: b => `${b.first_name || ''} ${b.last_name || ''}`.trim(),
     email: b => b.email,
@@ -518,7 +603,9 @@ export class BookingsComponent implements OnInit, OnDestroy {
     return result;
   }
 
+  /** Table: the current page. Phone cards: the first `cardLimit` bookings. */
   get pagedBookings(): Ticket[] {
+    if (this.cardsView) return this.filteredBookings.slice(0, this.cardLimit);
     const start = this.pageIndex * this.pageSize;
     return this.filteredBookings.slice(start, start + this.pageSize);
   }
@@ -553,7 +640,7 @@ export class BookingsComponent implements OnInit, OnDestroy {
   toggleSelectedOnly() {
     if (!this.selectedIds.size) { this.selectedOnly = false; return; }
     this.selectedOnly = !this.selectedOnly;
-    this.pageIndex = 0;
+    this.firstPage();
   }
 
   /** The last tick went: show the whole list again. A page past the end goes back to the last one. */
@@ -573,11 +660,23 @@ export class BookingsComponent implements OnInit, OnDestroy {
 
   toggleFilter(filter: BookingsStatFilter) {
     this.activeFilter = this.activeFilter === filter ? null : filter;
-    this.pageIndex = 0;
+    this.firstPage();
   }
 
   onSearchChange() {
+    this.firstPage();
+  }
+
+  /** A new filter / sort / search: back to page 1, and to the first cards. */
+  private firstPage() {
     this.pageIndex = 0;
+    this.cardLimit = CARD_STEP;
+    this.rebuildChips();
+  }
+
+  /** Phone cards: "Show more". */
+  showMoreCards() {
+    this.cardLimit += CARD_STEP;
   }
 
   onPageChange(event: PageEvent) {

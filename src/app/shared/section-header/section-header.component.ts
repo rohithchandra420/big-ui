@@ -55,8 +55,12 @@ export class SectionHeaderComponent implements OnInit, OnDestroy {
     private breakpoints: BreakpointObserver,
     private zone: NgZone,
     private cdr: ChangeDetectorRef,
-    @Optional() private scroller: MatSidenavContent | null
+    @Optional() private scroller: MatSidenavContent | null,
+    @Optional() private host: ElementRef<HTMLElement> | null
   ) {}
+
+  /** Phone cards (2026-11-25): watches the page header's height for `--ph-bottom`. */
+  private phObserver: ResizeObserver | null = null;
 
   ngOnInit(): void {
     this.url = this.router.url;
@@ -80,6 +84,7 @@ export class SectionHeaderComponent implements OnInit, OnDestroy {
       // CdkScrollable reports outside Angular's zone; re-enter only when the state flips.
       this.subs.push(this.scroller.elementScrolled().subscribe(() => this.onScroll()));
     }
+    this.watchHeaderBottom();
   }
 
   @HostBinding('class.empty') get empty(): boolean {
@@ -153,7 +158,27 @@ export class SectionHeaderComponent implements OnInit, OnDestroy {
     this.zone.run(() => { this.tucked = next; this.cdr.markForCheck(); });
   }
 
+  /**
+   * Phone cards (2026-11-25): a pinned list toolbar sits just under the page
+   * header, whose height changes (tabs tuck away on scroll, actions wrap). Keep
+   * `--ph-bottom` on <html> = the header's sticky top + its height, in px.
+   */
+  private watchHeaderBottom(): void {
+    const ph = this.host?.nativeElement?.closest?.('.page-ph') as HTMLElement | null;
+    if (!ph || typeof ResizeObserver === 'undefined') return;
+    const update = () => {
+      const top = parseFloat(getComputedStyle(ph).top) || 0;
+      document.documentElement.style.setProperty('--ph-bottom', `${Math.round(top + ph.offsetHeight)}px`);
+    };
+    this.zone.runOutsideAngular(() => {
+      this.phObserver = new ResizeObserver(update);
+      this.phObserver.observe(ph);
+    });
+    update();
+  }
+
   ngOnDestroy(): void {
     this.subs.forEach(s => s.unsubscribe());
+    this.phObserver?.disconnect();
   }
 }

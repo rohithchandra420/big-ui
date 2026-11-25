@@ -14,6 +14,7 @@ import { User } from '../../core/user.model';
 import { AppSelectComponent } from '../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../shared/app-select/app-option.component';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
+import { ViewModeService } from '../../core/view-mode.service';
 
 const mockEvent = { _id: 'event1', name: 'Test Event' } as EventItem;
 
@@ -54,9 +55,13 @@ describe('AccommodationInventoryComponent', () => {
   let authServiceStub: { currentUser: User | null; canWriteTenting: jasmine.Spy; canVacateTents: jasmine.Spy };
   let notificationSpy: jasmine.SpyObj<NotificationService>;
   let confirmationServiceSpy: jasmine.SpyObj<ConfirmationService>;
+  /** Phone cards: the view-mode stub's answers (default: a desktop). */
+  let cardsOn = false;
+  let phoneOn = false;
 
   beforeEach(async () => {
     localStorage.removeItem('accommodationInventoryTypeFilter:event1');
+    cardsOn = phoneOn = false;
     accomodationServiceSpy = jasmine.createSpyObj('AccomodationService', ['getAllTents', 'updateTent', 'deleteTent', 'vacateTentSlot']);
     accomodationServiceSpy.getAllTents.and.returnValue(of(mockTents));
     activeEventSubject = new BehaviorSubject<EventItem | null>(mockEvent);
@@ -81,6 +86,7 @@ describe('AccommodationInventoryComponent', () => {
         { provide: AuthService, useValue: authServiceStub },
         { provide: NotificationService, useValue: notificationSpy },
         { provide: ConfirmationService, useValue: confirmationServiceSpy },
+        { provide: ViewModeService, useValue: { cards: () => cardsOn, get isPhone() { return phoneOn; }, modeOf: () => 'cards', setMode: () => {} } },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -415,6 +421,77 @@ describe('AccommodationInventoryComponent', () => {
       component.vacateOccupant({ name: 'No Id' } as any, tent);
       expect(confirmationServiceSpy.confirm).not.toHaveBeenCalled();
       expect(accomodationServiceSpy.vacateTentSlot).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Phone cards (2026-11-25)', () => {
+    const el = () => fixture.nativeElement as HTMLElement;
+    const toCards = () => { cardsOn = phoneOn = true; fixture.detectChanges(); };
+
+    it('a phone in Cards mode shows the toolbar and a card per unit, not the table', () => {
+      toCards();
+      expect(el().querySelector('app-list-toolbar')).not.toBeNull();
+      expect(el().querySelector('.tbl-filters')).toBeNull();
+      expect(el().querySelector('table.tbl')).toBeNull();
+      expect(el().querySelectorAll('.pc-card').length).toBe(2);
+    });
+
+    it('tapping an occupied unit shows its occupants with Vacate; a vacant one does nothing', () => {
+      toCards();
+      const cards = el().querySelectorAll('.pc-card');
+      (cards[0] as HTMLElement).click();
+      fixture.detectChanges();
+      expect(component.expandedTentId).toBe('t1');
+      expect(cards[0].querySelector('.occupant-card-name')?.textContent).toContain('Ananya Rao');
+      expect(cards[0].querySelector('.occupant-vacate-btn')).not.toBeNull();
+      (cards[1] as HTMLElement).click();
+      expect(component.expandedTentId).toBe('t1');
+    });
+
+    it('Edit turns the card into the edit form; Delete asks first', () => {
+      toCards();
+      const card = el().querySelector('.pc-card') as HTMLElement;
+      (card.querySelector('.pc-actions .btn-sm-outline') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(component.editingTentId).toBe('t1');
+      expect(component.expandedTentId).toBeNull();
+      expect((el().querySelector('.iv-edit input[type="text"]') as HTMLInputElement).value).toBe('SH1');
+      component.cancelEdit();
+      fixture.detectChanges();
+      confirmationServiceSpy.confirm.and.returnValue(of(false) as any);
+      (el().querySelector('.pc-card .btn-sm-danger') as HTMLButtonElement).click();
+      expect(confirmationServiceSpy.confirm).toHaveBeenCalled();
+    });
+
+    it('no Edit / Delete without Manage', () => {
+      authServiceStub.canWriteTenting.and.returnValue(false);
+      toCards();
+      expect(el().querySelector('.pc-card .pc-actions')).toBeNull();
+    });
+
+    it('chips: type, occupancy and the sort; Clear all keeps the search', () => {
+      component.setTypeFilter('Solo Tent');
+      component.selectedOccupancy = 'Vacant';
+      component.refilter();
+      component.sort.set('capacity', 'desc');
+      expect(component.appliedChips.map(c => c.id)).toEqual(['type', 'occupancy', 'sort']);
+      component.removeChip('type');
+      expect(component.selectedType).toBe('All');
+      component.searchTerm = 'SH';
+      component.clearChips();
+      expect(component.appliedChips).toEqual([]);
+      expect(component.selectedOccupancy).toBe('All');
+      expect(component.sort.key).toBeNull();
+      expect(component.searchTerm).toBe('SH');
+    });
+
+    it('25 cards at a time', () => {
+      component.tents = Array.from({ length: 40 }, (_, i) => ({ _id: 'x' + i, tent_no: 'T' + i, capcity: 1, passType: 'Solo', occupants: [null] } as any));
+      toCards();
+      expect(el().querySelectorAll('.pc-card').length).toBe(25);
+      component.showMoreCards();
+      fixture.detectChanges();
+      expect(el().querySelectorAll('.pc-card').length).toBe(40);
     });
   });
 });

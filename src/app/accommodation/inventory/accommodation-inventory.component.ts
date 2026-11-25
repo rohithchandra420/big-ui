@@ -10,6 +10,9 @@ import { Tent, TentPassType } from '../../models/tent.model';
 import { Shopcart } from '../../models/ticket.model';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
+import { ViewModeService } from '../../core/view-mode.service';
+import { AppliedChip, SortOption } from '../../shared/list-toolbar/list-toolbar.component';
+import { CARD_STEP } from '../../shared/show-more/show-more.component';
 
 // Enhancement (2026-08-20, ACCOMMODATION_CONTEXT.md follow-up #4). Scoped per
 // event — same pattern EventService already uses for the active event itself
@@ -75,6 +78,7 @@ export class AccommodationInventoryComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private notificationService: NotificationService,
     private confirmationService: ConfirmationService,
+    private viewMode: ViewModeService,
   ) { }
 
   // Subscribes rather than reading currentActiveEvent once — see the
@@ -131,6 +135,7 @@ export class AccommodationInventoryComponent implements OnInit, OnDestroy {
 
   setTypeFilter(type: string) {
     this.selectedType = type;
+    this.refilter();
     if (this.currentEventId) {
       localStorage.setItem(TYPE_FILTER_KEY_PREFIX + this.currentEventId, type);
     }
@@ -207,7 +212,81 @@ export class AccommodationInventoryComponent implements OnInit, OnDestroy {
   }
 
   /** B-003: column sort (the stored list is sorted, then filtered). */
-  sort = new TableSort<'no' | 'type' | 'capacity' | 'occupants' | 'gender'>();
+  sort = new TableSort<'no' | 'type' | 'capacity' | 'occupants' | 'gender'>(null, 'asc', () => this.refilter());
+
+  // ── Phone cards (2026-11-25) ─────────────────────────────
+
+  /** Phone cards: how many cards show (grows by "Show more"; back to one step on a new filter / sort). */
+  cardLimit = CARD_STEP;
+
+  /** A phone with Inventory set to Cards (one view renders, never both). */
+  get cardsView(): boolean {
+    return this.viewMode.cards('inventory');
+  }
+
+  /** Phone (either view): the phone toolbar replaces the filter bar. */
+  get isPhone(): boolean {
+    return this.viewMode.isPhone;
+  }
+
+  /** The first cards (same tent objects as the table). */
+  get cardTents(): Tent[] {
+    return this.filteredTents.slice(0, this.cardLimit);
+  }
+
+  showMoreCards() {
+    this.cardLimit += CARD_STEP;
+  }
+
+  /** A filter / sort / search changed: back to the first cards, chips follow. */
+  refilter() {
+    this.cardLimit = CARD_STEP;
+    this.rebuildChips();
+  }
+
+  /** Phone toolbar sort picker: the table's columns (stored list). */
+  readonly sortOptions: SortOption[] = [
+    { key: 'no', label: 'Accom No' }, { key: 'type', label: 'Type' }, { key: 'capacity', label: 'Capacity' },
+    { key: 'occupants', label: 'Occupants' }, { key: 'gender', label: 'Gender' }
+  ];
+
+  /** Phone toolbar: applied filters + sort as removable chips (stored; rebuilt on every change). */
+  appliedChips: AppliedChip[] = [];
+
+  private rebuildChips() {
+    const chips: AppliedChip[] = [];
+    if (this.selectedType !== 'All') chips.push({ id: 'type', label: this.selectedType });
+    if (this.selectedOccupancy !== 'All') chips.push({ id: 'occupancy', label: this.selectedOccupancy });
+    if (this.sort.key) {
+      const o = this.sortOptions.find(x => x.key === this.sort.key);
+      chips.push({ id: 'sort', label: `Sort: ${o?.label ?? this.sort.key}`, icon: this.sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward' });
+    }
+    this.appliedChips = chips;
+  }
+
+  /** Phone toolbar: × on a chip. */
+  removeChip(id: string) {
+    if (id === 'type') this.setTypeFilter('All');
+    else if (id === 'occupancy') { this.selectedOccupancy = 'All'; this.refilter(); }
+    else if (id === 'sort') this.sort.set(null, 'asc');
+  }
+
+  /** Phone toolbar: Clear all (type, occupancy and sort; the search box stays). */
+  clearChips() {
+    this.selectedOccupancy = 'All';
+    this.sort.set(null, 'asc');
+    this.setTypeFilter('All');
+  }
+
+  /** Phone cards: left-edge colour, the same meaning as the row colours (full green, part-full amber). */
+  cardTone(tent: Tent): 'ok' | 'warn' | 'none' {
+    const st = this.occupancyStatus(tent);
+    return st === 'full' ? 'ok' : st === 'partial' ? 'warn' : 'none';
+  }
+
+  trackTent(_: number, t: Tent) {
+    return t._id;
+  }
   readonly sortGetters: Record<'no' | 'type' | 'capacity' | 'occupants' | 'gender', SortGetter<Tent>> = {
     no: t => t.tent_no,
     type: t => this.passTypeName(t),

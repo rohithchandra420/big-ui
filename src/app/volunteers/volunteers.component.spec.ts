@@ -15,6 +15,7 @@ import { StaffBandService } from '../core/staff-band.service';
 import { DepartmentService } from '../core/department.service';
 import { VolProfileComponent } from './vol-profile/vol-profile.component';
 import { SortThComponent } from '../shared/table-sort/sort-th.component';
+import { ViewModeService } from '../core/view-mode.service';
 
 const vol = (id: string, name: string, department: string | null, marked = true, extra: Partial<Volunteer> = {}): Volunteer => ({
   _id: id, name, avatarVersion: 0, role: 'VOL', department, unassigned: !department, phone: '', gender: '', dateOfJoining: null, reportedAt: null,
@@ -36,6 +37,9 @@ describe('VolunteersComponent', () => {
   let dialog: jasmine.SpyObj<MatDialog>;
   let bands: jasmine.SpyObj<StaffBandService>;
   const el = () => fixture.nativeElement as HTMLElement;
+  /** Phone cards: the view-mode stub's answers (default: a desktop). */
+  let cardsOn = false;
+  let phoneOn = false;
 
   const board = (): VolBoard => ({
     today: '2026-11-14', canAssign, pool: { _id: 'p', name: 'Volunteer' },
@@ -48,6 +52,7 @@ describe('VolunteersComponent', () => {
 
   beforeEach(async () => {
     canAssign = true;
+    cardsOn = phoneOn = false;
     service = jasmine.createSpyObj('VolunteersService', ['board', 'assign', 'profile', 'setNeed', 'askLocation', 'location']);
     service.board.and.callFake(() => Promise.resolve(board()));
     service.profile.and.returnValue(Promise.resolve(profile));
@@ -64,7 +69,8 @@ describe('VolunteersComponent', () => {
         { provide: VolunteersService, useValue: service },
         { provide: MatDialog, useValue: dialog },
         { provide: StaffBandService, useValue: bands },
-        { provide: DepartmentService, useValue: {} }
+        { provide: DepartmentService, useValue: {} },
+        { provide: ViewModeService, useValue: { cards: () => cardsOn, get isPhone() { return phoneOn; }, modeOf: () => 'cards', setMode: () => {} } }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -474,4 +480,94 @@ describe('VolunteersComponent', () => {
     expect(el().querySelectorAll('.vl-tbl tbody tr').length).toBe(3);
     expect(el().querySelector('.vl-pill.un')).not.toBeNull();
   }));
+
+  describe('Phone cards (2026-11-25)', () => {
+    const manage = () => service.board.and.callFake(() => Promise.resolve({ ...board(), canManage: true }));
+
+    it('a phone in Cards mode shows the toolbar and cards in the List, not the table', fakeAsync(() => {
+      cardsOn = phoneOn = true;
+      start('list');
+      expect(el().querySelector('app-list-toolbar')).not.toBeNull();
+      expect(el().querySelector('.vl-tbl')).toBeNull();
+      expect(el().querySelector('.vl-search')).toBeNull();
+      expect(el().querySelectorAll('.pc-card').length).toBe(3);
+    }));
+
+    it('the Board on a phone has no toolbar and no cards', fakeAsync(() => {
+      cardsOn = phoneOn = true;
+      start('board');
+      expect(el().querySelector('app-list-toolbar')).toBeNull();
+      expect(el().querySelector('.pc-card')).toBeNull();
+    }));
+
+    it('a phone in Table mode keeps the table, with the toolbar', fakeAsync(() => {
+      phoneOn = true;
+      start('list');
+      expect(el().querySelector('.vl-tbl')).not.toBeNull();
+      expect(el().querySelector('app-list-toolbar')).not.toBeNull();
+    }));
+
+    it('a card shows department or Unassigned, and Marked / Stay / Band with labels', fakeAsync(() => {
+      cardsOn = phoneOn = true;
+      start('list');
+      const cards = Array.from(el().querySelectorAll('.pc-card'));
+      const chand = cards.find(c => c.textContent!.includes('Chand'))!;
+      expect(chand.querySelector('.pc-title')!.textContent).toContain('WASH');
+      const anil = cards.find(c => c.textContent!.includes('Anil'))!;
+      expect(anil.querySelector('.pc-title')!.textContent).toContain('Unassigned');
+      expect(Array.from(anil.querySelectorAll('.pc-sv i')).map(i => i.textContent)).toEqual(['Today', 'Stay', 'Band']);
+    }));
+
+    it('ticking a card picks it without opening the profile; tapping opens it', fakeAsync(() => {
+      manage();
+      cardsOn = phoneOn = true;
+      start('list');
+      const card = el().querySelector('.pc-card') as HTMLElement;
+      (card.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
+      expect(component.selected.size).toBe(1);
+      expect(component.panel).toBe('closed');
+      card.click();
+      fixture.detectChanges(); flushMicrotasks();
+      expect(component.panel).toBe('profile');
+      flush();
+    }));
+
+    it('no tick boxes without Manage', fakeAsync(() => {
+      cardsOn = phoneOn = true;
+      start('list');
+      expect(el().querySelector('.pc-card input[type="checkbox"]')).toBeNull();
+    }));
+
+    it('chips for the tiles, Who to show and a non-default sort; × and Clear all', fakeAsync(() => {
+      start('list');
+      component.setStat('unassigned');
+      component.toggleNotMarked();
+      component.setRole('TL');
+      component.sort.set('phone', 'desc');
+      expect(component.appliedChips.map(c => c.id)).toEqual(['stat', 'notMarked', 'role', 'sort']);
+      expect(component.appliedChips[2].label).toBe('Team Leads');
+      component.removeChip('stat');
+      expect(component.stat).toBe('all');
+      component.search = 'an';
+      component.clearChips();
+      expect(component.appliedChips).toEqual([]);
+      expect(component.notMarked).toBeFalse();
+      expect(component.roleFilter).toBe('all');
+      expect(component.sort.key).toBe('name');
+      expect(component.search).toBe('an');
+    }));
+
+    it('25 cards at a time; a new filter starts again from 25', fakeAsync(() => {
+      service.board.and.callFake(() => Promise.resolve({ ...board(), volunteers: Array.from({ length: 60 }, (_, i) => vol('v' + i, 'Person ' + i, null)) }));
+      cardsOn = phoneOn = true;
+      start('list');
+      expect(el().querySelectorAll('.pc-card').length).toBe(25);
+      component.showMoreCards();
+      fixture.detectChanges();
+      expect(el().querySelectorAll('.pc-card').length).toBe(50);
+      component.toggleNotMarked();
+      expect(component.cardRows.length).toBeLessThanOrEqual(25);
+      expect(component.cardLimit).toBe(25);
+    }));
+  });
 });

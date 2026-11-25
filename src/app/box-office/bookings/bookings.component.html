@@ -23,7 +23,7 @@
   <app-section-header></app-section-header>
 </div>
 
-<div class="stat-row">
+<div class="stat-row pc-stats">
   <div class="stat tap" [class.act]="activeFilter === 'emailSent'" (click)="toggleFilter('emailSent')">
     <div class="stat-l">Ticket Emails Sent</div>
     <div class="stat-n">{{ emailsSentCount }}</div>
@@ -57,8 +57,8 @@
   </div>
 </div>
 
-<div class="tbl-container">
-  <div class="tbl-filters">
+<div class="tbl-container" [class.pc-mode]="isPhone">
+  <div class="tbl-filters" *ngIf="!isPhone">
     <div class="filter-bar">
       <input type="text" placeholder="Search name, email, booking ID or ticket ID..."
              [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
@@ -77,7 +77,7 @@
     </div>
   </div>
 
-  <div class="seg-bar">
+  <div class="seg-bar" *ngIf="!isPhone">
     <span class="seg-txt">{{ segText }}</span>
     <!-- Show just the ticked rows (2026-11-24) -->
     <label class="toggle-chip bk-sel-chip" [class.on]="selectedOnly" [class.off]="!selectedIds.size"
@@ -98,7 +98,103 @@
     </ng-container>
   </div>
 
-  <div class="tbl-scroll bookings-tbl-scroll">
+  <!-- Phone cards v2 (2026-11-25): phones only. One pinned toolbar (search, Sort & filter, applied chips,
+       selection line) replaces the filter bar and the bar above; the filters live in its bottom sheet. -->
+  <app-list-toolbar *ngIf="isPhone" page="bookings" noun="bookings"
+                    [search]="searchTerm" (searchChange)="searchTerm = $event; onSearchChange()"
+                    searchPlaceholder="Name, email, booking or ticket ID"
+                    [sort]="sort" [sortOptions]="sortOptions"
+                    [chips]="appliedChips" (chipRemoved)="removeChip($event)" (clearAll)="clearChips()"
+                    [resultCount]="filteredBookings.length"
+                    [selectable]="true" [shown]="pagedBookings.length" [selectedCount]="selectedIds.size"
+                    [allSelected]="allPagedSelected" [someSelected]="somePagedSelected" (toggleAll)="toggleSelectAllPaged()">
+    <div ltFilters>
+      <div class="field">
+        <label>Ticket email</label>
+        <app-select [(ngModel)]="emailStatusFilter" (ngModelChange)="onSearchChange()">
+          <app-option value="">All statuses</app-option>
+          <app-option *ngFor="let o of emailStatusOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
+        </app-select>
+      </div>
+      <div class="field">
+        <label>Early Check-In</label>
+        <app-select [(ngModel)]="checkinStatusFilter" (ngModelChange)="onSearchChange()">
+          <app-option value="">All statuses</app-option>
+          <app-option *ngFor="let o of checkinStatusOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
+        </app-select>
+      </div>
+      <div class="field">
+        <label>Pass types</label>
+        <app-multi-select [options]="passTypeOptions" [(ngModel)]="passTypeFilter" (ngModelChange)="onSearchChange()"
+                          placeholder="All pass types" noun="pass types" ariaLabel="Filter by pass type"></app-multi-select>
+      </div>
+    </div>
+    <ng-container ltActions>
+      <label class="toggle-chip lt-act" [class.on]="selectedOnly" [class.off]="!selectedIds.size">
+        <input class="sr-only" type="checkbox" [checked]="selectedOnly" [disabled]="!selectedIds.size" (change)="toggleSelectedOnly()">
+        <mat-icon>{{ selectedOnly ? 'check' : 'checklist' }}</mat-icon>Selected only
+      </label>
+      <ng-container *ngIf="canSendEmail$ | async">
+        <button type="button" class="btn-secondary lt-act" [matMenuTriggerFor]="emailMenuPhone" [disabled]="selectedIds.size === 0">Email ▾</button>
+        <mat-menu #emailMenuPhone="matMenu" xPosition="before">
+          <button mat-menu-item *ngIf="canSendTicket$ | async" (click)="sendTicketEmails()">Send Ticket Email</button>
+          <button mat-menu-item *ngIf="canSendCustom$ | async" (click)="sendCustomEmails()">Send Custom Email</button>
+          <button mat-menu-item *ngIf="canSendCheckin$ | async" (click)="sendCheckinEmails()">Send Early Check-In</button>
+        </mat-menu>
+      </ng-container>
+    </ng-container>
+  </app-list-toolbar>
+
+  <!-- Phone cards: same rows, same panel and ticks as the table; only one of the two renders -->
+  <ng-container *ngIf="cardsView">
+    <div class="pc-list">
+      <div class="pc-card" *ngFor="let booking of pagedBookings; trackBy: trackBooking"
+           [ngClass]="'s-' + cardTone(booking)"
+           [class.picked]="selectedIds.has(booking._id!)"
+           [class.current]="panelOpen && activeBooking?._id === booking._id"
+           role="button" tabindex="0" (click)="openPanel(booking)" (keydown.enter)="openPanel(booking)">
+        <div class="pc-head">
+          <label class="cb-wrap" (click)="$event.stopPropagation()">
+            <input type="checkbox" [checked]="selectedIds.has(booking._id!)" (change)="toggleRow(booking._id!)"
+                   [attr.aria-label]="'Select ' + booking.first_name + ' ' + booking.last_name">
+            <span class="cb-box"></span>
+          </label>
+          <div class="pc-title">
+            <b>
+              {{ booking.first_name }} {{ booking.last_name }}
+              <span class="badge br" *ngIf="booking.bookingStatus === 'cancelled'">Cancelled</span>
+              <mat-icon class="bk-flag" *ngIf="booking.syncFlags?.length" aria-label="Something to check (see the booking)">flag</mat-icon>
+            </b>
+            <span>{{ booking.email }}</span>
+            <span class="pc-phone" *ngIf="booking.phone_no">{{ booking.phone_no }}</span>
+          </div>
+          <div class="pc-id">
+            <span class="mono">{{ bookingId(booking) }}</span>
+            <mat-icon class="pc-go" aria-hidden="true">chevron_right</mat-icon>
+          </div>
+        </div>
+        <!-- Each status carries its label, so a bare "Sent" never stands alone -->
+        <div class="pc-stl">
+          <div class="pc-sv" [ngClass]="admittedCountFor(booking) > 0 ? 'bg' : 'bx'"><i>Admitted</i><b>{{ admittedCountFor(booking) }} / {{ booking.shopcart?.length || 0 }}</b></div>
+          <div class="pc-sv" [ngClass]="emailStatusBadge(booking)"><i>Ticket email</i><b>{{ emailStatusLabel(booking) }}</b></div>
+          <div class="pc-sv" [ngClass]="checkinStatusBadge(booking)"><i>Check-In</i><b>{{ checkinStatusLabel(booking) }}</b></div>
+          <div class="pc-sv" [ngClass]="festivalDetailsText(booking) !== '—' ? festivalDetailsBadge(booking) : 'bx'"><i>Details</i><b>{{ festivalDetailsText(booking) }}</b></div>
+        </div>
+        <div class="pc-meta">
+          <span><mat-icon aria-hidden="true">confirmation_number</mat-icon>{{ passSummary(booking) }}</span>
+          <span><mat-icon aria-hidden="true">payments</mat-icon>{{ paymentMethod(booking) || '—' }}{{ booking.paidAt ? ' · ' + (booking.paidAt | date:'d MMM, HH:mm') : '' }}</span>
+          <span><mat-icon aria-hidden="true">storefront</mat-icon>{{ source(booking) }}</span>
+          <span *ngIf="bedsText(booking) !== '—'" [class.pc-warn]="bedsMismatch(booking)">
+            <mat-icon aria-hidden="true">{{ bedsLinked(booking) ? 'link' : 'bed' }}</mat-icon>{{ bedsText(booking) }}
+          </span>
+        </div>
+      </div>
+      <div class="pc-empty" *ngIf="!loading && pagedBookings.length === 0">No bookings found.</div>
+    </div>
+    <app-show-more [shown]="pagedBookings.length" [total]="filteredBookings.length" (more)="showMoreCards()"></app-show-more>
+  </ng-container>
+
+  <div class="tbl-scroll bookings-tbl-scroll" *ngIf="!cardsView">
     <table class="tbl">
       <thead>
         <tr>
@@ -181,7 +277,7 @@
       {{ filteredBookings.length }} booking{{ filteredBookings.length === 1 ? '' : 's' }}
       <span *ngIf="refreshing" style="color: var(--text-faint); margin-left: 6px;">Refreshing…</span>
     </span>
-    <mat-paginator [length]="filteredBookings.length"
+    <mat-paginator *ngIf="!cardsView" [length]="filteredBookings.length"
                    [pageSize]="pageSize"
                    [pageSizeOptions]="pageSizeOptions"
                    [pageIndex]="pageIndex"

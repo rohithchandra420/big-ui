@@ -33,8 +33,8 @@
     </div>
 
     <!-- Stat cards (tap to filter) -->
-    <div class="vl-stats">
-      <button type="button" class="vl-stat" [class.on]="stat === 'all' && !notMarked" (click)="stat = 'all'; notMarked = false; apply()">
+    <div class="vl-stats pc-swipe">
+      <button type="button" class="vl-stat" [class.on]="stat === 'all' && !notMarked" (click)="showAll()">
         <mat-icon>groups</mat-icon><span><b>{{ view.stats.all }}</b><small>On this event</small></span>
       </button>
       <button type="button" class="vl-stat" [class.on]="stat === 'unassigned'" (click)="setStat('unassigned')">
@@ -54,31 +54,31 @@
         <button type="button" [class.on]="layout === 'board'" (click)="layout = 'board'"><mat-icon>view_kanban</mat-icon>Board</button>
       </div>
       <!-- List only: Team Leads show here, never on the board -->
-      <div class="vl-seg" role="group" aria-label="Who to show" *ngIf="layout === 'list' && view.tlCount">
+      <div class="vl-seg" role="group" aria-label="Who to show" *ngIf="layout === 'list' && view.tlCount && !phoneList">
         <button type="button" [class.on]="roleFilter === 'all'" (click)="setRole('all')">Everyone</button>
         <button type="button" [class.on]="roleFilter === 'VOL'" (click)="setRole('VOL')">Volunteers</button>
         <button type="button" [class.on]="roleFilter === 'TL'" (click)="setRole('TL')">Team Leads · {{ view.tlCount }}</button>
       </div>
-      <div class="search-field vl-search">
+      <div class="search-field vl-search" *ngIf="!phoneList">
         <mat-icon>search</mat-icon>
-        <input type="text" [(ngModel)]="search" (ngModelChange)="apply()" placeholder="Search name or phone" aria-label="Search volunteer" />
+        <input type="text" [(ngModel)]="search" (ngModelChange)="refilter()" placeholder="Search name or phone" aria-label="Search volunteer" />
       </div>
       <!-- Joining Time (B-008): date ranges -->
-      <div class="jt-dates">
+      <div class="jt-dates" *ngIf="!phoneList">
         <span>Expected Join Time</span>
-        <app-date [(ngModel)]="expFrom" (ngModelChange)="apply()" [max]="expTo || null" ariaLabel="Expected Join Time from" placeholder="From"></app-date>
+        <app-date [(ngModel)]="expFrom" (ngModelChange)="refilter()" [max]="expTo || null" ariaLabel="Expected Join Time from" placeholder="From"></app-date>
         <span>to</span>
-        <app-date [(ngModel)]="expTo" [min]="expFrom || null" (ngModelChange)="apply()" ariaLabel="Expected Join Time to" placeholder="To"></app-date>
+        <app-date [(ngModel)]="expTo" [min]="expFrom || null" (ngModelChange)="refilter()" ariaLabel="Expected Join Time to" placeholder="To"></app-date>
       </div>
-      <div class="jt-dates">
+      <div class="jt-dates" *ngIf="!phoneList">
         <span>Reported Time</span>
-        <app-date [(ngModel)]="repFrom" (ngModelChange)="apply()" [max]="repTo || null" ariaLabel="Reported Time from" placeholder="From"></app-date>
+        <app-date [(ngModel)]="repFrom" (ngModelChange)="refilter()" [max]="repTo || null" ariaLabel="Reported Time from" placeholder="From"></app-date>
         <span>to</span>
-        <app-date [(ngModel)]="repTo" [min]="repFrom || null" (ngModelChange)="apply()" ariaLabel="Reported Time to" placeholder="To"></app-date>
+        <app-date [(ngModel)]="repTo" [min]="repFrom || null" (ngModelChange)="refilter()" ariaLabel="Reported Time to" placeholder="To"></app-date>
         <button type="button" class="btn-ghost" *ngIf="joinFiltersOn" (click)="clearJoinFilters()">Clear dates</button>
       </div>
       <!-- List layout: pick rows, then ask them all (no bar at the bottom here) -->
-      <button type="button" class="btn-cta vl-ask" *ngIf="canManage && layout === 'list'" [disabled]="busy || !selected.size" (click)="askSelected()">
+      <button type="button" class="btn-cta vl-ask" *ngIf="canManage && layout === 'list' && !phoneList" [disabled]="busy || !selected.size" (click)="askSelected()">
         <mat-icon>location_searching</mat-icon> Ask location<ng-container *ngIf="selected.size"> ({{ selected.size }})</ng-container>
       </button>
     </div>
@@ -154,8 +154,92 @@
       </div>
     </div>
 
+    <!-- Phone cards (2026-11-25): List layout on a phone. One pinned toolbar holds search, Sort & filter
+         (Who to show, the join dates) and the picks with Ask location. -->
+    <app-list-toolbar *ngIf="phoneList && board.volunteers.length" page="volunteers" noun="people"
+                      [search]="search" (searchChange)="search = $event; refilter()"
+                      searchPlaceholder="Name or phone"
+                      [sort]="sort" [sortOptions]="sortOptions"
+                      [chips]="appliedChips" (chipRemoved)="removeChip($event)" (clearAll)="clearChips()"
+                      [resultCount]="view.rows.length"
+                      [selectable]="canManage" [shown]="cardRows.length" [selectedCount]="selected.size"
+                      [selectAllText]="'Select all ' + pickableShown"
+                      [allSelected]="allShownPicked" [someSelected]="selected.size > 0 && !allShownPicked" (toggleAll)="toggleAllShown()">
+      <div ltFilters>
+        <div class="field" *ngIf="view.tlCount">
+          <label>Who to show</label>
+          <div class="ls-seg" role="group" aria-label="Who to show">
+            <button type="button" [class.on]="roleFilter === 'all'" (click)="setRole('all')">Everyone</button>
+            <button type="button" [class.on]="roleFilter === 'VOL'" (click)="setRole('VOL')">Volunteers</button>
+            <button type="button" [class.on]="roleFilter === 'TL'" (click)="setRole('TL')">Team Leads</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="ph-vl-exp-from">Expected Join Time</label>
+          <div class="ls-range">
+            <app-date inputId="ph-vl-exp-from" [(ngModel)]="expFrom" (ngModelChange)="refilter()" [max]="expTo || null" placeholder="From"></app-date>
+            <app-date [(ngModel)]="expTo" (ngModelChange)="refilter()" [min]="expFrom || null" ariaLabel="Expected Join Time to" placeholder="To"></app-date>
+          </div>
+        </div>
+        <div class="field">
+          <label for="ph-vl-rep-from">Reported Time</label>
+          <div class="ls-range">
+            <app-date inputId="ph-vl-rep-from" [(ngModel)]="repFrom" (ngModelChange)="refilter()" [max]="repTo || null" placeholder="From"></app-date>
+            <app-date [(ngModel)]="repTo" (ngModelChange)="refilter()" [min]="repFrom || null" ariaLabel="Reported Time to" placeholder="To"></app-date>
+          </div>
+        </div>
+      </div>
+      <ng-container ltActions><ng-container *ngIf="canManage">
+        <button type="button" class="btn-secondary lt-act" [disabled]="busy || !selected.size" (click)="askSelected()">
+          <mat-icon>location_searching</mat-icon>Ask location
+        </button>
+      </ng-container></ng-container>
+    </app-list-toolbar>
+
+    <!-- Phone cards: same rows, same profile and picks as the table; only one of the two renders -->
+    <ng-container *ngIf="cardsView && board.volunteers.length">
+      <div class="pc-list">
+        <div class="pc-card" *ngFor="let r of cardRows; trackBy: trackRow"
+             [ngClass]="'s-' + cardTone(r.v)"
+             [class.picked]="selected.has(r.v._id)"
+             role="button" tabindex="0" (click)="openProfile(r.v)" (keydown.enter)="openProfile(r.v)">
+          <div class="pc-head">
+            <label class="cb-wrap" *ngIf="canManage" (click)="$event.stopPropagation()" [style.visibility]="r.v.role !== 'TL' ? 'visible' : 'hidden'">
+              <input type="checkbox" [checked]="selected.has(r.v._id)" (change)="toggle(r.v)" [disabled]="r.v.role === 'TL'"
+                     [attr.aria-label]="'Pick ' + r.v.name">
+              <span class="cb-box"></span>
+            </label>
+            <app-user-avatar [userId]="r.v._id" [name]="r.v.name" [version]="r.v.avatarVersion" [size]="32"></app-user-avatar>
+            <div class="pc-title">
+              <b>
+                {{ r.v.name }}
+                <span class="vl-pill tl" *ngIf="r.v.role === 'TL'" title="Team Lead">TL</span>
+                <mat-icon class="vl-loc" *ngIf="r.v.sharing" aria-label="Shares their location when asked">location_on</mat-icon>
+              </b>
+              <span>{{ r.deptName || 'Unassigned' }}</span>
+              <span class="pc-phone" *ngIf="r.v.phone">{{ r.v.phone }}</span>
+            </div>
+            <mat-icon class="pc-go" aria-hidden="true">chevron_right</mat-icon>
+          </div>
+          <div class="pc-stl pc-stl-3">
+            <div class="pc-sv" [ngClass]="r.v.marked ? 'bg' : 'br'"><i>{{ isToday ? 'Today' : dayLabel }}</i><b>{{ r.v.marked ? 'Marked' : 'Not marked' }}</b></div>
+            <div class="pc-sv" [ngClass]="r.v.stay === 'in' ? 'bg' : r.v.stay === 'booked' ? 'bb' : 'ba'"><i>Stay</i><b>{{ stayLabel[r.v.stay] || 'No bed' }}</b></div>
+            <div class="pc-sv" [ngClass]="r.v.band ? 'bg' : 'br'"><i>Band</i><b>{{ r.v.band ? 'Linked' : 'No band' }}</b></div>
+          </div>
+          <div class="pc-meta">
+            <span><mat-icon aria-hidden="true">wc</mat-icon>{{ r.v.gender || '—' }}</span>
+            <span><mat-icon aria-hidden="true">event</mat-icon>Joins {{ r.v.dateOfJoining ? (r.v.dateOfJoining | date: 'd MMM, HH:mm') : '—' }}</span>
+            <span *ngIf="r.v.reportedAt"><mat-icon aria-hidden="true">how_to_reg</mat-icon>Reported {{ r.v.reportedAt | date: 'd MMM, HH:mm' }}</span>
+            <span *ngIf="!r.v.reportedAt" class="jt-chip" [ngClass]="joinState(r.v.dateOfJoining, null)">{{ joinState(r.v.dateOfJoining, null) === 'late' ? 'Late · not reported' : 'Not reported' }}</span>
+          </div>
+        </div>
+        <div class="pc-empty" *ngIf="!view.rows.length">No one matches.</div>
+      </div>
+      <app-show-more [shown]="cardRows.length" [total]="view.rows.length" (more)="showMoreCards()"></app-show-more>
+    </ng-container>
+
     <!-- List -->
-    <div class="vl-tbl-wrap" *ngIf="layout === 'list' && board.volunteers.length">
+    <div class="vl-tbl-wrap" *ngIf="layout === 'list' && board.volunteers.length && !cardsView">
       <table class="tbl vl-tbl">
         <thead><tr>
           <th class="vl-pick-col" *ngIf="canManage">

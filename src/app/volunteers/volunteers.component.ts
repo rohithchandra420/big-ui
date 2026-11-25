@@ -14,6 +14,10 @@ import {
 import { TableSort } from '../shared/table-sort/table-sort';
 import { VolProfileComponent } from './vol-profile/vol-profile.component';
 import { joinState } from '../core/join-time';
+import { formatDate } from '@angular/common';
+import { ViewModeService } from '../core/view-mode.service';
+import { AppliedChip, SortOption } from '../shared/list-toolbar/list-toolbar.component';
+import { CARD_STEP } from '../shared/show-more/show-more.component';
 
 type Panel = 'closed' | 'profile' | 'need' | 'add';
 /** A home department a new volunteer may get (Add users). */
@@ -48,7 +52,7 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   /** B-018: the List opens first; Board is the second choice. */
   layout: 'board' | 'list' = 'list';
   /** B-003: List view column sort. */
-  sort = new TableSort<SortKey>('name', 'asc', () => this.apply());
+  sort = new TableSort<SortKey>('name', 'asc', () => this.refilter());
   /** List only: everyone, Volunteers or Team Leads. */
   roleFilter: RoleFilter = 'all';
   // Joining Time (B-008): date ranges on Expected Join Time and Reported Time
@@ -58,7 +62,7 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
   repTo = '';
   joinState = joinState;
   get joinFiltersOn(): boolean { return !!(this.expFrom || this.expTo || this.repFrom || this.repTo); }
-  clearJoinFilters() { this.expFrom = this.expTo = this.repFrom = this.repTo = ''; this.apply(); }
+  clearJoinFilters() { this.expFrom = this.expTo = this.repFrom = this.repTo = ''; this.refilter(); }
   /** After Mark reported / Undo in the profile: the row follows. */
   onReported(e: { userId: string; reportedAt: string | null }) {
     const v = this.board?.volunteers.find(x => x._id === e.userId);
@@ -98,7 +102,8 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
     private volunteers: VolunteersService,
     private notify: NotificationService,
     private zone: NgZone,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private viewMode: ViewModeService
   ) {}
 
   ngOnInit() {
@@ -223,17 +228,108 @@ export class VolunteersComponent implements OnInit, AfterViewInit, OnDestroy {
 
   setStat(s: StatFilter) {
     this.stat = this.stat === s ? 'all' : s;
-    this.apply();
+    this.refilter();
   }
 
   toggleNotMarked() {
     this.notMarked = !this.notMarked;
-    this.apply();
+    this.refilter();
   }
 
   setRole(r: RoleFilter) {
     this.roleFilter = r;
+    this.refilter();
+  }
+
+  /** "On this event" tile: no tile filter. */
+  showAll() {
+    this.stat = 'all';
+    this.notMarked = false;
+    this.refilter();
+  }
+
+  // ── Phone cards (2026-11-25): List layout only ──
+
+  /** Phone cards: how many cards show (grows by "Show more"; back to one step on a new filter / sort). */
+  cardLimit = CARD_STEP;
+
+  /** A phone in the List layout with Volunteers set to Cards (one view renders, never both). */
+  get cardsView(): boolean {
+    return this.layout === 'list' && this.viewMode.cards('volunteers');
+  }
+
+  /** Phone in the List layout: the phone toolbar replaces search, dates and Ask location. */
+  get phoneList(): boolean {
+    return this.layout === 'list' && this.viewMode.isPhone;
+  }
+
+  /** The first cards (same row objects as the table). */
+  get cardRows() {
+    return this.view.rows.slice(0, this.cardLimit);
+  }
+
+  showMoreCards() {
+    this.cardLimit += CARD_STEP;
+  }
+
+  /** A filter / sort / search changed: back to the first cards, chips follow. */
+  refilter() {
+    this.cardLimit = CARD_STEP;
     this.apply();
+    this.rebuildChips();
+  }
+
+  /** Phone toolbar sort picker: the table's columns (stored list). */
+  readonly sortOptions: SortOption[] = [
+    { key: 'name', label: 'Volunteer' }, { key: 'dept', label: 'Department' }, { key: 'today', label: 'Marked' },
+    { key: 'stay', label: 'Stay' }, { key: 'band', label: 'Band' }, { key: 'gender', label: 'Gender' },
+    { key: 'phone', label: 'Phone' }, { key: 'joined', label: 'Expected Join Time' }, { key: 'reported', label: 'Reported Time' }
+  ];
+
+  /** Phone toolbar: applied filters + sort as removable chips (stored; rebuilt on every change). */
+  appliedChips: AppliedChip[] = [];
+
+  private rebuildChips() {
+    const chips: AppliedChip[] = [];
+    const day = (d: string) => formatDate(d, 'd MMM', 'en-US');
+    const range = (a: string, b: string) => a && b ? `${day(a)} – ${day(b)}` : a ? `from ${day(a)}` : `to ${day(b)}`;
+    if (this.stat === 'unassigned') chips.push({ id: 'stat', label: 'Unassigned' });
+    if (this.stat === 'short') chips.push({ id: 'stat', label: 'Still needed' });
+    if (this.notMarked) chips.push({ id: 'notMarked', label: `Not marked ${this.dayPhrase}` });
+    if (this.roleFilter !== 'all') chips.push({ id: 'role', label: this.roleFilter === 'TL' ? 'Team Leads' : 'Volunteers only' });
+    if (this.expFrom || this.expTo) chips.push({ id: 'exp', label: `Joins ${range(this.expFrom, this.expTo)}` });
+    if (this.repFrom || this.repTo) chips.push({ id: 'rep', label: `Reported ${range(this.repFrom, this.repTo)}` });
+    if (this.sort.key && !(this.sort.key === 'name' && this.sort.dir === 'asc')) {
+      const o = this.sortOptions.find(x => x.key === this.sort.key);
+      chips.push({ id: 'sort', label: `Sort: ${o?.label ?? this.sort.key}`, icon: this.sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward' });
+    }
+    this.appliedChips = chips;
+  }
+
+  /** Phone toolbar: × on a chip. The sort goes back to Volunteer A–Z. */
+  removeChip(id: string) {
+    if (id === 'stat') this.stat = 'all';
+    else if (id === 'notMarked') this.notMarked = false;
+    else if (id === 'role') this.roleFilter = 'all';
+    else if (id === 'exp') this.expFrom = this.expTo = '';
+    else if (id === 'rep') this.repFrom = this.repTo = '';
+    else if (id === 'sort') { this.sort.set('name', 'asc'); return; }
+    this.refilter();
+  }
+
+  /** Phone toolbar: Clear all (filters and sort; the search box and the picked date stay). */
+  clearChips() {
+    this.stat = 'all';
+    this.notMarked = false;
+    this.roleFilter = 'all';
+    this.expFrom = this.expTo = this.repFrom = this.repTo = '';
+    this.sort.set('name', 'asc');
+  }
+
+  /** Phone cards: left-edge colour. Marked = ok; not marked = warn. Team Leads blue. */
+  cardTone(v: Volunteer): 'ok' | 'warn' | 'info' {
+    if (v.role === 'TL') return 'info';
+    return v.marked ? 'ok' : 'warn';
   }
 
   // ── picked date (Marked + Stay only) ──

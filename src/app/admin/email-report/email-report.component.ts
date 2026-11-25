@@ -16,6 +16,10 @@ import { EventItem } from '../../models/event.model';
 import { EmailLogSortKey } from '../../models/email.model';
 import { TableSort } from '../../shared/table-sort/table-sort';
 import { deliveryBadge, deliveryLabel, deliveryProblem, deliveryStatus } from '../../box-office/email/email-delivery.utils';
+import { formatDate } from '@angular/common';
+import { ViewModeService } from '../../core/view-mode.service';
+import { AppliedChip, SortOption } from '../../shared/list-toolbar/list-toolbar.component';
+import { CARD_STEP } from '../../shared/show-more/show-more.component';
 
 type ReportCard = 'sent' | 'delivered' | 'bounced' | 'failed' | 'opened';
 
@@ -101,7 +105,8 @@ export class EmailReportComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private tracker: EmailBatchTrackerService,
     private sanitizer: DomSanitizer,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private viewMode: ViewModeService
   ) { }
 
   ngOnInit() {
@@ -110,6 +115,10 @@ export class EmailReportComponent implements OnInit, OnDestroy {
     this.subs.push(this.searchChanged.pipe(debounceTime(300)).subscribe(() => this.load()));
     // A batch finishing elsewhere (e.g. Bookings in another tab of the app) changes the log.
     this.subs.push(this.tracker.finished$.subscribe(() => this.load()));
+    // Phone cards: cards and the table page differently — reload when the view flips.
+    this.subs.push(this.viewMode.changed$.subscribe(() => {
+      if (this.cardsView !== this.loadedAsCards) this.onFilterChange();
+    }));
     this.load();
   }
 
@@ -138,14 +147,19 @@ export class EmailReportComponent implements OnInit, OnDestroy {
   /** B-003: column sort — the server sorts (the report is paged); a new sort starts on page 1. */
   sort = new TableSort<EmailLogSortKey>(null, 'asc', () => this.onFilterChange());
 
-  load() {
+  load(append = false) {
     const requestNo = ++this.requestNo;
     this.loading = true;
-    this.emailService.getLog({ ...this.buildQuery(), page: this.pageIndex, pageSize: this.pageSize }).subscribe({
+    const cards = this.cardsView;
+    if (!append) this.cardPage = 0;
+    const page = cards ? this.cardPage : this.pageIndex;
+    const pageSize = cards ? CARD_STEP : this.pageSize;
+    this.emailService.getLog({ ...this.buildQuery(), page, pageSize }).subscribe({
       next: res => {
         // Ignore a slow, older response arriving after a newer one
         if (requestNo !== this.requestNo) return;
-        this.items = res.items || [];
+        this.loadedAsCards = cards;
+        this.items = append ? [...this.items, ...(res.items || [])] : (res.items || []);
         this.total = res.total || 0;
         this.summary = res.summary || this.summary;
         if (res.senders) this.senders = res.senders;
@@ -168,7 +182,90 @@ export class EmailReportComponent implements OnInit, OnDestroy {
 
   onFilterChange() {
     this.pageIndex = 0;
+    this.rebuildChips();
     this.load();
+  }
+
+  // ── Phone cards (2026-11-25) ─────────────────────────────
+
+  /** Phone cards: the server page last added (0 = the first 25). */
+  cardPage = 0;
+  /** What the loaded items are: cards (pages of 25) or a table page. */
+  private loadedAsCards = false;
+
+  /** A phone with Email Report set to Cards (one view renders, never both). */
+  get cardsView(): boolean {
+    return this.viewMode.cards('email-report');
+  }
+
+  /** Phone (either view): the phone toolbar replaces the filter bar. */
+  get isPhone(): boolean {
+    return this.viewMode.isPhone;
+  }
+
+  /** Phone cards: "Show more" fetches the next 25 from the server and adds them below. */
+  showMoreCards() {
+    if (this.loading) return;
+    this.cardPage++;
+    this.load(true);
+  }
+
+  /** Phone toolbar sort picker: the table's columns (stored list). */
+  readonly sortOptions: SortOption[] = [
+    { key: 'date', label: 'Date' }, { key: 'type', label: 'Type' }, { key: 'recipient', label: 'Recipient' },
+    { key: 'order', label: 'Order #' }, { key: 'subject', label: 'Subject' }, { key: 'status', label: 'Status' }
+  ];
+
+  /** Phone toolbar: applied filters + sort as removable chips (stored; rebuilt on every change). */
+  appliedChips: AppliedChip[] = [];
+
+  private rebuildChips() {
+    const chips: AppliedChip[] = [];
+    const day = (d: string) => formatDate(d, 'd MMM', 'en-US');
+    const label = (list: { value: string; label: string }[], v: string) => list.find(o => o.value === v)?.label ?? v;
+    if (this.typeFilter) chips.push({ id: 'type', label: `Type: ${label(this.typeOptions, this.typeFilter)}` });
+    if (this.statusFilter) chips.push({ id: 'status', label: `Send: ${label(this.statusOptions, this.statusFilter)}` });
+    if (this.deliveryFilter) chips.push({ id: 'delivery', label: label(this.deliveryOptions, this.deliveryFilter) });
+    if (this.eventFilter) chips.push({ id: 'event', label: this.events.find(e => e._id === this.eventFilter)?.name ?? 'Event' });
+    if (this.senderFilter) chips.push({ id: 'sender', label: `Sent by ${this.senders.find(x => x._id === this.senderFilter)?.name ?? '…'}` });
+    if (this.fromDate) chips.push({ id: 'from', label: `From ${day(this.fromDate)}` });
+    if (this.toDate) chips.push({ id: 'to', label: `To ${day(this.toDate)}` });
+    if (this.sort.key) {
+      const o = this.sortOptions.find(x => x.key === this.sort.key);
+      chips.push({ id: 'sort', label: `Sort: ${o?.label ?? this.sort.key}`, icon: this.sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward' });
+    }
+    this.appliedChips = chips;
+  }
+
+  /** Phone toolbar: × on a chip. */
+  removeChip(id: string) {
+    if (id === 'type') this.typeFilter = '';
+    else if (id === 'status') this.statusFilter = '';
+    else if (id === 'delivery') this.deliveryFilter = '';
+    else if (id === 'event') this.eventFilter = '';
+    else if (id === 'sender') this.senderFilter = '';
+    else if (id === 'from') this.fromDate = '';
+    else if (id === 'to') this.toDate = '';
+    else if (id === 'sort') { this.sort.set(null, 'asc'); return; }
+    this.onFilterChange();
+  }
+
+  /** Phone toolbar: Clear all (filters and sort; the search box stays). */
+  clearChips() {
+    this.typeFilter = '';
+    this.statusFilter = '';
+    this.deliveryFilter = '';
+    this.eventFilter = '';
+    this.senderFilter = '';
+    this.fromDate = '';
+    this.toDate = '';
+    this.sort.set(null, 'asc');
+  }
+
+  /** Phone cards: left-edge colour from the status badge. */
+  cardTone(e: EmailLogEntry): 'ok' | 'warn' | 'bad' | 'none' {
+    const b = this.statusBadge(e);
+    return b === 'bg' ? 'ok' : b === 'br' ? 'bad' : b === 'ba' ? 'warn' : 'none';
   }
 
   get hasFilters(): boolean {
