@@ -13,6 +13,7 @@ import { EmailBatchTrackerService } from '../../core/email-batch-tracker.service
 import { EmailBatch, EmailLogEntry, EmailLogPage } from '../../models/email.model';
 import { AppSelectComponent } from '../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../shared/app-select/app-option.component';
+import { ViewModeService } from '../../core/view-mode.service';
 
 const entry = (over: Partial<EmailLogEntry> = {}): EmailLogEntry => ({
   _id: 'e1', type: 'ticket', status: 'sent', to: 'asha@example.com', recipientName: 'Asha Menon', subject: 'BiG 7.0 Tickets',
@@ -33,6 +34,8 @@ describe('EmailReportComponent', () => {
   let emailSpy: jasmine.SpyObj<EmailService>;
   let notifySpy: jasmine.SpyObj<NotificationService>;
   let finished$: Subject<EmailBatch>;
+  /** Phone cards: the view-mode stub (default: a desktop). */
+  let vm: { cardsOn: boolean; isPhone: boolean; changed$: Subject<void>; cards: () => boolean; modeOf: () => string; setMode: () => void };
 
   beforeEach(async () => {
     emailSpy = jasmine.createSpyObj('EmailService', ['getLog', 'getLogEntry']);
@@ -43,6 +46,7 @@ describe('EmailReportComponent', () => {
     ])));
     notifySpy = jasmine.createSpyObj('NotificationService', ['openErrorSnackBar', 'openSucessSnackBar']);
     finished$ = new Subject<EmailBatch>();
+    vm = { cardsOn: false, isPhone: false, changed$: new Subject<void>(), cards: () => vm.cardsOn, modeOf: () => 'cards', setMode: () => {} };
 
     await TestBed.configureTestingModule({
       declarations: [DateTimeComponent, EmailReportComponent, AppSelectComponent, AppOptionComponent],
@@ -52,7 +56,8 @@ describe('EmailReportComponent', () => {
         { provide: EventService, useValue: { events: new BehaviorSubject([{ _id: 'ev1', name: 'BiG 7.0' }, { _id: 'ev2', name: 'BiG 6.0' }]) } },
         { provide: NotificationService, useValue: notifySpy },
         { provide: EmailBatchTrackerService, useValue: { finished$: finished$.asObservable() } },
-        { provide: MatDialog, useValue: { openDialogs: [] } }
+        { provide: MatDialog, useValue: { openDialogs: [] } },
+        { provide: ViewModeService, useValue: vm }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -232,5 +237,66 @@ describe('EmailReportComponent', () => {
     component.exportReport();
     expect(emailSpy.getLog).not.toHaveBeenCalled();
     expect(notifySpy.openErrorSnackBar).toHaveBeenCalledWith('No emails to export for these filters');
+  });
+
+  describe('Phone cards (2026-11-25)', () => {
+    const el = () => fixture.nativeElement as HTMLElement;
+    const toCards = () => { vm.cardsOn = vm.isPhone = true; vm.changed$.next(); fixture.detectChanges(); };
+
+    it('a desktop asks the server for a table page', () => {
+      expect(emailSpy.getLog.calls.mostRecent().args[0]).toEqual(jasmine.objectContaining({ page: 0, pageSize: 20 }));
+      expect(el().querySelector('table.tbl')).not.toBeNull();
+    });
+
+    it('switching to cards reloads the first 25 and shows cards, no table or paginator', () => {
+      emailSpy.getLog.calls.reset();
+      toCards();
+      expect(emailSpy.getLog).toHaveBeenCalledTimes(1);
+      expect(lastQuery()).toEqual(jasmine.objectContaining({ page: 0, pageSize: 25 }));
+      expect(el().querySelectorAll('.pc-card').length).toBe(3);
+      expect(el().querySelector('table.tbl')).toBeNull();
+      expect(el().querySelector('mat-paginator')).toBeNull();
+    });
+
+    it('"Show more" fetches the next page and adds it below', () => {
+      toCards();
+      emailSpy.getLog.and.returnValue(of(page([entry({ _id: 'e9', subject: 'Later one' })], { total: 26 })));
+      component.showMoreCards();
+      expect(lastQuery()).toEqual(jasmine.objectContaining({ page: 1, pageSize: 25 }));
+      expect(component.items.map(e => e._id)).toEqual(['e1', 'e2', 'e3', 'e9']);
+    });
+
+    it('a new filter starts again from the first 25', () => {
+      toCards();
+      component.showMoreCards();
+      component.typeFilter = 'custom';
+      component.onFilterChange();
+      expect(lastQuery()).toEqual(jasmine.objectContaining({ page: 0, pageSize: 25, type: 'custom' }));
+      expect(component.cardPage).toBe(0);
+    });
+
+    it('tapping a card opens the email', () => {
+      emailSpy.getLogEntry.and.returnValue(of(entry()));
+      toCards();
+      (el().querySelector('.pc-card') as HTMLElement).click();
+      expect(component.panelOpen).toBeTrue();
+      expect(component.active?._id).toBe('e1');
+    });
+
+    it('chips for filters and the sort; × and Clear all keep the search', () => {
+      component.typeFilter = 'ticket';
+      component.deliveryFilter = 'bounced';
+      component.onFilterChange();
+      component.sort.set('date', 'desc');
+      expect(component.appliedChips.map(c => c.id)).toEqual(['type', 'delivery', 'sort']);
+      expect(component.appliedChips[0].label).toBe('Type: Ticket');
+      component.removeChip('delivery');
+      expect(component.deliveryFilter).toBe('');
+      component.searchTerm = 'asha';
+      component.clearChips();
+      expect(component.appliedChips).toEqual([]);
+      expect(component.searchTerm).toBe('asha');
+      expect(lastQuery()).toEqual(jasmine.objectContaining({ q: 'asha', type: '', sort: null }));
+    });
   });
 });

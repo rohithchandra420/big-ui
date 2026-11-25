@@ -25,6 +25,13 @@ export class TableSort<K extends string = string> {
     this.changed?.();
   }
 
+  /** Phone cards sort bar: sort by `key` (null = the list's own order) in `dir`. */
+  set(key: K | null, dir: SortDir) {
+    this.key = key;
+    this.dir = dir;
+    this.changed?.();
+  }
+
   /** Material Symbols name for the header's arrow. */
   icon(key: K): string {
     return this.key !== key ? 'unfold_more' : this.dir === 'asc' ? 'arrow_upward' : 'arrow_downward';

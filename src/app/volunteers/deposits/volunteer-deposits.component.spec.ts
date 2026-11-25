@@ -10,6 +10,7 @@ import { NotificationService } from '../../core/notification.service';
 import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.service';
 import { VolunteersService } from '../volunteers.service';
 import { DepositList, DepositRow } from '../volunteers.model';
+import { ViewModeService } from '../../core/view-mode.service';
 
 const row = (id: string, name: string, extra: Partial<DepositRow> = {}): DepositRow =>
   ({ _id: id, name, avatarVersion: 0, phone: '', department: 'WASH', status: 'none', flag: '', ...extra });
@@ -23,6 +24,9 @@ describe('VolunteerDepositsComponent', () => {
   let confirm: jasmine.SpyObj<ConfirmationService>;
   let canManage: boolean;
   let seeAmounts: boolean;
+  /** Phone cards: the view-mode stub's answers (default: a desktop). */
+  let cardsOn = false;
+  let phoneOn = false;
   const el = () => fixture.nativeElement as HTMLElement;
 
   const list = (): DepositList => ({
@@ -39,6 +43,7 @@ describe('VolunteerDepositsComponent', () => {
   beforeEach(async () => {
     canManage = true;
     seeAmounts = true;
+    cardsOn = phoneOn = false;
     service = jasmine.createSpyObj('VolunteersService', ['deposits', 'saveDeposit', 'refundDeposit', 'removeDeposit', 'setDefaultDeposit']);
     service.deposits.and.callFake(() => Promise.resolve(list()));
     notify = jasmine.createSpyObj('NotificationService', ['openSucessSnackBar', 'openErrorSnackBar']);
@@ -50,7 +55,8 @@ describe('VolunteerDepositsComponent', () => {
         { provide: EventService, useValue: { activeEvent: new BehaviorSubject<any>({ _id: 'e1', name: 'BiG 7.0' }) } },
         { provide: NotificationService, useValue: notify },
         { provide: ConfirmationService, useValue: confirm },
-        { provide: VolunteersService, useValue: service }
+        { provide: VolunteersService, useValue: service },
+        { provide: ViewModeService, useValue: { cards: () => cardsOn, get isPhone() { return phoneOn; }, modeOf: () => 'cards', setMode: () => {} } }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -137,4 +143,51 @@ describe('VolunteerDepositsComponent', () => {
     expect(service.setDefaultDeposit).toHaveBeenCalledWith('e1', 1500);
     expect(notify.openSucessSnackBar).toHaveBeenCalledWith('Standard deposit: ₹1,500');
   }));
+
+  describe('Phone cards (2026-11-25)', () => {
+    it('a phone in Cards mode shows the toolbar and cards, not the table or the search box', fakeAsync(() => {
+      cardsOn = phoneOn = true;
+      start();
+      expect(el().querySelector('app-list-toolbar')).not.toBeNull();
+      expect(el().querySelector('.vl-search')).toBeNull();
+      expect(el().querySelector('.vl-tbl')).toBeNull();
+      expect(el().querySelectorAll('.pc-card').length).toBe(3);
+    }));
+
+    it('a card shows the status, and amounts only for people who see them', fakeAsync(() => {
+      cardsOn = phoneOn = true;
+      start();
+      const bela = Array.from(el().querySelectorAll('.pc-card')).find(c => c.textContent!.includes('Bela'))!;
+      expect(bela.querySelector('.pc-id')!.textContent).toContain('Collected');
+      expect(bela.querySelector('.pc-grid')!.textContent).toContain('₹500');
+    }));
+
+    it('no amounts on the card without Write', fakeAsync(() => {
+      seeAmounts = false;
+      cardsOn = phoneOn = true;
+      start();
+      expect(el().querySelector('.pc-grid')).toBeNull();
+      expect(component.sortOptionsBasic.map(o => o.key)).toEqual(['name', 'dept', 'status']);
+    }));
+
+    it('tapping a card opens the deposit', fakeAsync(() => {
+      cardsOn = phoneOn = true;
+      start();
+      (el().querySelector('.pc-card') as HTMLElement).click();
+      expect(component.mode).not.toBe('closed');
+    }));
+
+    it('chips: the status tile and the sort; × and Clear all keep the search', fakeAsync(() => {
+      start();
+      component.setFilter('held');
+      component.sort.set('amount', 'desc');
+      expect(component.appliedChips.map(c => c.label)).toEqual(['Collected', 'Sort: Amount']);
+      component.removeChip('status');
+      expect(component.filter).toBe('all');
+      component.search = 'an';
+      component.clearChips();
+      expect(component.appliedChips).toEqual([]);
+      expect(component.search).toBe('an');
+    }));
+  });
 });

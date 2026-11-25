@@ -90,6 +90,8 @@ import { SectionHeaderComponent } from './shared/section-header/section-header.c
 import { SlidePanelComponent } from './shared/slide-panel/slide-panel.component';
 import { BackClosesDirective } from './shared/slide-panel/back-closes.directive';
 import { SortThComponent } from './shared/table-sort/sort-th.component';
+import { ListToolbarComponent } from './shared/list-toolbar/list-toolbar.component';
+import { ShowMoreComponent } from './shared/show-more/show-more.component';
 import { ReportedComponent } from './shared/reported/reported.component';
 import { DateTimeComponent } from './shared/date-time/date-time.component';
 import { TaskPillComponent } from './shared/task/task-pill.component';
@@ -206,6 +208,8 @@ LOAD_WASM().subscribe()
     SlidePanelComponent,
     BackClosesDirective,
     SortThComponent,
+    ListToolbarComponent,
+    ShowMoreComponent,
     ReportedComponent,
     DateTimeComponent,
     TaskPillComponent,

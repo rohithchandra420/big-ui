@@ -21,6 +21,7 @@ import { EmailDialogsService } from '../email/email-dialogs.service';
 import { AppSelectComponent } from '../../shared/app-select/app-select.component';
 import { AppOptionComponent } from '../../shared/app-select/app-option.component';
 import { MultiSelectComponent } from '../../shared/multi-select/multi-select.component';
+import { ViewModeService } from '../../core/view-mode.service';
 
 const mockBatch: EmailBatch = { id: 'b1', type: 'ticket', total: 1, done: 0, sent: 0, failed: 0, skipped: 0, finished: false, startedAt: '', finishedAt: null };
 
@@ -47,6 +48,10 @@ describe('BookingsComponent', () => {
   let canSend: boolean;
   let emailDialogsSpy: jasmine.SpyObj<EmailDialogsService>;
   let finished$: Subject<EmailBatch>;
+  /** Phone cards: the stub answers "show cards?" with this (default: table, like a desktop). */
+  let cardsOn: boolean;
+  /** Phone width (phone toolbar instead of the filter bar), in either view. */
+  let phoneOn: boolean;
 
   beforeEach(async () => {
     boxOfficeServiceSpy = jasmine.createSpyObj('BoxOfficeService', ['getAllTickets', 'getTicketById', 'getPassTypes']);
@@ -67,6 +72,8 @@ describe('BookingsComponent', () => {
     emailDialogsSpy.openTicketEmail.and.returnValue(of(mockBatch));
     emailDialogsSpy.openCustomEmail.and.returnValue(of({ ...mockBatch, type: 'custom' } as EmailBatch));
     finished$ = new Subject<EmailBatch>();
+    cardsOn = false;
+    phoneOn = false;
 
     await TestBed.configureTestingModule({
       // app-select/app-option declared for real: the Ticket Email filter binds
@@ -82,6 +89,7 @@ describe('BookingsComponent', () => {
         { provide: EmailService, useValue: { canSend: () => of(canSend), canSendTicket: () => of(canSend), canSendCustom: () => of(canSend), canSendCheckin: () => of(canSend) } },
         { provide: EmailDialogsService, useValue: emailDialogsSpy },
         { provide: EmailBatchTrackerService, useValue: { finished$: finished$.asObservable() } },
+        { provide: ViewModeService, useValue: { cards: () => cardsOn, get isPhone() { return phoneOn; }, modeOf: () => 'table', setMode: () => {} } },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -912,6 +920,138 @@ describe('BookingsComponent', () => {
       fixture.detectChanges();
       const heads = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('th')).map(t => t.textContent?.trim());
       expect(heads).toContain('Early Check-In');
+    });
+  });
+  describe('Phone cards (2026-11-25)', () => {
+    const el = () => fixture.nativeElement as HTMLElement;
+    const many = (n: number) => Array.from({ length: n }, (_, i) =>
+      new Ticket(100 + i, 'Guest', String(i), `g${i}@example.com`, '9000000000', `TXN${i}`, 'not_sent', 10, [], `c${i}`));
+
+    it('shows the table, not cards, when the page is not in Cards mode', () => {
+      expect(el().querySelector('table.tbl')).not.toBeNull();
+      expect(el().querySelector('.pc-card')).toBeNull();
+    });
+
+    it('shows cards and no table in Cards mode (only one view renders)', () => {
+      cardsOn = phoneOn = true;
+      fixture.detectChanges();
+      expect(el().querySelector('table.tbl')).toBeNull();
+      expect(el().querySelectorAll('.pc-card').length).toBe(2);
+      expect(el().querySelector('mat-paginator')).toBeNull();
+    });
+
+    it('tapping a card opens the panel; ticking its box selects without opening', () => {
+      cardsOn = phoneOn = true;
+      fixture.detectChanges();
+      const card = el().querySelector('.pc-card') as HTMLElement;
+      const box = card.querySelector('input[type="checkbox"]') as HTMLInputElement;
+      box.click();
+      fixture.detectChanges();
+      expect(component.selectedIds.has('t1')).toBeTrue();
+      expect(component.panelOpen).toBeFalse();
+      card.click();
+      expect(component.panelOpen).toBeTrue();
+      expect(component.activeBooking?._id).toBe('t1');
+    });
+
+    it('shows 25 cards, then 25 more per "Show more", back to 25 on a new search', () => {
+      cardsOn = phoneOn = true;
+      component.bookings = many(60);
+      fixture.detectChanges();
+      expect(el().querySelectorAll('.pc-card').length).toBe(25);
+      component.showMoreCards();
+      fixture.detectChanges();
+      expect(el().querySelectorAll('.pc-card').length).toBe(50);
+      component.onSearchChange();
+      expect(component.pagedBookings.length).toBe(25);
+    });
+
+    it('"Select all shown" ticks only the cards on screen', () => {
+      cardsOn = phoneOn = true;
+      component.bookings = many(30);
+      fixture.detectChanges();
+      component.toggleSelectAllPaged();
+      expect(component.selectedIds.size).toBe(25);
+    });
+
+    it('gives a cancelled booking the red edge', () => {
+      cardsOn = phoneOn = true;
+      component.bookings = [Object.assign(many(1)[0], { bookingStatus: 'cancelled' })];
+      fixture.detectChanges();
+      expect(el().querySelector('.pc-card')?.classList).toContain('s-bad');
+    });
+    it('on a phone, the phone toolbar replaces the filter bar and the selection bar (table view too)', () => {
+      phoneOn = true;
+      fixture.detectChanges();
+      expect(el().querySelector('app-list-toolbar')).not.toBeNull();
+      expect(el().querySelector('.tbl-filters')).toBeNull();
+      expect(el().querySelector('.seg-bar')).toBeNull();
+      expect(el().querySelector('table.tbl')).not.toBeNull();
+    });
+
+    it('a card shows booking ID, phone and source, and no ticket ID', () => {
+      cardsOn = phoneOn = true;
+      component.bookings = [Object.assign(many(1)[0], { phone_no: '9123456780' })];
+      fixture.detectChanges();
+      const card = el().querySelector('.pc-card') as HTMLElement;
+      expect(card.querySelector('.pc-phone')?.textContent).toContain('9123456780');
+      expect(card.querySelector('.pc-id')?.textContent).toContain(component.bookingId(component.bookings[0]));
+      expect(card.querySelector('.pc-meta')?.textContent).toContain(component.source(component.bookings[0]));
+      expect(card.textContent).not.toContain('c0');
+    });
+
+    it('labels every status on the card', () => {
+      cardsOn = phoneOn = true;
+      fixture.detectChanges();
+      const labels = Array.from(el().querySelectorAll('.pc-card')[0].querySelectorAll('.pc-sv i')).map(i => i.textContent);
+      expect(labels).toEqual(['Admitted', 'Ticket email', 'Check-In', 'Details']);
+    });
+
+    describe('applied chips', () => {
+      it('a stat tile tap shows as a chip', () => {
+        component.toggleFilter('admitted');
+        expect(component.appliedChips).toEqual([{ id: 'stat', label: 'Admitted' }]);
+      });
+
+      it('filters and the sort show as chips, in order', () => {
+        component.emailStatusFilter = component.emailStatusOptions[0].value as any;
+        component.onSearchChange();
+        component.passTypeFilter = ['a', 'b'];
+        component.onSearchChange();
+        component.sort.set('paidAt', 'desc');
+        expect(component.appliedChips.map(c => c.id)).toEqual(['email', 'pass', 'sort']);
+        expect(component.appliedChips[0].label).toBe('Ticket email: ' + component.emailStatusOptions[0].label);
+        expect(component.appliedChips[1].label).toBe('2 pass types');
+        expect(component.appliedChips[2]).toEqual({ id: 'sort', label: 'Sort: Paid at', icon: 'arrow_downward' });
+      });
+
+      it('× removes one filter and starts again from the first cards', () => {
+        component.toggleFilter('admitted');
+        component.checkinStatusFilter = component.checkinStatusOptions[0].value as any;
+        component.onSearchChange();
+        component.showMoreCards();
+        component.removeChip('stat');
+        expect(component.activeFilter).toBeNull();
+        expect(component.cardLimit).toBe(25);
+        expect(component.appliedChips.map(c => c.id)).toEqual(['checkin']);
+        component.sort.set('name', 'asc');
+        component.removeChip('sort');
+        expect(component.sort.key).toBeNull();
+        expect(component.appliedChips.map(c => c.id)).toEqual(['checkin']);
+      });
+
+      it('Clear all resets every filter and the sort, not the search', () => {
+        component.searchTerm = 'priya';
+        component.toggleFilter('emailSent');
+        component.passTypeFilter = ['a'];
+        component.sort.set('name', 'desc');
+        component.clearChips();
+        expect(component.activeFilter).toBeNull();
+        expect(component.passTypeFilter).toEqual([]);
+        expect(component.sort.key).toBeNull();
+        expect(component.appliedChips).toEqual([]);
+        expect(component.searchTerm).toBe('priya');
+      });
     });
   });
 });

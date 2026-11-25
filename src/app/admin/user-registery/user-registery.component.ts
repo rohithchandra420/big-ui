@@ -16,6 +16,10 @@ import { StaffBandInfo, StaffBandService } from '../../core/staff-band.service';
 import { JOIN_STATE_LABEL, JoinState, inDayRange, joinState } from '../../core/join-time';
 import { ReportedChange } from '../../shared/reported/reported.component';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
+import { formatDate } from '@angular/common';
+import { ViewModeService } from '../../core/view-mode.service';
+import { AppliedChip, SortOption } from '../../shared/list-toolbar/list-toolbar.component';
+import { CARD_STEP } from '../../shared/show-more/show-more.component';
 
 type UserSortKey = 'name' | 'email' | 'role' | 'dept' | 'access' | 'joined' | 'reported' | 'staff';
 
@@ -102,7 +106,8 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private avatarService: AvatarService,
     private eventService: EventService,
-    private staffBands: StaffBandService
+    private staffBands: StaffBandService,
+    private viewMode: ViewModeService
   ) { }
 
   // ── Role checks ──────────────────────────────────────────
@@ -353,7 +358,7 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
   }
 
   /** B-003: column sort, Name A–Z to start with (the list's old fixed order); a new sort starts again on the first page. */
-  sort = new TableSort<UserSortKey>('name', 'asc', () => { this.pageIndex = 0; });
+  sort = new TableSort<UserSortKey>('name', 'asc', () => this.firstPage());
   readonly sortGetters: Record<UserSortKey, SortGetter<any>> = {
     name: u => u.name,
     email: u => u.email,
@@ -409,8 +414,103 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
   }
 
   get pagedUsers(): any[] {
+    if (this.cardsView) return this.filteredUsers.slice(0, this.cardLimit);
     const start = this.pageIndex * this.pageSize;
     return this.filteredUsers.slice(start, start + this.pageSize);
+  }
+
+  // ── Phone cards (2026-11-25) ─────────────────────────────
+
+  /** Phone cards: how many cards show (grows by "Show more"; back to one step on a new filter / sort). */
+  cardLimit = CARD_STEP;
+
+  /** A phone with Users set to Cards (one view renders, never both). */
+  get cardsView(): boolean {
+    return this.viewMode.cards('users');
+  }
+
+  /** Phone (either view): the phone toolbar replaces the filter bar and the staff bar. */
+  get isPhone(): boolean {
+    return this.viewMode.isPhone;
+  }
+
+  /** Phone toolbar sort picker: the table's columns (stored list; Staff list added when it shows). */
+  readonly sortOptions: SortOption[] = [
+    { key: 'name', label: 'Name' }, { key: 'email', label: 'Email' }, { key: 'role', label: 'Role' },
+    { key: 'dept', label: 'Department' }, { key: 'access', label: 'Access' },
+    { key: 'joined', label: 'Expected Join Time' }, { key: 'reported', label: 'Reported Time' }, { key: 'staff', label: 'Staff list' }
+  ];
+
+  /** Phone toolbar: applied filters + sort as removable chips (stored; rebuilt on every change). */
+  appliedChips: AppliedChip[] = [];
+
+  private static readonly STAT_LABELS: Record<Exclude<UserStatFilter, null>, string> = {
+    admins: 'Admins', leads: 'Team Leads', volunteers: 'Volunteers', noDept: 'No Department'
+  };
+
+  private rebuildChips() {
+    const chips: AppliedChip[] = [];
+    const day = (d: string) => formatDate(d, 'd MMM', 'en-US');
+    if (this.activeFilter) chips.push({ id: 'stat', label: UserRegisteryComponent.STAT_LABELS[this.activeFilter] });
+    if (this.statusFilter !== 'active') chips.push({ id: 'status', label: this.statusFilter === 'deactivated' ? 'Deactivated' : 'All statuses' });
+    if (this.roleFilter) chips.push({ id: 'role', label: `Role: ${this.roleFilter}` });
+    if (this.deptFilter) {
+      const d = this.deptFilterOptions.find(x => x._id === this.deptFilter);
+      chips.push({ id: 'dept', label: d ? d.name : 'Department' });
+    }
+    if (this.showStaff && this.staffFilter !== 'on') {
+      chips.push({ id: 'staff', label: this.staffFilter === 'off' ? `Not on ${this.staffEvent?.name}` : 'On the staff list or not' });
+    }
+    if (this.expOn) chips.push({ id: 'exp', label: `Joins ${day(this.expOn)}` });
+    if (this.repOn) chips.push({ id: 'rep', label: `Reported ${day(this.repOn)}` });
+    if (this.sort.key && !(this.sort.key === 'name' && this.sort.dir === 'asc')) {
+      const o = this.sortOptions.find(x => x.key === this.sort.key);
+      chips.push({ id: 'sort', label: `Sort: ${o?.label ?? this.sort.key}`, icon: this.sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward' });
+    }
+    this.appliedChips = chips;
+  }
+
+  /** Phone toolbar: × on a chip. The sort goes back to Name A–Z. */
+  removeChip(id: string) {
+    if (id === 'stat') this.activeFilter = null;
+    else if (id === 'status') this.statusFilter = 'active';
+    else if (id === 'role') this.roleFilter = '';
+    else if (id === 'dept') this.deptFilter = '';
+    else if (id === 'staff') this.staffFilter = 'on';
+    else if (id === 'exp') this.expOn = '';
+    else if (id === 'rep') this.repOn = '';
+    else if (id === 'sort') { this.sort.set('name', 'asc'); return; }
+    this.firstPage();
+  }
+
+  /** Phone toolbar: Clear all (filters and sort; the search box stays). */
+  clearChips() {
+    const term = this.searchTerm;
+    this.clearFilters();
+    this.searchTerm = term;
+    this.sort.set('name', 'asc');
+  }
+
+  /** A new filter / sort / search: back to page 1, and to the first cards. */
+  private firstPage() {
+    this.pageIndex = 0;
+    this.cardLimit = CARD_STEP;
+    this.rebuildChips();
+  }
+
+  /** Phone cards: "Show more". */
+  showMoreCards() {
+    this.cardLimit += CARD_STEP;
+  }
+
+  trackUser(_: number, u: any): string {
+    return u._id;
+  }
+
+  /** Phone cards: left-edge colour. Reported = ok, late and not reported = warn. */
+  cardTone(u: any): 'ok' | 'warn' | 'none' {
+    if (u.reportedAt) return 'ok';
+    return this.joinStateOf(u) === 'late' ? 'warn' : 'none';
   }
 
   get hasFilters(): boolean {
@@ -421,17 +521,17 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
 
   toggleFilter(filter: UserStatFilter) {
     this.activeFilter = this.activeFilter === filter ? null : filter;
-    this.pageIndex = 0;
+    this.firstPage();
   }
 
   /** The Deactivated card — same setting as the Status dropdown. */
   toggleDeactivated() {
     this.statusFilter = this.statusFilter === 'deactivated' ? 'active' : 'deactivated';
-    this.pageIndex = 0;
+    this.firstPage();
   }
 
   onFilterChange() {
-    this.pageIndex = 0;
+    this.firstPage();
   }
 
   clearFilters() {
@@ -442,7 +542,7 @@ export class UserRegisteryComponent implements OnInit, OnDestroy {
     this.deptFilter = '';
     this.staffFilter = 'on';
     this.expOn = this.repOn = '';
-    this.pageIndex = 0;
+    this.firstPage();
   }
 
   // ── Joining Time ─────────────────────────────────────────

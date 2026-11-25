@@ -11,10 +11,10 @@
   No event selected. Choose one from the Event picker in the sidebar first.
 </div>
 
-<div class="tbl-container" *ngIf="!noActiveEvent">
-  <div class="tbl-filters">
+<div class="tbl-container" *ngIf="!noActiveEvent" [class.pc-mode]="isPhone">
+  <div class="tbl-filters" *ngIf="!isPhone">
     <div class="filter-bar">
-      <input type="text" placeholder="Search Accom No or occupant name…" [(ngModel)]="searchTerm" />
+      <input type="text" placeholder="Search Accom No or occupant name…" [(ngModel)]="searchTerm" (ngModelChange)="refilter()" />
     </div>
     <app-select style="max-width: 200px;" [ngModel]="selectedType" (ngModelChange)="setTypeFilter($event)">
       <app-option *ngFor="let t of types" [value]="t">{{ t }}</app-option>
@@ -22,12 +22,102 @@
     <!-- Enhancement (2026-08-20) — occupancy filter, paired with the row
          background colouring below. Not persisted (unlike the type filter)
          since that wasn't asked for here. -->
-    <app-select style="max-width: 200px;" [(ngModel)]="selectedOccupancy">
+    <app-select style="max-width: 200px;" [(ngModel)]="selectedOccupancy" (ngModelChange)="refilter()">
       <app-option *ngFor="let o of occupancyOptions" [value]="o">{{ o }}</app-option>
     </app-select>
   </div>
 
-  <div class="tbl-scroll">
+  <!-- Phone cards (2026-11-25): phones only. One pinned toolbar holds search and Sort & filter. -->
+  <app-list-toolbar *ngIf="isPhone" page="inventory" noun="units"
+                    [search]="searchTerm" (searchChange)="searchTerm = $event; refilter()"
+                    searchPlaceholder="Accom No or occupant name"
+                    [sort]="sort" [sortOptions]="sortOptions"
+                    [chips]="appliedChips" (chipRemoved)="removeChip($event)" (clearAll)="clearChips()"
+                    [resultCount]="filteredTents.length">
+    <div ltFilters>
+      <div class="field">
+        <label>Type</label>
+        <app-select [ngModel]="selectedType" (ngModelChange)="setTypeFilter($event)">
+          <app-option *ngFor="let t of types" [value]="t">{{ t }}</app-option>
+        </app-select>
+      </div>
+      <div class="field">
+        <label>Occupancy</label>
+        <div class="ls-seg" role="group" aria-label="Occupancy">
+          <button type="button" *ngFor="let o of occupancyOptions" [class.on]="selectedOccupancy === o"
+                  (click)="selectedOccupancy = o; refilter()">{{ o }}</button>
+        </div>
+      </div>
+    </div>
+  </app-list-toolbar>
+
+  <!-- Phone cards: tap a unit to see who is in it (as the row does); Edit / Delete / Vacate as today -->
+  <ng-container *ngIf="cardsView">
+    <div class="pc-list">
+      <div class="pc-card iv-card" *ngFor="let tent of cardTents; trackBy: trackTent"
+           [ngClass]="'s-' + cardTone(tent)"
+           [class.current]="expandedTentId === tent._id"
+           role="button" tabindex="0" (click)="toggleExpand(tent)" (keydown.enter)="toggleExpand(tent)"
+           [attr.aria-expanded]="occupantCount(tent) > 0 ? expandedTentId === tent._id : null">
+        <ng-container *ngIf="editingTentId !== tent._id; else editCard">
+          <div class="pc-head">
+            <div class="pc-title">
+              <b>{{ tent.tent_no }}<span class="pc-sub-name"> · {{ passTypeName(tent) }}</span></b>
+              <span>Capacity {{ tent.capcity }} · {{ genderComposition(tent) === '—' ? 'empty' : genderComposition(tent) }}</span>
+            </div>
+            <div class="pc-id">
+              <span class="badge" [ngClass]="cardTone(tent) === 'ok' ? 'bg' : cardTone(tent) === 'warn' ? 'ba' : 'bx'">{{ occupantCount(tent) }} / {{ tent.capcity }}</span>
+              <mat-icon class="pc-go" *ngIf="occupantCount(tent) > 0" aria-hidden="true">{{ expandedTentId === tent._id ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+          </div>
+          <div class="pc-meta" *ngIf="occupantCount(tent) > 0 && expandedTentId !== tent._id">
+            <span><mat-icon aria-hidden="true">group</mat-icon>{{ occupantNames(tent) }}</span>
+          </div>
+          <div class="occupant-detail-grid iv-occ" *ngIf="expandedTentId === tent._id" (click)="$event.stopPropagation()">
+            <div class="occupant-card"
+                 [class.gender-male]="o.gender === 'Male'"
+                 [class.gender-female]="o.gender === 'Female'"
+                 [class.gender-other]="o.gender !== 'Male' && o.gender !== 'Female'"
+                 *ngFor="let o of occupantsList(tent)">
+              <div class="occupant-card-name">{{ o.name || '(no name)' }}</div>
+              <div class="occupant-card-row occupant-gender-row"><mat-icon>wc</mat-icon>{{ o.gender || '—' }}</div>
+              <div class="occupant-card-row"><mat-icon>call</mat-icon>{{ o.phone_no || '—' }}</div>
+              <div class="occupant-card-row"><mat-icon>mail</mat-icon>{{ o.email || '—' }}</div>
+              <div class="occupant-card-row" *ngIf="o.order_id != null"><mat-icon>receipt_long</mat-icon>Order #{{ o.order_id }}</div>
+              <div class="occupant-card-row">
+                <span class="badge-admit" [class.in]="o.isAdmitted" [class.out]="!o.isAdmitted">{{ o.isAdmitted ? 'Admitted' : 'Not admitted' }}</span>
+              </div>
+              <button *ngIf="canVacate" class="btn-sm-danger occupant-vacate-btn" (click)="vacateOccupant(o, tent)">Vacate</button>
+            </div>
+          </div>
+          <div class="pc-actions" *ngIf="canManage" (click)="$event.stopPropagation()">
+            <button type="button" class="btn-sm-outline" (click)="startEdit(tent)">Edit</button>
+            <button type="button" class="btn-sm-danger" (click)="deleteTent(tent)">Delete</button>
+          </div>
+        </ng-container>
+        <ng-template #editCard>
+          <div class="iv-edit" [formGroup]="editForm" (click)="$event.stopPropagation()">
+            <div class="field">
+              <label [for]="'iv-no-' + tent._id">Accom No</label>
+              <input type="text" [id]="'iv-no-' + tent._id" formControlName="tent_no">
+            </div>
+            <div class="field">
+              <label [for]="'iv-cap-' + tent._id">Capacity</label>
+              <input type="number" [id]="'iv-cap-' + tent._id" formControlName="capcity" min="1" inputmode="numeric">
+            </div>
+            <div class="pc-actions">
+              <button type="button" class="btn-sm-outline" (click)="cancelEdit()">Cancel</button>
+              <button type="button" class="btn-sm-outline" [disabled]="editForm.invalid" (click)="saveEdit(tent)">Save</button>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+      <div class="pc-empty" *ngIf="!loading && filteredTents.length === 0">No tents match.</div>
+    </div>
+    <app-show-more [shown]="cardTents.length" [total]="filteredTents.length" (more)="showMoreCards()"></app-show-more>
+  </ng-container>
+
+  <div class="tbl-scroll" *ngIf="!cardsView">
     <table class="tbl">
       <thead>
         <tr>

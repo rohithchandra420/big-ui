@@ -15,6 +15,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.84.0] - 2026-11-26
+
+### Added
+- Phone cards: on a phone (below 768 px), six lists show cards instead of a table: Box Office › Bookings, Admin › Users, Admin › Email Report, Volunteers › List, Volunteers › Deposits and Accommodation › Inventory. Tablets and desktops keep the table.
+  - Tap a card to open what the row opens (booking, user, email, profile, deposit). On Inventory a card opens in place to show who is in the unit, with Vacate, Edit and Delete as before.
+  - Tick boxes stay where the table has them (Bookings, Users, Volunteers List); ticking never opens the card.
+  - Each card carries every column, labelled, and a coloured left edge for what needs a look.
+  - Bookings card: name, email, phone and Booking ID; Admitted, Ticket email, Check-In and Details; passes, payment and paid at, source and beds.
+  - Infinite scroll instead of the page picker: 25 cards first; at the end of the list a "Loading more…" spinner shows for a second, then the next 25 appear (Email Report fetches them from the server then).
+- On a phone, one compact toolbar replaces each list's filter bar and stays pinned under the page header while scrolling: search, "Sort & filter", the applied filters as chips (× to remove one, Clear all), and, where rows can be ticked, a selection line with the page's own actions (Bookings: Selected only and Email; Users: one Actions menu for staff list add / remove and delete; Volunteers: Ask location).
+- "Sort & filter" opens a bottom sheet with the sort column and order, the page's filters, a Cards / Table switch and the live count. The Cards / Table choice is remembered per page on that phone (default Cards) and stays until UAT decides which view to keep.
+- On a phone, the stat tiles of Bookings, Users, Email Report, Volunteers and Deposits become one row that scrolls sideways; a tapped tile also shows as a chip in the toolbar.
+
+---
+
 ## [1.83.2] - 2026-11-25
 
 ### Fixed

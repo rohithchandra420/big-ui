@@ -1,0 +1,66 @@
+<div class="lt-bar" *ngIf="viewMode.isPhone">
+  <div class="lt-row">
+    <label class="lt-search">
+      <mat-icon aria-hidden="true">search</mat-icon>
+      <input type="search" [placeholder]="searchPlaceholder" [ngModel]="search" (ngModelChange)="onSearch($event)"
+             [attr.aria-label]="searchPlaceholder">
+    </label>
+    <button type="button" class="lt-open" [class.on]="chips.length" (click)="sheetOpen = true"
+            [attr.aria-label]="'Sort and filter' + (chips.length ? ', ' + chips.length + ' applied' : '')">
+      <mat-icon aria-hidden="true">tune</mat-icon>Sort &amp; filter
+      <span class="lt-cnt" *ngIf="chips.length">{{ chips.length }}</span>
+    </button>
+  </div>
+
+  <div class="lt-chips" *ngIf="chips.length">
+    <button type="button" class="lt-chip" *ngFor="let c of chips; trackBy: trackChip" (click)="chipRemoved.emit(c.id)"
+            [attr.aria-label]="'Remove ' + c.label">
+      {{ c.label }}<mat-icon *ngIf="c.icon" class="lt-chip-ic" aria-hidden="true">{{ c.icon }}</mat-icon><mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+    <button type="button" class="lt-chip lt-clear" (click)="clearAll.emit()">Clear all</button>
+  </div>
+
+  <div class="lt-sel" *ngIf="selectable" [class.has]="selectedCount">
+    <label class="cb-wrap">
+      <input type="checkbox" [checked]="allSelected" [indeterminate]="someSelected" [disabled]="!shown" (change)="toggleAll.emit()"
+             aria-label="Select all shown">
+      <span class="cb-box"></span>
+    </label>
+    <span class="lt-grow">{{ selectedCount ? selectedCount + ' selected' : (selectAllText || 'Select all ' + shown + ' shown') }}</span>
+    <ng-content select="[ltActions]"></ng-content>
+  </div>
+</div>
+
+<app-slide-panel [open]="sheetOpen" title="Sort & filter" icon="tune" (closed)="sheetOpen = false">
+  <div class="ls-body">
+    <button type="button" class="ls-clear" *ngIf="chips.length" (click)="clearAll.emit()">Clear all</button>
+
+    <div class="field">
+      <label>Sort by</label>
+      <app-select [ngModel]="sort.key" (ngModelChange)="pickSort($event)">
+        <app-option [value]="null">List order</app-option>
+        <app-option *ngFor="let o of sortOptions; trackBy: trackKey" [value]="o.key">{{ o.label }}</app-option>
+      </app-select>
+    </div>
+    <div class="ls-seg" role="group" aria-label="Sort order">
+      <button type="button" [class.on]="sort.key && sort.dir === 'asc'" [disabled]="!sort.key" (click)="setDir('asc')"
+              [attr.aria-pressed]="sort.dir === 'asc'"><mat-icon aria-hidden="true">arrow_upward</mat-icon>Ascending</button>
+      <button type="button" [class.on]="sort.key && sort.dir === 'desc'" [disabled]="!sort.key" (click)="setDir('desc')"
+              [attr.aria-pressed]="sort.dir === 'desc'"><mat-icon aria-hidden="true">arrow_downward</mat-icon>Descending</button>
+    </div>
+
+    <ng-content select="[ltFilters]"></ng-content>
+
+    <div class="field">
+      <label>Show as</label>
+      <div class="ls-seg" role="group" aria-label="Show as">
+        <button type="button" [class.on]="mode === 'cards'" (click)="setMode('cards')" [attr.aria-pressed]="mode === 'cards'">
+          <mat-icon aria-hidden="true">view_agenda</mat-icon>Cards</button>
+        <button type="button" [class.on]="mode === 'table'" (click)="setMode('table')" [attr.aria-pressed]="mode === 'table'">
+          <mat-icon aria-hidden="true">table_rows</mat-icon>Table</button>
+      </div>
+    </div>
+
+    <button type="button" class="btn-cta ls-show" (click)="sheetOpen = false">Show {{ resultCount }} {{ noun }}</button>
+  </div>
+</app-slide-panel>

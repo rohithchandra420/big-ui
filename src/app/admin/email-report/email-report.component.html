@@ -13,7 +13,7 @@
 <div class="report-page">
 
   <!-- ── Summary (tap to filter) ──────────────────────────── -->
-  <div class="stat-row">
+  <div class="stat-row pc-stats">
     <div class="stat tap" [class.act]="isCardActive('sent')" (click)="toggleCard('sent')">
       <div class="stat-l">Sent</div>
       <div class="stat-n">{{ cardCount('sent') }}</div>
@@ -43,8 +43,8 @@
   </div>
 
   <!-- ── Table ────────────────────────────────────────────── -->
-  <div class="tbl-container">
-    <div class="tbl-filters">
+  <div class="tbl-container" [class.pc-mode]="isPhone">
+    <div class="tbl-filters" *ngIf="!isPhone">
       <div class="filter-bar">
         <input type="text" placeholder="Search recipient, email, order # or subject..."
                [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
@@ -87,7 +87,93 @@
       </div>
     </div>
 
-    <div class="tbl-scroll report-tbl-scroll">
+    <!-- Phone cards (2026-11-25): phones only. One pinned toolbar replaces the filter bar;
+         the filters live in its Sort & filter sheet. -->
+    <app-list-toolbar *ngIf="isPhone" page="email-report" noun="emails"
+                      [search]="searchTerm" (searchChange)="searchTerm = $event; onSearchChange()"
+                      searchPlaceholder="Recipient, order # or subject"
+                      [sort]="sort" [sortOptions]="sortOptions"
+                      [chips]="appliedChips" (chipRemoved)="removeChip($event)" (clearAll)="clearChips()"
+                      [resultCount]="total">
+      <div ltFilters>
+        <div class="field">
+          <label>Type</label>
+          <app-select [(ngModel)]="typeFilter" (ngModelChange)="onFilterChange()">
+            <app-option value="">All types</app-option>
+            <app-option *ngFor="let o of typeOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
+          </app-select>
+        </div>
+        <div class="field">
+          <label>Send status</label>
+          <app-select [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
+            <app-option value="">Any send status</app-option>
+            <app-option *ngFor="let o of statusOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
+          </app-select>
+        </div>
+        <div class="field">
+          <label>Delivery</label>
+          <app-select [(ngModel)]="deliveryFilter" (ngModelChange)="onFilterChange()">
+            <app-option value="">Any delivery</app-option>
+            <app-option *ngFor="let o of deliveryOptions; trackBy: trackOption" [value]="o.value">{{ o.label }}</app-option>
+          </app-select>
+        </div>
+        <div class="field" *ngIf="events.length > 1">
+          <label>Event</label>
+          <app-select [(ngModel)]="eventFilter" (ngModelChange)="onFilterChange()">
+            <app-option value="">All events</app-option>
+            <app-option *ngFor="let ev of events; trackBy: trackById" [value]="ev._id">{{ ev.name }}</app-option>
+          </app-select>
+        </div>
+        <div class="field" *ngIf="senders.length > 1">
+          <label>Sent by</label>
+          <app-select [(ngModel)]="senderFilter" (ngModelChange)="onFilterChange()">
+            <app-option value="">Anyone</app-option>
+            <app-option *ngFor="let s of senders; trackBy: trackById" [value]="s._id">{{ s.name }}</app-option>
+          </app-select>
+        </div>
+        <div class="field">
+          <label for="ph-er-from">From</label>
+          <app-date inputId="ph-er-from" [(ngModel)]="fromDate" (ngModelChange)="onFilterChange()" [max]="toDate || null"></app-date>
+        </div>
+        <div class="field">
+          <label for="ph-er-to">To</label>
+          <app-date inputId="ph-er-to" [(ngModel)]="toDate" (ngModelChange)="onFilterChange()" [min]="fromDate || null"></app-date>
+        </div>
+      </div>
+    </app-list-toolbar>
+
+    <!-- Phone cards: same emails and panel as the table; only one of the two renders -->
+    <ng-container *ngIf="cardsView">
+      <div class="pc-list">
+        <div class="pc-card" *ngFor="let e of items; trackBy: trackById"
+             [ngClass]="'s-' + cardTone(e)"
+             [class.current]="panelOpen && active?._id === e._id"
+             role="button" tabindex="0" (click)="openEmail(e)" (keydown.enter)="openEmail(e)">
+          <div class="pc-head">
+            <div class="pc-title">
+              <b>{{ e.recipientName || e.to }}</b>
+              <span *ngIf="e.recipientName">{{ e.to }}</span>
+              <span class="pc-test" *ngIf="e.redirectedTo">test → {{ e.redirectedTo }}</span>
+            </div>
+            <div class="pc-id">
+              <span class="badge" [ngClass]="statusBadge(e)">{{ statusLabel(e) }}</span>
+              <mat-icon class="pc-go" aria-hidden="true">chevron_right</mat-icon>
+            </div>
+          </div>
+          <div class="pc-subj">{{ e.subject || '—' }}</div>
+          <div class="pc-meta">
+            <span><mat-icon aria-hidden="true">schedule</mat-icon>{{ (e.sentAt || e.createdAt) | date:'d MMM y, h:mm a' }}</span>
+            <span><mat-icon aria-hidden="true">mail</mat-icon>{{ typeLabel(e) }}</span>
+            <span *ngIf="e.orderId != null"><mat-icon aria-hidden="true">receipt_long</mat-icon>Order #{{ e.orderId }}</span>
+            <span><mat-icon aria-hidden="true">person</mat-icon>{{ senderName(e) || '—' }}</span>
+          </div>
+        </div>
+        <div class="pc-empty" *ngIf="!loading && items.length === 0">No emails found.</div>
+      </div>
+      <app-show-more [shown]="items.length" [total]="total" [busy]="loading" (more)="showMoreCards()"></app-show-more>
+    </ng-container>
+
+    <div class="tbl-scroll report-tbl-scroll" *ngIf="!cardsView">
       <table class="tbl">
         <thead>
           <tr>
@@ -130,7 +216,7 @@
         {{ total }} email{{ total === 1 ? '' : 's' }}
         <span *ngIf="loading" class="loading-txt">Loading…</span>
       </span>
-      <mat-paginator [length]="total"
+      <mat-paginator *ngIf="!cardsView" [length]="total"
                      [pageSize]="pageSize"
                      [pageSizeOptions]="pageSizeOptions"
                      [pageIndex]="pageIndex"

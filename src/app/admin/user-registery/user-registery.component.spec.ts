@@ -3,6 +3,7 @@ import { DateTimeComponent } from '../../shared/date-time/date-time.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { MatMenuModule } from '@angular/material/menu';
 import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 
 import { UserRegisteryComponent } from './user-registery.component';
@@ -15,6 +16,7 @@ import { AppOptionComponent } from '../../shared/app-select/app-option.component
 import { AvatarService } from '../../core/avatar.service';
 import { EventService } from '../../core/event.service';
 import { StaffBandService } from '../../core/staff-band.service';
+import { ViewModeService } from '../../core/view-mode.service';
 
 const ops = { _id: 'd-ops', name: 'Operations' };
 const box = { _id: 'd-box', name: 'Box Office' };
@@ -59,6 +61,10 @@ describe('UserRegisteryComponent', () => {
   let avatarSpy: jasmine.SpyObj<AvatarService>;
   let bandSpy: jasmine.SpyObj<StaffBandService>;
   let userSubject: BehaviorSubject<any>;
+  /** Phone cards: the view-mode stub's answers (default: a desktop). */
+  let cardsOn = false;
+  let phoneOn = false;
+  afterEach(() => { cardsOn = phoneOn = false; });
 
   const authStub = {
     get user() { return userSubject; },
@@ -98,7 +104,7 @@ describe('UserRegisteryComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [DateTimeComponent, UserRegisteryComponent, AppSelectComponent, AppOptionComponent],
-      imports: [FormsModule, ReactiveFormsModule],
+      imports: [FormsModule, ReactiveFormsModule, MatMenuModule],
       providers: [
         { provide: AdminService, useValue: adminSpy },
         { provide: AuthService, useValue: authStub },
@@ -108,6 +114,7 @@ describe('UserRegisteryComponent', () => {
         { provide: AvatarService, useValue: avatarSpy },
         { provide: EventService, useValue: { activeEvent, get currentActiveEvent() { return activeEvent.value; } } },
         { provide: StaffBandService, useValue: bandSpy },
+        { provide: ViewModeService, useValue: { cards: () => cardsOn, get isPhone() { return phoneOn; }, modeOf: () => 'cards', setMode: () => {} } },
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -622,6 +629,85 @@ describe('UserRegisteryComponent', () => {
       await setup({ _id: 'tl1', name: 'Lead Ops', role: 'TL', departments: [{ department: ops }] });
       expect(adminSpy.getAllUsers.calls.mostRecent().args[1]).toBe('');
       expect(component.showStaff).toBeFalse();
+    });
+  });
+
+  describe('Phone cards (2026-11-25)', () => {
+    const el = () => fixture.nativeElement as HTMLElement;
+
+    it('a desktop keeps the filter bar and the table', async () => {
+      await setup(devActor);
+      expect(el().querySelector('.tbl-filters')).not.toBeNull();
+      expect(el().querySelector('table.tbl')).not.toBeNull();
+      expect(el().querySelector('.pc-card')).toBeNull();
+    });
+
+    it('a phone in Cards mode shows the toolbar and cards, no table or paginator', async () => {
+      cardsOn = phoneOn = true;
+      await setup(devActor);
+      fixture.detectChanges();
+      expect(el().querySelector('app-list-toolbar')).not.toBeNull();
+      expect(el().querySelector('.tbl-filters')).toBeNull();
+      expect(el().querySelector('table.tbl')).toBeNull();
+      expect(el().querySelector('mat-paginator')).toBeNull();
+      expect(el().querySelectorAll('.pc-card').length).toBe(component.pagedUsers.length);
+    });
+
+    it('tapping a card opens the user; its tick box only picks', async () => {
+      cardsOn = phoneOn = true;
+      await setup(devActor);
+      fixture.detectChanges();
+      const cards = Array.from(el().querySelectorAll('.pc-card')) as HTMLElement[];
+      const vol = cards.find(c => c.textContent?.includes('Vol Ops'))!;
+      (vol.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
+      expect(component.selectedIds.has('vol1')).toBeTrue();
+      expect(component.panelOpen).toBeFalse();
+      vol.click();
+      expect(component.panelOpen).toBeTrue();
+      expect(component.activeUser?._id).toBe('vol1');
+    });
+
+    it('a TL sees no tick boxes on the cards', async () => {
+      cardsOn = phoneOn = true;
+      await setup(tlActor);
+      fixture.detectChanges();
+      expect(el().querySelector('.pc-card input[type="checkbox"]')).toBeNull();
+    });
+
+    it('chips: stat tile, role and a non-default sort; × and Clear all', async () => {
+      await setup(devActor);
+      component.toggleFilter('leads');
+      component.roleFilter = 'TL';
+      component.onFilterChange();
+      component.sort.set('email', 'desc');
+      expect(component.appliedChips.map(c => c.id)).toEqual(['stat', 'role', 'sort']);
+      expect(component.appliedChips[0].label).toBe('Team Leads');
+      component.removeChip('sort');
+      expect(component.sort.key).toBe('name');
+      expect(component.sort.dir).toBe('asc');
+      component.searchTerm = 'lead';
+      component.clearChips();
+      expect(component.appliedChips).toEqual([]);
+      expect(component.activeFilter).toBeNull();
+      expect(component.roleFilter).toBe('');
+      expect(component.searchTerm).toBe('lead');
+    });
+
+    it('Name A–Z (the starting order) is not a chip', async () => {
+      await setup(devActor);
+      component.sort.set('name', 'asc');
+      expect(component.appliedChips).toEqual([]);
+    });
+
+    it('25 cards at a time; a new filter starts again from 25', async () => {
+      cardsOn = phoneOn = true;
+      await setup(devActor);
+      component.users = Array.from({ length: 60 }, (_, i) => mkUser('u' + i, 'Person ' + i, 'VOL', ops, { onEvent: true }));
+      expect(component.pagedUsers.length).toBe(25);
+      component.showMoreCards();
+      expect(component.pagedUsers.length).toBe(50);
+      component.onFilterChange();
+      expect(component.pagedUsers.length).toBe(25);
     });
   });
 });
