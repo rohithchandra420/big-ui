@@ -15,6 +15,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.83.2] - 2026-11-25
+
+### Fixed
+- Hospitality › Today › Who's counted: names and departments are visible again. A long reason such as "Expected to join … late, not reported yet" squeezed them to nothing in the panel, mostly on phones. Each person now takes three lines: name, food and status; then department; then the reason.
+
+---
+
 ## [1.83.1] - 2026-11-25
 
 ### Fixed

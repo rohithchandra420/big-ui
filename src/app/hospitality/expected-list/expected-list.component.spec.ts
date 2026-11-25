@@ -124,6 +124,26 @@ describe('ExpectedListComponent', () => {
     expect(rows()).toContain('Bina Marked');
   });
 
+  it('ui 1.83.2: compact in a narrow panel keeps name and department visible next to a long "late" reason', () => {
+    const d = exp();
+    d.counted = [{ _id: 'f', name: 'Farah Late', avatarVersion: 0, department: 'General Operations', food: 'veg', counted: true,
+      why: 'expected', late: true, status: 'none', at: null, expectedAt: new Date(2026, 10, 9, 11).toISOString(), reportedAt: null }];
+    d.others = []; d.guests = [];
+    fixture.nativeElement.style.display = 'block';
+    fixture.nativeElement.style.width = '320px';
+    component.compact = true;
+    component.showAvatar = false;
+    show(d);
+    const row = fixture.nativeElement.querySelector('.hx-er:not(.hx-eh)') as HTMLElement;
+    const name = row.querySelector('.hx-en') as HTMLElement;
+    const dept = row.querySelector('.hx-ed') as HTMLElement;
+    const why = row.querySelector('.hx-ew') as HTMLElement;
+    expect(why.textContent).toContain('late, not reported yet');
+    expect(name.getBoundingClientRect().width).toBeGreaterThan(120);       // not squeezed by the reason
+    expect(dept.getBoundingClientRect().width).toBeGreaterThan(200);       // department has its own full row
+    expect(why.getBoundingClientRect().top).toBeGreaterThan(dept.getBoundingClientRect().top);
+  });
+
   it('every person row has the food icon, with the word in its own span (hidden on phones by CSS)', () => {
     show(exp());
     const people = Array.from(fixture.nativeElement.querySelectorAll('.hx-er:not(.hx-eh)')) as HTMLElement[];
