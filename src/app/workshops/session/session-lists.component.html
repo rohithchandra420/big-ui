@@ -56,13 +56,13 @@
     <div class="sl-search">
       <label class="search-field">
         <mat-icon>search</mat-icon>
-        <input type="text" [ngModel]="search" (ngModelChange)="onSearch($event)" placeholder="Or search name, email, phone or order number"
+        <input type="text" [ngModel]="search" (ngModelChange)="onSearch($event)" placeholder="Or search name, email, phone or Booking ID"
                aria-label="Search people" [disabled]="(tab === 'list' && !d.registrationOpen) || (tab === 'door' && doorClosed)">
       </label>
       <div class="sl-results" *ngIf="results.length || (searched && !searching)">
         <button type="button" class="sl-result" *ngFor="let p of results; trackBy: trackId" (click)="pick(p)" [disabled]="busy || !p.isAdmitted">
           <span class="sl-r-name">{{ p.name }}</span>
-          <span class="sl-r-meta">Order {{ p.order_id }}{{ p.band ? ' · band ' + p.band.code : '' }}</span>
+          <span class="sl-r-meta">{{ bookingLabel(p) }}{{ p.band ? ' · band ' + p.band.code : '' }}</span>
           <span class="badge bx" *ngIf="!p.isAdmitted">Not admitted</span>
         </button>
         <div class="sl-r-none" *ngIf="searched && !searching && !results.length">Nobody found</div>
@@ -96,12 +96,12 @@
       <div class="tbl-container">
         <div class="tbl-scroll">
           <table class="tbl" *ngIf="grp.rows.length; else none">
-            <thead><tr><th appSort="pos" [sort]="sort">#</th><th appSort="name" [sort]="sort">Name</th><th class="hide-sm" appSort="order" [sort]="sort">Order · band</th><th appSort="status" [sort]="sort">Status</th><th></th></tr></thead>
+            <thead><tr><th appSort="pos" [sort]="sort">#</th><th appSort="name" [sort]="sort">Name</th><th class="hide-sm" appSort="order" [sort]="sort">Booking · band</th><th appSort="status" [sort]="sort">Status</th><th></th></tr></thead>
             <tbody>
               <tr *ngFor="let e of grp.rows; trackBy: trackId">
                 <td>{{ posOf(e) }}</td>
                 <td class="strong">{{ e.pass?.name || '(deleted pass)' }}<span class="badge ba late" *ngIf="e.late">Late</span></td>
-                <td class="hide-sm">{{ e.pass?.order_id }}{{ e.pass?.band ? ' · ' + e.pass?.band?.code : '' }}</td>
+                <td class="hide-sm">{{ bookingId(e.pass) }}{{ e.pass?.band ? ' · ' + e.pass?.band?.code : '' }}</td>
                 <td>
                   <span class="badge bg" *ngIf="e.attendedAt; else waiting">In {{ time(e.attendedAt) }}</span>
                   <ng-template #waiting><span class="muted">{{ grp.key === 'pre' ? 'Not here yet' : 'Waiting' }}</span></ng-template>

@@ -4,7 +4,7 @@ import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
 import { EventItem } from '../../models/event.model';
 import { WorkshopService } from '../workshop.service';
-import { ReportPerson, SessionReport, WorkshopReport, WorkshopReports } from '../workshops.model';
+import { ReportPerson, SessionReport, WorkshopReport, WorkshopReports, passBookingId } from '../workshops.model';
 import { localDate, localTime } from '../planner.utils';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
 
@@ -178,7 +178,7 @@ export class WorkshopReportsComponent implements OnInit, OnDestroy {
       const rows = people.map(p => ({
         Workshop: p.session?.workshop?.title || '', Venue: p.session?.venue?.name || '',
         Day: p.session ? localDate(new Date(p.session.start)) : '', Start: p.session ? this.time(p.session.start) : '',
-        Name: p.pass?.name || '', Email: p.pass?.email || '', Phone: p.pass?.phone_no || '', 'Order ID': p.pass?.order_id ?? '',
+        Name: p.pass?.name || '', Email: p.pass?.email || '', Phone: p.pass?.phone_no || '', 'Booking ID': passBookingId(p.pass),
         List: this.listLabel(p), Position: p.position, Attended: p.attendedAt ? 'Yes' : 'No', 'Came at': this.time(p.attendedAt)
       }));
       const wb = XLSX.utils.book_new();

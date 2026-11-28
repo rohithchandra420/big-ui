@@ -7,7 +7,7 @@ import { GateFeedbackService } from '../../core/gate-feedback.service';
 import { BandLookup } from '../../box-office/box-office.service';
 import { BoxOfficeQrscannerPopupComponent, QrScannerData } from '../../box-office/registration/qrscanner-popup/qrscanner-popup.component';
 import { WorkshopService } from '../workshop.service';
-import { DoorAnswer, EntryPass, PersonRef, SessionLists, WorkshopEntry } from '../workshops.model';
+import { DoorAnswer, EntryPass, PersonRef, SessionLists, WorkshopEntry, passBookingId, passBookingLabel } from '../workshops.model';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
 
 type EntrySortKey = 'pos' | 'name' | 'order' | 'status';
@@ -110,7 +110,7 @@ export class SessionListsComponent implements OnInit, OnDestroy {
   readonly sortGetters: Record<EntrySortKey, SortGetter<WorkshopEntry>> = {
     pos: x => this.posOf(x),
     name: x => x.pass?.name,
-    order: x => x.pass?.order_id,
+    order: x => passBookingId(x.pass) || null,
     status: x => x.attendedAt ? Date.parse(x.attendedAt) : null
   };
 
@@ -124,6 +124,9 @@ export class SessionListsComponent implements OnInit, OnDestroy {
   }
 
   /** The entry's place on its own list (1 = first), whatever the sort. */
+  readonly bookingId = passBookingId;
+  readonly bookingLabel = passBookingLabel;
+
   posOf(x: WorkshopEntry): number {
     const list = x.list === 'pre' ? this.pre : x.list === 'wait' ? this.wait : this.walkin;
     return list.indexOf(x) + 1;
