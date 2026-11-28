@@ -2,10 +2,16 @@ import { WashFacility, WashState } from './wash.model';
 
 // Same rule as big-api utils/washState.js — keep the two in step.
 // Hand-set states win; never done = not started; then ok → due soon (last 30 min) → overdue.
+// In progress (a started job, user 2026-11-28) wins over Empty and the clock; Out of order wins over it.
 export const HOUR = 60 * 60 * 1000;
 export const DUE_SOON_MS = 30 * 60 * 1000;
+/** A job running longer than this shows "Taking long". */
+export const LONG_MS = 60 * 60 * 1000;
+/** Biggest number a WASH field takes (capacity in litres, stock counts): same as big-api (B-066). */
+export const MAX_QTY = 1000000;
+export const MAX_TEXT = '1,000,000';
 
-type StateInput = Pick<WashFacility, 'kind' | 'status' | 'intervalHours' | 'lastDoneAt'>;
+type StateInput = Pick<WashFacility, 'kind' | 'status' | 'intervalHours' | 'lastDoneAt'> & { startedAt?: string | null };
 
 export function dueAtOf(f: StateInput): Date | null {
   return f.lastDoneAt ? new Date(new Date(f.lastDoneAt).getTime() + f.intervalHours * HOUR) : null;
@@ -13,6 +19,7 @@ export function dueAtOf(f: StateInput): Date | null {
 
 export function stateOf(f: StateInput, now: Date = new Date()): WashState {
   if (f.status === 'out_of_order') return 'out_of_order';
+  if (f.startedAt) return 'in_progress';
   if (f.status === 'empty' && f.kind === 'water') return 'empty';
   const due = dueAtOf(f);
   if (!due) return 'not_started';
@@ -26,9 +33,21 @@ export function stateOf(f: StateInput, now: Date = new Date()): WashState {
 export function usedPercent(f: StateInput, now: Date = new Date()): number {
   const s = stateOf(f, now);
   if (s === 'not_started') return 0;
+  // A running job: how much of its first hour has gone.
+  if (s === 'in_progress') return Math.max(0, Math.min(100, Math.round(minutesSince(f.startedAt as string, now) / 60 * 100)));
   if (s === 'empty' || s === 'out_of_order' || s === 'overdue') return 100;
   const used = (now.getTime() - new Date(f.lastDoneAt as string).getTime()) / (f.intervalHours * HOUR);
   return Math.max(0, Math.min(100, Math.round(used * 100)));
+}
+
+/** Whole minutes from `at` to `now` (never below 0). */
+export function minutesSince(at: string | Date, now: Date = new Date()): number {
+  return Math.max(0, Math.floor((now.getTime() - new Date(at).getTime()) / 60000));
+}
+
+/** True when a started job has run past LONG_MS. */
+export function isLong(f: { startedAt?: string | null }, now: Date = new Date()): boolean {
+  return !!f.startedAt && now.getTime() - new Date(f.startedAt).getTime() >= LONG_MS;
 }
 
 /**

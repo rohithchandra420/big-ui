@@ -1483,6 +1483,7 @@ th[aria-sort="ascending"] .th-sort .mat-icon, th[aria-sort="descending"] .th-sor
 .vm-status.wash-due_soon { background: #d69e2e; }
 .vm-status.wash-overdue { background: #c2410c; }
 .vm-status.wash-empty { background: #1d4ed8; }
+.vm-status.wash-in_progress { background: #0f766e; }
 .vm-status.wash-out_of_order { background: #4b5563; }
 .vm-status.wash-not_started { background: #cbd5e1; }
 .vm-area-ic {
@@ -2848,3 +2849,179 @@ app-list-toolbar { display: contents; }
 .pc-more-spin .mat-icon { font-size: 22px; width: 22px; height: 22px; color: var(--color-primary); animation: pc-spin 0.9s linear infinite; }
 @keyframes pc-spin { to { transform: rotate(360deg); } }
 .pc-sentinel { height: 1px; }
+
+/* Announcements: phone preview + History list. Moved from the page's own stylesheet
+   (over its 6 kB budget, 2026-11-28); the page's @media rules still adjust these. */
+/* A lock-screen notification look-alike, with the type's icon. */
+.ann-phone-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  max-width: 380px;
+  padding: 10px 12px;
+  background: #f1f1ef;
+  border-radius: 16px;
+}
+.ann-phone-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--t-c);
+  color: #fff;
+}
+.ann-phone-icon mat-icon { font-size: 20px; width: 20px; height: 20px; }
+.ann-phone-text { min-width: 0; }
+.ann-phone-app { font-size: 11px; color: var(--text-muted); }
+.ann-phone-title { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+.ann-phone-body { font-size: 13px; color: var(--text-primary); overflow-wrap: anywhere; }
+
+/* ── History ───────────────────────────────────────────────────────── */
+.ann-history-lbl { margin: 0 0 10px; display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.ann-history-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(30, 70, 56, 0.1);
+  color: var(--color-primary);
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ann-empty { font-size: 13px; color: var(--text-muted); }
+.ann-filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; flex: 0 0 auto; }
+.ann-filter-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ann-filter-row app-select { width: 100%; min-width: 0; }
+.ann-filter-foot { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); }
+.ann-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;                  /* its own scrollbar */
+  padding: 2px 6px 12px 2px;
+  scrollbar-width: thin;
+}
+.ann-list .ann-item { margin: 0; flex: 0 0 auto; }
+
+.ann-item {
+  display: flex;
+  flex-direction: row;   /* Bootstrap's .card is a column — icon goes beside the text */
+  gap: 12px;
+  align-items: flex-start;
+  border-left: 3px solid var(--t-c);
+}
+/* Left column of a card: icon, then its badges stacked underneath. */
+.ann-item-side {
+  flex: 0 0 72px;
+  width: 72px;                       /* same in every card, so the text lines up */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.ann-item-ic {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--t-soft);
+  color: var(--t-c);
+}
+.ann-item-ic mat-icon { font-size: 20px; width: 20px; height: 20px; }
+.ann-item-body { flex: 1 1 auto; min-width: 0; }
+
+.ann-item-hd { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ann-item-title {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.ann-item-when { font-size: 12px; color: var(--text-muted); }
+.ann-item-msg { margin-top: 4px; font-size: 13px; color: var(--text-primary); overflow-wrap: anywhere; }
+.ann-item-meta { margin-top: 6px; font-size: 12px; color: var(--text-muted); }
+
+.ann-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  flex: 0 0 auto;
+  background: var(--t-soft);
+  color: var(--t-c);
+}
+.ann-badge mat-icon { font-size: 13px; width: 13px; height: 13px; }
+.ann-badge.resent { background: rgba(30, 70, 56, 0.1); color: var(--color-primary); }
+
+.ann-item-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+
+/* WASH › Monitor: In progress (Start / Finished, user 2026-11-28). Global because the page's
+   own stylesheet is at its size limit; .wm-page makes these outrank the page's base rules. */
+.wm-page .wm-card.t-prog { border-color: var(--sc); background: var(--sb); overflow: hidden; }
+.wm-page .wm-card.t-prog::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; opacity: .8;
+  background: repeating-linear-gradient(90deg, var(--sc) 0 14px, transparent 14px 28px); background-size: 28px 4px;
+  animation: wm-slide 1s linear infinite; }
+.wm-page .wm-card.t-prog .wm-pill { background: var(--sc); color: #fff; }
+.wm-page .wm-txt small.wm-who { color: var(--sc); font-weight: 600; }
+.wm-page .wm-act.main.wm-finish { background: var(--sc, #0f766e); border-color: var(--sc, #0f766e); color: #fff; }
+.wm-page .wm-act.wm-quiet { color: var(--text-secondary); }
+.wm-page .wm-st.t-prog i { animation: wm-pulse 1.4s ease-in-out infinite; }
+.wm-timer { display: flex; align-items: center; gap: 12px; margin: 0 0 10px; padding: 12px; border-radius: 12px;
+  background: #e0f4f1; border: 1px solid #0f766e; color: #0f4f49; }
+.wm-timer.long { background: #fdf3e1; border-color: #b7791f; color: #7a4f12; }
+.wm-timer mat-icon { flex: none; font-size: 28px; width: 28px; height: 28px; color: #0f766e; }
+.wm-timer.long mat-icon { color: #b7791f; }
+.wm-timer b { display: block; font-size: 22px; line-height: 1.15; font-variant-numeric: tabular-nums; color: inherit; }
+.wm-timer small { display: block; font-size: 12.5px; color: inherit; overflow-wrap: anywhere; }
+/* The panel's Finished button takes the job's colour (the timer sits right above it). */
+.wm-panel-acts .wm-act.main.wm-finish { background: #0f766e; border-color: #0f766e; color: #fff; }
+@keyframes wm-slide { to { background-position: 28px 0; } }
+@keyframes wm-pulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .wm-page .wm-card.t-prog::after, .wm-page .wm-st.t-prog i { animation: none; } }
+/* Card layout: title row (+ Empty / Out of order top right), then the two action buttons side by side,
+   pinned to the card's bottom so cards in one grid row line up. */
+.wm-page .wm-head { display: flex; align-items: flex-start; gap: 8px; }
+.wm-page .wm-head .wm-top { flex: 1; min-width: 0; }
+.wm-page .wm-flags { display: flex; gap: 4px; flex: none; }
+.wm-page .wm-flag { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--border-default); border-radius: 8px; background: #fff; color: var(--text-secondary); }
+.wm-page .wm-flag:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+.wm-page .wm-flag mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.wm-page .wm-card > .wm-acts { margin-top: auto; flex-wrap: nowrap; }
+.wm-page .wm-card > .wm-acts .wm-act { flex: 1 1 0; min-width: 0; justify-content: center; }
+.wm-page .wm-card > .wm-acts .wm-act.main { flex-grow: 1.4; }
+/* Detail panel: the main button full width, its partner (Done now / Cancel) full width under it,
+   then "Report a problem" with Empty / Out of order as an even pair. */
+.wm-panel-acts > div.wm-acts { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.wm-panel-acts > div.wm-acts .wm-act { width: 100%; justify-content: center; }
+.wm-problems { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border-default); color: var(--text-primary); }
+.wm-problems-h { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--text-secondary); margin-bottom: 6px; }
+.wm-problems-row { display: flex; gap: 8px; }
+/* Task link (2026-11-28): a task that moves with the WASH job */
+.wm-task-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; color: var(--text-primary); }
+.wm-linked { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 600; color: #0f766e; }
+.wm-linked mat-icon { font-size: 14px; width: 14px; height: 14px; }
+.wm-problems-row button.wm-act { flex: 1 1 0; min-width: 0; justify-content: center; }

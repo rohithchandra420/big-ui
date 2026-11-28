@@ -73,7 +73,7 @@ export class WorkshopService {
   getLists(sessionId: string): Promise<SessionLists> {
     return firstValueFrom(this.http.get<SessionLists>(`${this.url}/sessions/${sessionId}/entries`));
   }
-  /** Festival Pass holders by name, email, phone or order number (when scanning is down). */
+  /** Festival Pass holders by name, email, phone or Booking ID or order number (when scanning is down). */
   searchPasses(eventId: string, q: string): Promise<{ passes: EntryPass[] }> {
     return firstValueFrom(this.http.get<{ passes: EntryPass[] }>(this.url + '/passes', { params: { event: eventId, q } }));
   }

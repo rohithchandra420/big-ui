@@ -15,6 +15,50 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.87.1] - 2026-11-28
+
+### Fixed
+- B-066 WASH Setup / Stock: too-big numbers are stopped in the form with the allowed range (up to 1,000,000), before saving.
+- B-070 Medical Desk / Records: the Serious card turns red when there are serious visits.
+
+## [1.87.0] - 2026-11-28
+
+### Added
+- WASH Monitor: tasks sent to the WASH team move with the job (Start → In Progress, Finished / Done now → Closed). The panel marks them "Moves with the job"; the confirmation says when a task moved.
+
+## [1.86.0] - 2026-11-28
+
+### Added
+- WASH Monitor: Start refill / Start cleaning, then Finished (or Cancel). A running job shows in teal with who started it and for how long, and turns amber ("Taking long") after an hour. "Done now" logs a job that is already finished. New "In progress" tile in the state strip.
+- WASH Monitor panel: a timer for the running job; the history shows how long each job took.
+- Venue Map: WASH pins have a colour for In progress.
+- WASH Report: "took … min" in the day's log and a "Took (min)" column in the export.
+- Public page map: "Being cleaned" / "Being refilled".
+
+### Changed
+- WASH Monitor cards: Empty and Out of order moved to the title row as icon buttons; the two everyday buttons sit side by side at the bottom of each card, so cards in a row line up.
+- WASH Monitor panel: the main button full width, then Done now / Cancel, then "Report a problem" with Empty and Out of order as an even pair.
+
+## [1.85.1] - 2026-11-28
+
+### Fixed
+- Venue Map: opening the Venue Map from the sidebar after "Draw on map" in Workshops › Setup now leaves "Workshop areas only" mode (before, it stayed on until the page was reloaded).
+- Venue Map, Workshop areas: the Responsible department list now offers only Workshop departments (it listed every department without a special role). An area that already has another department keeps it.
+- Directors, Developers and Admins without a remembered event now start on the active event, not the newest draft.
+- WASH Monitor: the selected status tile keeps its highlight after it is clicked.
+
+### Development
+- Announcements styles partly moved to the global stylesheet (the page was over its style size warning).
+- Admin menu styles: a nested rule the build skipped is written out in plain CSS (removes a build warning).
+
+## [1.85.0] - 2026-11-28
+
+### Added
+- Medical Desk and Workshop session lists: search by Booking ID too. Results and the session lists show the Booking ID (older passes show their order number); the list column is now "Booking · band".
+
+### Changed
+- Workshop Reports export: the "Order ID" column is now "Booking ID".
+
 ## [1.84.0] - 2026-11-26
 
 ### Added

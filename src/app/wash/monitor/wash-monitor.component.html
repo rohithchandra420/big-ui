@@ -48,27 +48,39 @@
 
     <div class="wm-grid">
       <article class="wm-card" *ngFor="let c of cards; trackBy: trackCard" [ngClass]="'t-' + c.info.tone">
-        <button type="button" class="wm-top" (click)="open(c.f)" [attr.aria-label]="'Open ' + c.f.name">
-          <span class="wm-ring" [style.--p]="c.pct" [class.k-water]="c.f.kind === 'water'">
-            <span><mat-icon class="ms-fill">{{ kindInfo[c.f.kind].icon }}</mat-icon></span>
-          </span>
-          <span class="wm-txt">
-            <b>{{ c.f.name }}</b>
-            <small>{{ c.last }}</small>
-            <small><span class="wm-pill"><mat-icon>{{ c.info.icon }}</mat-icon>{{ c.info.label }}</span> {{ c.sub }}</small>
-            <small class="wm-task tk-s-{{ c.taskStatus }}" *ngIf="c.taskLine"><mat-icon aria-hidden="true">task_alt</mat-icon>{{ c.taskLine }}</small>
-          </span>
-        </button>
+        <div class="wm-head">
+          <button type="button" class="wm-top" (click)="open(c.f)" [attr.aria-label]="'Open ' + c.f.name">
+            <span class="wm-ring" [style.--p]="c.pct" [class.k-water]="c.f.kind === 'water'">
+              <span><mat-icon class="ms-fill">{{ kindInfo[c.f.kind].icon }}</mat-icon></span>
+            </span>
+            <span class="wm-txt">
+              <b>{{ c.f.name }}</b>
+              <small [class.wm-who]="c.working">{{ c.last }}</small>
+              <small><span class="wm-pill"><mat-icon>{{ c.info.icon }}</mat-icon>{{ c.info.label }}</span> {{ c.sub }}</small>
+              <small class="wm-task tk-s-{{ c.taskStatus }}" *ngIf="c.taskLine"><mat-icon aria-hidden="true">task_alt</mat-icon>{{ c.taskLine }}</small>
+            </span>
+          </button>
+          <!-- Problem reports sit top right, away from the everyday buttons -->
+          <div class="wm-flags" *ngIf="canLog && c.f.status !== 'out_of_order'">
+            <button type="button" class="wm-flag" *ngIf="c.f.kind === 'water' && c.f.status === 'ok' && !c.working" (click)="open(c.f, 'empty')"
+                    title="Empty" aria-label="Empty">
+              <mat-icon>water_loss</mat-icon>
+            </button>
+            <button type="button" class="wm-flag" (click)="open(c.f, 'out_of_order')" title="Out of order" aria-label="Out of order">
+              <mat-icon>block</mat-icon>
+            </button>
+          </div>
+        </div>
         <div class="wm-acts" *ngIf="canLog">
-          <button type="button" class="wm-act main" [disabled]="busyId === c.f._id" (click)="mainAction(c.f)">
+          <button type="button" class="wm-act main" [class.wm-finish]="c.working" [disabled]="busyId === c.f._id" (click)="mainAction(c.f)">
             <mat-icon>{{ c.doneIcon }}</mat-icon>{{ c.doneLabel }}
           </button>
-          <button type="button" class="wm-act" *ngIf="c.f.kind === 'water' && c.f.status === 'ok'" (click)="open(c.f, 'empty')">
-            <mat-icon>water_loss</mat-icon>Empty
+          <button type="button" class="wm-act wm-quiet" *ngIf="c.working" [disabled]="busyId === c.f._id" (click)="cancelJob(c.f)">
+            <mat-icon>close</mat-icon>Cancel
           </button>
-          <button type="button" class="wm-act" *ngIf="c.f.status !== 'out_of_order'" (click)="open(c.f, 'out_of_order')"
-                  title="Out of order" aria-label="Out of order">
-            <mat-icon>block</mat-icon>
+          <button type="button" class="wm-act wm-quiet" *ngIf="!c.working && c.f.status !== 'out_of_order'" [disabled]="busyId === c.f._id"
+                  (click)="doneNow(c.f)" [title]="'Already ' + kindInfo[c.f.kind].doneLabel.toLowerCase() + ': log it now'">
+            <mat-icon>done_all</mat-icon>Done now
           </button>
         </div>
       </article>
@@ -96,15 +108,33 @@
       <!-- Actions (also where a scanned sticker lands) -->
       <div class="wm-panel-acts" *ngIf="canLog && !noteFor">
         <p class="wm-scanned" *ngIf="selectedScanned"><mat-icon>qr_code_2</mat-icon>Sticker scanned — logs are marked "via QR"</p>
-        <p class="wm-muted" *ngIf="requireQr && !selectedScanned && f.status !== 'out_of_order'">
-          <mat-icon class="wm-ic">qr_code_scanner</mat-icon>{{ kindInfo[f.kind].doneLabel }} asks for this facility's QR sticker.
+        <p class="wm-muted" *ngIf="requireQr && !selectedScanned && f.status !== 'out_of_order' && !f.startedAt">
+          <mat-icon class="wm-ic">qr_code_scanner</mat-icon>{{ kindInfo[f.kind].startLabel }} and Done now ask for this facility's QR sticker.
         </p>
+        <!-- In progress: how long it has run, and who started it -->
+        <div class="wm-timer" *ngIf="f.startedAt" [class.long]="selectedLong">
+          <mat-icon>{{ selectedLong ? 'hourglass_bottom' : 'autorenew' }}</mat-icon>
+          <div>
+            <b>{{ elapsed(f) }}</b>
+            <small>{{ selectedLong ? 'Taking long — ' : '' }}{{ kindInfo[f.kind].workingLabel }} · {{ startedLine(f) }}</small>
+          </div>
+        </div>
         <div class="wm-acts">
-          <button type="button" class="wm-act main wm-big" [disabled]="busyId === f._id" (click)="mainAction(f)">
+          <button type="button" class="wm-act main wm-big" [class.wm-finish]="!!f.startedAt" [disabled]="busyId === f._id" (click)="mainAction(f)">
             <mat-icon>{{ selectedDone.icon }}</mat-icon>{{ selectedDone.label }}
           </button>
-          <button type="button" class="wm-act" *ngIf="f.kind === 'water' && f.status === 'ok'" (click)="open(f, 'empty')"><mat-icon>water_loss</mat-icon>Empty</button>
-          <button type="button" class="wm-act" *ngIf="f.status !== 'out_of_order'" (click)="open(f, 'out_of_order')"><mat-icon>block</mat-icon>Out of order</button>
+          <button type="button" class="wm-act wm-quiet" *ngIf="f.startedAt" [disabled]="busyId === f._id" (click)="cancelJob(f)"><mat-icon>close</mat-icon>Cancel — not done</button>
+          <button type="button" class="wm-act wm-quiet" *ngIf="!f.startedAt && f.status !== 'out_of_order'" [disabled]="busyId === f._id" (click)="doneNow(f)">
+            <mat-icon>done_all</mat-icon>Already {{ kindInfo[f.kind].doneLabel.toLowerCase() }} — log it now
+          </button>
+        </div>
+        <!-- Problem reports: their own row, two even buttons -->
+        <div class="wm-problems" *ngIf="f.status !== 'out_of_order'">
+          <span class="wm-problems-h">Report a problem</span>
+          <div class="wm-problems-row">
+            <button type="button" class="wm-act" *ngIf="f.kind === 'water' && f.status === 'ok' && !f.startedAt" (click)="open(f, 'empty')"><mat-icon>water_loss</mat-icon>Empty</button>
+            <button type="button" class="wm-act" (click)="open(f, 'out_of_order')"><mat-icon>block</mat-icon>Out of order</button>
+          </div>
         </div>
       </div>
 
@@ -112,7 +142,7 @@
         <dt>Status</dt><dd><span class="wm-pill" [ngClass]="'t-' + stateInfo[selectedState!].tone">{{ stateInfo[selectedState!].label }}</span></dd>
         <dt>Last {{ f.kind === 'water' ? 'refill' : 'clean' }}</dt>
         <dd>{{ f.lastDoneAt ? clock(f.lastDoneAt) + (f.lastDoneBy ? ' by ' + f.lastDoneBy : '') : 'Not started' }}</dd>
-        <dt>Next due</dt><dd>{{ f.dueAt ? clock(f.dueAt) : '—' }} (every {{ f.intervalHours }} h)</dd>
+        <dt>Next due</dt><dd>{{ f.startedAt ? 'Counts from Finished' : (f.dueAt ? clock(f.dueAt) : '—') }} (every {{ f.intervalHours }} h)</dd>
         <ng-container *ngIf="f.capacityLitres"><dt>Capacity</dt><dd>{{ f.capacityLitres }} L</dd></ng-container>
         <ng-container *ngIf="f.statusNote"><dt>Note</dt><dd>{{ f.statusNote }}</dd></ng-container>
         <dt>Public map</dt><dd>{{ publicText }}</dd>
@@ -123,11 +153,15 @@
         <p class="section-lbl">Open tasks</p>
         <ul class="wm-tasks">
           <li *ngFor="let t of f.tasks; trackBy: trackTask">
-            <span>{{ t.title }}</span>
+            <span class="wm-task-t">
+              {{ t.title }}
+              <small class="wm-linked" *ngIf="t.linked"><mat-icon aria-hidden="true">link</mat-icon>Moves with the job</small>
+            </span>
             <span class="tk-pill tk-s-{{ t.status }}">{{ taskLabel(t) }}</span>
           </li>
         </ul>
-        <p class="wm-muted">Tasks are separate from the log: {{ kindInfo[f.kind].doneLabel }} does not close them. Change a task on the Billboard or in My Department.</p>
+        <p class="wm-muted" *ngIf="hasLinked(f)">Tasks sent to WASH move with the job: {{ kindInfo[f.kind].startLabel }} puts them In Progress, {{ kindInfo[f.kind].doneLabel }} closes them.</p>
+        <p class="wm-muted" *ngIf="hasOtherTasks(f)">Tasks sent to other teams change only on the Billboard or in My Department.</p>
       </ng-container>
 
       <p class="section-lbl">History</p>
@@ -137,8 +171,8 @@
         <li *ngFor="let h of history; trackBy: trackLog">
           <mat-icon>{{ actionInfo[h.action].icon }}</mat-icon>
           <div>
-            {{ actionInfo[h.action].label }}<ng-container *ngIf="h.by"> · {{ h.by }}</ng-container>
-            <small>{{ clock(h.at) }} · {{ h.at | date: 'd MMM' }}<ng-container *ngIf="h.viaQr"> · via QR</ng-container><ng-container *ngIf="h.note"> · "{{ h.note }}"</ng-container></small>
+            {{ actionInfo[h.action].label }}<ng-container *ngIf="took(h) as t"> · {{ t }}</ng-container><ng-container *ngIf="h.by"> · {{ h.by }}</ng-container>
+            <small><ng-container *ngIf="h.startedAt">{{ clock(h.startedAt) }} → </ng-container>{{ clock(h.at) }} · {{ h.at | date: 'd MMM' }}<ng-container *ngIf="h.viaQr"> · via QR</ng-container><ng-container *ngIf="h.note"> · "{{ h.note }}"</ng-container></small>
           </div>
         </li>
       </ul>

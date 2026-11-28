@@ -52,6 +52,14 @@ describe('MedicalRecordsComponent', () => {
     expect(fixture.nativeElement.querySelector('.md-flag')).toBeTruthy();
   }));
 
+  it('B-070: the Serious card turns red when there are serious visits', fakeAsync(() => {
+    start();
+    fixture.detectChanges();
+    const serious = Array.from(fixture.nativeElement.querySelectorAll('.stat') as NodeListOf<HTMLElement>)
+      .find(s => s.querySelector('.stat-l')!.textContent!.trim() === 'Serious')!;
+    expect(serious.classList).toContain('alert-stat');
+  }));
+
   it('stat cards work as quick filters and toggle off', fakeAsync(() => {
     start();
     component.setQuick('followUp');

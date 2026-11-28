@@ -18,12 +18,11 @@
 .desktop-menu {
   display: flex;
   gap: 8px;
+}
 
-  button {
-    mat-icon {
-      margin-right: 8px;
-    }
-  }
+/* Was SCSS-style nesting in a plain .css file: the build skipped it with a warning. */
+.desktop-menu button mat-icon {
+  margin-right: 8px;
 }
 
 .mobile-menu-button {

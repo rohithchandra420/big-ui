@@ -134,9 +134,23 @@ export interface EntryPass {
   email: string;
   phone_no: string;
   order_id: number;
+  /** Booking ID the participant knows (sales system reference, else the order id as text). */
+  bookingId?: string | null;
   passTypeName: string;
   isAdmitted: boolean;
   band: { _id: string; code: string } | null;
+}
+
+type PassRef = { bookingId?: string | null; order_id?: number | null } | null | undefined;
+
+/** The pass's Booking ID, else its order number as text ('' when neither). */
+export function passBookingId(p: PassRef): string {
+  return p?.bookingId || (p?.order_id != null ? String(p.order_id) : '');
+}
+
+/** "Booking <id>" when the pass has a Booking ID, else "Order <n>" (older passes). */
+export function passBookingLabel(p: PassRef): string {
+  return p?.bookingId ? `Booking ${p.bookingId}` : (p?.order_id != null ? `Order ${p.order_id}` : '');
 }
 
 export interface WorkshopEntry {
@@ -220,7 +234,7 @@ export interface WorkshopReports {
 
 export interface ReportPerson {
   _id: string;
-  pass: { _id: string; name: string; email: string; phone_no: string; order_id: number } | null;
+  pass: { _id: string; name: string; email: string; phone_no: string; order_id: number; bookingId?: string | null } | null;
   session: { _id: string; start: string; end: string; workshop: { _id: string; title: string } | null; venue: { _id: string; name: string } | null } | null;
   list: EntryList;
   late: boolean;

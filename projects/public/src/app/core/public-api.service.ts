@@ -27,7 +27,8 @@ export interface PublicEvent {
 /** PH4a public map: whitelisted pins and areas only. */
 /** WASH: toilets are open / closed; a water station is refilled / empty. Only for places the WASH team set up. */
 /** WASH words (2026-11-20): toilets cleaned / open / closed; water filled / empty. */
-export type PublicWash = 'open' | 'cleaned' | 'closed' | 'filled' | 'empty';
+/** In progress (user, 2026-11-28): toilets 'cleaning', water 'refilling'. */
+export type PublicWash = 'open' | 'cleaned' | 'closed' | 'filled' | 'empty' | 'cleaning' | 'refilling';
 /** What runs on a Workshop / Stage area now (or next today), or the Medical Bay switch. */
 export type PublicLive =
   | { what: 'workshop'; now: boolean; title: string; start: string; end: string; state: SessionState; stateAt: string | null; full: boolean }

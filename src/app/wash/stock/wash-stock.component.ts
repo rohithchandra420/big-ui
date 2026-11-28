@@ -6,7 +6,7 @@ import { ConfirmationService } from '../../shared/confirm-dialog/confirmation.se
 import { EventItem } from '../../models/event.model';
 import { WashService } from '../wash.service';
 import { StockItem, StockLogEntry, StockMoveKind } from '../wash.model';
-import { clockText } from '../wash.utils';
+import { clockText, MAX_QTY, MAX_TEXT } from '../wash.utils';
 
 type Mode = 'closed' | 'view' | 'move' | 'new' | 'edit';
 /** One row, built in apply() — never in a getter. `pct`: how full the bar is. */
@@ -170,16 +170,21 @@ export class WashStockComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** A whole number from `min` to MAX_QTY (B-066: big numbers are refused here, with the limit, not by the server). */
   private whole(v: any, min: number): number | null {
     const n = Number(v);
-    return v !== null && v !== '' && Number.isInteger(n) && n >= min ? n : null;
+    return v !== null && v !== '' && Number.isInteger(n) && n >= min && n <= MAX_QTY ? n : null;
   }
 
   async saveMove() {
     const i = this.selected;
     if (!i || this.busy) return;
     const qty = this.whole(this.moveQty, 1);
-    if (!qty) { this.formError = 'Quantity: a whole number, 1 or more.'; return; }
+    if (!qty) { this.formError = `Quantity: a whole number from 1 to ${MAX_TEXT}.`; return; }
+    if (this.moveKind === 'received' && i.quantity + qty > MAX_QTY) {
+      this.formError = `The store can hold up to ${MAX_TEXT} ${i.unit}`.trim() + '.';
+      return;
+    }
     this.busy = true;
     this.formError = '';
     try {
@@ -204,14 +209,14 @@ export class WashStockComponent implements OnInit, OnDestroy {
     const name = this.form.name.trim();
     const lowLimit = this.whole(this.form.lowLimit ?? 0, 0);
     if (!name) { this.formError = 'Give the item a name.'; return; }
-    if (lowLimit === null) { this.formError = 'Low at: a whole number (0 = no warning).'; return; }
+    if (lowLimit === null) { this.formError = `Low at: a whole number from 0 to ${MAX_TEXT} (0 = no warning).`; return; }
     const unit = this.form.unit.trim();
     this.busy = true;
     this.formError = '';
     try {
       if (this.mode === 'new') {
         const quantity = this.whole(this.form.quantity ?? 0, 0);
-        if (quantity === null) { this.formError = 'In store: a whole number.'; return; }
+        if (quantity === null) { this.formError = `In store: a whole number from 0 to ${MAX_TEXT}.`; return; }
         await this.wash.addItem(this.event._id, { name, unit, lowLimit, quantity });
         this.notify.openSucessSnackBar('Item added');
         this.close();

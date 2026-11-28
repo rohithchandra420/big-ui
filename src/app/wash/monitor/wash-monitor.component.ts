@@ -8,7 +8,7 @@ import { WashService } from '../wash.service';
 import {
   ACTION_INFO, KIND_INFO, STATE_INFO, STATE_ORDER, StateInfo, WashAction, WashFacility, WashKind, WashLogEntry, WashState, WashTask
 } from '../wash.model';
-import { agoText, clockText, dueAtOf, parseWashQr, stateOf, usedPercent } from '../wash.utils';
+import { agoText, clockText, dueAtOf, durationText, isLong, minutesSince, parseWashQr, stateOf, usedPercent } from '../wash.utils';
 import { taskStatusMeta, worstTaskStatus } from '../../core/task.service';
 
 /** One card, built in apply() — never in a getter (stable identities for *ngFor). */
@@ -21,12 +21,22 @@ interface Card {
   sub: string;
   doneLabel: string;
   doneIcon: string;
+  /** In progress (user, 2026-11-28): a job is running; `long` = past an hour. */
+  working: boolean;
+  long: boolean;
   /** HD3: "Open task: …" / "3 open tasks" ('' when none) and the worst status, for its colour. */
   taskLine: string;
   taskStatus: string;
 }
 
 const REFRESH_MS = 60 * 1000;
+
+/** Snackbar tail for the linked tasks a log moved: " · task closed" / " · 2 tasks In Progress" ('' when none). */
+export function movedText(moved: WashTask[] | undefined): string {
+  if (!moved?.length) return '';
+  const word = moved[0].status === 'closed' ? 'closed' : 'In Progress';
+  return moved.length === 1 ? ` · task ${word}` : ` · ${moved.length} tasks ${word}`;
+}
 
 /**
  * WASH › Monitor (WA1): every facility of the sidebar event with its state;
@@ -138,7 +148,7 @@ export class WashMonitorComponent implements OnInit, OnDestroy {
   }
 
   private zeroCounts(): Record<WashState, number> {
-    return { not_started: 0, ok: 0, due_soon: 0, overdue: 0, empty: 0, out_of_order: 0 };
+    return { not_started: 0, ok: 0, due_soon: 0, overdue: 0, in_progress: 0, empty: 0, out_of_order: 0 };
   }
 
   apply() {
@@ -158,8 +168,11 @@ export class WashMonitorComponent implements OnInit, OnDestroy {
     const state = stateOf(f, now);
     const k = KIND_INFO[f.kind];
     const due = dueAtOf(f);
+    const working = state === 'in_progress';
+    const long = working && isLong(f, now);
     let sub = '';
-    if (state === 'empty' || state === 'out_of_order') sub = f.statusNote;
+    if (working) sub = this.elapsed(f, now);
+    else if (state === 'empty' || state === 'out_of_order') sub = f.statusNote;
     else if (state === 'overdue') sub = `Was due ${clockText(due)}`;
     else if (state === 'not_started') sub = `Every ${f.intervalHours} h, from the first one`;
     else sub = `Next due ${clockText(due)}`;
@@ -168,12 +181,34 @@ export class WashMonitorComponent implements OnInit, OnDestroy {
     return {
       taskLine: tasks.length === 1 ? `Open task: ${tasks[0].title}` : tasks.length ? `${tasks.length} open tasks` : '',
       taskStatus: tasks.length ? worstTaskStatus(tasks.map(t => t.status)) : '',
-      f, state, info: STATE_INFO[state], pct: usedPercent(f, now),
-      last: f.lastDoneAt ? `${k.doneLabel} ${agoText(f.lastDoneAt, now)} · every ${f.intervalHours} h` : `Never ${k.doneLabel.toLowerCase()} yet · every ${f.intervalHours} h`,
-      sub,
-      doneLabel: back ? 'Back in service' : k.doneLabel,
-      doneIcon: back ? ACTION_INFO.back_in_service.icon : ACTION_INFO[k.done].icon,
+      f, state, info: working ? this.jobInfo(f, long) : STATE_INFO[state], pct: usedPercent(f, now),
+      last: working ? this.startedLine(f)
+        : f.lastDoneAt ? `${k.doneLabel} ${agoText(f.lastDoneAt, now)} · every ${f.intervalHours} h` : `Never ${k.doneLabel.toLowerCase()} yet · every ${f.intervalHours} h`,
+      sub, working, long,
+      doneLabel: back ? 'Back in service' : working ? 'Finished' : k.startLabel,
+      doneIcon: back ? ACTION_INFO.back_in_service.icon : working ? 'check' : ACTION_INFO.started.icon,
     };
+  }
+
+  /** The pill of a running job: "Refilling" / "Cleaning", or "Taking long" past an hour (same tone, amber). */
+  private jobInfo(f: WashFacility, long: boolean): StateInfo {
+    return long ? { label: 'Taking long', icon: 'hourglass_bottom', tone: 'prog long' }
+      : { label: KIND_INFO[f.kind].workingLabel, icon: STATE_INFO.in_progress.icon, tone: 'prog' };
+  }
+  /** "Pia K. started 11:48". */
+  startedLine(f: WashFacility): string {
+    return `${f.startedBy || 'Someone'} started ${clockText(f.startedAt || null)}`;
+  }
+  /** How long the running job has gone: "12 min", "1 h 10 min", "just started". */
+  elapsed(f: WashFacility, now: Date = new Date()): string {
+    const m = f.startedAt ? minutesSince(f.startedAt, now) : 0;
+    return m ? durationText(m) : 'just started';
+  }
+  /** "took 14 min" for a Refilled / Cleaned that ended a started job ('' otherwise). */
+  took(h: WashLogEntry): string {
+    if (!h.startedAt) return '';
+    const m = minutesSince(h.startedAt, new Date(h.at));
+    return m ? durationText(m) : 'under a minute';
   }
 
   setKind(k: 'all' | WashKind) { this.kind = k; this.apply(); }
@@ -183,18 +218,31 @@ export class WashMonitorComponent implements OnInit, OnDestroy {
   trackLog = (_: number, l: WashLogEntry) => l._id;
   trackTask = (_: number, t: WashTask) => t._id;
   taskLabel = (t: WashTask) => taskStatusMeta(t.status).label;
+  hasLinked = (f: WashFacility) => (f.tasks || []).some(t => t.linked);
+  hasOtherTasks = (f: WashFacility) => (f.tasks || []).some(t => !t.linked);
   clock = clockText;
 
   // ── actions ──
 
-  /** The card's main button: Refilled / Cleaned, or Back in service when out of order. */
+  /**
+   * The card's main button: Start (refill / cleaning), Finished while a job runs,
+   * or Back in service when out of order. "Require QR" asks for the sticker at Start.
+   */
   async mainAction(f: WashFacility) {
-    const back = f.status === 'out_of_order';
-    const action: WashAction = back ? 'back_in_service' : KIND_INFO[f.kind].done;
-    // "Require QR": Refilled / Cleaned first need this facility's sticker.
-    if (!back && this.requireQr && this.scanned?.id !== f._id && !await this.scanFor(f)) return;
-    this.send(f, action);
+    if (f.status === 'out_of_order') { this.send(f, 'back_in_service'); return; }
+    if (f.startedAt) { this.send(f, KIND_INFO[f.kind].done); return; }
+    if (this.requireQr && this.scanned?.id !== f._id && !await this.scanFor(f)) return;
+    this.send(f, 'started');
   }
+
+  /** "Done now": log Refilled / Cleaned at once, for a job already finished (asks for the sticker under "Require QR"). */
+  async doneNow(f: WashFacility) {
+    if (this.requireQr && this.scanned?.id !== f._id && !await this.scanFor(f)) return;
+    this.send(f, KIND_INFO[f.kind].done);
+  }
+
+  /** Stop a running job that was not finished. */
+  cancelJob(f: WashFacility) { this.send(f, 'cancelled'); }
 
   /** Header button: scan any facility's sticker and open that facility. */
   async scanAny() {
@@ -230,12 +278,16 @@ export class WashMonitorComponent implements OnInit, OnDestroy {
     if (this.busyId) return false;
     this.busyId = f._id;
     try {
-      const updated = await this.wash.log(f._id, action, note, this.scanned?.id === f._id ? this.scanned.token : null);
+      const startedAt = f.startedAt || null;
+      const { movedTasks, ...updated } = await this.wash.log(f._id, action, note, this.scanned?.id === f._id ? this.scanned.token : null);
       this.facilities = this.facilities.map(x => x._id === updated._id ? { ...x, ...updated } : x);
       if (this.selected?._id === f._id) { this.selected = this.facilities.find(x => x._id === f._id) || null; this.loadHistory(); }
       this.apply();
-      const at = action === 'refilled' || action === 'cleaned' ? ` at ${clockText(updated.lastDoneAt)}` : '';
-      this.notify.openSucessSnackBar(`${f.name}: ${ACTION_INFO[action].label}${at}`);
+      const done = action === 'refilled' || action === 'cleaned';
+      const took = done && startedAt ? this.took({ at: updated.lastDoneAt, startedAt } as WashLogEntry) : '';
+      const at = done ? ` at ${clockText(updated.lastDoneAt)}${took ? ' · took ' + took : ''}` : '';
+      const label = action === 'started' ? `${KIND_INFO[f.kind].workingLabel} started` : ACTION_INFO[action].label;
+      this.notify.openSucessSnackBar(`${f.name}: ${label}${at}${movedText(movedTasks)}`);
       return true;
     } catch (err: any) {
       this.notify.openErrorSnackBar(err?.error?.message || 'Could not save that.');
@@ -289,8 +341,10 @@ export class WashMonitorComponent implements OnInit, OnDestroy {
     const f = this.selected;
     if (!f) return { label: '', icon: '' };
     if (f.status === 'out_of_order') return ACTION_INFO.back_in_service;
-    return ACTION_INFO[KIND_INFO[f.kind].done];
+    if (f.startedAt) return { label: 'Finished', icon: 'check' };
+    return { label: KIND_INFO[f.kind].startLabel, icon: ACTION_INFO.started.icon };
   }
+  get selectedLong(): boolean { return !!this.selected && isLong(this.selected); }
   get selectedScanned(): boolean { return !!this.selected && this.scanned?.id === this.selected._id; }
 
   get panelTitle(): string { return this.selected?.name || ''; }
@@ -303,7 +357,9 @@ export class WashMonitorComponent implements OnInit, OnDestroy {
     const f = this.selected;
     if (!f) return '';
     // Shown on the public map from WA4 (decision 2026-11-13).
-    if (f.kind === 'toilets') return f.status === 'out_of_order' ? 'Closed' : 'Open';
+    if (f.kind === 'toilets') return f.status === 'out_of_order' ? 'Closed' : f.startedAt ? 'Being cleaned' : 'Open';
+    if (f.status === 'out_of_order') return 'Empty';
+    if (f.startedAt) return 'Being refilled';
     return f.status === 'ok' ? 'Refilled' : 'Empty';
   }
 }

@@ -14,11 +14,14 @@
 .t-over { --sc: #c2410c; --sb: #fdebe2; }
 .t-empty { --sc: #1d4ed8; --sb: #e5ecfd; }
 .t-ooo { --sc: #6b7280; --sb: #eceef1; }
+.t-prog { --sc: #0f766e; --sb: #e0f4f1; }
+.t-prog.long { --sc: #b7791f; --sb: #fdf3e1; }
 
-.wm-strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.wm-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
 .wm-st { font: inherit; text-align: left; background: #fff; border: 1px solid var(--border-default); border-radius: 12px;
   padding: 10px 12px; cursor: pointer; color: var(--text-primary); }
-.wm-st.on { outline: 2px solid var(--color-primary); }
+/* Selected: border + ring, not outline (Bootstrap clears outline on a clicked button). */
+.wm-st.on { border-color: var(--color-primary); box-shadow: 0 0 0 1px var(--color-primary); }
 .wm-st b { display: block; font-size: 22px; line-height: 1.1; color: var(--text-primary); }
 .wm-st small { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); }
 .wm-st i { width: 8px; height: 8px; border-radius: 50%; background: var(--sc); }

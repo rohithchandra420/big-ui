@@ -62,6 +62,16 @@ describe('MedicalDeskComponent', () => {
     expect(text()).toContain('Resting Rao');
   }));
 
+  it('B-070: the Serious card is red only when there are serious visits', fakeAsync(() => {
+    const seriousCard = () => Array.from(fixture.nativeElement.querySelectorAll('.stat') as NodeListOf<HTMLElement>)
+      .find(s => s.querySelector('.stat-l')!.textContent!.trim() === 'Serious')!;
+    start();
+    expect(seriousCard().classList).not.toContain('alert-stat');
+    component.counts = { ...component.counts, serious: 2 } as any;
+    fixture.detectChanges();
+    expect(seriousCard().classList).toContain('alert-stat');
+  }));
+
   it('Medical Bay switch: closed by default, opens after the confirm', fakeAsync(() => {
     start();
     const btn = () => fixture.nativeElement.querySelector('.md-bay') as HTMLButtonElement;

@@ -18,7 +18,7 @@
       <div class="stat tap" [class.act]="quick === 'today'" (click)="setQuick('today')"><div class="stat-l">Visits today</div><div class="stat-n">{{ counts.visitsToday }}</div><div class="stat-s">seen today</div></div>
       <div class="stat tap" [class.act]="quick === 'resting'" [class.alert-stat]="counts.restingNow > 0" (click)="setQuick('resting')"><div class="stat-l">Resting now</div><div class="stat-n">{{ counts.restingNow }}</div><div class="stat-s">in the Medical camp</div></div>
       <div class="stat tap" [class.act]="quick === 'followUp'" [class.alert-stat]="counts.followUpsDue > 0" (click)="setQuick('followUp')"><div class="stat-l">Follow-ups</div><div class="stat-n">{{ counts.followUpsDue }}</div><div class="stat-s">still open</div></div>
-      <div class="stat tap" [class.act]="quick === 'serious'" (click)="setQuick('serious')"><div class="stat-l">Serious</div><div class="stat-n">{{ counts.serious }}</div><div class="stat-s">visits</div></div>
+      <div class="stat tap" [class.act]="quick === 'serious'" [class.alert-stat]="counts.serious > 0" (click)="setQuick('serious')"><div class="stat-l">Serious</div><div class="stat-n">{{ counts.serious }}</div><div class="stat-s">visits</div></div>
     </div>
 
     <div class="tbl-container">

@@ -7,6 +7,7 @@ import { EventItem } from '../../models/event.model';
 import { parseLatLng } from '../../venue-map/venue-map.utils';
 import { WashService } from '../wash.service';
 import { KIND_INFO, NewFacility, WashFacility, WashKind, WashPin, WashSticker } from '../wash.model';
+import { MAX_QTY, MAX_TEXT } from '../wash.utils';
 import { SortGetter, TableSort } from '../../shared/table-sort/table-sort';
 
 type FacilitySortKey = 'name' | 'every' | 'capacity' | 'logged';
@@ -215,7 +216,7 @@ export class WashSetupComponent implements OnInit, OnDestroy {
   private validCapacity(): number | null | undefined {
     const c = this.form.capacityLitres;
     if (c === null || c === undefined || (c as any) === '') return null;
-    return Number.isInteger(Number(c)) && Number(c) >= 1 ? Number(c) : undefined;
+    return Number.isInteger(Number(c)) && Number(c) >= 1 && Number(c) <= MAX_QTY ? Number(c) : undefined;
   }
 
   async save() {
@@ -223,7 +224,7 @@ export class WashSetupComponent implements OnInit, OnDestroy {
     const intervalHours = this.validInterval();
     if (!intervalHours) { this.formError = 'Every 1 to 24 hours (whole hours).'; return; }
     const capacity = this.formKind === 'water' ? this.validCapacity() : null;
-    if (capacity === undefined) { this.formError = 'Capacity: a whole number of litres, or leave it empty.'; return; }
+    if (capacity === undefined) { this.formError = `Capacity: a whole number of litres from 1 to ${MAX_TEXT}, or leave it empty.`; return; }
 
     let data: NewFacility | null = null;
     if (this.mode === 'add') {

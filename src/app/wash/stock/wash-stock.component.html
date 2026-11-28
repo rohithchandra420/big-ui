@@ -50,7 +50,7 @@
     <div class="wk-form" *ngIf="mode === 'move' && selected as i">
       <div class="field">
         <label for="wk-qty">How many {{ i.unit }} {{ moveKind === 'received' ? 'came in' : 'were used' }}? *</label>
-        <input id="wk-qty" type="number" min="1" step="1" inputmode="numeric" [(ngModel)]="moveQty" />
+        <input id="wk-qty" type="number" min="1" max="1000000" step="1" inputmode="numeric" [(ngModel)]="moveQty" />
       </div>
       <div class="warn-banner wk-warn" *ngIf="overBy">
         Only {{ i.quantity }} {{ i.unit }} in store — that is {{ overBy }} more. Saving sets {{ i.name }} to 0.
@@ -74,10 +74,10 @@
         <div class="field"><label for="wk-unit">Unit</label>
           <input id="wk-unit" type="text" maxlength="20" [(ngModel)]="form.unit" placeholder="rolls, litres, pcs" /></div>
         <div class="field"><label for="wk-low">Low at</label>
-          <input id="wk-low" type="number" min="0" step="1" [(ngModel)]="form.lowLimit" /></div>
+          <input id="wk-low" type="number" min="0" max="1000000" step="1" [(ngModel)]="form.lowLimit" /></div>
       </div>
       <div class="field" *ngIf="mode === 'new'"><label for="wk-open">In store now</label>
-        <input id="wk-open" type="number" min="0" step="1" [(ngModel)]="form.quantity" /></div>
+        <input id="wk-open" type="number" min="0" max="1000000" step="1" [(ngModel)]="form.quantity" /></div>
       <p class="wk-muted">"Low at" marks the item when the store reaches that number (0 = no warning).</p>
       <div class="field-error" *ngIf="formError">{{ formError }}</div>
       <div class="wk-btns">
