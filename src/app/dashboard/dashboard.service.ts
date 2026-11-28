@@ -40,7 +40,7 @@ export interface DashboardOverview {
   /** WASH (counts only): facility states and low stock right now. Missing on an older API. */
   wash?: {
     facilities: number; attention: number; stockItems: number; stockLow: number;
-    states: { not_started: number; ok: number; due_soon: number; overdue: number; empty: number; out_of_order: number };
+    states: { not_started: number; ok: number; due_soon: number; overdue: number; in_progress: number; empty: number; out_of_order: number };
   };
 }
 

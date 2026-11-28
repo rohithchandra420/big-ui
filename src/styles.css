@@ -1483,6 +1483,7 @@ th[aria-sort="ascending"] .th-sort .mat-icon, th[aria-sort="descending"] .th-sor
 .vm-status.wash-due_soon { background: #d69e2e; }
 .vm-status.wash-overdue { background: #c2410c; }
 .vm-status.wash-empty { background: #1d4ed8; }
+.vm-status.wash-in_progress { background: #0f766e; }
 .vm-status.wash-out_of_order { background: #4b5563; }
 .vm-status.wash-not_started { background: #cbd5e1; }
 .vm-area-ic {
@@ -2975,3 +2976,48 @@ app-list-toolbar { display: contents; }
   gap: 8px;
 }
 
+
+/* WASH › Monitor: In progress (Start / Finished, user 2026-11-28). Global because the page's
+   own stylesheet is at its size limit; .wm-page makes these outrank the page's base rules. */
+.wm-page .wm-card.t-prog { border-color: var(--sc); background: var(--sb); overflow: hidden; }
+.wm-page .wm-card.t-prog::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; opacity: .8;
+  background: repeating-linear-gradient(90deg, var(--sc) 0 14px, transparent 14px 28px); background-size: 28px 4px;
+  animation: wm-slide 1s linear infinite; }
+.wm-page .wm-card.t-prog .wm-pill { background: var(--sc); color: #fff; }
+.wm-page .wm-txt small.wm-who { color: var(--sc); font-weight: 600; }
+.wm-page .wm-act.main.wm-finish { background: var(--sc, #0f766e); border-color: var(--sc, #0f766e); color: #fff; }
+.wm-page .wm-act.wm-quiet { color: var(--text-secondary); }
+.wm-page .wm-st.t-prog i { animation: wm-pulse 1.4s ease-in-out infinite; }
+.wm-timer { display: flex; align-items: center; gap: 12px; margin: 0 0 10px; padding: 12px; border-radius: 12px;
+  background: #e0f4f1; border: 1px solid #0f766e; color: #0f4f49; }
+.wm-timer.long { background: #fdf3e1; border-color: #b7791f; color: #7a4f12; }
+.wm-timer mat-icon { flex: none; font-size: 28px; width: 28px; height: 28px; color: #0f766e; }
+.wm-timer.long mat-icon { color: #b7791f; }
+.wm-timer b { display: block; font-size: 22px; line-height: 1.15; font-variant-numeric: tabular-nums; color: inherit; }
+.wm-timer small { display: block; font-size: 12.5px; color: inherit; overflow-wrap: anywhere; }
+/* The panel's Finished button takes the job's colour (the timer sits right above it). */
+.wm-panel-acts .wm-act.main.wm-finish { background: #0f766e; border-color: #0f766e; color: #fff; }
+@keyframes wm-slide { to { background-position: 28px 0; } }
+@keyframes wm-pulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .wm-page .wm-card.t-prog::after, .wm-page .wm-st.t-prog i { animation: none; } }
+/* Card layout: title row (+ Empty / Out of order top right), then the two action buttons side by side,
+   pinned to the card's bottom so cards in one grid row line up. */
+.wm-page .wm-head { display: flex; align-items: flex-start; gap: 8px; }
+.wm-page .wm-head .wm-top { flex: 1; min-width: 0; }
+.wm-page .wm-flags { display: flex; gap: 4px; flex: none; }
+.wm-page .wm-flag { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--border-default); border-radius: 8px; background: #fff; color: var(--text-secondary); }
+.wm-page .wm-flag:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+.wm-page .wm-flag mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.wm-page .wm-card > .wm-acts { margin-top: auto; flex-wrap: nowrap; }
+.wm-page .wm-card > .wm-acts .wm-act { flex: 1 1 0; min-width: 0; justify-content: center; }
+.wm-page .wm-card > .wm-acts .wm-act.main { flex-grow: 1.4; }
+/* Detail panel: the main button full width, its partner (Done now / Cancel) full width under it,
+   then "Report a problem" with Empty / Out of order as an even pair. */
+.wm-panel-acts > div.wm-acts { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.wm-panel-acts > div.wm-acts .wm-act { width: 100%; justify-content: center; }
+.wm-problems { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border-default); color: var(--text-primary); }
+.wm-problems-h { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--text-secondary); margin-bottom: 6px; }
+.wm-problems-row { display: flex; gap: 8px; }
+.wm-problems-row button.wm-act { flex: 1 1 0; min-width: 0; justify-content: center; }

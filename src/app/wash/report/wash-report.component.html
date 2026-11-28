@@ -85,7 +85,7 @@
         <li *ngFor="let l of f.logs; trackBy: trackLog">
           <b>{{ l.time }}</b>
           <div>
-            {{ actionInfo[l.action].label }}<ng-container *ngIf="l.by"> · {{ l.by }}</ng-container><ng-container *ngIf="l.viaQr"> · via QR</ng-container>
+            {{ actionInfo[l.action].label }}<ng-container *ngIf="l.tookMin"> · took {{ l.tookMin }} min</ng-container><ng-container *ngIf="l.by"> · {{ l.by }}</ng-container><ng-container *ngIf="l.viaQr"> · via QR</ng-container>
             <small *ngIf="l.note">"{{ l.note }}"</small>
           </div>
         </li>

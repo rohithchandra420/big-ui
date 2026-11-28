@@ -18,6 +18,8 @@ const WASH: Record<PublicWash, { word: WordKey; detail: WordKey; tone: LiveTone;
   closed: { word: 'map.closed', detail: 'map.outOfOrder', tone: 'bad', icon: 'block' },
   filled: { word: 'map.refilled', detail: 'map.refilled', tone: 'good', icon: 'water_drop' },
   empty: { word: 'map.noWater', detail: 'map.noWater', tone: 'bad', icon: 'format_color_reset' },
+  cleaning: { word: 'map.beingCleaned', detail: 'map.beingCleanedText', tone: 'info', icon: 'cleaning_services' },
+  refilling: { word: 'map.beingRefilled', detail: 'map.beingRefilledText', tone: 'info', icon: 'water_full' },
 };
 
 /** Short workshop words for the badge. */
