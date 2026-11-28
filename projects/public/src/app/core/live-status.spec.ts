@@ -45,6 +45,9 @@ describe('live status words', () => {
     expect(washBadge('open', i18n)).toEqual(jasmine.objectContaining({ text: 'Open', tone: 'warn' }));
     expect(washBadge('closed', i18n).tone).toBe('bad');
     expect(washBadge('filled', i18n).text).toBe('Filled');
+    // In progress (user, 2026-11-28)
+    expect(washBadge('cleaning', i18n)).toEqual(jasmine.objectContaining({ text: 'Being cleaned', tone: 'info' }));
+    expect(washBadge('refilling', i18n)).toEqual(jasmine.objectContaining({ text: 'Being refilled', tone: 'info', detail: 'Being refilled right now' }));
     expect(washBadge('empty', i18n).tone).toBe('bad');
   });
 

@@ -115,7 +115,7 @@ export class WashReportComponent implements OnInit, OnDestroy {
         'Overdue (min)': f.overdueMin, 'Empty / out of order (min)': f.downMin
       }));
       const log = r.facilities.flatMap(f => f.logs.map(l => ({
-        Time: l.time, Facility: f.name, Action: ACTION_INFO[l.action].label, By: l.by || '', 'Via QR': l.viaQr ? 'Yes' : '', Note: l.note
+        Time: l.time, Facility: f.name, Action: ACTION_INFO[l.action].label, By: l.by || '', 'Via QR': l.viaQr ? 'Yes' : '', 'Took (min)': l.tookMin ?? '', Note: l.note
       }))).sort((a, b) => a.Time.localeCompare(b.Time));
       const stock = r.stock.map(s => ({ Item: s.name, Unit: s.unit, Used: s.used, Received: s.received }));
       const book = XLSX.utils.book_new();

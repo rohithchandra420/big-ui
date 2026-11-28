@@ -15,6 +15,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.86.0] - 2026-11-28
+
+### Added
+- WASH Monitor: Start refill / Start cleaning, then Finished (or Cancel). A running job shows in teal with who started it and for how long, and turns amber ("Taking long") after an hour. "Done now" logs a job that is already finished. New "In progress" tile in the state strip.
+- WASH Monitor panel: a timer for the running job; the history shows how long each job took.
+- Venue Map: WASH pins have a colour for In progress.
+- WASH Report: "took … min" in the day's log and a "Took (min)" column in the export.
+- Public page map: "Being cleaned" / "Being refilled".
+
+### Changed
+- WASH Monitor cards: Empty and Out of order moved to the title row as icon buttons; the two everyday buttons sit side by side at the bottom of each card, so cards in a row line up.
+- WASH Monitor panel: the main button full width, then Done now / Cancel, then "Report a problem" with Empty and Out of order as an even pair.
+
 ## [1.85.1] - 2026-11-28
 
 ### Fixed

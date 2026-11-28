@@ -1,4 +1,4 @@
-import { agoText, dueAtOf, HOUR, parseWashQr, stateOf, usedPercent } from './wash.utils';
+import { agoText, dueAtOf, HOUR, isLong, minutesSince, parseWashQr, stateOf, usedPercent } from './wash.utils';
 
 describe('wash.utils', () => {
   const now = new Date('2026-11-13T10:00:00Z');
@@ -17,6 +17,19 @@ describe('wash.utils', () => {
     expect(stateOf({ ...base, lastDoneAt: ago(1), status: 'out_of_order' }, now)).toBe('out_of_order');
     expect(stateOf({ ...base, lastDoneAt: ago(1), status: 'empty' }, now)).toBe('empty');
     expect(stateOf({ ...base, kind: 'toilets', lastDoneAt: ago(1), status: 'empty' }, now)).toBe('ok');
+  });
+
+  it('shows a started job as in progress (over Empty and the clock); out of order wins', () => {
+    const job = { ...base, startedAt: ago(0.25) };
+    expect(stateOf(job, now)).toBe('in_progress');
+    expect(stateOf({ ...job, status: 'empty' }, now)).toBe('in_progress');
+    expect(stateOf({ ...job, lastDoneAt: ago(5) }, now)).toBe('in_progress');
+    expect(stateOf({ ...job, status: 'out_of_order' }, now)).toBe('out_of_order');
+    expect(usedPercent(job, now)).toBe(25);                       // a quarter of the first hour
+    expect(usedPercent({ ...base, startedAt: ago(2) }, now)).toBe(100);
+    expect(isLong(job, now)).toBeFalse();
+    expect(isLong({ startedAt: ago(1) }, now)).toBeTrue();
+    expect(minutesSince(ago(0.5), now)).toBe(30);
   });
 
   it('reads a WASH sticker link and nothing else', () => {

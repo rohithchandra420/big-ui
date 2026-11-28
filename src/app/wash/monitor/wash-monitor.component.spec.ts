@@ -82,11 +82,11 @@ describe('WashMonitorComponent', () => {
     discardPeriodicTasks();
   }));
 
-  it('logs Refilled from the card, and Back in service for an out-of-order one', fakeAsync(() => {
+  it('logs Refilled with Done now, and Back in service for an out-of-order one', fakeAsync(() => {
     start();
     const refilled = fac('b', { name: 'Water Station B', lastDoneAt: new Date().toISOString(), state: 'ok' });
     service.log.and.returnValue(Promise.resolve(refilled));
-    component.mainAction(component.facilities.find(f => f._id === 'b')!);
+    component.doneNow(component.facilities.find(f => f._id === 'b')!);
     flushMicrotasks();
     expect(service.log).toHaveBeenCalledWith('b', 'refilled', '', null);
     expect(component.counts.overdue).toBe(0);
@@ -134,9 +134,10 @@ describe('WashMonitorComponent', () => {
     expect(fixture.nativeElement.querySelector('.wm-scanned')).toBeTruthy();
 
     service.log.and.returnValue(Promise.resolve(fac(ID_A, { name: 'Water Station A', lastDoneAt: new Date().toISOString() })));
+    // The main button is Start now; the sticker code goes with it (and with Done now).
     component.mainAction(component.selected!);
     flushMicrotasks();
-    expect(service.log).toHaveBeenCalledWith(ID_A, 'refilled', '', TOKEN);
+    expect(service.log).toHaveBeenCalledWith(ID_A, 'started', '', TOKEN);
     component.closePanel();
     expect(component.scanned).toBeNull();
     discardPeriodicTasks();
@@ -161,25 +162,25 @@ describe('WashMonitorComponent', () => {
     discardPeriodicTasks();
   }));
 
-  it('with "Require QR", Refilled asks for that facility\'s sticker first; Back in service does not', fakeAsync(() => {
+  it('with "Require QR", Done now asks for that facility\'s sticker first; Back in service does not', fakeAsync(() => {
     requireQr = true;
     list[1]._id = ID_A;
     start();
     const b = component.facilities.find(f => f._id === ID_A)!;
     service.scan.and.returnValue(Promise.resolve(null));
-    component.mainAction(b);
+    component.doneNow(b);
     flushMicrotasks();
     expect(service.log).not.toHaveBeenCalled();
 
     service.scan.and.returnValue(Promise.resolve({ id: 'b'.repeat(24), token: TOKEN }));
-    component.mainAction(b);
+    component.doneNow(b);
     flushMicrotasks();
     expect(service.log).not.toHaveBeenCalled();
     expect(notify.openErrorSnackBar).toHaveBeenCalledWith('That is not the sticker of Water Station B.');
 
     service.scan.and.returnValue(Promise.resolve({ id: ID_A, token: TOKEN }));
     service.log.and.returnValue(Promise.resolve(fac(ID_A, { name: 'Water Station B', lastDoneAt: new Date().toISOString() })));
-    component.mainAction(b);
+    component.doneNow(b);
     flushMicrotasks();
     expect(service.log).toHaveBeenCalledWith(ID_A, 'refilled', '', TOKEN);
 
@@ -192,10 +193,114 @@ describe('WashMonitorComponent', () => {
     discardPeriodicTasks();
   }));
 
+  describe('In progress (Start / Finished, user 2026-11-28)', () => {
+    const btns = () => Array.from(fixture.nativeElement.querySelectorAll('.wm-card') as NodeListOf<HTMLElement>)
+      .map(c => Array.from(c.querySelectorAll('.wm-acts button')).map(b => b.textContent!.replace(/\s+/g, ' ').trim()));
+    const flags = () => Array.from(fixture.nativeElement.querySelectorAll('.wm-card') as NodeListOf<HTMLElement>)
+      .map(c => Array.from(c.querySelectorAll('.wm-flags button')).map(b => b.getAttribute('aria-label')));
+
+    it('the card offers Start + Done now; Start sends "started"', fakeAsync(() => {
+      start();
+      const a = component.cards.find(c => c.f._id === 'a')!;
+      expect(a.doneLabel).toBe('Start refill');
+      expect(component.cards.find(c => c.f._id === 'd')!.doneLabel).toBe('Start cleaning');
+      const i = component.cards.indexOf(a);
+      expect(btns()[i]).toEqual(['play_arrowStart refill', 'done_allDone now']);
+      expect(flags()[i]).toEqual(['Empty', 'Out of order']);           // problem reports sit in the title row
+
+      service.log.and.returnValue(Promise.resolve(fac('a', { name: 'Water Station A', startedAt: new Date().toISOString(), startedBy: 'Pia', state: 'in_progress' })));
+      component.mainAction(a.f);
+      flushMicrotasks();
+      expect(service.log).toHaveBeenCalledWith('a', 'started', '', null);
+      expect(notify.openSucessSnackBar).toHaveBeenCalledWith('Water Station A: Refilling started');
+      expect(component.counts.in_progress).toBe(1);
+      discardPeriodicTasks();
+    }));
+
+    it('a running job shows who / how long, Finished + Cancel, and no Empty or Done now', fakeAsync(() => {
+      list[0] = fac('a', { name: 'Water Station A', startedAt: new Date(Date.now() - 12 * 60e3).toISOString(), startedBy: 'Pia' });
+      start();
+      const a = component.cards.find(c => c.f._id === 'a')!;
+      expect(a.state).toBe('in_progress');
+      expect(component.cards[0].f._id).toBe('b');                    // overdue still first, then the running job
+      expect(component.cards[1]).toBe(a);
+      expect(a.info.label).toBe('Refilling');
+      expect(a.last).toMatch(/^Pia started \d\d:\d\d$/);
+      expect(a.sub).toBe('12 min');
+      expect(a.pct).toBe(20);
+      expect(btns()[1]).toEqual(['checkFinished', 'closeCancel']);
+      expect(flags()[1]).toEqual(['Out of order']);                    // no Empty while refilling
+
+      service.log.and.returnValue(Promise.resolve(fac('a', { name: 'Water Station A', lastDoneAt: new Date().toISOString(), state: 'ok' })));
+      component.mainAction(a.f);
+      flushMicrotasks();
+      expect(service.log).toHaveBeenCalledWith('a', 'refilled', '', null);
+      expect(notify.openSucessSnackBar).toHaveBeenCalledWith(jasmine.stringMatching(/^Water Station A: Refilled at \d\d:\d\d · took 12 min$/));
+      discardPeriodicTasks();
+    }));
+
+    it('Finished does not ask for the sticker under "Require QR"; Start does', fakeAsync(() => {
+      requireQr = true;
+      list[0] = fac('a', { name: 'Water Station A', startedAt: new Date().toISOString(), startedBy: 'Pia' });
+      start();
+      service.log.and.returnValue(Promise.resolve(fac('a', { lastDoneAt: new Date().toISOString() })));
+      component.mainAction(component.facilities.find(f => f._id === 'a')!);
+      flushMicrotasks();
+      expect(service.scan).not.toHaveBeenCalled();
+      expect(service.log).toHaveBeenCalledWith('a', 'refilled', '', null);
+
+      service.scan.and.returnValue(Promise.resolve(null));
+      component.mainAction(component.facilities.find(f => f._id === 'd')!);
+      flushMicrotasks();
+      expect(service.scan).toHaveBeenCalled();
+      expect(service.log).not.toHaveBeenCalledWith('d', 'started', jasmine.anything(), jasmine.anything());
+      discardPeriodicTasks();
+    }));
+
+    it('turns amber ("Taking long") after an hour; Cancel sends "cancelled"', fakeAsync(() => {
+      list[3] = fac('d', { name: 'Toilet Block 2', kind: 'toilets', startedAt: new Date(Date.now() - 70 * 60e3).toISOString(), startedBy: 'Ravi' });
+      start();
+      const d = component.cards.find(c => c.f._id === 'd')!;
+      expect(d.long).toBeTrue();
+      expect(d.info).toEqual(jasmine.objectContaining({ label: 'Taking long', tone: 'prog long' }));
+      expect(d.sub).toBe('1 h 10 min');
+      const el = fixture.nativeElement.querySelectorAll('.wm-card')[component.cards.indexOf(d)] as HTMLElement;
+      expect(el.classList).toContain('t-prog');
+      expect(el.classList).toContain('long');
+
+      service.log.and.returnValue(Promise.resolve(fac('d', { kind: 'toilets', name: 'Toilet Block 2' })));
+      component.cancelJob(d.f);
+      flushMicrotasks();
+      expect(service.log).toHaveBeenCalledWith('d', 'cancelled', '', null);
+      discardPeriodicTasks();
+    }));
+
+    it('the panel shows the timer, "Counts from Finished" and the public word; history shows how long a job took', fakeAsync(() => {
+      list[3] = fac('d', { name: 'Toilet Block 2', kind: 'toilets', startedAt: new Date(Date.now() - 5 * 60e3).toISOString(), startedBy: 'Ravi' });
+      const t0 = new Date(Date.now() - 2 * H);
+      service.history.and.returnValue(Promise.resolve([
+        { _id: 'h1', action: 'cleaned', at: new Date(t0.getTime() + 14 * 60e3).toISOString(), by: 'Neel', note: '', viaQr: false, startedAt: t0.toISOString() },
+        { _id: 'h2', action: 'started', at: t0.toISOString(), by: 'Neel', note: '', viaQr: false, startedAt: null }
+      ] as any));
+      start();
+      component.open(component.facilities.find(f => f._id === 'd')!);
+      flushMicrotasks();
+      fixture.detectChanges();
+      const panel = fixture.nativeElement as HTMLElement;
+      expect(panel.querySelector('.wm-timer')!.textContent).toContain('5 min');
+      expect(panel.querySelector('.wm-timer')!.textContent).toContain('Cleaning · Ravi started');
+      expect(panel.textContent).toContain('Counts from Finished');
+      expect(component.publicText).toBe('Being cleaned');
+      expect(panel.querySelector('.wm-tl')!.textContent).toContain('Cleaned · 14 min · Neel');
+      discardPeriodicTasks();
+    }));
+  });
+
   it('hides the buttons for view-only people', fakeAsync(() => {
     canLog = false;
     start();
     expect(fixture.nativeElement.querySelectorAll('.wm-acts').length).toBe(0);
+    expect(fixture.nativeElement.querySelectorAll('.wm-flags').length).toBe(0);
     discardPeriodicTasks();
   }));
 
