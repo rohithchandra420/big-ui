@@ -15,6 +15,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.87.2] - 2026-11-28
+
+### Changed
+- The site deploy workflow uses the current versions of its GitHub actions (Node 24). No change in the app.
+
+---
+
 ## [1.87.1] - 2026-11-28
 
 ### Fixed
