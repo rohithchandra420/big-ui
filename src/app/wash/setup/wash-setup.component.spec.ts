@@ -121,6 +121,16 @@ describe('WashSetupComponent', () => {
     expect((html.match(/class="st"/g) || []).length).toBe(2);
   });
 
+  it('B-066: refuses a capacity past 1,000,000 litres with the limit, before asking the server', fakeAsync(() => {
+    start();
+    component.edit(component.facilities[0]);
+    component.form.capacityLitres = 5000000;
+    component.save();
+    flushMicrotasks();
+    expect(component.formError).toBe('Capacity: a whole number of litres from 1 to 1,000,000, or leave it empty.');
+    expect(service.update).not.toHaveBeenCalled();
+  }));
+
   it('edits the interval and removes with the log count in the question', fakeAsync(() => {
     start();
     component.edit(component.facilities[0]);

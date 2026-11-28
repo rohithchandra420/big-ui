@@ -27,7 +27,7 @@
       <div class="stat"><div class="stat-l">Visits today</div><div class="stat-n">{{ counts.visitsToday }}</div><div class="stat-s">{{ counts.patients }} patients this event</div></div>
       <div class="stat" [class.alert-stat]="counts.restingNow > 0"><div class="stat-l">Resting now</div><div class="stat-n">{{ counts.restingNow }}</div><div class="stat-s">in the Medical camp</div></div>
       <div class="stat" [class.alert-stat]="counts.followUpsDue > 0"><div class="stat-l">Follow-ups</div><div class="stat-n">{{ counts.followUpsDue }}</div><div class="stat-s">still open</div></div>
-      <div class="stat"><div class="stat-l">Serious</div><div class="stat-n">{{ counts.serious }}</div><div class="stat-s">visits this event</div></div>
+      <div class="stat" [class.alert-stat]="counts.serious > 0"><div class="stat-l">Serious</div><div class="stat-n">{{ counts.serious }}</div><div class="stat-s">visits this event</div></div>
     </div>
 
     <div class="md-sos" *ngIf="sos">

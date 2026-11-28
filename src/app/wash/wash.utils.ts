@@ -7,6 +7,9 @@ export const HOUR = 60 * 60 * 1000;
 export const DUE_SOON_MS = 30 * 60 * 1000;
 /** A job running longer than this shows "Taking long". */
 export const LONG_MS = 60 * 60 * 1000;
+/** Biggest number a WASH field takes (capacity in litres, stock counts): same as big-api (B-066). */
+export const MAX_QTY = 1000000;
+export const MAX_TEXT = '1,000,000';
 
 type StateInput = Pick<WashFacility, 'kind' | 'status' | 'intervalHours' | 'lastDoneAt'> & { startedAt?: string | null };
 
