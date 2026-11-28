@@ -2,7 +2,7 @@ import { NavAccessService } from '../core/nav-access.service';
 import { ComponentFixture, TestBed, fakeAsync, flush } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router, convertToParamMap } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BehaviorSubject, of } from 'rxjs';
 import { VenueMapComponent } from './venue-map.component';
@@ -22,6 +22,7 @@ describe('VenueMapComponent', () => {
   let snack: jasmine.SpyObj<NotificationService>;
   let confirm: jasmine.SpyObj<ConfirmationService>;
   let event$: BehaviorSubject<any>;
+  let qp$: BehaviorSubject<ParamMap>;
   let auth: any;
   let live: any[];
   const el = () => fixture.nativeElement as HTMLElement;
@@ -59,6 +60,7 @@ describe('VenueMapComponent', () => {
     };
     live = [(opts as any).sessions ?? [], (opts as any).venues ?? []];
     event$ = new BehaviorSubject<any>({ _id: 'ev1', name: 'BiG 7.0', status: 'active' });
+    qp$ = new BehaviorSubject<ParamMap>(convertToParamMap({ ...(opts.draw ? { draw: opts.draw } : {}), ...(opts.qp ?? {}) }));
     auth = {
       currentUser: { role: opts.role ?? 'ADMIN', departments: [{ department: { _id: 'd-food', name: 'Hospitality' } }] },
       deptKeyOf: (d: any) => d?.key || (d?.name || '').toLowerCase().replace(/\s+/g, '-')
@@ -79,7 +81,7 @@ describe('VenueMapComponent', () => {
         { provide: WorkshopService, useValue: { getSchedule: jasmine.createSpy('getSchedule').and.callFake(() => Promise.resolve({
           event: { _id: 'ev1', name: 'BiG 7.0', startDate: null, endDate: null }, sessions: live[0], venues: live[1], workshops: [], canManage: false, canRun: false
         })) } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: (k: string) => opts.qp?.[k] ?? (k === 'draw' ? (opts.draw ?? null) : null) } } } }
+        { provide: ActivatedRoute, useValue: { queryParamMap: qp$, snapshot: { queryParamMap: { get: (k: string) => opts.qp?.[k] ?? (k === 'draw' ? (opts.draw ?? null) : null) } } } }
       ]
     });
     // The live refresh timer would outlive each fake-time test: no real interval here.
@@ -401,10 +403,10 @@ describe('VenueMapComponent', () => {
       { _id: 'd-gen', name: 'General', key: 'general' }
     ];
 
-    it('Responsible department offers only Workshop and General, Workshop first, no "No department"', fakeAsync(() => {
+    it('Responsible department offers only Workshop-key departments, no "No department"', fakeAsync(() => {
       setup({ qp: { focus: 'workshop' } }); settle();
       component.departments = WS_DEPTS;
-      expect(component.areaDepartments.map(d => d._id)).toEqual(['d-ws', 'd-gen']);
+      expect(component.areaDepartments.map(d => d._id)).toEqual(['d-ws']);
       component.drawing = 'area';
       component.onDrawn({ remove: () => {}, on: () => {}, pm: { enable: () => {} } } as any);
       fixture.detectChanges();
@@ -412,13 +414,31 @@ describe('VenueMapComponent', () => {
       expect(el().textContent).not.toContain('No department');
     }));
 
-    it('refuses to save without the Workshop or General department', fakeAsync(() => {
+    it('an edited area keeps the department it already had, even when not a Workshop one', fakeAsync(() => {
+      setup({ qp: { focus: 'workshop' }, areas: [area('w1', { department: { _id: 'd-gen', name: 'General' } })] }); settle();
+      component.departments = WS_DEPTS;
+      component.areaForm = { _id: 'w1', name: 'Lawn', kind: 'workshop_area', shape: 'polygon', department: 'd-gen', notes: '' };
+      expect(component.areaDepartments.map(d => d._id)).toEqual(['d-ws', 'd-gen']);
+    }));
+
+    it('leaves Workshop mode when the query drops ?focus=workshop (sidebar link, same page)', fakeAsync(() => {
+      setup({ qp: { focus: 'workshop' } }); settle();
+      expect(component.workshopMode).toBeTrue();
+      svc.list.calls.reset();
+      qp$.next(convertToParamMap({})); settle();
+      expect(component.workshopMode).toBeFalse();
+      expect(svc.list).toHaveBeenCalledWith('ev1');
+      expect(el().querySelector('.vm-focus')).toBeNull();
+      expect(btn('Draw line')).toBeTruthy();
+    }));
+
+    it('refuses to save without a Workshop department', fakeAsync(() => {
       setup({ qp: { focus: 'workshop' } }); settle();
       component.departments = WS_DEPTS;
-      component.areaForm = { name: 'Lawn', kind: 'workshop_area', shape: 'polygon', department: 'd-ops', notes: '' };
+      component.areaForm = { name: 'Lawn', kind: 'workshop_area', shape: 'polygon', department: 'd-gen', notes: '' };
       component.saveArea(); settle();
       expect(svc.createArea).not.toHaveBeenCalled();
-      expect(component.formError).toContain('Workshop or General');
+      expect(component.formError).toContain('Workshop department');
     }));
 
     it('outside Workshop mode every department is offered', fakeAsync(() => {

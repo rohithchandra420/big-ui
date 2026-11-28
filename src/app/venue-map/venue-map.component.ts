@@ -1,6 +1,6 @@
 import { NavAccessService } from '../core/nav-access.service';
 import { AfterViewInit, OnInit, Component, ElementRef, HostListener, NgZone, OnDestroy, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import type * as Leaflet from 'leaflet';
 import { Subscription } from 'rxjs';
 import { EventService } from '../core/event.service';
@@ -60,9 +60,6 @@ interface TimelineItem {
   numbers: string;
   colour: string;
 }
-
-/** Responsible department for a Workshop area drawn from Workshops › Setup (user decision 2026-11-03). */
-const WORKSHOP_AREA_DEPTS = ['workshop', 'general'];
 
 /**
  * Venue Map (VENUE_MAP_AND_TENT_FIELDS_CONTEXT.md): places (A1), and areas and
@@ -217,6 +214,21 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.workshopMode = qp?.get('focus') === 'workshop';
     this.wantDrawNew = this.workshopMode && qp?.get('draw') === 'new';
     this.wantEdit = this.workshopMode && qp?.get('edit') === '1';
+    // The page stays alive when only the query changes (e.g. the sidebar's Venue Map
+    // link after a venue form's "Draw on map"): leave / enter Workshop mode then too.
+    const changes = this.route.queryParamMap;
+    if (changes) this.subs.add(changes.subscribe(q => this.onFocusChange(q)));
+  }
+
+  private onFocusChange(q: ParamMap): void {
+    const workshop = q.get('focus') === 'workshop';
+    if (workshop === this.workshopMode) return;
+    this.workshopMode = workshop;
+    this.wantDrawNew = workshop && q.get('draw') === 'new';
+    this.wantEdit = workshop && q.get('edit') === '1';
+    this.wantArea = q.get('area') || null;
+    this.closePanels();
+    if (this.event) this.load();
   }
 
   async ngAfterViewInit(): Promise<void> {
@@ -744,10 +756,16 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.adding) this.startNew(lat, lng);
   }
 
-  /** Departments offered in the area form. Workshop mode: only Workshop and General (by fixed key). */
+  /**
+   * Departments offered in the area form. Workshop mode: Workshop-key departments only
+   * (every department without a built-in key counts as `general`, so `general` listed them
+   * all — user, 2026-11-28), plus the department a saved area had before this edit.
+   */
   get areaDepartments(): { _id: string; name: string; key?: string }[] {
     if (!this.workshopMode) return this.departments;
-    return this.departments.filter(d => WORKSHOP_AREA_DEPTS.includes(this.auth.deptKeyOf(d)));
+    const id = this.areaForm?._id;
+    const kept = id ? this.areas.find(a => a._id === id)?.department?._id ?? null : null;
+    return this.departments.filter(d => this.auth.deptKeyOf(d) === 'workshop' || d._id === kept);
   }
 
   private defaultDepartment(): string | null {
@@ -967,7 +985,7 @@ export class VenueMapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!name) { this.formError = 'Give it a name'; return; }
     if (this.isTL && !f.department) { this.formError = 'Pick your department'; return; }
     if (this.workshopMode && !this.areaDepartments.some(d => d._id === f.department)) {
-      this.formError = 'Pick the Workshop or General department';
+      this.formError = 'Pick the Workshop department';
       return;
     }
     const points = this.shapePoints();

@@ -2848,3 +2848,130 @@ app-list-toolbar { display: contents; }
 .pc-more-spin .mat-icon { font-size: 22px; width: 22px; height: 22px; color: var(--color-primary); animation: pc-spin 0.9s linear infinite; }
 @keyframes pc-spin { to { transform: rotate(360deg); } }
 .pc-sentinel { height: 1px; }
+
+/* Announcements: phone preview + History list. Moved from the page's own stylesheet
+   (over its 6 kB budget, 2026-11-28); the page's @media rules still adjust these. */
+/* A lock-screen notification look-alike, with the type's icon. */
+.ann-phone-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  max-width: 380px;
+  padding: 10px 12px;
+  background: #f1f1ef;
+  border-radius: 16px;
+}
+.ann-phone-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--t-c);
+  color: #fff;
+}
+.ann-phone-icon mat-icon { font-size: 20px; width: 20px; height: 20px; }
+.ann-phone-text { min-width: 0; }
+.ann-phone-app { font-size: 11px; color: var(--text-muted); }
+.ann-phone-title { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+.ann-phone-body { font-size: 13px; color: var(--text-primary); overflow-wrap: anywhere; }
+
+/* ── History ───────────────────────────────────────────────────────── */
+.ann-history-lbl { margin: 0 0 10px; display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.ann-history-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(30, 70, 56, 0.1);
+  color: var(--color-primary);
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ann-empty { font-size: 13px; color: var(--text-muted); }
+.ann-filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; flex: 0 0 auto; }
+.ann-filter-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ann-filter-row app-select { width: 100%; min-width: 0; }
+.ann-filter-foot { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); }
+.ann-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;                  /* its own scrollbar */
+  padding: 2px 6px 12px 2px;
+  scrollbar-width: thin;
+}
+.ann-list .ann-item { margin: 0; flex: 0 0 auto; }
+
+.ann-item {
+  display: flex;
+  flex-direction: row;   /* Bootstrap's .card is a column — icon goes beside the text */
+  gap: 12px;
+  align-items: flex-start;
+  border-left: 3px solid var(--t-c);
+}
+/* Left column of a card: icon, then its badges stacked underneath. */
+.ann-item-side {
+  flex: 0 0 72px;
+  width: 72px;                       /* same in every card, so the text lines up */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.ann-item-ic {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--t-soft);
+  color: var(--t-c);
+}
+.ann-item-ic mat-icon { font-size: 20px; width: 20px; height: 20px; }
+.ann-item-body { flex: 1 1 auto; min-width: 0; }
+
+.ann-item-hd { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ann-item-title {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.ann-item-when { font-size: 12px; color: var(--text-muted); }
+.ann-item-msg { margin-top: 4px; font-size: 13px; color: var(--text-primary); overflow-wrap: anywhere; }
+.ann-item-meta { margin-top: 6px; font-size: 12px; color: var(--text-muted); }
+
+.ann-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  flex: 0 0 auto;
+  background: var(--t-soft);
+  color: var(--t-c);
+}
+.ann-badge mat-icon { font-size: 13px; width: 13px; height: 13px; }
+.ann-badge.resent { background: rgba(30, 70, 56, 0.1); color: var(--color-primary); }
+
+.ann-item-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+

@@ -77,7 +77,8 @@ export class EventService {
         if (stored) {
           this.activeEvent.next(stored);
         } else if (events.length) {
-          this.setActiveEvent(events[0]);
+          // Top roles also see draft / archived events (newest first): prefer the active one.
+          this.setActiveEvent(events.find(e => e.status === 'active') ?? events[0]);
         } else {
           localStorage.removeItem(ACTIVE_EVENT_KEY);
           this.activeEvent.next(null);
