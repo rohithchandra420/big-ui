@@ -31,6 +31,13 @@ interface Card {
 
 const REFRESH_MS = 60 * 1000;
 
+/** Snackbar tail for the linked tasks a log moved: " · task closed" / " · 2 tasks In Progress" ('' when none). */
+export function movedText(moved: WashTask[] | undefined): string {
+  if (!moved?.length) return '';
+  const word = moved[0].status === 'closed' ? 'closed' : 'In Progress';
+  return moved.length === 1 ? ` · task ${word}` : ` · ${moved.length} tasks ${word}`;
+}
+
 /**
  * WASH › Monitor (WA1): every facility of the sidebar event with its state;
  * Refilled / Cleaned any time (on demand — that time becomes the last one),
@@ -211,6 +218,8 @@ export class WashMonitorComponent implements OnInit, OnDestroy {
   trackLog = (_: number, l: WashLogEntry) => l._id;
   trackTask = (_: number, t: WashTask) => t._id;
   taskLabel = (t: WashTask) => taskStatusMeta(t.status).label;
+  hasLinked = (f: WashFacility) => (f.tasks || []).some(t => t.linked);
+  hasOtherTasks = (f: WashFacility) => (f.tasks || []).some(t => !t.linked);
   clock = clockText;
 
   // ── actions ──
@@ -270,7 +279,7 @@ export class WashMonitorComponent implements OnInit, OnDestroy {
     this.busyId = f._id;
     try {
       const startedAt = f.startedAt || null;
-      const updated = await this.wash.log(f._id, action, note, this.scanned?.id === f._id ? this.scanned.token : null);
+      const { movedTasks, ...updated } = await this.wash.log(f._id, action, note, this.scanned?.id === f._id ? this.scanned.token : null);
       this.facilities = this.facilities.map(x => x._id === updated._id ? { ...x, ...updated } : x);
       if (this.selected?._id === f._id) { this.selected = this.facilities.find(x => x._id === f._id) || null; this.loadHistory(); }
       this.apply();
@@ -278,7 +287,7 @@ export class WashMonitorComponent implements OnInit, OnDestroy {
       const took = done && startedAt ? this.took({ at: updated.lastDoneAt, startedAt } as WashLogEntry) : '';
       const at = done ? ` at ${clockText(updated.lastDoneAt)}${took ? ' · took ' + took : ''}` : '';
       const label = action === 'started' ? `${KIND_INFO[f.kind].workingLabel} started` : ACTION_INFO[action].label;
-      this.notify.openSucessSnackBar(`${f.name}: ${label}${at}`);
+      this.notify.openSucessSnackBar(`${f.name}: ${label}${at}${movedText(movedTasks)}`);
       return true;
     } catch (err: any) {
       this.notify.openErrorSnackBar(err?.error?.message || 'Could not save that.');

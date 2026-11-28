@@ -30,11 +30,18 @@ export interface WashFacility {
   long?: boolean;
   state: WashState;
   logCount?: number;
-  /** Helpdesk HD3: open tasks about this facility. Separate from the log: Refilled / Cleaned never closes them. */
+  /** Helpdesk HD3: open tasks about this facility. */
   tasks?: WashTask[];
 }
 
-export interface WashTask { _id: string; title: string; status: 'new' | 'acknowledged' | 'in_progress' | 'blocked' | 'closed' }
+/**
+ * `linked` (task link, user 2026-11-28): sent to the WASH department, so a WASH job moves it —
+ * Start → In Progress, Finished / Done now → Closed. One way: a task change never touches the facility.
+ */
+export interface WashTask { _id: string; title: string; status: 'new' | 'acknowledged' | 'in_progress' | 'blocked' | 'closed'; linked?: boolean }
+
+/** POST …/log: the facility, plus the linked tasks whose status this log changed. */
+export type WashLogResult = WashFacility & { movedTasks?: WashTask[] };
 
 export interface WashList {
   facilities: WashFacility[];

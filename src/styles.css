@@ -3020,4 +3020,8 @@ app-list-toolbar { display: contents; }
 .wm-problems-h { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
   color: var(--text-secondary); margin-bottom: 6px; }
 .wm-problems-row { display: flex; gap: 8px; }
+/* Task link (2026-11-28): a task that moves with the WASH job */
+.wm-task-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; color: var(--text-primary); }
+.wm-linked { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 600; color: #0f766e; }
+.wm-linked mat-icon { font-size: 14px; width: 14px; height: 14px; }
 .wm-problems-row button.wm-act { flex: 1 1 0; min-width: 0; justify-content: center; }

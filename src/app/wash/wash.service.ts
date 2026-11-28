@@ -6,7 +6,7 @@ import { environment } from '../../environments/environment';
 import { BoxOfficeQrscannerPopupComponent, QrScannerData } from '../box-office/registration/qrscanner-popup/qrscanner-popup.component';
 import {
   NewFacility, StockItem, StockItemInput, StockList, StockLogEntry, StockMoveKind, StockMoveResult,
-  WashAction, WashFacility, WashList, WashLogEntry, WashPin, WashReport, WashSticker
+  WashAction, WashFacility, WashList, WashLogEntry, WashLogResult, WashPin, WashReport, WashSticker
 } from './wash.model';
 import { parseWashQr } from './wash.utils';
 
@@ -42,8 +42,9 @@ export class WashService {
   }
 
   /** `qr`: the code from the facility's sticker when the log follows a scan (the server checks it). */
-  log(id: string, action: WashAction, note = '', qr: string | null = null): Promise<WashFacility> {
-    return firstValueFrom(this.http.post<WashFacility>(`${this.url}/facilities/${id}/log`, { action, note, ...(qr ? { qr } : {}) }));
+  /** The answer also carries the facility's open tasks and the linked tasks this log moved (task link, 2026-11-28). */
+  log(id: string, action: WashAction, note = '', qr: string | null = null): Promise<WashLogResult> {
+    return firstValueFrom(this.http.post<WashLogResult>(`${this.url}/facilities/${id}/log`, { action, note, ...(qr ? { qr } : {}) }));
   }
 
   setRequireQr(eventId: string, requireQr: boolean): Promise<{ requireQr: boolean }> {

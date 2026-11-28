@@ -153,11 +153,15 @@
         <p class="section-lbl">Open tasks</p>
         <ul class="wm-tasks">
           <li *ngFor="let t of f.tasks; trackBy: trackTask">
-            <span>{{ t.title }}</span>
+            <span class="wm-task-t">
+              {{ t.title }}
+              <small class="wm-linked" *ngIf="t.linked"><mat-icon aria-hidden="true">link</mat-icon>Moves with the job</small>
+            </span>
             <span class="tk-pill tk-s-{{ t.status }}">{{ taskLabel(t) }}</span>
           </li>
         </ul>
-        <p class="wm-muted">Tasks are separate from the log: {{ kindInfo[f.kind].doneLabel }} does not close them. Change a task on the Billboard or in My Department.</p>
+        <p class="wm-muted" *ngIf="hasLinked(f)">Tasks sent to WASH move with the job: {{ kindInfo[f.kind].startLabel }} puts them In Progress, {{ kindInfo[f.kind].doneLabel }} closes them.</p>
+        <p class="wm-muted" *ngIf="hasOtherTasks(f)">Tasks sent to other teams change only on the Billboard or in My Department.</p>
       </ng-container>
 
       <p class="section-lbl">History</p>

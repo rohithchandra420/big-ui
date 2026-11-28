@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute, ParamMap, Router, convertToParamMap } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import { WashMonitorComponent } from './wash-monitor.component';
+import { WashMonitorComponent, movedText } from './wash-monitor.component';
 import { SlidePanelComponent } from '../../shared/slide-panel/slide-panel.component';
 import { EventService } from '../../core/event.service';
 import { NotificationService } from '../../core/notification.service';
@@ -318,4 +318,47 @@ describe('WashMonitorComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.wm-task').length).toBe(2);
     discardPeriodicTasks();
   }));
+
+  describe('Task link (user, 2026-11-28)', () => {
+    it('says in the snackbar which linked tasks the log moved, and keeps the fresh task list', fakeAsync(() => {
+      list[0].tasks = [{ _id: 't1', title: 'Tap is leaking', status: 'new', linked: true }];
+      start();
+      service.log.and.returnValue(Promise.resolve({
+        ...fac('a', { name: 'Water Station A', startedAt: new Date().toISOString(), startedBy: 'Pia' }),
+        tasks: [{ _id: 't1', title: 'Tap is leaking', status: 'in_progress', linked: true }],
+        movedTasks: [{ _id: 't1', title: 'Tap is leaking', status: 'in_progress' }]
+      } as any));
+      component.mainAction(component.facilities.find(f => f._id === 'a')!);
+      flushMicrotasks();
+      expect(notify.openSucessSnackBar).toHaveBeenCalledWith('Water Station A: Refilling started · task In Progress');
+      const a = component.facilities.find(f => f._id === 'a')! as any;
+      expect(a.tasks[0].status).toBe('in_progress');
+      expect(a.movedTasks).toBeUndefined();                          // never stored on the facility
+      discardPeriodicTasks();
+    }));
+
+    it('movedText words one or several tasks', () => {
+      expect(movedText(undefined)).toBe('');
+      expect(movedText([])).toBe('');
+      expect(movedText([{ _id: 'x', title: 'A', status: 'closed' }])).toBe(' · task closed');
+      expect(movedText([{ _id: 'x', title: 'A', status: 'in_progress' }, { _id: 'y', title: 'B', status: 'in_progress' }])).toBe(' · 2 tasks In Progress');
+    });
+
+    it('the panel marks the tasks that move with the job and explains both kinds', fakeAsync(() => {
+      list[3].tasks = [
+        { _id: 't1', title: 'Clean after the rush', status: 'new', linked: true },
+        { _id: 't2', title: 'Door hinge broken', status: 'new', linked: false }
+      ];
+      start();
+      component.open(component.facilities.find(f => f._id === 'd')!);
+      flushMicrotasks();
+      fixture.detectChanges();
+      const items = Array.from(fixture.nativeElement.querySelectorAll('.wm-tasks li') as NodeListOf<HTMLElement>);
+      expect(items.map(li => !!li.querySelector('.wm-linked'))).toEqual([true, false]);
+      const text = (fixture.nativeElement as HTMLElement).textContent!;
+      expect(text).toContain('Tasks sent to WASH move with the job: Start cleaning puts them In Progress, Cleaned closes them.');
+      expect(text).toContain('Tasks sent to other teams change only on the Billboard or in My Department.');
+      discardPeriodicTasks();
+    }));
+  });
 });
