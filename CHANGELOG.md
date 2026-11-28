@@ -15,6 +15,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.87.0] - 2026-11-28
+
+### Added
+- WASH Monitor: tasks sent to the WASH team move with the job (Start → In Progress, Finished / Done now → Closed). The panel marks them "Moves with the job"; the confirmation says when a task moved.
+
 ## [1.86.0] - 2026-11-28
 
 ### Added
