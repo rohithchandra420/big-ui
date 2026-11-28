@@ -106,7 +106,7 @@
         <div class="field"><label for="ws-int">{{ formKind === 'water' ? 'Refill' : 'Clean' }} every (hours) *</label>
           <input id="ws-int" type="number" min="1" max="24" step="1" [(ngModel)]="form.intervalHours" /></div>
         <div class="field" *ngIf="formKind === 'water'"><label for="ws-cap">Capacity (litres)</label>
-          <input id="ws-cap" type="number" min="1" step="1" [(ngModel)]="form.capacityLitres" placeholder="Optional" /></div>
+          <input id="ws-cap" type="number" min="1" max="1000000" step="1" [(ngModel)]="form.capacityLitres" placeholder="Optional" /></div>
       </div>
       <p class="ws-muted">Refills and cleanings can happen any time; the next one is due this many hours after the last.</p>
 

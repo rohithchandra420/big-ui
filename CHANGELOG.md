@@ -15,6 +15,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.87.1] - 2026-11-28
+
+### Fixed
+- B-066 WASH Setup / Stock: too-big numbers are stopped in the form with the allowed range (up to 1,000,000), before saving.
+- B-070 Medical Desk / Records: the Serious card turns red when there are serious visits.
+
 ## [1.87.0] - 2026-11-28
 
 ### Added

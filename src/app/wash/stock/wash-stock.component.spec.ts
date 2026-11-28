@@ -79,7 +79,14 @@ describe('WashStockComponent', () => {
     component.startMove(component.items[0], 'received');
     component.moveQty = 0;
     component.saveMove();
-    expect(component.formError).toContain('1 or more');
+    expect(component.formError).toBe('Quantity: a whole number from 1 to 1,000,000.');
+    component.moveQty = 1e21;                                         // B-066: big numbers stop here, with the limit
+    component.saveMove();
+    expect(component.formError).toBe('Quantity: a whole number from 1 to 1,000,000.');
+    component.moveQty = 999999;                                       // 40 in store + this is past the limit
+    component.saveMove();
+    expect(component.formError).toBe('The store can hold up to 1,000,000 rolls.');
+    expect(service.moveStock).not.toHaveBeenCalled();
     service.moveStock.and.returnValue(Promise.resolve({ item: item('s1', 'Soap', 90, 10), short: 0, becameLow: false }));
     component.moveQty = 50;
     component.moveNote = ' Delivery ';
