@@ -15,6 +15,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.85.1] - 2026-11-28
+
+### Fixed
+- Venue Map: opening the Venue Map from the sidebar after "Draw on map" in Workshops › Setup now leaves "Workshop areas only" mode (before, it stayed on until the page was reloaded).
+- Venue Map, Workshop areas: the Responsible department list now offers only Workshop departments (it listed every department without a special role). An area that already has another department keeps it.
+- Directors, Developers and Admins without a remembered event now start on the active event, not the newest draft.
+- WASH Monitor: the selected status tile keeps its highlight after it is clicked.
+
+### Development
+- Announcements styles partly moved to the global stylesheet (the page was over its style size warning).
+- Admin menu styles: a nested rule the build skipped is written out in plain CSS (removes a build warning).
+
 ## [1.85.0] - 2026-11-28
 
 ### Added

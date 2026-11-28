@@ -53,6 +53,29 @@ describe('EventService', () => {
         expect(localStorage.getItem('activeEventId')).toBe('evt1');
     });
 
+    it('prefers the active event over a newer draft when nothing is stored (top roles see drafts first)', () => {
+        const newestFirst: EventItem[] = [
+            { _id: 'evt3', name: 'Draft edition', description: '', status: 'draft' },
+            ...mockEvents,
+        ];
+        currentUserSubject.next({ name: 'Test' } as User);
+        httpMock.expectOne('/api/admin/events').flush(newestFirst);
+
+        expect(service.currentActiveEvent?._id).toBe('evt1');
+        expect(localStorage.getItem('activeEventId')).toBe('evt1');
+    });
+
+    it('falls back to the first event when none is active', () => {
+        const drafts: EventItem[] = [
+            { _id: 'evt3', name: 'Draft edition', description: '', status: 'draft' },
+            { _id: 'evt2', name: 'BloomNight 01', description: '', status: 'draft' },
+        ];
+        currentUserSubject.next({ name: 'Test' } as User);
+        httpMock.expectOne('/api/admin/events').flush(drafts);
+
+        expect(service.currentActiveEvent?._id).toBe('evt3');
+    });
+
     it('restores the previously-selected event from localStorage if it is still in the list', () => {
         localStorage.setItem('activeEventId', 'evt2');
         currentUserSubject.next({ name: 'Test' } as User);
