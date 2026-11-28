@@ -15,6 +15,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.85.0] - 2026-11-28
+
+### Added
+- Medical Desk and Workshop session lists: search by Booking ID too. Results and the session lists show the Booking ID (older passes show their order number); the list column is now "Booking · band".
+
+### Changed
+- Workshop Reports export: the "Order ID" column is now "Booking ID".
+
 ## [1.84.0] - 2026-11-26
 
 ### Added

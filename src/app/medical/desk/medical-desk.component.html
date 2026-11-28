@@ -48,7 +48,7 @@
         </button>
         <label class="search-field md-search">
           <mat-icon>search</mat-icon>
-          <input type="search" [(ngModel)]="q" (ngModelChange)="onSearch()" placeholder="Name, email, phone or order number" aria-label="Search patients">
+          <input type="search" [(ngModel)]="q" (ngModelChange)="onSearch()" placeholder="Name, email, phone or Booking ID" aria-label="Search patients">
         </label>
       </div>
       <div class="md-msg" *ngIf="scanMessage"><mat-icon>info</mat-icon>{{ scanMessage }}</div>
